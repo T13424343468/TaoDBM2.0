@@ -760,6 +760,45 @@ Layer("集成");
     Environment.SetEnvironmentVariable("DBM_STREAMING", null);
 }
 
+// 5) TaskCenter A2 实体化：暂停/续跑、重跑、快照导出/回放
+{
+    var tc = new TaoDBM.Core.Streaming.TaskCenter();
+    var ranCount = 0;
+    tc.Runner = _ => { Interlocked.Increment(ref ranCount); return Task.CompletedTask; };
+
+    Check("暂停首次生效", tc.Pause());
+    Check("重复暂停返回false", !tc.Pause());
+    var hp = tc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Kind = "export", Title = "暂停期任务", Db = "db1", Sql = "SELECT 1;" });
+    await Task.Delay(200);
+    Check("暂停期任务不开跑且停在运行态", ranCount == 0 && tc.List().First(s => s.TaskId == hp.TaskId).State == "running", $"ran={ranCount}");
+    Check("暂停期运行态任务不可重跑", tc.Retry(hp.TaskId) == null, "running 态不允许 Retry");
+
+    tc.Resume();
+    var t0 = DateTime.UtcNow;
+    while (ranCount < 1 && DateTime.UtcNow - t0 < TimeSpan.FromSeconds(5)) await Task.Delay(20);
+    var t1 = DateTime.UtcNow;
+    while (!tc.List().Any(s => s.TaskId == hp.TaskId && s.State == "done") && DateTime.UtcNow - t1 < TimeSpan.FromSeconds(5)) await Task.Delay(20);
+    Check("续跑后积压任务开跑至完成", ranCount == 1 && tc.List().First(s => s.TaskId == hp.TaskId).State == "done", $"ran={ranCount}");
+
+    var hq = tc.Retry(hp.TaskId);
+    Check("终态任务重跑返回新句柄", hq != null && hq.TaskId != hp.TaskId);
+    Check("重跑沿用原规格", hq != null && hq.Spec.Title == "暂停期任务" && hq.Spec.Kind == "export" && hq.Spec.Sql == "SELECT 1;");
+    Check("未知任务重跑返回null", tc.Retry("no-such-id") == null);
+    var t2 = DateTime.UtcNow;
+    while (ranCount < 2 && DateTime.UtcNow - t2 < TimeSpan.FromSeconds(5)) await Task.Delay(20);
+    Check("重跑任务执行完成", ranCount == 2, $"ran={ranCount}");
+
+    // 快照导出/回放：新实例并入历史、重复回放幂等、坏快照静默忽略
+    var json = tc.ExportStates();
+    var tc2 = new TaoDBM.Core.Streaming.TaskCenter();
+    tc2.ImportStates(json);
+    Check("快照回放后历史可见", tc2.List().Count == tc.List().Count && tc2.List().Any(s => s.TaskId == hp.TaskId && s.State == "done"), $"tc2={tc2.List().Count} tc={tc.List().Count}");
+    tc2.ImportStates(json);
+    Check("重复回放不重复计数", tc2.List().Count == tc.List().Count);
+    tc2.ImportStates("{坏");
+    Check("损坏快照静默忽略", tc2.List().Count == tc.List().Count);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
