@@ -799,6 +799,83 @@ Layer("集成");
     Check("损坏快照静默忽略", tc2.List().Count == tc.List().Count);
 }
 
+// 6) SchemaDiff 结构差异对比 + 同步计划（对象同步批纯引擎）
+{
+    SchemaTableSnapshot T(string table, params TableColumnDesign[] cols) => new()
+    { Table = table, Columns = cols.ToList() };
+    TableColumnDesign C(string name, string type, bool nullable = true, bool pk = false, string def = "") => new()
+    { Name = name, SqlType = type, Nullable = nullable, IsPrimaryKey = pk, DefaultValue = def };
+
+    var src = new List<SchemaTableSnapshot>
+    {
+        T("users", C("id", "BIGINT", false, true), C("name", "VARCHAR(50)"), C("age", "INT")),
+        T("orders", C("id", "BIGINT", false, true), C("memo", "TEXT"), C("flag", "INT", true, false, "0")),
+        T("logs", C("id", "BIGINT", false, true)),
+    };
+    var dst = new List<SchemaTableSnapshot>
+    {
+        T("users", C("id", "BIGINT", false, true), C("name", "VARCHAR(100)"), C("extra", "CHAR(1)")),
+        T("orders", C("id", "BIGINT", false, true), C("memo", "TEXT"), C("flag", "INT", true, false, "1")),
+        T("archive", C("id", "BIGINT")),
+    };
+
+    var diffs = SchemaDiff.Diff(src, dst);
+
+    // 缺表 / 多余表
+    var logs = diffs.First(d => d.Table == "logs" && d.Kind == "table-missing");
+    Check("缺表检出且可执行", logs.Actionable, logs.Detail);
+    Check("多余表仅提示", diffs.Any(d => d.Table == "archive" && d.Kind == "table-extra" && !d.Actionable));
+
+    // 列级差异
+    var tmiss = diffs.FirstOrDefault(d => d.Table == "users" && d.Kind == "column-missing");
+    Check("缺列检出", tmiss != null && tmiss.Column == "age" && tmiss.Actionable);
+    var textra = diffs.FirstOrDefault(d => d.Table == "users" && d.Kind == "column-extra");
+    Check("多余列仅提示不可执行", textra != null && textra.Column == "extra" && !textra.Actionable);
+    var tmis = diffs.FirstOrDefault(d => d.Table == "users" && d.Kind == "type-mismatch");
+    Check("类型不一致检出", tmis != null && tmis.Column == "name" && tmis.Source == "VARCHAR(50)" && tmis.Target == "VARCHAR(100)");
+
+    // 默认值比较默认关闭、开启后检出
+    Check("默认值差异默认不报", !diffs.Any(d => d.Table == "orders" && d.Kind == "default-mismatch"));
+    var d1 = SchemaDiff.Diff(src, dst, new SchemaDiffOptions { CompareDefault = true, ReportExtraColumns = false, ReportExtraTables = false });
+    Check("开启默认值比较后检出", d1.Any(d => d.Table == "orders" && d.Kind == "default-mismatch" && d.Column == "flag"));
+    Check("关闭多余报告后无提示项", !d1.Any(d => d.Kind is "column-extra" or "table-extra"));
+
+    // 主键 / 可空性差异
+    var srcPk = new List<SchemaTableSnapshot> { T("t1", C("id", "INT", true, true)) };
+    var dstPk = new List<SchemaTableSnapshot> { T("t1", C("id", "INT", true, false)) };
+    var pkDiffs = SchemaDiff.Diff(srcPk, dstPk);
+    Check("主键差异检出", pkDiffs.Any(d => d.Kind == "pk-mismatch" && d.Column == "id"));
+    var srcN = new List<SchemaTableSnapshot> { T("t2", C("a", "INT", true)) };
+    var dstN = new List<SchemaTableSnapshot> { T("t2", C("a", "INT", false)) };
+    Check("可空性差异检出", SchemaDiff.Diff(srcN, dstN).Any(d => d.Kind == "nullable-mismatch"));
+
+    // 完全一致零差异；表名/列名大小写不敏感
+    var same = SchemaDiff.Diff(src, new List<SchemaTableSnapshot>(src));
+    Check("同构零差异", same.Count == 0, string.Join("|", same.Select(d => d.Table + ":" + d.Kind)));
+    var caseDst = new List<SchemaTableSnapshot> { T("USERS", C("ID", "bigint", false, true), C("NAME", "varchar(50)"), C("AGE", "int")) };
+    var caseUsers = SchemaDiff.Diff(src.Where(t => t.Table == "users").ToList(), caseDst);
+    Check("大小写不敏感比对", caseUsers.Count == 0, string.Join("|", caseUsers.Select(d => d.Kind + ":" + d.Column)));
+
+    // 同步计划：缺表 → CREATE；缺列+类型对齐 → ALTER；多余列不删（dropMissing=false）
+    var my = (Func<string, string>)(s => "`" + s + "`");
+    var (stmts, skips) = SchemaDiff.PlanSync(src, dst, diffs, DbEngine.MySQL, my);
+    Check("缺表生成建表", stmts.Any(s => s.Contains("CREATE TABLE `logs`")), string.Join(" ;; ", stmts));
+    Check("缺列生成加列", stmts.Contains("ALTER TABLE `users` ADD `age` INT"));
+    Check("类型对齐生成改列", stmts.Contains("ALTER TABLE `users` MODIFY COLUMN `name` VARCHAR(50)"));
+    Check("多余列不进计划", !stmts.Any(s => s.Contains("DROP COLUMN")));
+    Check("多余表不进计划", !stmts.Any(s => s.Contains("`archive`")));
+    Check("提示类差异不落语句", skips.Count == 0, string.Join("|", skips));
+
+    // dropMissing=true 开删侧；SQLite 不支持改列进 skipped
+    var (dropStmts, _) = SchemaDiff.PlanSync(src, dst, diffs, DbEngine.MySQL, my, dropMissing: true);
+    Check("开删侧后多余列进计划", dropStmts.Contains("ALTER TABLE `users` DROP COLUMN `extra`"));
+    var lite = new List<SchemaTableSnapshot> { T("u", C("a", "INT")) };
+    var liteDst = new List<SchemaTableSnapshot> { T("u", C("a", "BIGINT")) };
+    var liteDiffs = SchemaDiff.Diff(lite, liteDst);
+    var (_, liteSkips) = SchemaDiff.PlanSync(lite, liteDst, liteDiffs, DbEngine.SQLite, s => s);
+    Check("SQLite 改列进跳过清单", liteSkips.Count == 1 && liteSkips[0].Contains("SQLite"), string.Join("|", liteSkips));
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
