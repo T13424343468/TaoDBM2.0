@@ -1,45 +1,52 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using TaoDBM.ViewModels;
 
 namespace TaoDBM.UI;
 
-/// <summary>设置弹窗：托盘 / 关闭主窗口行为（三选项归组附说明）。保存即生效并持久化。</summary>
+/// <summary>设置弹窗（MVVM 模板）：视图只负责搭建控件并绑定 ViewModel，选项文案与保存逻辑全部在 ViewModel。</summary>
 public static class SettingsDialog
 {
     public static async Task ShowAsync(Window owner)
     {
-        var current = Core.AppPrefs.Load();
+        var vm = new SettingsViewModel(
+            Core.AppPrefs.Load(),
+            v =>
+            {
+                try { Core.AppPrefs.Save(v); }
+                catch (Exception ex) { Core.AppLog.Write($"设置保存失败: {ex.Message}"); }
+            });
 
-        var rbAsk = new RadioButton { GroupName = "CloseBehavior", Margin = new Thickness(0, 2, 0, 0) };
-        var rbTray = new RadioButton { GroupName = "CloseBehavior" };
-        var rbExit = new RadioButton { GroupName = "CloseBehavior" };
-        switch (current)
-        {
-            case Core.CloseBehavior.Tray: rbTray.IsChecked = true; break;
-            case Core.CloseBehavior.Exit: rbExit.IsChecked = true; break;
-            default: rbAsk.IsChecked = true; break;
-        }
+        var panel = new StackPanel { Spacing = 8, MinWidth = 400 };
+        panel.Children.Add(new TextBlock { Text = "关闭主窗口时", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
 
         var desc = new TextBlock { Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
-        void Bind(RadioButton rb, string title, string note, Core.CloseBehavior kind)
+        void Bind(RadioButton rb, string title, Core.CloseBehavior kind)
         {
+            rb.GroupName = "CloseBehavior";
+            rb.IsChecked = vm.CloseBehavior == kind;
+            rb.Margin = kind == Core.CloseBehavior.Ask ? new Thickness(0, 2, 0, 0) : default;
             rb.Content = new StackPanel
             {
                 Orientation = Orientation.Vertical,
                 Children =
                 {
                     new TextBlock { Text = title },
-                    new TextBlock { Text = note, Foreground = Ant.TextSub, FontSize = 12 },
+                    new TextBlock { Text = vm.DescriptionFor(kind), Foreground = Ant.TextSub, FontSize = 12 },
                 }
             };
-            rb.Checked += (_, _) => desc.Text = note;
+            rb.Checked += (_, _) => vm.CloseBehavior = kind;
         }
-        Bind(rbAsk, "每次询问", "点关闭时弹一次选择：最小化到托盘还是退出，可记住选择。", Core.CloseBehavior.Ask);
-        Bind(rbTray, "最小化到托盘", "点关闭时收进系统托盘继续运行，点托盘图标随时回来。", Core.CloseBehavior.Tray);
-        Bind(rbExit, "直接退出", "点关闭就退出程序，托盘图标一并消失。", Core.CloseBehavior.Exit);
+        Bind(new RadioButton(), "每次询问", Core.CloseBehavior.Ask);
+        Bind(new RadioButton(), "最小化到托盘", Core.CloseBehavior.Tray);
+        Bind(new RadioButton(), "直接退出", Core.CloseBehavior.Exit);
 
-        var panel = new StackPanel { Spacing = 8, MinWidth = 400 };
-        panel.Children.Add(new TextBlock { Text = "关闭主窗口时", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        desc.Text = vm.Description;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.Description)) desc.Text = vm.Description;
+        };
+
         panel.Children.Add(rbAsk);
         panel.Children.Add(rbTray);
         panel.Children.Add(rbExit);
@@ -62,13 +69,7 @@ public static class SettingsDialog
 
         if (await dlg.ShowThemedAsync() == ContentDialogResult.Primary)
         {
-            try
-            {
-                Core.AppPrefs.Save(
-                    rbTray.IsChecked == true ? Core.CloseBehavior.Tray :
-                    rbExit.IsChecked == true ? Core.CloseBehavior.Exit : Core.CloseBehavior.Ask);
-            }
-            catch (Exception ex) { Core.AppLog.Write($"设置保存失败: {ex.Message}"); }
+            vm.SaveCommand.Execute(null);
         }
     }
 }
