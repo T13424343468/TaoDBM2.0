@@ -68,4 +68,45 @@ public static class Exporter
             return input.Trim();
         return "'" + input.Replace("'", "''") + "'";
     }
+
+    /// <summary>
+    /// A1 流式导出（CSV）：逐页写 TextWriter，不整包攒串，大结果集内存恒定。
+    /// 页序列来自 StreamingQuery / QueryRouter 的分页枚举；返回写出行数。
+    /// </summary>
+    public static long CsvStream(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, TextWriter w, CancellationToken ct = default)
+    {
+        w.Write('\uFEFF'); // UTF-8 BOM，Excel 直接打开不乱码（与整包版一致）
+        w.WriteLine(string.Join(",", columns.Select(EscapeCsv)));
+        long written = 0;
+        foreach (var page in pages)
+        {
+            ct.ThrowIfCancellationRequested();
+            foreach (var row in page.Rows)
+            {
+                var cells = new string[row.Length];
+                for (int i = 0; i < row.Length; i++) cells[i] = EscapeCsv(Format(row[i]));
+                w.WriteLine(string.Join(",", cells));
+                written++;
+            }
+        }
+        return written;
+    }
+
+    /// <summary>A1 流式导出（INSERT）：逐页写 TextWriter，不整包攒串；返回写出行数。</summary>
+    public static long InsertSqlStream(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string table, TextWriter w, CancellationToken ct = default)
+    {
+        long written = 0;
+        foreach (var page in pages)
+        {
+            ct.ThrowIfCancellationRequested();
+            foreach (var row in page.Rows)
+            {
+                var vals = new string[row.Length];
+                for (int i = 0; i < row.Length; i++) vals[i] = SqlValue(row[i]);
+                w.WriteLine($"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", vals)});");
+                written++;
+            }
+        }
+        return written;
+    }
 }

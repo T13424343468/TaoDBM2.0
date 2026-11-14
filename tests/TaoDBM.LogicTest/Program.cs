@@ -74,6 +74,36 @@ Console.WriteLine("== Exporter ==");
     Check("INSERT NULL", sql.Contains("NULL"), sql);
     Check("INSERT 十六进制", sql.Contains("X'DEAD'"), sql);
 }
+{
+    // A1 流式导出：逐页写 TextWriter，不整包攒串；行为必须与整包版严格同形
+    var pages = new[]
+    {
+        new TaoDBM.Core.Streaming.QueryPage { Rows = new object[][] { new object[] { 1, "张三" }, new object[] { 2, "有,逗号" } }, HasMore = true },
+        new TaoDBM.Core.Streaming.QueryPage { Rows = new object[][] { new object[] { 3, "李\"四" } }, HasMore = false },
+    };
+    var sw = new StringWriter();
+    long n = Exporter.CsvStream(pages, new[] { "id", "name" }, sw);
+    var sameRows = new QueryResult { Columns = { "id", "name" } };
+    sameRows.Rows.Add(new object?[] { 1, "张三" });
+    sameRows.Rows.Add(new object?[] { 2, "有,逗号" });
+    sameRows.Rows.Add(new object?[] { 3, "李\"四" });
+    Check("流式 CSV 与整包同形", n == 3 && sw.ToString() == Exporter.Csv(sameRows), $"n={n}");
+    var sw2 = new StringWriter();
+    long n2 = Exporter.InsertSqlStream(pages, new[] { "id", "name" }, "users", sw2);
+    Check("流式 INSERT 同形", n2 == 3 && sw2.ToString() == Exporter.InsertSql(sameRows, "users"), $"n2={n2}");
+    // 取消语义：枚举中途取消须抛 OperationCanceledException，不吞不漏
+    var cts = new CancellationTokenSource();
+    IEnumerable<TaoDBM.Core.Streaming.QueryPage> CancelOnSecond()
+    {
+        yield return pages[0];
+        cts.Cancel();
+        yield return pages[1];
+    }
+    bool canceled = false;
+    try { Exporter.CsvStream(CancelOnSecond(), new[] { "id", "name" }, new StringWriter(), cts.Token); }
+    catch (OperationCanceledException) { canceled = true; }
+    Check("流式导出可取消", canceled);
+}
 
 Console.WriteLine("== EngineInfo ==");
 {
