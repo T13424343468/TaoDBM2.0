@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.App/**/*.cs" />
+    <Compile Include="Stubs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.WinUI">
+      <HintPath>/root/workspace/.nuget/packages/microsoft.windowsappsdk/2.6.5/lib/net6.0-windows10.0.18362.0/Microsoft.WinUI.dll</HintPath>
+    </Reference>
+    <Reference Include="WinRT.Runtime">
+      <HintPath>/root/workspace/.nuget/packages/microsoft.windows.sdk.net.ref/10.0.19041.56/lib/net8.0/WinRT.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Windows.SDK.NET">
+      <HintPath>/root/workspace/.nuget/packages/microsoft.windows.sdk.net.ref/10.0.19041.56/lib/net8.0/Microsoft.Windows.SDK.NET.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

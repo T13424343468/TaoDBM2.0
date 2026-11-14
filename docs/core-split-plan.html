@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaoDBM 二期 Core 拆分方案</title>
+<style>
+:root{
+  --bg:#f5f6f8; --ink:#20242b; --muted:#5c6470; --line:#d8dce3;
+  --node-core:#1f5fa8; --node-abs:#7a4fa3; --node-infra:#2b7a5a; --node-app:#b3562a; --node-test:#5a5f6b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.7}
+main{max-width:960px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:1.7rem;line-height:1.3;margin-bottom:6px}
+.meta{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+h2{font-size:1.2rem;margin:36px 0 12px;padding-left:10px;border-left:4px solid var(--node-core)}
+h3{font-size:1.02rem;margin:20px 0 8px}
+p{margin:8px 0}
+ul,ol{margin:8px 0 8px 22px}
+li{margin:4px 0}
+code,.mono{font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.88em;background:#eceef2;padding:1px 5px;border-radius:3px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#eceff4}
+.note{background:#eef3f9;border-left:4px solid var(--node-core);padding:10px 14px;border-radius:4px;margin:12px 0;font-size:.95rem}
+.warn{background:#faf3ea;border-left:4px solid var(--node-app);padding:10px 14px;border-radius:4px;margin:12px 0;font-size:.95rem}
+/* 依赖方向图 */
+.deps{margin:14px 0;overflow-x:auto}
+.dep-chain{display:flex;align-items:center;gap:8px;min-width:640px;flex-wrap:nowrap}
+.node{flex:1;text-align:center;padding:12px 8px;border-radius:6px;color:#fff;font-size:.9rem;min-width:120px}
+.node b{display:block;font-size:.95rem}
+.node small{opacity:.85;font-size:.78rem}
+.arrow{color:var(--muted);font-size:1.3rem;flex:0 0 auto}
+.n-abs{background:var(--node-abs)} .n-infra{background:var(--node-infra)}
+.n-core{background:var(--node-core)} .n-app{background:var(--node-app)}
+.n-test{background:#5a5f6b} .n-tc{background:#8a6d3b}
+/* 树状图 */
+.tree{font-family:"SF Mono",Consolas,monospace;font-size:.85rem;background:#fff;border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto;line-height:1.6}
+.tree .d1{color:var(--node-core);font-weight:600}
+.tree .d2{color:var(--node-infra);font-weight:600}
+.tree .c{color:var(--muted)}
+@media (max-width:390px){ body{font-size:15px} main{padding:24px 14px} h1{font-size:1.4rem} }
+</style>
+</head>
+<body data-visualization-style="knowledge-technology">
+<main>
+
+<h1>TaoDBM 二期 · Core 多工程拆分方案</h1>
+<p class="meta">依据：《架构升级初步方案》§7.3（已过审）· 老板 2026-11-15 拍板 · 执行位置：二期新树 <span class="mono">/root/workspace/TaoDBM-phase2</span></p>
+
+<div class="note">
+<strong>一句话方案</strong>：把一期的单工程 <span class="mono">src/TaoDBM</span> 按依赖方向拆成 App / Core / Core.Abstractions / Infrastructure 四个工程加两个辅助工程，命名空间不变、源码逐文件原样搬运，只在搬运时补一期遗留的 OpenStream 缺定义；类库与逻辑测试在本机 .NET 10 已验证 <strong>零错零警</strong>。
+</div>
+
+<h2>一、目标结构</h2>
+<p>对应方案 §7.3 的目标结构，二期新树 <span class="mono">TaoDBM-phase2/</span>：</p>
+<div class="tree">
+TaoDBM.slnx
+├── <span class="d1">src/TaoDBM.App/</span>          <span class="c"># WinUI3 壳：App、MainWindow、app.manifest、Assets/、UI/ 13 文件</span>
+├── <span class="d1">src/TaoDBM.Core/</span>         <span class="c"># 领域逻辑：Streaming/、DataSync、导入导出、报表、DDL 等</span>
+├── <span class="d1">src/TaoDBM.Core.Abstractions/</span> <span class="c"># 契约：IQueryConsumer、QueryPage、StreamingQuery、QueryResult</span>
+├── <span class="d1">src/TaoDBM.Infrastructure/</span> <span class="c"># 存储、凭据、外部 IO：Providers/、Safe、SshTunnel 等</span>
+├── <span class="d2">tests/TaoDBM.LogicTest/</span>  <span class="c"># 逻辑测试，改为工程引用</span>
+└── <span class="d2">tools/TaoDBM.TypeCheck/</span>  <span class="c"># Linux 侧类型检查（Stubs 方案）</span>
+</div>
+
+<h2>二、文件归属映射</h2>
+<h3>Core.Abstractions（4 个契约文件）</h3>
+<ul>
+<li><code>Core/Streaming/IQueryConsumer.cs</code>、<code>QueryPage.cs</code>、<code>StreamingQuery.cs</code></li>
+<li><code>Core/QueryResult.cs</code> —— 因 IQueryConsumer 签名引用它，留在 Core 会成环，故一并上移</li>
+</ul>
+
+<h3>Infrastructure（存储、凭据、外部 IO）</h3>
+<ul>
+<li>根层 13 个：<code>AppLog</code>、<code>AppPrefs</code>、<code>AtomicWrite</code>、<code>TaoPaths</code>、<code>ConnectionStore</code>（含 ConnectionProfile）、<code>Favorites</code>、<code>QueryHistory</code>、<code>TabSession</code>、<code>ThemeStore</code>、<code>ThemePalette</code>、<code>SshTunnel</code>、<code>Safe</code>、<code>DbEngine</code></li>
+<li><code>Providers/</code> 4 个：<code>Engines</code>、<code>MongoProvider</code>、<code>RedisProvider</code>、<code>RelationalProvider</code></li>
+</ul>
+
+<h3>Core（领域逻辑）</h3>
+<ul>
+<li><code>Streaming/</code>：<code>QueryRouter</code>、<code>StreamingSwitch</code>、<code>TaskCenter</code>（按一期实际位置保留在 Streaming 下）</li>
+<li>平铺 11 个：<code>DataSync</code>、<code>BackupTools</code>、<code>TableDdl</code>、<code>ErdModel</code>、<code>Faker</code>、<code>SeedPlan</code>、<code>CsvImporter</code>、<code>JsonImporter</code>、<code>ReportBuilder</code>、<code>SqlHighlighter</code>、<code>TnsNames</code></li>
+</ul>
+
+<h3>App（WinUI 壳）</h3>
+<ul>
+<li><code>App.xaml(.cs)</code>、<code>MainWindow.xaml(.cs)</code>、<code>app.manifest</code>、<code>Assets/</code>（ico + png）、<code>UI/</code> 13 文件（含 Exporter）</li>
+</ul>
+
+<div class="warn">
+<strong>边界说明</strong>：一期原 <code>logictest</code> 与 <code>typecheck</code> 两个辅助工程因逐文件 <code>&lt;Compile Include&gt;</code> 引用，搬进新树后路径失效；本方案将其重建为独立工程目录（tests/、tools/），由工程引用替代逐文件登记。
+</div>
+
+<h2>三、依赖方向（经 grep 二进制安全核验，无循环）</h2>
+<div class="deps">
+<div class="dep-chain">
+<div class="node n-abs"><b>Abstractions</b><small>无依赖</small></div>
+<div class="arrow">→</div>
+<div class="node n-infra"><b>Infrastructure</b><small>引用 Abstractions</small></div>
+<div class="arrow">→</div>
+<div class="node n-core"><b>Core</b><small>引用 Infra + Abstractions</small></div>
+<div class="arrow">→</div>
+<div class="node n-app"><b>App</b><small>引用全部</small></div>
+</div>
+<div class="dep-chain" style="margin-top:8px">
+<div class="node n-test" style="flex:2"><b>tests/TaoDBM.LogicTest</b><small>ProjectReference → Core / Infra / Abstractions</small></div>
+<div class="node n-tc" style="flex:2"><b>tools/TaoDBM.TypeCheck</b><small>Linux 侧类型检查（Stubs）</small></div>
+</div>
+</div>
+<p>关键归属决策：<code>Safe</code> 因被 RelationalProvider / SshTunnel 引用必须留在 Infrastructure，否则成环；<code>QueryResult</code> 上移到 Abstractions 的原因同上（IQueryConsumer 签名引用它）。</p>
+
+<h2>四、关键技术决策</h2>
+<table>
+<tr><th style="width:30%">决策项</th><th>方案</th></tr>
+<tr><td>目标框架（类库 / 测试）</td><td><code>net10.0</code>，本机 SDK 10.0.404 已验证</td></tr>
+<tr><td>目标框架（App / TypeCheck）</td><td><code>net10.0-windows10.0.26100.0</code>，待 Windows 真机/CI 验证</td></tr>
+<tr><td>WindowsAppSDK</td><td>2.6.5（NuGet API 已核实为最新稳定版）</td></tr>
+<tr><td>命名空间</td><td>保持不变（TaoDBM.Core / Core.Streaming / UI），只拆工程引用方向，源码零改动搬运</td></tr>
+<tr><td>OpenStream 缺口</td><td>在 RelationalProvider 加 <code>public virtual DbConnection OpenStream(string? db) =&gt; Open(db);</code>（一期缺失定义，QueryRouter 与 logictest 两处调用点已核实），最小补齐、行为等价，A1 批次细化</td></tr>
+<tr><td>logictest 改 ProjectReference</td><td>删除 38 条逐文件 <code>&lt;Compile Include&gt;</code>；Exporter 属 App 但为纯逻辑，暂单独 <code>Compile Include</code> 链接引入（A1 可考虑移入 Core）</td></tr>
+<tr><td>TaskCenter internal 访问</td><td>Core 工程加 <code>InternalsVisibleTo("TaoDBM.LogicTest")</code>，替代一期“测试与主工程同 assembly”的隐式约定</td></tr>
+<tr><td>数据库驱动包</td><td>驱动包（MySqlConnector/Npgsql/SqlClient/Sqlite/MongoDB.Driver/StackExchange.Redis/Oracle/SSH.NET/ProtectedData）统一放在 Infrastructure，Core 通过 ProjectReference 传递获得，Core 自身无直接驱动依赖（已 grep 核验）</td></tr>
+<tr><td>版本号</td><td>App 版本升至 2.0.0，对应二期</td></tr>
+</table>
+
+<h2>五、一期遗留问题及处理</h2>
+<ol>
+<li><strong>OpenStream 缺定义</strong>：一期 HEAD（a049e4a）源码本身编译不过，QueryRouter 与 logictest 逐文件 Compile 未包含 RelationalProvider 的 OpenStream，掩盖了问题。拆分时以最小补齐修复（见上表）。</li>
+<li><strong>logictest 逐文件 Compile</strong>：新增文件需手工登记（goal.md 已记录），拆分后由工程引用彻底消除。</li>
+<li><strong>TaskCenter.Runner internal</strong>：一期 logictest 与主工程同 assembly，可访问 internal；拆分后用 InternalsVisibleTo 显式声明。</li>
+</ol>
+
+<h2>六、验证边界与遗留项</h2>
+<table>
+<tr><th style="width:38%">项</th><th>状态</th></tr>
+<tr><td>类库三工程 + LogicTest 构建</td><td>本机 .NET 10.0.404 已验证，零错零警</td></tr>
+<tr><td>App / TypeCheck（Windows 专属）</td><td>Linux 无法编译 WinUI，待 CI / Windows 真机验证</td></tr>
+<tr><td>WindowsAppSDK 2.6.5 投影</td><td>tc.csproj 引用本地 nuget 缓存中的投影 DLL，TFM 升级后待真机复核</td></tr>
+<tr><td>存量 CS86xx 警告压制</td><td>不复制 NoWarn，A1 收口前处理</td></tr>
+<tr><td>新 .cs 文件 UTF-8 BOM</td><td>按约定执行</td></tr>
+</table>
+
+<h2>七、拆分动作的时机</h2>
+<p>按方案 §7.3：拆分动作本身放在 A1（传输流式化）之前或与 A1 并行做，<strong>一次目录调整完成</strong>，避免后续每批落码都搬迁文件。</p>
+
+<div class="note" style="margin-top:28px">
+<strong>当前进度</strong>：新树目录结构与文件映射已落位（含建模/目录冗余副本清理，与一期逐文件 diff 一致），OpenStream 缺口已补，类库三工程 .NET 10 构建零错零警，解决方案六工程登记完整（.slnx 格式）。LogicTest 构建与运行验证进行中。
+</div>
+
+</main>
+</body>
+</html>

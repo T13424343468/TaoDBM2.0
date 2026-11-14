@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "TaoDBM.Core.Abstractions/1.0.0": {
+        "runtime": {
+          "TaoDBM.Core.Abstractions.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "TaoDBM.Core.Abstractions/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

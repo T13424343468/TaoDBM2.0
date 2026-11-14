@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 拆分后改为工程引用，新增文件无需再逐个登记；
+         Exporter 属 App 的 UI 文件但为纯逻辑，保留在 App，此处单独引入（A1 可考虑移入 Core）。 -->
+    <Compile Include="..\..\src\TaoDBM.App\UI\Exporter.cs" Link="Exporter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TaoDBM.Core\TaoDBM.Core.csproj" />
+    <ProjectReference Include="..\..\src\TaoDBM.Core.Abstractions\TaoDBM.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\TaoDBM.Infrastructure\TaoDBM.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.3.7" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
+    <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.5.1" />
+    <PackageReference Include="SSH.NET" Version="2024.1.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
