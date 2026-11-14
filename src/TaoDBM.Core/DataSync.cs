@@ -73,3 +73,53 @@ public static class DataSync
         _ => "'" + v.ToString()?.Replace("'", "''") + "'",
     };
 }
+
+/// <summary>
+/// A1 同步断点水位：记录某表传输进度（已完整落库的批次数）。
+/// 中断后凭水位续传，只补剩余批次，已落库数据不重灌。
+/// 持久化由调用方走 AtomicWrite（本类保持纯逻辑，不碰文件）。
+/// </summary>
+public sealed class SyncWatermark
+{
+    public string Table { get; init; } = "";
+    public int BatchDone { get; init; }              // 已完整落库的批次数（断点）
+    public string LastKey { get; init; } = "";       // 水位键（源表有序键值，信息性）
+    public DateTimeOffset UpdatedAt { get; init; } = DateTimeOffset.Now;
+
+    public static SyncWatermark Empty(string table) => new() { Table = table, BatchDone = 0, LastKey = "" };
+}
+
+public static class SyncCheckpoint
+{
+    /// <summary>续传：跳过水位之前的批次，返回剩余待执行语句；每发一批回调最新水位供调用方持久化。</summary>
+    public static IReadOnlyList<string> Resume(IReadOnlyList<string> batches, SyncWatermark w,
+        Action<SyncWatermark>? onBatchDone = null)
+    {
+        var rest = new List<string>();
+        for (int i = w.BatchDone; i < batches.Count; i++)
+        {
+            rest.Add(batches[i]);
+            onBatchDone?.Invoke(new SyncWatermark
+            {
+                Table = w.Table, BatchDone = i + 1, LastKey = w.LastKey,
+            });
+        }
+        return rest;
+    }
+
+    /// <summary>水位回读容错：JSON 合法则还原，损坏/为空返回零值水位（不抛，同步可从头重来）。</summary>
+    public static SyncWatermark FailSafeParse(string table, string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return SyncWatermark.Empty(table);
+        try
+        {
+            var w = System.Text.Json.JsonSerializer.Deserialize<SyncWatermark>(json);
+            return w ?? SyncWatermark.Empty(table);
+        }
+        catch (System.Text.Json.JsonException) { return SyncWatermark.Empty(table); }
+    }
+
+    /// <summary>水位序列化（调用方拿去走 AtomicWrite 落盘）。</summary>
+    public static string ToJson(SyncWatermark w) =>
+        System.Text.Json.JsonSerializer.Serialize(w);
+}

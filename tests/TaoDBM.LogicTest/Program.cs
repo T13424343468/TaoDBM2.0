@@ -453,6 +453,28 @@ Console.WriteLine("== DataSync ==");
     Check("null 与 DBNull 转 NULL", batches[1].Contains("NULL") && !batches[1].Contains("DBNull"));
     Check("空结果零语句", DataSync.InsertBatches(new QueryResult { Title = "t" }, "t", bt).Count == 0);
 }
+{
+    // A1 同步断点水位：凭水位续传只补剩余批次，不重灌已落库数据；水位回读容错
+    Func<string, string> qt = n => "`" + n + "`";
+    var mk = new QueryResult { Title = "t", Columns = { "id" } };
+    for (int i = 1; i <= 5; i++) mk.Rows.Add(new object?[] { i });
+    var all = DataSync.InsertBatches(mk, "`t`", qt, batch: 1);   // 5 批
+    var seen = new List<int>();
+    var rest = SyncCheckpoint.Resume(all, SyncWatermark.Empty("t"), w => seen.Add(w.BatchDone));
+    Check("水位从零全量执行", rest.Count == 5 && seen.SequenceEqual(new[] { 1, 2, 3, 4, 5 }));
+    var rest2 = SyncCheckpoint.Resume(all, new SyncWatermark { Table = "t", BatchDone = 2 });
+    Check("断点续传只补剩余", rest2.Count == 3 && rest2[0] == all[2] && rest2[2] == all[4]);
+    var done = SyncCheckpoint.Resume(all, new SyncWatermark { Table = "t", BatchDone = 5 });
+    Check("断点已到底幂等空集", done.Count == 0);
+    var over = SyncCheckpoint.Resume(all, new SyncWatermark { Table = "t", BatchDone = 99 });
+    Check("水位越界不重灌", over.Count == 0);
+    var json = SyncCheckpoint.ToJson(new SyncWatermark { Table = "t", BatchDone = 3, LastKey = "k3" });
+    var back = SyncCheckpoint.FailSafeParse("t", json);
+    Check("水位往返还原", back.Table == "t" && back.BatchDone == 3 && back.LastKey == "k3");
+    var broken = SyncCheckpoint.FailSafeParse("t", "{断");
+    Check("坏水位容错归零", broken.BatchDone == 0 && broken.Table == "t");
+    Check("空水位容错归零", SyncCheckpoint.FailSafeParse("t", null).BatchDone == 0);
+}
 
 Console.WriteLine("== ErdModel ==");
 {
