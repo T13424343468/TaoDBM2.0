@@ -49,7 +49,7 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $out = dotnet build Src/TaoDBM.App -warnaserror 2>&1
+          $out = dotnet build Src/TaoDBM.App -r win-x64 -warnaserror 2>&1
           $out | ForEach-Object { Write-Host "$_" }
           if ($LASTEXITCODE -ne 0) {
             "### App build failed (windows-latest)" | Add-Content $env:GITHUB_STEP_SUMMARY
