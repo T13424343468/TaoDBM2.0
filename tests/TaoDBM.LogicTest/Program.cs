@@ -995,6 +995,31 @@ Layer("集成");
     Check("全ok脚本 worst 为 ok", RiskySqlGuard.Worst(RiskySqlGuard.InspectScript("select 1;", DbEngine.MySQL, id)).Level == "ok");
 }
 
+// 9) MaskEngine 一键脱敏引擎（安全线：一键脱敏导出）
+{
+    Check("手机号列推断", MaskEngine.InferRule("phone") == MaskRule.Phone && MaskEngine.InferRule("手机号") == MaskRule.Phone);
+    Check("证件与卡号列推断", MaskEngine.InferRule("id_card") == MaskRule.IdCard && MaskEngine.InferRule("银行卡号") == MaskRule.BankCard);
+    Check("密码列整值档", MaskEngine.InferRule("password") == MaskRule.Secret && MaskEngine.InferRule("密码") == MaskRule.Secret);
+    Check("普通列不脱敏", MaskEngine.InferRule("order_total") == MaskRule.None && MaskEngine.InferRule("created_at") == MaskRule.None);
+    Check("结构名列不误伤", MaskEngine.InferRule("table_name") == MaskRule.None && MaskEngine.InferRule("column_name") == MaskRule.None);
+    Check("姓名列推断", MaskEngine.InferRule("联系人") == MaskRule.Name && MaskEngine.InferRule("user_name") == MaskRule.Name);
+    Check("手机号打码", MaskEngine.Mask("13812345678", MaskRule.Phone) == "138****5678");
+    Check("邮箱打码保域名", MaskEngine.Mask("zhangsan@163.com", MaskRule.Email) == "z***@163.com");
+    Check("身份证打码", MaskEngine.Mask("110101199001011234", MaskRule.IdCard) == "110***********1234");
+    Check("姓名打码", MaskEngine.Mask("张小明明", MaskRule.Name) == "张***");
+    Check("银行卡打码", MaskEngine.Mask("6222021234561234567", MaskRule.BankCard) == new string('*', 15) + "4567");
+    Check("密码整值打码", MaskEngine.Mask("p@ssw0rd", MaskRule.Secret) == "********");
+    Check("空值原样", MaskEngine.Mask(null, MaskRule.Phone) == "" && MaskEngine.Mask("", MaskRule.Email) == "");
+    Check("短值整段打码不越界", MaskEngine.Mask("123", MaskRule.Phone) == "***" && MaskEngine.Mask("12345", MaskRule.IdCard) == "*****");
+    var row = MaskEngine.MaskRow(new List<KeyValuePair<string, string>>
+    {
+        new("phone", "13812345678"), new("total", "99"), new("密码", "abc123"),
+    });
+    Check("行级脱敏混合列", row[0].Value == "138****5678" && row[1].Value == "99" && row[2].Value == "******");
+    Check("自定义覆盖规则", MaskEngine.InferRule("member_id",
+        new Dictionary<string, MaskRule> { ["member_id"] = MaskRule.Phone }) == MaskRule.Phone);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
