@@ -1432,6 +1432,131 @@ Layer("集成");
     Check("零批大小拒绝", threw);
 }
 
+// 智能线 C1 第一批：慢查询诊断+一键优化闭环（含复测）、容量增长预测、查询复现包（纯引擎，SQLite 真库验证）
+{
+    // 1) 静态诊断
+    var f1 = SlowQueryDiagnoser.Analyze("SELECT * FROM big_table");
+    Check("智能线-SELECT*与全量读双报", f1.Any(x => x.Code == "S001") && f1.Any(x => x.Code == "S005"), string.Join(",", f1.Select(x => x.Code)));
+    var f2 = SlowQueryDiagnoser.Analyze("DELETE FROM t");
+    Check("智能线-无WHERE删除判危险", f2.Any(x => x.Code == "D001" && x.Severity == "danger"), "");
+    var f3 = SlowQueryDiagnoser.Analyze("SELECT a FROM t WHERE name LIKE '%x'");
+    Check("智能线-前导通配LIKE", f3.Any(x => x.Code == "S002"), "");
+    var f4 = SlowQueryDiagnoser.Analyze("SELECT a FROM t ORDER BY a");
+    Check("智能线-排序无LIMIT提示", f4.Any(x => x.Code == "S007"), "");
+    Check("智能线-正常查询不误报", SlowQueryDiagnoser.Analyze("SELECT id, name FROM t WHERE id = 1 LIMIT 10").Count == 0,
+        string.Join(",", SlowQueryDiagnoser.Analyze("SELECT id, name FROM t WHERE id = 1 LIMIT 10").Select(x => x.Code)));
+
+    // 2) 计划诊断（SQLite EXPLAIN QUERY PLAN 口径）
+    Check("智能线-计划全表扫描", SlowQueryDiagnoser.AnalyzePlan("SCAN t").Any(x => x.Code == "P001"), "");
+    Check("智能线-走索引不报扫描", !SlowQueryDiagnoser.AnalyzePlan("SEARCH t USING INDEX idx_t_code").Any(x => x.Code == "P001"), "");
+    Check("智能线-临时B树提示", SlowQueryDiagnoser.AnalyzePlan("USE TEMP B-TREE FOR ORDER BY").Any(x => x.Code == "P002"), "");
+    Check("智能线-标量子查询提示", SlowQueryDiagnoser.AnalyzePlan("SCALAR SUBQUERY 1").Any(x => x.Code == "P003"), "");
+
+    // 3) 真库闭环：诊断→建索引→计划改善→复测提速
+    var dbPath = Path.Combine(Path.GetTempPath(), "taodbm-smartline-" + Guid.NewGuid().ToString("N") + ".db");
+    await using (var setup = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}"))
+    {
+        setup.Open();
+        using (var c = setup.CreateCommand())
+        {
+            c.CommandText = "CREATE TABLE t(id INTEGER PRIMARY KEY, code TEXT);";
+            c.ExecuteNonQuery();
+        }
+        using (var tx = setup.BeginTransaction())
+        {
+            for (int i = 0; i < 20000; i++)
+            using (var one = setup.CreateCommand())
+            {
+                one.Transaction = tx;
+                one.CommandText = "INSERT INTO t(code) VALUES (@c)";
+                one.Parameters.AddWithValue("@c", "X" + i);
+                one.ExecuteNonQuery();
+            }
+            tx.Commit();
+        }
+    }
+    await using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath}"))
+    {
+        conn.Open();
+        string Explain(string sql)
+        {
+            using var c = conn.CreateCommand();
+            c.CommandText = "EXPLAIN QUERY PLAN " + sql;
+            var parts = new List<string>();
+            using var r = c.ExecuteReader();
+            while (r.Read()) parts.Add(r.GetString(3));
+            return string.Join("|", parts);
+        }
+        string probe = "SELECT * FROM t WHERE code = 'X12345'";
+        Check("智能线-真库初始全表扫描", Explain(probe).Contains("SCAN"), Explain(probe));
+        var ddl = SlowQueryDiagnoser.SuggestIndexDdl(probe, "t");
+        Check("智能线-索引建议含code列", ddl.Count == 1 && ddl[0].Contains("(code)"), ddl.FirstOrDefault() ?? "");
+
+        async Task RunAsync(string sql, CancellationToken ct)
+        {
+            using var c = conn.CreateCommand();
+            c.CommandText = sql;
+            using var r = await c.ExecuteReaderAsync(ct);
+            while (await r.ReadAsync(ct)) { }
+        }
+        var before = await QueryRetest.MedianMsAsync(RunAsync, probe, 3);
+        using (var c = conn.CreateCommand()) { c.CommandText = ddl[0]; c.ExecuteNonQuery(); }
+        Check("智能线-建索引后走索引", System.Text.RegularExpressions.Regex.IsMatch(Explain(probe), @"USING\s+(COVERING\s+)?INDEX"), Explain(probe));
+        Check("智能线-计划体检识别改善", !SlowQueryDiagnoser.AnalyzePlan(Explain(probe)).Any(x => x.Code == "P001"), "");
+        var after = await QueryRetest.MedianMsAsync(RunAsync, probe, 3);
+        Check("智能线-建索引复测提速", after < before, $"before={before:F2}ms after={after:F2}ms");
+        var cmp = await QueryRetest.CompareAsync(RunAsync, "SELECT COUNT(*) FROM t", "SELECT COUNT(*) FROM t", 3);
+        Check("智能线-复测报告口径", cmp.Speedup > 0 && cmp.Iterations == 3, $"speedup={cmp.Speedup:F2}");
+    }
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    for (int attempt = 0; attempt < 5 && System.IO.File.Exists(dbPath); attempt++)
+    {
+        try { System.IO.File.Delete(dbPath); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
+    }
+
+    // 4) 容量增长预测：线性样本拟合 + 阈值外推
+    var t0 = DateTimeOffset.Parse("2026-11-01T00:00:00+08:00");
+    var samples = Enumerable.Range(0, 5).Select(i => new CapacityForecaster.CapacitySample(t0.AddDays(i), 100.0 * (i + 1))).ToList();
+    var fc = CapacityForecaster.Forecast(samples, 1000.0);
+    Check("智能线-日增速拟合", Math.Abs(fc.GrowthPerDay - 100.0) < 1e-6, fc.GrowthPerDay.ToString("F4"));
+    Check("智能线-拟合优度", fc.RSquared > 0.999, fc.RSquared.ToString("F4"));
+    Check("智能线-阈值外推", Math.Abs(fc.DaysToThreshold!.Value - 7.0) < 1e-6, fc.DaysToThreshold!.Value.ToString("F3"));
+    Check("智能线-用量外推", Math.Abs(fc.PredictAt(10) - 1300.0) < 1e-6, fc.PredictAt(10).ToString("F2"));
+    Check("智能线-单样本不外推", CapacityForecaster.Forecast(new List<CapacityForecaster.CapacitySample> { samples[0] }).DaysToThreshold == null, "");
+
+    // 5) 查询复现包：净化→打包→往返→真库回放
+    var pack = new QueryReproPack.ReproPack("1.0", "订单查询复现", "SQLite", "SELECT COUNT(*) AS n FROM orders WHERE region = @r",
+        new Dictionary<string, string> { ["r"] = "华东", ["password"] = "should-drop" },
+        new List<string> { "CREATE TABLE orders(id INTEGER PRIMARY KEY, region TEXT);", "INSERT INTO orders(region) VALUES ('华东');", "INSERT INTO orders(region) VALUES ('华北');" },
+        "用于复现慢查询", DateTimeOffset.UtcNow);
+    var clean = QueryReproPack.Sanitize(pack);
+    Check("智能线-复现包剔凭据", !clean.Params.ContainsKey("password") && (clean.Notes ?? "").Contains("password"), clean.Notes ?? "");
+    var packJson = QueryReproPack.ToJson(clean);
+    Check("智能线-复现包不含凭据值", !packJson.Contains("should-drop"), "");
+    var back = QueryReproPack.FromJson(packJson);
+    Check("智能线-复现包往返", back != null && back.Sql == clean.Sql && back.Params["r"] == "华东", "");
+    Check("智能线-坏包不炸", QueryReproPack.FromJson("{坏") == null, "");
+    var db2 = Path.Combine(Path.GetTempPath(), "taodbm-repro-" + Guid.NewGuid().ToString("N") + ".db");
+    await using (var conn2 = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={db2}"))
+    {
+        conn2.Open();
+        foreach (var ddlSql in back.SetupSql)
+            using (var c = conn2.CreateCommand()) { c.CommandText = ddlSql; c.ExecuteNonQuery(); }
+        using (var c = conn2.CreateCommand())
+        {
+            c.CommandText = back.Sql;
+            c.Parameters.AddWithValue("@r", back.Params["r"]);
+            var n = Convert.ToInt64(c.ExecuteScalar());
+            Check("智能线-复现包真库回放", n == 1, n.ToString());
+        }
+    }
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    for (int attempt = 0; attempt < 5 && System.IO.File.Exists(db2); attempt++)
+    {
+        try { System.IO.File.Delete(db2); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
+    }
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
