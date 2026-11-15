@@ -23,3 +23,14 @@ jobs:
 
       - name: Logic tests
         run: dotnet run --project tests/TaoDBM.LogicTest -c Release
+
+      - name: Publish App (win-x64)
+        run: dotnet publish src/TaoDBM.App -c Release -r win-x64 --self-contained false -o publish/app
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-phase2-win
+          path: |
+            publish/app/
+            tests/TaoDBM.LogicTest/bin/
