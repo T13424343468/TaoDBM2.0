@@ -1110,6 +1110,42 @@ Layer("集成");
     Check("最大批次封顶", capped.BatchesDone == 1 && capped.RowsDeleted == 1000 && !capped.Exhausted);
 }
 
+// 13) LockAnalyzer 锁与死锁现场还原 + 终止会话（安全线）
+{
+    var sessions = new Dictionary<string, SessionInfo>
+    {
+        ["101"] = new("101", "alice", "update t set a = 1", 5000),
+        ["102"] = new("102", "bob", "delete from t", 200),
+        ["103"] = new("103", "carol", "select * from t", 1),
+    };
+    var cycle = LockAnalyzer.FindDeadlocks(new List<LockWait>
+    {
+        new("101", "102", "t.pk=1"),
+        new("102", "101", "t.pk=2"),
+    });
+    Check("双会话死锁环检出", cycle.Count == 1 && cycle[0].SessionIds.Contains("101") && cycle[0].SessionIds.Contains("102"));
+    Check("牺牲者选扫描最少的", LockAnalyzer.PickVictim(cycle[0], sessions) == "102");
+
+    var three = LockAnalyzer.FindDeadlocks(new List<LockWait>
+    {
+        new("a", "b", "r1"), new("b", "c", "r2"), new("c", "a", "r3"),
+    });
+    Check("三会话环检出", three.Count == 1 && three[0].SessionIds.Count == 3 && three[0].Resources.Count == 3);
+
+    var none = LockAnalyzer.FindDeadlocks(new List<LockWait> { new("x", "y", "r1"), new("y", "z", "r2") });
+    Check("无环链不误报", none.Count == 0);
+
+    Check("MySQL终止语句", LockAnalyzer.KillSql("101", DbEngine.MySQL) == "KILL 101");
+    Check("PG终止语句走后端函数", LockAnalyzer.KillSql("101", DbEngine.PostgreSQL) == "SELECT pg_terminate_backend(101);");
+    Check("SQLite无终止能力返回空", LockAnalyzer.KillSql("101", DbEngine.SQLite) == null);
+
+    var timeline = LockAnalyzer.Timeline(new List<LockWait>
+    {
+        new("w1", "h1", "r1"), new("w2", "h2", "r2"), new("w3", "h3", "r3"),
+    }, new Dictionary<string, long> { ["w1"] = 5, ["w2"] = 90, ["w3"] = 1 });
+    Check("现场按等待时长倒序", timeline[0].Waiter == "w2" && timeline[^1].Waiter == "w3");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
