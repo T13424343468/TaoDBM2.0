@@ -1362,6 +1362,68 @@ Layer("集成");
     Check("不支持分区整计划返回空表", PartitionDdl.PlanSql(DbEngine.SQLite, "orders", plan).Count == 0);
 }
 
+// 22) HotspotSalting 热点盐化（分库分区分表底座，承接 A5-4「拆分加盐」处置）
+{
+    var plan = HotspotSalting.Plan("merchant_88", 4);
+    Check("默认命名子键确定序", plan.SaltedKeys.SequenceEqual(new[] { "merchant_88#0", "merchant_88#1", "merchant_88#2", "merchant_88#3" }),
+        string.Join("|", plan.SaltedKeys));
+    Check("方案记录键与槽数", plan.HotKey == "merchant_88" && plan.SaltCount == 4);
+
+    var custom = HotspotSalting.Plan("big_shop", 3, (k, i) => $"{k}_{i:00}");
+    Check("自定义命名生效", custom.SaltedKeys.SequenceEqual(new[] { "big_shop_00", "big_shop_01", "big_shop_02" }));
+
+    Check("读扇出覆盖全槽", HotspotSalting.FanOutRead(plan).Count == 4 && HotspotSalting.FanOutRead(plan)[2] == "merchant_88#2");
+
+    int r1 = HotspotSalting.RouteWrite("row-123", 8);
+    int r2 = HotspotSalting.RouteWrite("row-123", 8);
+    Check("写路由确定且落在槽内", r1 == r2 && r1 >= 0 && r1 < 8);
+
+    var hits = new bool[8];
+    for (int i = 0; i < 200; i++) hits[HotspotSalting.RouteWrite($"row-{i}", 8)] = true;
+    Check("写路由实际打散到多槽", hits.Count(h => h) >= 4, $"覆盖 {hits.Count(h => h)}/8 槽");
+
+    bool threw;
+    threw = false; try { HotspotSalting.Plan("", 4); } catch (ArgumentException) { threw = true; }
+    Check("空热点键拒绝", threw);
+    threw = false; try { HotspotSalting.Plan("k", 1); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("盐槽数 1 拒绝", threw);
+    threw = false; try { HotspotSalting.Plan("k", 1025); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("盐槽数超上界拒绝", threw);
+    threw = false; try { HotspotSalting.RouteWrite("r", 0); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("写路由零槽拒绝", threw);
+}
+
+// 23) OnlineDdl 在线改表扇出（新需求「图形化改表」配套，对标 pt-osc 步骤）
+{
+    var plan = OnlineDdl.Plan("orders", "ADD COLUMN remark VARCHAR(200)", "id", 2500, 1000);
+    Check("影子表与旧表确定命名", plan.ShadowTable == "_osc_orders_new" && plan.OldTable == "_osc_orders_old");
+    var phases = plan.Steps.Select(s => s.Phase).ToList();
+    Check("阶段顺序 build→alter→backfill→swap→cleanup",
+        phases[0] == "build" && phases[1] == "alter" && phases[2] == "backfill" && phases[^2] == "swap" && phases[^1] == "cleanup",
+        string.Join(",", phases));
+    Check("回填批数向上取整", plan.Steps.Count(s => s.Phase == "backfill") == 4, $"{plan.Steps.Count(s => s.Phase == "backfill")} 批");
+    Check("换名是单语句原子操作", plan.Steps.Single(s => s.Phase == "swap").Sql ==
+        "RENAME TABLE `orders` TO `_osc_orders_old`, `_osc_orders_new` TO `orders`");
+    Check("换名步唯一且在回填之后", plan.Steps.Count(s => s.Phase == "swap") == 1);
+    Check("清理步提示先对账", plan.Steps[^1].Note.Contains("A5-2 数据对账"));
+    Check("回填携带主键分段谓词", plan.Steps.Where(s => s.Phase == "backfill").All(s => s.Sql.Contains("WHERE s.`id` > @last")));
+
+    var empty = OnlineDdl.Plan("t", "ADD COLUMN c INT", "id", 0, 500);
+    Check("零行无回填步", empty.Steps.Count(s => s.Phase == "backfill") == 0 && empty.Steps.Count == 4);
+
+    bool threw;
+    threw = false; try { OnlineDdl.Plan("", "ADD COLUMN c INT", "id", 10, 100); } catch (ArgumentException) { threw = true; }
+    Check("空表名拒绝", threw);
+    threw = false; try { OnlineDdl.Plan("t", " ", "id", 10, 100); } catch (ArgumentException) { threw = true; }
+    Check("空变更子句拒绝", threw);
+    threw = false; try { OnlineDdl.Plan("t", "ADD COLUMN c INT", "", 10, 100); } catch (ArgumentException) { threw = true; }
+    Check("空主键列拒绝", threw);
+    threw = false; try { OnlineDdl.Plan("t", "ADD COLUMN c INT", "id", -1, 100); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("负行数拒绝", threw);
+    threw = false; try { OnlineDdl.Plan("t", "ADD COLUMN c INT", "id", 10, 0); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("零批大小拒绝", threw);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
