@@ -78,3 +78,70 @@ jobs:
           path: |
             publish/app/
             Tests/TaoDBM.LogicTest/bin/
+
+  msi:
+    # MSI 唯一安装交付形态：WiX 5 收割 publish 产物，静默装卸链真机验证（复用一期同口径）
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install WiX 5.0.2
+        run: dotnet tool install --global wix --version 5.0.2
+        shell: pwsh
+
+      - name: Publish App (self-contained for MSI)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -o publish/msi 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "publish/msi/TaoDBM.exe")) { Write-Host "::error::publish payload missing TaoDBM.exe"; exit 1 }
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          if (Test-Path out) { Remove-Item -Recurse -Force out }
+          $pub = Join-Path (Get-Location) "publish\msi"
+          $ico = Join-Path (Get-Location) "Src\TaoDBM.App\Assets\TaoDBM.ico"
+          if (-not (Test-Path $ico)) { Write-Host "::error::icon missing: $ico"; exit 1 }
+          # 绝对路径传参——WiX 对 SourceFile 与 Files Include 的相对解析基准不同（一期 run 43579338702 实锤）
+          $out2 = wix build Installer/Package.wxs -arch x64 -d PublishDir="$pub" -d IconSource="$ico" -o "out/TaoDBM-2.0.0-x64.msi" 2>&1
+          $out2 | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { $out2 | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
+          $msis = Get-ChildItem out -Filter *.msi
+          if ($msis.Count -ne 1) { Write-Host "::error::msi count wrong: $($msis.Count)"; exit 1 }
+          Write-Host "[HASH] SHA256: $((Get-FileHash $msis[0].FullName -Algorithm SHA256).Hash)"
+
+      - name: Silent install -> verify -> uninstall -> verify clean
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path out/*.msi).Path
+          $p1 = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install.log" -Wait -PassThru
+          Write-Host "[INSTALL] exit=$($p1.ExitCode)"
+          if ($p1.ExitCode -ne 0) { Get-Content install.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
+          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if (-not $arp) { Write-Host "::error::no ARP entry after install"; exit 1 }
+          Write-Host "[OK] ARP entry: $($arp.DisplayName) $($arp.DisplayVersion)"
+          $p2 = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart","/l*v","uninstall.log" -Wait -PassThru
+          Write-Host "[UNINSTALL] exit=$($p2.ExitCode)"
+          if ($p2.ExitCode -ne 0) { Get-Content uninstall.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
+          $arp2 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if ($arp2) { Write-Host "::error::ARP residue after uninstall"; exit 1 }
+          Write-Host "[OK] uninstall clean"
+
+      - name: Upload MSI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-phase2-msi
+          path: |
+            out/*.msi
+            install.log
