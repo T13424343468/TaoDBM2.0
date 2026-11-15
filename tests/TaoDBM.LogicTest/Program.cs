@@ -140,6 +140,58 @@ Console.WriteLine("== CsvImporter ==");
     Check("导入标识符引用", stmts[0].Contains("INSERT INTO `t` (`id`, `name`)"), stmts[0]);
 }
 
+Console.WriteLine("== ImportStreaming ==");
+{
+    // 与整包解析同形：含 BOM、引号转义、跨行值
+    var sample = "id,name,note\n1,\"有,逗号\",\"带\"\"引号\"\"的\"\n2,李四,\"跨\n行值\"";
+    var (h0, r0) = CsvImporter.Parse(sample);
+    var rr = new TaoDBM.Core.Streaming.CsvRowReader();
+    var streamed = rr.Rows(new StringReader(sample)).ToList();
+    Check("流式 CSV 表头一致", rr.Headers.SequenceEqual(h0), string.Join("|", rr.Headers));
+    Check("流式 CSV 行数一致", streamed.Count == r0.Count, $"streamed={streamed.Count}, parse={r0.Count}");
+    bool same = streamed.Count == r0.Count && streamed.Zip(r0).All(p => p.First.SequenceEqual(p.Second));
+    Check("流式 CSV 行内容一致", same);
+}
+{
+    // 250 行 → 100/100/50 三批
+    var csv = "id\n" + string.Join("\n", Enumerable.Range(1, 250));
+    var batches = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(csv)).ToList();
+    Check("批次划分 100/100/50", batches.Count == 3 && batches[0].Rows.Count == 100 && batches[1].Rows.Count == 100 && batches[2].Rows.Count == 50,
+        $"count={batches.Count}, sizes={string.Join(",", batches.Select(b => b.Rows.Count))}");
+    Check("批次累进行数", batches[2].CumulativeRows == 250);
+    Check("批次不带截断", batches.All(b => !b.Truncated));
+}
+{
+    // 行数上限兜底：MaxRows=120 → 120 行即截断
+    var csv = "id\n" + string.Join("\n", Enumerable.Range(1, 250));
+    var batches = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(csv),
+        new TaoDBM.Core.Streaming.ImportOptions { MaxRows = 120 }).ToList();
+    Check("行数上限截断", batches.Count == 2 && batches[1].CumulativeRows == 120 && batches[1].Truncated,
+        $"count={batches.Count}, last={batches.LastOrDefault()?.CumulativeRows}");
+}
+{
+    // 空输入与仅表头：不产出批次
+    var none = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader("")).ToList();
+    Check("空输入无批次", none.Count == 0);
+    var headerOnly = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader("id,name\n")).ToList();
+    Check("仅表头无数据批", headerOnly.Count == 0);
+}
+{
+    // 溢出暂存回放：批次入临时文件后按序读回一致，Delete 后清空
+    var csv = "id,name\n" + string.Join("\n", Enumerable.Range(1, 250).Select(n => $"{n},名{n}"));
+    using var spill = new TaoDBM.Infrastructure.TempFileSpillStore();
+    var summary = TaoDBM.Core.Streaming.ImportStreaming.CsvIngest(new StringReader(csv), spill);
+    Check("溢出批次数", summary.BatchCount == 3 && spill.BatchCount == 3, $"batchCount={summary.BatchCount}");
+    Check("溢出总行数", summary.TotalRows == 250 && !summary.Truncated);
+    var replay = spill.ReadBatches().ToList();
+    Check("溢出回放批次数", replay.Count == 3);
+    Check("溢出回放表头", replay.Count > 0 && replay[0].Headers.SequenceEqual(new[] { "id", "name" }));
+    Check("溢出回放行数", replay.Sum(b => b.Rows.Count) == 250);
+    Check("溢出回放内容一致", replay[0].Rows[0].SequenceEqual(new string?[] { "1", "名1" }) && replay[2].Rows[49].SequenceEqual(new string?[] { "250", "名250" }));
+    spill.Delete();
+    Check("删除后清空", spill.BatchCount == 0 && spill.ReadBatches().ToList().Count == 0);
+}
+
 Console.WriteLine("== QueryHistory ==");
 {
     QueryHistory.Add("MySQL", "db1", "SELECT 1");
