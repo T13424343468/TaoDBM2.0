@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# TaoDBM äºŒæœŸæ¨é€è„šæœ¬ï¼ˆè€æ¿è§£é”å‡­æ®åä¸€æ¡å‘½ä»¤æ‰§è¡Œï¼Œé…å¥— Docs/REPO_SETUP.mdï¼‰
-# ç”¨æ³•1ï¼ˆSSH é’¥åŒ™æœ‰ write æƒé™ï¼‰: Scripts/PushPhase2.sh ssh <SSHåˆ«å> [è¿œç«¯åˆ†æ”¯ï¼Œé»˜è®¤ phase2]
-# ç”¨æ³•2ï¼ˆPATï¼‰: GITHUB_PAT=ghp_xxx Scripts/PushPhase2.sh pat <GitHubç”¨æˆ·å> [è¿œç«¯åˆ†æ”¯]
-# è¯´æ˜ï¼šåªæ¨å½“å‰ HEAD åˆ° phase2 åˆ†æ”¯ï¼Œä¸è§¦ç¢°å…¬ä»“æ—¢æœ‰ mainï¼›dry-run éªŒè¯å¯ç”¨ git push --dry-run å…ˆè¡Œã€‚
+# TaoDBM ¶şÆÚÍÆËÍ½Å±¾£¨ÀÏ°å½âËøÆ¾¾İºóÒ»ÌõÃüÁîÖ´ĞĞ£¬ÅäÌ× Docs/REPO_SETUP.md£©
+# ÓÃ·¨1£¨SSH Ô¿³×ÓĞ write È¨ÏŞ£©: Scripts/PushPhase2.sh ssh <SSH±ğÃû> [Ô¶¶Ë·ÖÖ§£¬Ä¬ÈÏ phase2]
+# ÓÃ·¨2£¨PAT£©: GITHUB_PAT=ghp_xxx Scripts/PushPhase2.sh pat <GitHubÓÃ»§Ãû> [Ô¶¶Ë·ÖÖ§]
+# ËµÃ÷£ºÖ»ÍÆµ±Ç° HEAD µ½ phase2 ·ÖÖ§£¬²»´¥Åö¹«²Ö¼ÈÓĞ main£»dry-run ÑéÖ¤¿ÉÓÃ git push --dry-run ÏÈĞĞ¡£
 set -euo pipefail
 
 REPO="T13424343468/TaoDBM"
@@ -13,19 +13,19 @@ BRANCH="${3:-phase2}"
 
 case "${1:-}" in
   ssh)
-    ALIAS="${2:?ç¼ºå°‘ SSH åˆ«åï¼Œå¦‚ github-taoplay}"
+    ALIAS="${2:?È±ÉÙ SSH ±ğÃû£¬Èç github-taoplay}"
     GIT_SSH_COMMAND="$SSH_BIN -F $SSH_CFG -o UserKnownHostsFile=$SSH_KNOWN -o StrictHostKeyChecking=yes" \
       git push "git@$ALIAS:$REPO.git" "HEAD:refs/heads/$BRANCH"
     ;;
   pat)
-    : "${GITHUB_PAT:?ç¼ºå°‘ GITHUB_PAT ç¯å¢ƒå˜é‡}"
-    USER_NAME="${2:?ç¼ºå°‘ GitHub ç”¨æˆ·å}"
+    : "${GITHUB_PAT:?È±ÉÙ GITHUB_PAT »·¾³±äÁ¿}"
+    USER_NAME="${2:?È±ÉÙ GitHub ÓÃ»§Ãû}"
     git push "https://$USER_NAME:$GITHUB_PAT@github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
     ;;
   *)
-    echo "ç”¨æ³•: $0 ssh <SSHåˆ«å> [è¿œç«¯åˆ†æ”¯] | GITHUB_PAT=xx $0 pat <ç”¨æˆ·å> [è¿œç«¯åˆ†æ”¯]" >&2
+    echo "ÓÃ·¨: $0 ssh <SSH±ğÃû> [Ô¶¶Ë·ÖÖ§] | GITHUB_PAT=xx $0 pat <ÓÃ»§Ãû> [Ô¶¶Ë·ÖÖ§]" >&2
     exit 2
     ;;
 esac
 
-echo "å·²æ¨é€: $(git log --oneline -1) -> $REPO@$BRANCH"
+echo "ÒÑÍÆËÍ: $(git log --oneline -1) -> $REPO@$BRANCH"
