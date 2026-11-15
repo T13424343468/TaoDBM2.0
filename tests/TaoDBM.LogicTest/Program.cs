@@ -1319,6 +1319,26 @@ Layer("集成");
     Check("非法粒度抛参数异常", threw);
 }
 
+// 20) RebalancePlanner 数据再均衡计划（分库分区分表底座）
+{
+    var skewed = RebalancePlanner.Plan(new[] { new RebalanceShard("p0", 100), new RebalanceShard("p1", 10), new RebalanceShard("p2", 10), new RebalanceShard("p3", 10), new RebalanceShard("p4", 10) });
+    Check("热点搬出量正确", skewed.Moves.Count == 4 && skewed.Moves.All(m => m.From == "p0"));
+    Check("每片承接缺口相等", skewed.Moves.All(m => m.Rows == 18) && skewed.Moves.Select(m => m.To).SequenceEqual(new[] { "p1", "p2", "p3", "p4" }));
+    Check("均值计算正确", skewed.MeanLoad == 28 && !skewed.Balanced);
+
+    var even = RebalancePlanner.Plan(new[] { new RebalanceShard("a", 10), new RebalanceShard("b", 10) });
+    Check("已均衡不出搬迁", even.Balanced && even.Moves.Count == 0);
+
+    var empty = RebalancePlanner.Plan(Array.Empty<RebalanceShard>());
+    Check("空输入视为均衡", empty.Balanced && empty.MeanLoad == 0);
+
+    var over = RebalancePlanner.Plan(new[] { new RebalanceShard("big", 90), new RebalanceShard("s1", 10), new RebalanceShard("s2", 20) });
+    Check("溢出量受承接缺口封顶", over.Moves.Sum(m => m.Rows) == 50 && over.Moves[0].To == "s1", string.Join(",", over.Moves.Select(m => $"{m.From}->{m.To}:{m.Rows}")));
+
+    var tie = RebalancePlanner.Plan(new[] { new RebalanceShard("h2", 40), new RebalanceShard("h1", 40), new RebalanceShard("c1", 10), new RebalanceShard("c2", 30) });
+    Check("并列热点按超出量与名字定序", tie.Moves[0].From == "h1" && tie.Moves[0].To == "c1", string.Join(",", tie.Moves.Select(m => $"{m.From}->{m.To}:{m.Rows}")));
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
