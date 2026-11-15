@@ -1282,6 +1282,43 @@ Layer("集成");
     Check("并列负载按名字定序", tie.Verdicts.Select(v => v.Name).SequenceEqual(new[] { "a", "b" }));
 }
 
+// 19) PartitionRoller 时间分区自动滚动（分库分区分表底座）
+{
+    var day = TimeSpan.FromDays(1);
+    var noon = new DateTime(2026, 11, 15, 12, 0, 0);
+
+    var fresh = PartitionRoller.EnsureCoverage(Array.Empty<TimePartition>(), noon, day, retainCount: 7);
+    Check("空表从目标槽位起建一个分区", fresh.ToAdd.Count == 1 && fresh.ToAdd[0].Name == "p_20261115" &&
+        fresh.ToAdd[0].StartInclusive == new DateTime(2026, 11, 15) && fresh.CoversHorizon);
+
+    var existing = new[] { new TimePartition("p_20261114", new DateTime(2026, 11, 14), new DateTime(2026, 11, 15)) };
+    var roll = PartitionRoller.EnsureCoverage(existing, noon, day, 7);
+    Check("逐日滚动补当前槽", roll.ToAdd.Count == 1 && roll.ToAdd[0].Name == "p_20261115" && roll.CoversHorizon);
+    Check("保留窗口内不归档", roll.ToArchive.Count == 0);
+
+    var span = PartitionRoller.EnsureCoverage(new[] { new TimePartition("p_20261113", new DateTime(2026, 11, 13), new DateTime(2026, 11, 14)) }, noon, day, 7);
+    Check("断档多槽按序补齐", span.ToAdd.Select(p => p.Name).SequenceEqual(new[] { "p_20261114", "p_20261115" }));
+
+    var withOld = new[]
+    {
+        new TimePartition("p_20261101", new DateTime(2026, 11, 1), new DateTime(2026, 11, 2)),
+        new TimePartition("p_20261114", new DateTime(2026, 11, 14), new DateTime(2026, 11, 15)),
+    };
+    var arch = PartitionRoller.EnsureCoverage(withOld, noon, day, 7);
+    Check("超保留窗口旧分区建议归档", arch.ToArchive.SequenceEqual(new[] { "p_20261101" }));
+
+    var covered = PartitionRoller.EnsureCoverage(new[] { new TimePartition("p_20261115", new DateTime(2026, 11, 15), new DateTime(2026, 11, 16)) }, noon, day, 7);
+    Check("已覆盖时不重复建分区", covered.ToAdd.Count == 0 && covered.CoversHorizon);
+
+    var hourGrain = TimeSpan.FromHours(1);
+    var hourly = PartitionRoller.EnsureCoverage(new[] { new TimePartition("p_20261115_1100", new DateTime(2026, 11, 15, 11, 0, 0), new DateTime(2026, 11, 15, 12, 0, 0)) }, new DateTime(2026, 11, 15, 12, 30, 0), hourGrain, 24);
+    Check("小时粒度命名与滚动", hourly.ToAdd.Count == 1 && hourly.ToAdd[0].Name == "p_20261115_1200");
+
+    bool threw = false;
+    try { PartitionRoller.EnsureCoverage(Array.Empty<TimePartition>(), noon, TimeSpan.Zero, 1); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("非法粒度抛参数异常", threw);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
