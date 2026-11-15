@@ -1203,6 +1203,27 @@ Layer("集成");
         toggle.First(t => t.Name == "r1").ShouldServeReads == true);
 }
 
+// 16) ReconcileEngine 迁移后数据对账（主从/搬迁配套）
+{
+    Check("行数对账SQL", ReconcileEngine.CountSql("orders", null, DbEngine.MySQL) == "SELECT COUNT(*) AS row_count FROM `orders`");
+    Check("带条件行数SQL去分号", ReconcileEngine.CountSql("orders", "created_at < '2026-01-01';", DbEngine.MySQL) ==
+        "SELECT COUNT(*) AS row_count FROM `orders` WHERE created_at < '2026-01-01'");
+
+    var mysqlCk = ReconcileEngine.ChecksumSql("orders", new[] { "id", "amount" }, null, DbEngine.MySQL);
+    Check("MySQL校验和CRC32", mysqlCk == "SELECT COUNT(*) AS row_count, COALESCE(SUM(CRC32(CONCAT_WS('|', `id`, `amount`))), 0) AS checksum FROM `orders`", mysqlCk);
+    var pgCk = ReconcileEngine.ChecksumSql("orders", new[] { "id" }, null, DbEngine.PostgreSQL);
+    Check("PG校验和md5截段", pgCk is not null && pgCk.Contains("md5(concat_ws('|', \"id\"))", StringComparison.Ordinal));
+    Check("无校验和函数方言退化", ReconcileEngine.ChecksumSql("t", new[] { "a" }, null, DbEngine.SQLite) == null);
+    Check("空列集不给校验和", ReconcileEngine.ChecksumSql("t", Array.Empty<string>(), null, DbEngine.MySQL) == null);
+
+    Check("两端一致判match", ReconcileEngine.Compare(100, 100, 7, 7).Level == "match");
+    Check("行数不一致判档", ReconcileEngine.Compare(100, 98, 7, 7).Level == "count-mismatch");
+    Check("行数同内容漂移判档", ReconcileEngine.Compare(100, 100, 7, 9).Level == "checksum-mismatch");
+    Check("单端缺校验和判档", ReconcileEngine.Compare(100, 100, 7, null).Level == "checksum-mismatch");
+
+    Check("抽样核对SQL", ReconcileEngine.SampleSql("users", "id", 50, DbEngine.MySQL) == "SELECT * FROM `users` ORDER BY `id` LIMIT 50");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
