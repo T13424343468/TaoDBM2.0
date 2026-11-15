@@ -1084,6 +1084,32 @@ Layer("集成");
     Check("分数下限不为负", s7 == 0 && SqlReleaseCheck.Verdict(0) == "建议整改");
 }
 
+// 12) BatchCleanup 大表分批清理（安全线）
+{
+    var plan = BatchCleanup.Plan("logs", "created_at < '2026-01-01'", "id", 2500, 1000, DbEngine.MySQL);
+    Check("计划按估计行数分批", plan.TotalBatches == 3 && plan.BatchSqls.Count == 3 && !plan.WholeTable);
+    Check("MySQL批次SQL带LIMIT", plan.BatchSqls[0] == "DELETE FROM `logs` WHERE created_at < '2026-01-01' LIMIT 1000", plan.BatchSqls[0]);
+
+    var pg = BatchCleanup.Plan("logs", "created_at < '2026-01-01'", "id", 2500, 1000, DbEngine.PostgreSQL);
+    Check("PG批次SQL主键子查询", pg.BatchSqls[0] == "DELETE FROM \"logs\" WHERE \"id\" IN (SELECT \"id\" FROM \"logs\" WHERE created_at < '2026-01-01' ORDER BY \"id\" LIMIT 1000)", pg.BatchSqls[0]);
+
+    var whole = BatchCleanup.Plan("logs", null, "id", 500, 200, DbEngine.MySQL);
+    Check("整表清空计划带警示", whole.WholeTable && whole.TotalBatches == 3 && whole.BatchSqls[0] == "DELETE FROM `logs` LIMIT 200");
+
+    Check("非法参数空计划", BatchCleanup.Plan("t", "x=1", "id", 0, 100, DbEngine.MySQL).TotalBatches == 0);
+
+    var batchHit = 0;
+    var run = BatchCleanup.Run(plan, _ => ++batchHit switch { 1 => 1000, 2 => 1000, _ => 400 });
+    Check("执行收敛统计行数", run.RowsDeleted == 2400 && run.BatchesDone == 3 && run.Exhausted, $"{run.RowsDeleted}/{run.BatchesDone}");
+
+    var hit = 0;
+    var early = BatchCleanup.Run(plan, _ => ++hit == 2 ? 0 : 1000);
+    Check("删除0行提前收敛", early.BatchesDone == 2 && early.RowsDeleted == 1000 && !early.Exhausted);
+
+    var capped = BatchCleanup.Run(plan, _ => 1000, maxBatches: 1);
+    Check("最大批次封顶", capped.BatchesDone == 1 && capped.RowsDeleted == 1000 && !capped.Exhausted);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
