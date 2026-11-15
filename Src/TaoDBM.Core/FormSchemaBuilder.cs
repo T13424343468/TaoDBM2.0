@@ -47,7 +47,7 @@ public static class FormSchemaBuilder
             bool empty = string.IsNullOrWhiteSpace(v);
             if (f.Required && empty) { errors[f.Column] = "必填项未填写"; continue; }
             if (empty) continue;
-            string reason = f.InputType switch
+            string? reason = f.InputType switch
             {
                 "number" => double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _) ? null : "需为数字",
                 "date" => DateTime.TryParse(v, CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? null : "需为日期",

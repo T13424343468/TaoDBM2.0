@@ -10,6 +10,6 @@
   </Folder>
   <Folder Name="/Tools/" />
   <Folder Name="/Tools/TaoDBM.TypeCheck/">
-    <Project Path="Tools/TaoDBM.TypeCheck/tc.csproj" />
+    <Project Path="Tools/TaoDBM.TypeCheck/TaoDBM.TypeCheck.csproj" />
   </Folder>
 </Solution>
