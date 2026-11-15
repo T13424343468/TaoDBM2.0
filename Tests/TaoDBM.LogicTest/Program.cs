@@ -1832,7 +1832,7 @@ Layer("暴力");
 // 沙箱不编译 WinUI App 工程，界面侧编译错误只有真机能看见——
 // 源码层兜底：App 工程所有 .cs 对 ThemePalette/ThemeStore 的静态成员引用必须有定义。
 {
-    string baseDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src"));
+    string baseDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "Src"));
     // 二期拆分后：tests/TaoDBM.LogicTest/bin/<cfg>/<tfm> 需上跳五级到解决方案根（旧布局为四级）；
     // 定义在 Infrastructure，被扫描的是 App 工程（沙箱不编译 WinUI，源码层兜底）
     var defs = File.ReadAllText(Path.Combine(baseDir, "TaoDBM.Infrastructure", "ThemePalette.cs"))
@@ -2281,8 +2281,8 @@ Console.WriteLine("== AtomicWrite 原子落盘（三.6 断电模拟）==");
         string[] six = ["AppPrefs.cs", "ConnectionStore.cs", "Favorites.cs", "QueryHistory.cs", "TabSession.cs", "ThemeStore.cs"];
         var root = AppContext.BaseDirectory;
         while (root != null && !System.IO.File.Exists(Path.Combine(root, "TaoDBM.slnx"))) root = Path.GetDirectoryName(root);
-        var bad = six.Where(n => !System.IO.File.Exists(Path.Combine(root!, "src", "TaoDBM.Infrastructure", n)) ||
-            System.IO.File.ReadAllText(Path.Combine(root!, "src", "TaoDBM.Infrastructure", n)).Contains("File.WriteAllText(File,"))
+        var bad = six.Where(n => !System.IO.File.Exists(Path.Combine(root!, "Src", "TaoDBM.Infrastructure", n)) ||
+            System.IO.File.ReadAllText(Path.Combine(root!, "Src", "TaoDBM.Infrastructure", n)).Contains("File.WriteAllText(File,"))
             .ToList();
         Check("六处落盘点统一走 AtomicWrite 零遗漏", bad.Count == 0, string.Join(",", bad));
     }
