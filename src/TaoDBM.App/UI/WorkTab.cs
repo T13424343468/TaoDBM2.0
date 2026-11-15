@@ -5,6 +5,7 @@ using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
 using Windows.UI.Text;
 using TaoDBM.Core;
+using TaoDBM.Core.Streaming;
 
 namespace TaoDBM.UI;
 
@@ -503,33 +504,53 @@ public class WorkTab : Grid
 
             var text = await Windows.Storage.FileIO.ReadTextAsync(file);
             bool isJson = file.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
-            List<string> headers;
-            List<string?[]> rows;
+            List<string> headers = new();
+            List<string?[]> rows = new();
             if (isJson)
             {
                 (headers, rows) = JsonImporter.Parse(text);
                 if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "JSON 内容为空或不是对象数组 / 行式 JSON。"; return; }
             }
-            else
-            {
-                (headers, rows) = CsvImporter.Parse(text);
-                if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
-            }
             if (_cols.Count == 0) _cols = await _provider.GetColumns(_db, _child);
 
-            var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, headers, rows);
-            int total = rows.Count, ok = 0; var errs = new System.Text.StringBuilder();
-            foreach (var s in stmts)
+            int total = 0, ok = 0; bool truncated = false;
+            var errs = new System.Text.StringBuilder();
+            if (isJson)
             {
-                var list = await _provider.Execute(_db, s);
-                foreach (var qr in list)
+                var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, headers, rows);
+                foreach (var s in stmts)
                 {
-                    if (qr.Message.StartsWith("错误", StringComparison.Ordinal)) errs.AppendLine(qr.Message);
-                    else ok++;
+                    var list = await _provider.Execute(_db, s);
+                    foreach (var qr in list)
+                    {
+                        if (qr.Message.StartsWith("错误", StringComparison.Ordinal)) errs.AppendLine(qr.Message);
+                        else ok++;
+                    }
                 }
             }
+            else
+            {
+                // CSV 走流式批次：逐批生成并执行 INSERT，内存中仅保留单批
+                foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 100 }))
+                {
+                    if (b.Headers == null || b.Rows.Count == 0) continue;
+                    var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, b.Headers.ToList(), b.Rows.ToList());
+                    foreach (var s in stmts)
+                    {
+                        var list = await _provider.Execute(_db, s);
+                        foreach (var qr in list)
+                        {
+                            if (qr.Message.StartsWith("错误", StringComparison.Ordinal)) errs.AppendLine(qr.Message);
+                            else ok++;
+                        }
+                    }
+                    total = (int)b.CumulativeRows;
+                    truncated |= b.Truncated;
+                }
+                if (total == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
+            }
             QueryHistory.Add(_provider.EngineName, _db, $"-- {(isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
-            _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(errs.Length > 0 ? "\n" + errs : "")}";
+            _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errs.Length > 0 ? "\n" + errs : "")}";
             _owner.SetStatus($"{(isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
             _offset = 0;
             await RunOrRefresh();
