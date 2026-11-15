@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaoDBM 用户与权限管理 · 界面稿</title>
+</head>
+<body style="margin:0;background:#eef1f5;font-family:'Segoe UI','Microsoft YaHei',sans-serif;color:#23272e;">
+<div style="max-width:1180px;margin:0 auto;padding:24px;">
+  <div style="background:#fff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;">
+    <!-- 顶部栏 -->
+    <div style="height:44px;background:#1f2733;display:flex;align-items:center;padding:0 16px;gap:12px;">
+      <span style="color:#fff;font-weight:600;">TaoDBM</span>
+      <span style="color:#8b95a5;font-size:12px;">2.0 · 界面稿 B3</span>
+      <span style="flex:1"></span>
+      <span style="color:#aab3c0;font-size:12px;">本地连接（127.0.0.1:3306）</span>
+    </div>
+    <div style="display:flex;">
+      <!-- 对象树占位 -->
+      <div style="width:200px;min-height:560px;border-right:1px solid #e3e6ea;padding:12px;font-size:13px;background:#fafbfc;">
+        <div style="color:#8b95a5;font-size:12px;margin-bottom:8px;">对象树</div>
+        <div>▸ dev_store</div>
+        <div style="color:#5a6472;">　▸ 表</div>
+        <div style="color:#5a6472;">　▸ 视图</div>
+        <div style="color:#5a6472;">　▸ 存储过程</div>
+        <div style="margin-top:8px;padding:4px 8px;background:#e8f1ff;border-radius:4px;color:#1a66d9;font-weight:600;">▸ 用户与权限</div>
+        <div style="padding-left:16px;color:#5a6472;">　root@localhost</div>
+        <div style="padding-left:16px;color:#5a6472;">　app_rw@%</div>
+        <div style="padding-left:16px;color:#5a6472;">　reader_a@10.%</div>
+      </div>
+      <!-- 主区 -->
+      <div style="flex:1;padding:20px;">
+        <h1 style="font-size:18px;margin:0 0 4px;">用户与权限管理</h1>
+        <p style="margin:0 0 16px;color:#8b95a5;font-size:12px;">界面稿示意：数据为演示用</p>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button style="background:#1a66d9;color:#fff;border:none;border-radius:4px;padding:7px 16px;cursor:pointer;">新建用户</button>
+          <input placeholder="搜索用户名 / 主机" style="flex:1;max-width:280px;border:1px solid #d4d9e0;border-radius:4px;padding:6px 10px;font-size:13px;">
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f5f7fa;color:#5a6472;text-align:left;">
+              <th style="padding:10px;">用户名@主机</th>
+              <th style="padding:10px;">全局权限</th>
+              <th style="padding:10px;">库级授权</th>
+              <th style="padding:10px;">高危权限</th>
+              <th style="padding:10px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid #eef0f3;">
+              <td style="padding:10px;">root@localhost</td>
+              <td style="padding:10px;color:#d4380d;">ALL（宽账号）</td>
+              <td style="padding:10px;">—</td>
+              <td style="padding:10px;color:#d4380d;">是（可转授）</td>
+              <td style="padding:10px;color:#1a66d9;cursor:pointer;">查看审计</td>
+            </tr>
+            <tr style="border-top:1px solid #eef0f3;">
+              <td style="padding:10px;">app_rw@%</td>
+              <td style="padding:10px;">SELECT / INSERT / UPDATE / DELETE</td>
+              <td style="padding:10px;">dev_store.*</td>
+              <td style="padding:10px;color:#3f8f29;">否</td>
+              <td style="padding:10px;color:#1a66d9;cursor:pointer;">授权 · 回收</td>
+            </tr>
+            <tr style="border-top:1px solid #eef0f3;">
+              <td style="padding:10px;">reader_a@10.%</td>
+              <td style="padding:10px;">SELECT</td>
+              <td style="padding:10px;">dev_store.orders</td>
+              <td style="padding:10px;color:#3f8f29;">否</td>
+              <td style="padding:10px;color:#1a66d9;cursor:pointer;">授权 · 回收</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 权限矩阵 -->
+        <h2 style="font-size:15px;margin:24px 0 8px;">权限矩阵</h2>
+        <p style="margin:0 0 10px;color:#8b95a5;font-size:12px;">勾选即改，保存时生成一条完整的授权 / 回收语句，先预览后执行。</p>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:#f5f7fa;color:#5a6472;text-align:left;">
+              <th style="padding:8px;">权限</th>
+              <th style="padding:8px;">app_rw@%</th>
+              <th style="padding:8px;">reader_a@10.%</th>
+              <th style="padding:8px;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid #eef0f3;"><td style="padding:8px;">SELECT</td><td style="padding:8px;">✔</td><td style="padding:8px;">✔</td><td style="padding:8px;color:#8b95a5;">读</td></tr>
+            <tr style="border-top:1px solid #eef0f3;"><td style="padding:8px;">INSERT / UPDATE / DELETE</td><td style="padding:8px;">✔</td><td style="padding:8px;">—</td><td style="padding:8px;color:#8b95a5;">写</td></tr>
+            <tr style="border-top:1px solid #eef0f3;"><td style="padding:8px;">DROP / TRUNCATE</td><td style="padding:8px;">—</td><td style="padding:8px;">—</td><td style="padding:8px;color:#d4380d;">高危：操作前需预览+二次确认</td></tr>
+            <tr style="border-top:1px solid #eef0f3;"><td style="padding:8px;">GRANT OPTION（转授）</td><td style="padding:8px;">—</td><td style="padding:8px;">—</td><td style="padding:8px;color:#d4380d;">高危：仅宽账号出现</td></tr>
+          </tbody>
+        </table>
+
+        <!-- 数据安全设计专节 -->
+        <div style="margin-top:28px;background:#f8fafc;border:1px solid #e3e6ea;border-radius:8px;padding:16px;">
+          <h3 style="margin:0 0 8px;font-size:14px;color:#1a66d9;">数据安全设计专节</h3>
+          <ul style="margin:0;padding-left:18px;font-size:12px;color:#5a6472;line-height:1.9;">
+            <li><strong>危险操作预览+确认</strong>：授权 / 回收不直接执行，先弹出即将生成的 GRANT / REVOKE 语句供核对，点击确认才生效。</li>
+            <li><strong>可回滚 / 可审计</strong>：每次权限变更写入审计记录（时间、账号、语句、操作者），一条 REVOKE 可用同界面逆向恢复为 GRANT。</li>
+            <li><strong>凭据不落盘</strong>：新建用户的密码仅在创建弹窗内展示一次并加密连接提交，不留明文缓存，不写入连接配置文件。</li>
+            <li><strong>最小权限</strong>：界面默认按需勾选，宽账号（ALL）与可转授账号单独标红提示，避免随手复制过宽授权。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

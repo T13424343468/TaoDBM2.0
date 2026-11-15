@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>B10 主从 / 分布式管理面 - TaoDBM 2.0 界面稿</title>
+</head>
+<body style="margin:0;font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;">
+
+<!-- 顶部：模块说明（评审用，正式版不含） -->
+<div style="background:#e6f4ff;border:1px solid #91caff;border-radius:8px;padding:12px 16px;margin:16px;font-size:13px;line-height:1.7;">
+  <strong style="color:#1677ff;">界面稿说明</strong>｜模块：主从 / 分布式管理面（档三 B10）。展示主从拓扑、节点列表与复制延迟，并提供管理操作入口。对应后台能力：<code>DataSync</code>（复制状态查询与延迟采集）。<br>
+  <span style="color:#888;">此说明条为评审标注，正式版不出现；灰色「接线」标签同理。</span>
+</div>
+
+<div style="margin:0 16px 16px;display:flex;flex-direction:column;gap:16px;">
+
+  <!-- 拓扑图 -->
+  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;">
+    <div style="font-weight:600;margin-bottom:12px;">主从拓扑<span style="float:right;color:#bbb;font-size:11px;">接线 DataSync：拓扑与复制状态查询</span></div>
+    <div style="display:flex;align-items:center;gap:12px;font-size:13px;">
+      <div style="border:2px solid #1677ff;border-radius:8px;padding:10px 18px;background:#e8f1ff;">
+        <div style="font-weight:600;">主库 master-1</div>
+        <div style="color:#52c41a;font-size:11px;">● 正常</div>
+      </div>
+      <div style="color:#999;">────── 复制 ──────▸</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="border:2px solid #52c41a;border-radius:8px;padding:10px 18px;background:#f6ffed;">
+          <div style="font-weight:600;">从库 replica-1</div>
+          <div style="color:#52c41a;font-size:11px;">● 正常　延迟 0.4s</div>
+        </div>
+        <div style="border:2px solid #faad14;border-radius:8px;padding:10px 18px;background:#fffbe6;">
+          <div style="font-weight:600;">从库 replica-2</div>
+          <div style="color:#faad14;font-size:11px;">● 延迟偏高　12.6s</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#888;">点选节点可在右侧查看该节点的复制详情与操作入口。</div>
+  </div>
+
+  <!-- 节点列表 -->
+  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">节点列表<span style="float:right;color:#bbb;font-size:11px;">接线 DataSync：节点状态与延迟采集</span></div>
+    <table style="border-collapse:collapse;width:100%;font-size:13px;">
+      <tr style="background:#fafafa;"><th style="border:1px solid #eee;padding:6px 10px;text-align:left;">节点</th><th style="border:1px solid #eee;padding:6px 10px;text-align:left;">角色</th><th style="border:1px solid #eee;padding:6px 10px;text-align:left;">状态</th><th style="border:1px solid #eee;padding:6px 10px;text-align:left;">复制延迟</th><th style="border:1px solid #eee;padding:6px 10px;text-align:left;">操作</th></tr>
+      <tr><td style="border:1px solid #eee;padding:6px 10px;">master-1</td><td style="border:1px solid #eee;padding:6px 10px;">主库</td><td style="border:1px solid #eee;padding:6px 10px;color:#52c41a;">● 正常</td><td style="border:1px solid #eee;padding:6px 10px;">—</td><td style="border:1px solid #eee;padding:6px 10px;color:#1a66d9;">详情</td></tr>
+      <tr><td style="border:1px solid #eee;padding:6px 10px;">replica-1</td><td style="border:1px solid #eee;padding:6px 10px;">从库</td><td style="border:1px solid #eee;padding:6px 10px;color:#52c41a;">● 正常</td><td style="border:1px solid #eee;padding:6px 10px;">0.4s</td><td style="border:1px solid #eee;padding:6px 10px;color:#1a66d9;">详情 · 重连</td></tr>
+      <tr><td style="border:1px solid #eee;padding:6px 10px;">replica-2</td><td style="border:1px solid #eee;padding:6px 10px;">从库</td><td style="border:1px solid #eee;padding:6px 10px;color:#faad14;">● 延迟偏高</td><td style="border:1px solid #eee;padding:6px 10px;color:#faad14;">12.6s</td><td style="border:1px solid #eee;padding:6px 10px;color:#1a66d9;">详情 · 重连</td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;color:#888;">从库连续多次采集到延迟超阈值时，在拓扑图与列表同时标黄提醒。</div>
+  </div>
+
+  <!-- 管理操作 -->
+  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">管理操作入口</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:13px;">
+      <span style="border:1px solid #d4d9e0;border-radius:6px;padding:6px 12px;">添加从库</span>
+      <span style="border:1px solid #d4d9e0;border-radius:6px;padding:6px 12px;">切换主库<span style="color:#ff4d4f;">（高危）</span></span>
+      <span style="border:1px solid #d4d9e0;border-radius:6px;padding:6px 12px;">暂停 / 恢复复制</span>
+      <span style="border:1px solid #d4d9e0;border-radius:6px;padding:6px 12px;">重建复制通道</span>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#888;">「切换主库」等影响数据方向的操作走预览+确认流程。</div>
+  </div>
+
+</div>
+
+<!-- 数据安全设计专节 -->
+<div style="margin:0 16px 24px;background:#fffbe6;border:1px solid #ffe58f;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.8;">
+  <strong>🔒 数据安全设计专节</strong>
+  <ul style="margin:6px 0 0;padding-left:20px;">
+    <li><strong>危险操作预览+确认</strong>：切换主库、暂停复制等操作先展示拓扑变化与数据风险说明，二次确认后执行。</li>
+    <li><strong>可回滚/可审计</strong>：拓扑变更记录到操作历史，含变更前后角色；重连等只读恢复操作免确认但同样留痕。</li>
+    <li><strong>最小权限</strong>：管理面操作使用当前连接账号自身权限，无 REPLICA 权限的账号隐藏对应操作入口并说明原因。</li>
+  </ul>
+</div>
+
+</body>
+</html>
