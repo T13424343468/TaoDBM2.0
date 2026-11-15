@@ -1921,6 +1921,45 @@ Layer("集成");
     Check("续传-坏JSON不炸", MigrationResume.FromJson("{坏") == null, "");
 }
 
+{
+    // 局域网搬运：封包指纹 + 验包防篡改 + 分块过线重装（纯引擎）
+    var t6 = DateTimeOffset.Parse("2026-11-16T06:40:00+08:00");
+    var items = new List<ShareItem>
+    {
+        new("c1", "conn", "{}", t6, "alice"),
+        new("f1", "fav", "{\"name\":\"生产库\"}", t6, "alice"),
+        new("n1", "note", "备注", t6, "bob", Deleted: true),
+    };
+    var packet = SharePacketBuilder.Build(items, "alice-book", t6);
+    Check("搬运-封包头完整", packet.Header.ItemCount == 3 && packet.Header.Sender == "alice-book" && packet.Header.Sha256.Length == 64, packet.Header.Sha256);
+    Check("搬运-验包通过", SharePacketBuilder.Verify(packet) is { Ok: true, Payload: not null }, "");
+
+    var tampered = packet with { Payload = packet.Payload.Replace("fav", "favs") };
+    var checkTamper = SharePacketBuilder.Verify(tampered);
+    Check("搬运-载荷被改验出", !checkTamper.Ok && checkTamper.Reason.Contains("指纹不符"), checkTamper.Reason);
+
+    var truncated = packet with { Payload = packet.Payload[..^10] };
+    Check("搬运-载荷被截验出", !SharePacketBuilder.Verify(truncated).Ok, "");
+
+    var chunks = SharePacketBuilder.Chunk(packet, 64);
+    Check("搬运-分块数正确", chunks.Count > 1 && chunks.All(c => c.PacketId == packet.Header.PacketId) && chunks[0].Total == chunks.Count, chunks.Count.ToString());
+    var reassembled = SharePacketBuilder.Assemble(chunks);
+    Check("搬运-重装还原载荷", reassembled == packet.Payload, "");
+    Check("搬运-重装后复验通过", reassembled is not null && SharePacketBuilder.Verify(packet with { Payload = reassembled }).Ok, "");
+
+    var missing = chunks.Where(c => c.Index != 1).ToList();
+    Check("搬运-缺块拒装", SharePacketBuilder.Assemble(missing) == null, "");
+    var mixed = chunks.ToList();
+    mixed[0] = mixed[0] with { PacketId = "别的包" };
+    Check("搬运-混包拒装", SharePacketBuilder.Assemble(mixed) == null, "");
+    bool threwChunk = false;
+    try { SharePacketBuilder.Chunk(packet, 0); } catch (ArgumentOutOfRangeException) { threwChunk = true; }
+    Check("搬运-零块宽拒绝", threwChunk, "");
+
+    var empty = SharePacketBuilder.Build(new List<ShareItem>(), "bob-book", t6);
+    Check("搬运-空包封验通过", empty.Header.ItemCount == 0 && SharePacketBuilder.Verify(empty).Ok, "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
