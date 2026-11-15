@@ -1055,6 +1055,35 @@ Layer("集成");
     Check("缺账文件按空账", ChangeAudit.LoadJsonl(Path.Combine(dir, "none.jsonl")).Count == 0);
 }
 
+// 11) SqlReleaseCheck SQL 上线检查评分（安全线）
+{
+    var (okScore, okFindings) = SqlReleaseCheck.Review("select id, name from users where id = 1;", DbEngine.MySQL);
+    Check("干净脚本满分可上线", okScore == 100 && okFindings.Count == 0 && SqlReleaseCheck.Verdict(okScore) == "可上线");
+
+    var (badScore, bad) = SqlReleaseCheck.Review("delete from users;\ndrop table logs;", DbEngine.MySQL);
+    Check("无WHERE与DROP均拦截", bad.Count(f => f.Level == "block") == 2 && badScore == 50 && SqlReleaseCheck.Verdict(badScore) == "建议整改");
+
+    var (s1, f1) = SqlReleaseCheck.Review("select * from orders;", DbEngine.MySQL);
+    Check("SELECT星告警", s1 == 90 && f1.Any(x => x.Rule == "select-star" && x.Level == "warn") && SqlReleaseCheck.Verdict(s1) == "可上线");
+
+    var (s2, f2) = SqlReleaseCheck.Review("select * from users where name like '%张';", DbEngine.MySQL);
+    Check("前导通配与星合计", f2.Count == 2 && f2.All(x => x.Level == "warn") && s2 == 80);
+
+    var (s3, f3) = SqlReleaseCheck.Review("update t set a = 1 where id = 2;", DbEngine.MySQL);
+    Check("改数无LIMIT无事务提示", f3.Any(x => x.Rule == "no-limit") && f3.Any(x => x.Rule == "no-transaction") && s3 == 94);
+
+    var (s4, f4) = SqlReleaseCheck.Review("begin;\nupdate t set a = 1 where id = 2;\n", DbEngine.MySQL);
+    Check("包事务后不提示", !f4.Any(x => x.Rule == "no-transaction") && s4 == 97);
+
+    var (s5, f5) = SqlReleaseCheck.Review("update t set a = 'where x = 1';", DbEngine.MySQL);
+    Check("字符串含WHERE不算条件仍判无WHERE危险", f5.Any(x => x.Rule == "dangerous-statement") && s5 == 75);
+
+    var (s6, _) = SqlReleaseCheck.Review("xxx;\ntruncate table huge;", DbEngine.MySQL);
+    Check("TRUNCATE拦截扣25分", s6 == 75 && SqlReleaseCheck.Verdict(s6) == "谨慎上线");
+    var (s7, _) = SqlReleaseCheck.Review("truncate table a; truncate table b; truncate table c; truncate table d;", DbEngine.MySQL);
+    Check("分数下限不为负", s7 == 0 && SqlReleaseCheck.Verdict(0) == "建议整改");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留

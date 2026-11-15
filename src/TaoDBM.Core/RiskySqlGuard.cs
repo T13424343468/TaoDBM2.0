@@ -153,7 +153,7 @@ public static partial class RiskySqlGuard
     }
 
     private static IReadOnlyList<string> SplitStatements(string script) =>
-        Regex.Split(script, @";\s*(?:\r?\n|$)")
+        script.Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .Where(s => s.Length > 0)
             .ToList();
