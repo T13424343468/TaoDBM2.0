@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TaoDBM 二期推送脚本（老板解锁凭据后一条命令执行，配套 docs/建仓推送清单.md）
+# TaoDBM 二期推送脚本（老板解锁凭据后一条命令执行，配套 docs/REPO_SETUP.md）
 # 用法1（SSH 钥匙有 write 权限）: scripts/push-phase2.sh ssh <SSH别名> [远端分支，默认 phase2]
 # 用法2（PAT）: GITHUB_PAT=ghp_xxx scripts/push-phase2.sh pat <GitHub用户名> [远端分支]
 # 说明：只推当前 HEAD 到 phase2 分支，不触碰公仓既有 main；dry-run 验证可用 git push --dry-run 先行。

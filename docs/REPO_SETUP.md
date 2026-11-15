@@ -8,7 +8,7 @@
 4. 启用流水线：把 `docs/ci/windows-build.yml` 移入 `.github/workflows/`（本仓库 Write 工具限制，先暂存于此），commit + push，确认 Actions 首跑全绿。
 5. 核验：GitHub 网页看提交数与分支；Actions 跑 `windows-build`（Windows 真环境全量编译 + LogicTest）。
 6. 公仓同步：若公仓独立，`git push <公仓地址> main` 并核对提交数一致。
-7. 回报老板：私仓/公仓地址、Actions 首跑结论、真机验证清单（见下）随包可测。
+7. 回报老板：私仓/公仓地址、Actions 首跑结论、DEVICE_CHECKLIST（见下）随包可测。
 
 ## 当前本地提交基线（推送前核对 `git log --oneline | head`）
 
