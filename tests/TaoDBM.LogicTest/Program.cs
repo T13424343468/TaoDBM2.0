@@ -1260,6 +1260,28 @@ Layer("集成");
     Check("范围路由超界提示扩分片", ShardKeyEvaluator.RangeRoute(3001, bounds) == -1);
 }
 
+// 18) HotspotDetector 热点倾斜检测（分库分区分表底座）
+{
+    var skewed = HotspotDetector.Analyze(new[] { new ShardLoad("p0", 100), new ShardLoad("p1", 10), new ShardLoad("p2", 10), new ShardLoad("p3", 10), new ShardLoad("p4", 10) });
+    Check("热点分片检出", skewed.HasHotSpot && skewed.Verdicts[0].Name == "p0" && skewed.Verdicts[0].Level == "hot");
+    Check("冷清分片检出", skewed.Verdicts.Count(v => v.Level == "cold") == 4);
+    Check("热点建议含拆分或加盐", skewed.Suggestions.Any(s => s.Contains("p0") && s.Contains("加盐")));
+    Check("峰值倍数正确", skewed.PeakRatio > 3.5 && skewed.PeakRatio < 3.6, skewed.PeakRatio.ToString("0.###"));
+
+    var even = HotspotDetector.Analyze(new[] { new ShardLoad("a", 10), new ShardLoad("b", 10), new ShardLoad("c", 10) });
+    Check("均匀分布无热点无冷清", !even.HasHotSpot && even.Verdicts.All(v => v.Level == "normal"));
+    Check("均匀分布建议为无需处置", even.Suggestions.SequenceEqual(new[] { "负载分布正常，无需处置" }));
+
+    var zeros = HotspotDetector.Analyze(new[] { new ShardLoad("x", 0), new ShardLoad("y", 0) });
+    Check("全零负载不误报热点", !zeros.HasHotSpot && zeros.MeanLoad == 0 && zeros.Verdicts.All(v => v.Level == "normal"));
+
+    var empty = HotspotDetector.Analyze(Array.Empty<ShardLoad>());
+    Check("空输入安全降级", empty.Verdicts.Count == 0 && !empty.HasHotSpot && empty.Suggestions.Single().Contains("无分片负载数据"));
+
+    var tie = HotspotDetector.Analyze(new[] { new ShardLoad("b", 5), new ShardLoad("a", 5) });
+    Check("并列负载按名字定序", tie.Verdicts.Select(v => v.Name).SequenceEqual(new[] { "a", "b" }));
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
