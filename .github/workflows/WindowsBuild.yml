@@ -1,7 +1,7 @@
 name: windows-build
 
-# 云端 Windows 验证流水线（预置）：建仓后由推送清单把本文件移入 .github/workflows/ 即生效。
-# 职责：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试，补沙箱无法覆盖的部分。
+# 云端 Windows 验证流水线：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试 + App 发布产物。
+# 失败时把编译错误行以 ::error:: 注解写上 check run（公开仓注解可匿名 API 读取，补无凭据日志缺口）。
 
 on:
   push:
@@ -18,11 +18,26 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Build solution (0 warning 0 error gate)
-        run: dotnet build TaoDBM.slnx -warnaserror
+      - name: Build libraries (Core/Abstractions/Infrastructure)
+        shell: pwsh
+        run: |
+          $out = dotnet build Src/TaoDBM.Core.Abstractions Src/TaoDBM.Core Src/TaoDBM.Infrastructure -warnaserror 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
 
-      - name: Logic tests
-        run: dotnet run --project Tests/TaoDBM.LogicTest -c Release
+      - name: Logic tests (Release)
+        shell: pwsh
+        run: |
+          $out = dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error|✗|失败" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
+
+      - name: Build App (WinUI, 0 warning 0 error gate)
+        shell: pwsh
+        run: |
+          $out = dotnet build Src/TaoDBM.App -warnaserror 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
 
       - name: Publish App (win-x64)
         run: dotnet publish Src/TaoDBM.App -c Release -r win-x64 --self-contained false -o publish/app
