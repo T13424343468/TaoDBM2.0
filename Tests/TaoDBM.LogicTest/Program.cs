@@ -1789,6 +1789,94 @@ Layer("集成");
     Check("权限-对等REVOKE生成", revokes.Single() == "REVOKE SELECT, INSERT ON app.* FROM 'app'@'10.0.0.%';", revokes.FirstOrDefault() ?? "");
 }
 
+// 档三纯引擎：ER 正向生成（模型→建库 DDL）+ 执行计划树解析与瓶颈标注 + 对象树目录语句生成
+{
+    // 1) ER 正向：user ← orders（故意乱序放入，验证依赖排序）
+    var user = new ErdTable { Name = "user" };
+    user.Columns.Add(new ErdColumn { Name = "id", Type = "INT", IsKey = true });
+    user.Columns.Add(new ErdColumn { Name = "city", Type = "VARCHAR(50)" });
+    var orders = new ErdTable { Name = "orders" };
+    orders.Columns.Add(new ErdColumn { Name = "id", Type = "INT", IsKey = true });
+    orders.Columns.Add(new ErdColumn { Name = "user_id", Type = "INT" });
+    var em = new ErdModel { Tables = { orders, user }, Edges = { new ErdEdge { FromTable = "orders", FromCol = "user_id", ToTable = "user" } } };
+    var fwd = ErdForward.Generate(em);
+    Check("ER正向-生成成功", fwd.Ok && fwd.Ddl.Count == 2, string.Join("|", fwd.Errors));
+    Check("ER正向-被引用表在前", fwd.Ddl.Count == 2 && fwd.Ddl[0].StartsWith("CREATE TABLE `user`", StringComparison.Ordinal), fwd.Ddl.FirstOrDefault() ?? "");
+    Check("ER正向-主键非空", fwd.Ddl[0].Contains("`id` INT NOT NULL", StringComparison.Ordinal) && fwd.Ddl[0].Contains("PRIMARY KEY (`id`)", StringComparison.Ordinal), fwd.Ddl[0]);
+    Check("ER正向-外键约束", fwd.Ddl[1].Contains("FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)", StringComparison.Ordinal), fwd.Ddl[1]);
+    Check("ER正向-可空列不带NOT NULL", fwd.Ddl[0].Contains("`city` VARCHAR(50) NULL", StringComparison.Ordinal), fwd.Ddl[0]);
+
+    var weird = new ErdTable { Name = "we`ird" };
+    weird.Columns.Add(new ErdColumn { Name = "id", IsKey = true });
+    var fwdWeird = ErdForward.Generate(new ErdModel { Tables = { weird } });
+    Check("ER正向-反引号转义", fwdWeird.Ok && fwdWeird.Ddl[0].Contains("`we``ird`", StringComparison.Ordinal), fwdWeird.Ddl.FirstOrDefault() ?? "");
+    Check("ER正向-模型为空拒绝", !ErdForward.Generate(null).Ok, "");
+
+    var dupA = new ErdTable { Name = "dup" };
+    dupA.Columns.Add(new ErdColumn { Name = "id", IsKey = true });
+    var dupB = new ErdTable { Name = "dup" };
+    dupB.Columns.Add(new ErdColumn { Name = "id", IsKey = true });
+    Check("ER正向-重名表拒绝", !ErdForward.Generate(new ErdModel { Tables = { dupA, dupB } }).Ok, "");
+
+    var noPk = new ErdTable { Name = "t" };
+    noPk.Columns.Add(new ErdColumn { Name = "a", Type = "INT" });
+    Check("ER正向-无主键拒绝", !ErdForward.Generate(new ErdModel { Tables = { noPk } }).Ok, "");
+
+    var ta = new ErdTable { Name = "a" };
+    ta.Columns.Add(new ErdColumn { Name = "id", IsKey = true });
+    var tb = new ErdTable { Name = "b" };
+    tb.Columns.Add(new ErdColumn { Name = "c", Type = "INT" });
+    Check("ER正向-目标无主键拒绝", !ErdForward.Generate(new ErdModel
+    {
+        Tables = { ta, tb },
+        Edges = { new ErdEdge { FromTable = "a", FromCol = "id", ToTable = "b" } }
+    }).Ok, "");
+    var badColFwd = ErdForward.Generate(new ErdModel
+    {
+        Tables = { new ErdTable { Name = "a", Columns = { new ErdColumn { Name = "id", IsKey = true } } } },
+        Edges = { new ErdEdge { FromTable = "a", FromCol = "ghost", ToTable = "a" } }
+    });
+    Check("ER正向-坏列外键拒绝", !badColFwd.Ok && badColFwd.Errors.Any(e => e.Contains("列不存在")), string.Join("|", badColFwd.Errors));
+}
+
+{
+    // 2) 执行计划：缩进树解析 + 瓶颈标注 + 索引建议
+    var planText = "SCAN user\n  SEARCH user USING INDEX idx_user_city (city=?)\nSCAN orders\n  USE TEMP B-TREE FOR ORDER BY\n    Using filesort";
+    var plan = ExplainPlanEngine.Parse(planText);
+    Check("计划-解析节点数与根数", plan.Flat.Count == 5 && plan.Roots.Count == 2, $"flat={plan.Flat.Count} roots={plan.Roots.Count}");
+    Check("计划-父子层级挂接", plan.Roots[0].Children.Count == 1 && plan.Roots[1].Children.Count == 1
+        && plan.Roots[1].Children[0].Children.Count == 1,
+        $"r0={plan.Roots[0].Children.Count} r1={plan.Roots[1].Children.Count}");
+    Check("计划-空文本不炸", ExplainPlanEngine.Parse("  \n ").Flat.Count == 0, "");
+    Check("计划-深度跳级收敛", ExplainPlanEngine.Parse("A\n        B").Flat.Last().Depth == 1, "");
+    var pf = ExplainPlanEngine.Annotate(plan);
+    Check("计划-全表扫描标注P201", pf.Count(f => f.Code == "P201") == 2, pf.Count.ToString());
+    Check("计划-文件排序P202为danger", pf.Any(f => f.Code == "P202" && f.Severity == "danger"), "");
+    Check("计划-临时表P203", pf.Any(f => f.Code == "P203"), "");
+    Check("计划-命中索引不误报P201", !pf.Any(f => f.Node.Contains("USING INDEX")), "");
+    Check("计划-SQLite口径提取", ExplainPlanEngine.ExtractFullScanTable("SCAN user") == "user", "");
+    Check("计划-MySQL口径提取", ExplainPlanEngine.ExtractFullScanTable("Table scan on `orders`") == "orders", "");
+    Check("计划-JSON往返", ExplainPlan.FromJson(plan.ToJson()) is { } back && back.Flat.Count == plan.Flat.Count, "");
+}
+
+{
+    // 3) 对象树目录：按引擎生成元数据查询语句
+    Check("目录-支持引擎判定", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite) && !ObjectTreeCatalog.Supported(DbEngine.Redis), "");
+    var myViews = ObjectTreeCatalog.ListViews(DbEngine.MySQL, "shop");
+    Check("目录-MySQL视图语句", myViews.Contains("information_schema.VIEWS") && myViews.Contains("'shop'"), myViews);
+    Check("目录-PG视图语句", ObjectTreeCatalog.ListViews(DbEngine.PostgreSQL, "shop").Contains("pg_views"), "");
+    Check("目录-SQLite视图语句", ObjectTreeCatalog.ListViews(DbEngine.SQLite, "main").Contains("sqlite_master"), "");
+    Check("目录-MySQL索引语句", ObjectTreeCatalog.ListIndexes(DbEngine.MySQL, "shop").Contains("information_schema.STATISTICS"), "");
+    Check("目录-MySQL外键语句", ObjectTreeCatalog.ListForeignKeys(DbEngine.MySQL, "shop").Contains("REFERENCED_TABLE_NAME IS NOT NULL"), "");
+    Check("目录-MySQL触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.MySQL, "shop").Contains("information_schema.TRIGGERS"), "");
+    Check("目录-SQLite触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.SQLite, "main").Contains("sqlite_master"), "");
+    Check("目录-SQLite例程空清单", ObjectTreeCatalog.ListRoutines(DbEngine.SQLite, "main").Contains("WHERE 0"), "");
+    Check("目录-引号转义", ObjectTreeCatalog.ListViews(DbEngine.MySQL, "it's").Contains("it''s"), "");
+    bool threwCat = false;
+    try { ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "x"); } catch (NotSupportedException) { threwCat = true; }
+    Check("目录-不支持引擎报错", threwCat, "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
