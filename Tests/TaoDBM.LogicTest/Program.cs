@@ -1877,6 +1877,50 @@ Layer("集成");
     Check("目录-不支持引擎报错", threwCat, "");
 }
 
+{
+    // 迁移续传：清单基线 + 逐表水位 + 重启后重算续传计划（纯引擎，凭据不落盘）
+    var manifest = new MigrationManifest("M-20261116", "src-main", "dst-main",
+        DateTimeOffset.Parse("2026-11-16T04:50:00+08:00"), new[]
+        {
+            new MigrationTable("users", 1000, 10),
+            new MigrationTable("orders", 5000, 50),
+            new MigrationTable("logs", 200, 2),
+        });
+    var state = MigrationResume.Fresh(manifest);
+    Check("续传-新状态零水位", state.Tables.Count == 3 && state.Tables.All(p => p.BatchDone == 0 && !p.Done), "");
+
+    state = MigrationResume.Advance(state, "users", 10, "u-1000", 10);
+    state = MigrationResume.Advance(state, "orders", 20, "o-2400", 50);
+    Check("续传-满批自动置完成", state.Tables.First(p => p.Table == "users").Done, "");
+    Check("续传-半途保留水位", state.Tables.First(p => p.Table == "orders") is { BatchDone: 20, LastKey: "o-2400", Done: false }, "");
+
+    var plan = MigrationResume.Plan(manifest, state);
+    Check("续传-动作三分", plan.Actions.Count == 3
+        && plan.Actions[0] is { Action: "verify", Table: "users" }
+        && plan.Actions[1] is { Action: "resume", FromBatch: 20, Table: "orders" }
+        && plan.Actions[2] is { Action: "copy", Table: "logs" }, plan.Actions[1].Note);
+    Check("续传-续传从下一批起", plan.Actions[1].Note.Contains("第 21 批"), plan.Actions[1].Note);
+
+    var drifted = MigrationResume.Plan(manifest, state,
+        sourceCounts: new Dictionary<string, long> { ["orders"] = 5100 });
+    Check("续传-源漂移报出", drifted.Drifted.SequenceEqual(new[] { "orders" }), string.Join(",", drifted.Drifted));
+    Check("续传-漂移不改动作", drifted.Actions[1].Action == "resume", "");
+
+    var mismatch = MigrationResume.Plan(manifest, state,
+        targetCounts: new Dictionary<string, long> { ["users"] = 998 });
+    Check("续传-完成表行数不符", mismatch.VerifyMismatch.SequenceEqual(new[] { "users" }) && mismatch.Actions[0].Action == "copy", "");
+
+    bool threwMig = false;
+    try { MigrationResume.Plan(manifest, state with { ManifestId = "M-别的" }); } catch (ArgumentException) { threwMig = true; }
+    Check("续传-清单状态不匹配拒绝", threwMig, "");
+
+    var json = MigrationResume.ToJson(state);
+    Check("续传-状态JSON往返", MigrationResume.FromJson(json) is { } back && back.ManifestId == "M-20261116"
+        && back.Tables.First(p => p.Table == "orders").LastKey == "o-2400", "");
+    Check("续传-状态无凭据字段", !json.Contains("Password", StringComparison.OrdinalIgnoreCase) && !json.Contains("pwd"), "");
+    Check("续传-坏JSON不炸", MigrationResume.FromJson("{坏") == null, "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
