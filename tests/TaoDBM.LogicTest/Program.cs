@@ -876,6 +876,42 @@ Layer("集成");
     Check("SQLite 改列进跳过清单", liteSkips.Count == 1 && liteSkips[0].Contains("SQLite"), string.Join("|", liteSkips));
 }
 
+// 7) SchemaTimeline 表结构变更时间线：追加切面、任意两切面对比/回放、序列化容错
+{
+    SchemaTableSnapshot T(string table, params TableColumnDesign[] cols) => new()
+    { Table = table, Columns = cols.ToList() };
+    TableColumnDesign C(string name, string type, bool nullable = true, bool pk = false, string def = "") => new()
+    { Name = name, SqlType = type, Nullable = nullable, IsPrimaryKey = pk, DefaultValue = def };
+
+    var t0 = new DateTimeOffset(2026, 11, 15, 8, 0, 0, TimeSpan.FromHours(8));
+    var line = SchemaTimeline.Append([], new[] { T("users", C("id", "BIGINT", false, true)) }, "基线", t0);
+    var afterAdd = SchemaTimeline.Append(line, new[] { T("users", C("id", "BIGINT", false, true), C("age", "INT")) }, "加列", t0.AddMinutes(30));
+    var afterMore = SchemaTimeline.Append(afterAdd, new[] {
+        T("users", C("id", "BIGINT", false, true), C("age", "INT")),
+        T("logs", C("id", "BIGINT", false, true)),
+    }, "补日志表", t0.AddMinutes(60));
+
+    Check("切面逐次追加且不改旧表", line.Count == 1 && afterAdd.Count == 2 && afterMore.Count == 3);
+    Check("切面携带时间与说明", afterAdd[1].Label == "加列" && afterAdd[1].At > afterAdd[0].At);
+    Check("追加不污染旧切面", afterAdd[0].Tables[0].Columns.Count == 1 && line[0].Tables[0].Columns.Count == 1);
+
+    // 对比与回放：基线 → 补日志表
+    var diffs = SchemaTimeline.DiffBetween(afterMore[0], afterMore[2]);
+    Check("跨切面差异检出", diffs.Any(d => d.Table == "users" && d.Kind == "column-missing" && d.Column == "age")
+        && diffs.Any(d => d.Table == "logs" && d.Kind == "table-missing"));
+    var my = (Func<string, string>)(s => "`" + s + "`");
+    var (stmts, _) = SchemaTimeline.PlanBetween(afterMore[0], afterMore[2], DbEngine.MySQL, my);
+    Check("跨切面回放生成计划", stmts.Any(s => s.Contains("CREATE TABLE `logs`")) && stmts.Contains("ALTER TABLE `users` ADD `age` INT"),
+        string.Join(" ;; ", stmts));
+
+    // 序列化往返与容错
+    var json = SchemaTimeline.ToJson(afterMore);
+    var back = SchemaTimeline.Parse(json);
+    Check("时间线往返还原", back.Count == 3 && back[1].Label == "加列" && back[1].Tables[0].Columns.Count == 2);
+    Check("回读按时间升序", back.SequenceEqual(back.OrderBy(e => e.At)));
+    Check("损坏时间线回空", SchemaTimeline.Parse("{坏").Count == 0 && SchemaTimeline.Parse("").Count == 0 && SchemaTimeline.Parse(null).Count == 0);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
