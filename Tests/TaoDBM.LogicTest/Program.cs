@@ -1210,7 +1210,7 @@ Layer("集成");
         "SELECT COUNT(*) AS row_count FROM `orders` WHERE created_at < '2026-01-01'");
 
     var mysqlCk = ReconcileEngine.ChecksumSql("orders", new[] { "id", "amount" }, null, DbEngine.MySQL);
-    Check("MySQL校验和CRC32", mysqlCk == "SELECT COUNT(*) AS row_count, COALESCE(SUM(CRC32(CONCAT_WS('|', `id`, `amount`))), 0) AS checksum FROM `orders`", mysqlCk);
+    Check("MySQL校验和CRC32", mysqlCk == "SELECT COUNT(*) AS row_count, COALESCE(SUM(CRC32(CONCAT_WS('|', `id`, `amount`))), 0) AS checksum FROM `orders`", mysqlCk ?? "");
     var pgCk = ReconcileEngine.ChecksumSql("orders", new[] { "id" }, null, DbEngine.PostgreSQL);
     Check("PG校验和md5截段", pgCk is not null && pgCk.Contains("md5(concat_ws('|', \"id\"))", StringComparison.Ordinal));
     Check("无校验和函数方言退化", ReconcileEngine.ChecksumSql("t", new[] { "a" }, null, DbEngine.SQLite) == null);
