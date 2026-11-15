@@ -1339,6 +1339,29 @@ Layer("集成");
     Check("并列热点按超出量与名字定序", tie.Moves[0].From == "h1" && tie.Moves[0].To == "c1", string.Join(",", tie.Moves.Select(m => $"{m.From}->{m.To}:{m.Rows}")));
 }
 
+// 21) PartitionDdl 分区 DDL 方言生成（分库分区分表底座）
+{
+    var p = new TimePartition("p_20261115", new DateTime(2026, 11, 15), new DateTime(2026, 11, 16));
+    Check("MySQL 新增分区走 TO_DAYS 上界", PartitionDdl.AddSql(DbEngine.MySQL, "orders", p) ==
+        "ALTER TABLE `orders` ADD PARTITION (PARTITION p_20261115 VALUES LESS THAN (TO_DAYS('2026-11-16')))");
+    Check("PG 新增分区声明式半开区间", PartitionDdl.AddSql(DbEngine.PostgreSQL, "orders", p) ==
+        "CREATE TABLE orders_p_20261115 PARTITION OF orders FOR VALUES FROM ('2026-11-15 00:00:00') TO ('2026-11-16 00:00:00')");
+    Check("不支持分区方言返回空", PartitionDdl.AddSql(DbEngine.SQLite, "orders", p) == null && PartitionDdl.DropSql(DbEngine.SQLite, "orders", "p_x") == null);
+    Check("MySQL 归档分区 DROP PARTITION", PartitionDdl.DropSql(DbEngine.MySQL, "orders", "p_20261101") == "ALTER TABLE `orders` DROP PARTITION p_20261101");
+    Check("PG 归档分区 DROP 子表", PartitionDdl.DropSql(DbEngine.PostgreSQL, "orders", "p_20261101") == "DROP TABLE IF EXISTS orders_p_20261101");
+
+    var noon = new DateTime(2026, 11, 15, 12, 0, 0);
+    var day = TimeSpan.FromDays(1);
+    var plan = PartitionRoller.EnsureCoverage(new[]
+    {
+        new TimePartition("p_20261101", new DateTime(2026, 11, 1), new DateTime(2026, 11, 2)),
+        new TimePartition("p_20261114", new DateTime(2026, 11, 14), new DateTime(2026, 11, 15)),
+    }, noon, day, 7);
+    var mysqlSqls = PartitionDdl.PlanSql(DbEngine.MySQL, "orders", plan);
+    Check("整计划先归档后新增有序", mysqlSqls.Count == 2 && mysqlSqls[0].Contains("DROP PARTITION p_20261101") && mysqlSqls[1].Contains("ADD PARTITION (PARTITION p_20261115"));
+    Check("不支持分区整计划返回空表", PartitionDdl.PlanSql(DbEngine.SQLite, "orders", plan).Count == 0);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
