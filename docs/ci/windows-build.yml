@@ -1,0 +1,25 @@
+name: windows-build
+
+# 云端 Windows 验证流水线（预置）：建仓后由推送清单把本文件移入 .github/workflows/ 即生效。
+# 职责：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试，补沙箱无法覆盖的部分。
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build solution (0 warning 0 error gate)
+        run: dotnet build TaoDBM.slnx -warnaserror
+
+      - name: Logic tests
+        run: dotnet run --project tests/TaoDBM.LogicTest -c Release

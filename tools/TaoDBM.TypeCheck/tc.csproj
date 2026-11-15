@@ -16,14 +16,30 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Core/TaoDBM.Core.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Linux 沙箱 App 层类型闸：用 WinUI/WinRT 托管桩程序集做纯编译校验（不运行 XAML）。
+       桩目录可用 -p:StubDir=... 覆盖；桩来自 nuget.org 的
+       Microsoft.WindowsAppSDK.WinUI 2.6.5 与 Microsoft.Windows.SDK.NET.Ref 10.0.19041.56。 -->
+  <PropertyGroup>
+    <StubDir Condition="'$(StubDir)' == ''">/root/workspace/.nuget/stubs/was</StubDir>
+  </PropertyGroup>
+
+  <ItemGroup>
     <Reference Include="Microsoft.WinUI">
-      <HintPath>/root/workspace/.nuget/packages/microsoft.windowsappsdk/2.6.5/lib/net6.0-windows10.0.18362.0/Microsoft.WinUI.dll</HintPath>
+      <HintPath>$(StubDir)/WinUI.dll</HintPath>
     </Reference>
     <Reference Include="WinRT.Runtime">
-      <HintPath>/root/workspace/.nuget/packages/microsoft.windows.sdk.net.ref/10.0.19041.56/lib/net8.0/WinRT.Runtime.dll</HintPath>
+      <HintPath>$(StubDir)/WinRT.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Windows.SDK.NET">
-      <HintPath>/root/workspace/.nuget/packages/microsoft.windows.sdk.net.ref/10.0.19041.56/lib/net8.0/Microsoft.Windows.SDK.NET.dll</HintPath>
+      <HintPath>$(StubDir)/Microsoft.Windows.SDK.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.InteractiveExperiences.Projection">
+      <HintPath>$(StubDir)/Microsoft.InteractiveExperiences.Projection.dll</HintPath>
     </Reference>
   </ItemGroup>
 

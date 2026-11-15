@@ -32,14 +32,17 @@ public static class SettingsDialog
                 Children =
                 {
                     new TextBlock { Text = title },
-                    new TextBlock { Text = vm.DescriptionFor(kind), Foreground = Ant.TextSub, FontSize = 12 },
+                    new TextBlock { Text = SettingsViewModel.DescriptionFor(kind), Foreground = Ant.TextSub, FontSize = 12 },
                 }
             };
             rb.Checked += (_, _) => vm.CloseBehavior = kind;
         }
-        Bind(new RadioButton(), "每次询问", Core.CloseBehavior.Ask);
-        Bind(new RadioButton(), "最小化到托盘", Core.CloseBehavior.Tray);
-        Bind(new RadioButton(), "直接退出", Core.CloseBehavior.Exit);
+        var rbAsk = new RadioButton();
+        var rbTray = new RadioButton();
+        var rbExit = new RadioButton();
+        Bind(rbAsk, "每次询问", Core.CloseBehavior.Ask);
+        Bind(rbTray, "最小化到托盘", Core.CloseBehavior.Tray);
+        Bind(rbExit, "直接退出", Core.CloseBehavior.Exit);
 
         desc.Text = vm.Description;
         vm.PropertyChanged += (_, e) =>
