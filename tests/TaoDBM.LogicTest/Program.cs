@@ -1182,6 +1182,27 @@ Layer("集成");
     Check("缺文件按无快照降级", DeletedRowRecovery.LoadJsonl(Path.Combine(dir, "none.json")) == null);
 }
 
+// 15) ReadRouter 延迟感知读路由（主从底座）
+{
+    var nodes = new List<ReplicaNode>
+    {
+        new("r2", 3, true), new("r1", 1, true), new("r3", 30, true), new("r4", 2, false),
+    };
+    var d = ReadRouter.Route(nodes, maxLagSeconds: 5);
+    Check("路由按延迟升序过滤", d.EligibleReplicas.SequenceEqual(new[] { "r1", "r2" }) && !d.FellBackToPrimary);
+
+    var lagged = ReadRouter.Route(nodes, maxLagSeconds: 0);
+    Check("全部超阈值回落主库", lagged.FellBackToPrimary && lagged.EligibleReplicas.Count == 0 && lagged.HasTarget);
+
+    var tie = ReadRouter.Route(new List<ReplicaNode> { new("b", 5, true), new("a", 5, true) }, 5);
+    Check("同延迟按名字定序", tie.EligibleReplicas.SequenceEqual(new[] { "a", "b" }));
+
+    var toggle = ReadRouter.AutoToggle(nodes, 5);
+    Check("自动摘除超时与故障副本", toggle.First(t => t.Name == "r3").ShouldServeReads == false &&
+        toggle.First(t => t.Name == "r4").ShouldServeReads == false &&
+        toggle.First(t => t.Name == "r1").ShouldServeReads == true);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
