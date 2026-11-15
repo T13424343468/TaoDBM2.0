@@ -21,9 +21,13 @@ jobs:
       - name: Build libraries (Core/Abstractions/Infrastructure)
         shell: pwsh
         run: |
-          $out = dotnet build Src/TaoDBM.Core.Abstractions Src/TaoDBM.Core Src/TaoDBM.Infrastructure -warnaserror 2>&1
-          $out | ForEach-Object { Write-Host "$_" }
-          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
+          $fail = 0
+          foreach ($p in @('Src/TaoDBM.Core.Abstractions','Src/TaoDBM.Core','Src/TaoDBM.Infrastructure')) {
+            $out = dotnet build $p -warnaserror 2>&1
+            $out | ForEach-Object { Write-Host "$_" }
+            if ($LASTEXITCODE -ne 0) { $fail = 1; $out | Where-Object { "$_" -match "error" } | Select-Object -First 10 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" } }
+          }
+          if ($fail -ne 0) { exit 1 }
 
       - name: Logic tests (Release)
         shell: pwsh
