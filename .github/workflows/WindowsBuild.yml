@@ -145,3 +145,47 @@ jobs:
           path: |
             out/*.msi
             install.log
+
+  trim-r2r:
+    # 裁剪+预编译可行性验证（保全口径）：TrimMode=partial 只裁框架、应用壳不裁；R2R 预编译启动提速
+    # 独立 job 不碰主交付链；启动冒烟 10 秒判存活，裁出问题立刻红灯
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish baseline (untrimmed, for size compare)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -o publish/full 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish trimmed + ReadyToRun
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=true -p:TrimMode=partial -p:PublishReadyToRun=true -o publish/trim 2>&1
+          $out | ForEach-Object { Write-Host "$_" }
+          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
+          if (-not (Test-Path "publish/trim/TaoDBM.exe")) { Write-Host "::error::payload missing TaoDBM.exe"; exit 1 }
+          $full = (Get-ChildItem publish/full -Recurse | Measure-Object Length -Sum).Sum / 1MB
+          $trim = (Get-ChildItem publish/trim -Recurse | Measure-Object Length -Sum).Sum / 1MB
+          Write-Host "[SIZE] full=$([Math]::Round($full,1))MB trimmed+r2r=$([Math]::Round($trim,1))MB"
+
+      - name: Launch smoke (10s alive check on trimmed build)
+        shell: pwsh
+        run: |
+          $p = Start-Process "publish/trim/TaoDBM.exe" -PassThru
+          Start-Sleep -Seconds 10
+          $alive = -not $p.HasExited
+          if ($alive) { Write-Host "[OK] trimmed app alive after 10s" } else { Write-Host "::error::trimmed app exited early code=$($p.ExitCode)" }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          if (-not $alive) { exit 1 }
