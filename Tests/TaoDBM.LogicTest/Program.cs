@@ -1734,6 +1734,61 @@ Layer("集成");
     Check("协作-坏包不炸", TeamShareMerge.FromJson("{坏") == null, "");
 }
 
+// 档三纯引擎：定时备份计划（节奏生成/下次执行/保留清理）+ 权限审计（GRANT 解析/风险发现/对等回收）
+{
+    var anchor = DateTimeOffset.Parse("2026-11-15T00:00:00+08:00");
+    var policy = new BackupPolicy(24, 6, 3, anchor);
+
+    // 1) 槽位生成：窗口截取与增量挂靠
+    var slots = BackupPlanner.Schedule(policy,
+        DateTimeOffset.Parse("2026-11-15T12:00:00+08:00"), DateTimeOffset.Parse("2026-11-17T00:00:00+08:00"));
+    Check("备份-窗口外全量跳过", slots.Count == 5 && slots.Count(s => s.Kind == "full") == 2
+        && !slots.Any(s => s.At <= DateTimeOffset.Parse("2026-11-15T12:00:00+08:00")),
+        string.Join(",", slots.Select(s => $"{s.Kind}:{s.At:MM-dd HH}:{s.Seq}")));
+    Check("备份-增量挂靠全量序号", slots.Where(s => s.Kind == "incr").All(s => s.Seq == 1) && slots.First(s => s.Kind == "full").Seq == 1, "");
+    var next = BackupPlanner.NextRun(policy, DateTimeOffset.Parse("2026-11-15T23:30:00+08:00"));
+    Check("备份-下次执行时间", next == DateTimeOffset.Parse("2026-11-16T00:00:00+08:00"), next?.ToString() ?? "null");
+
+    // 2) 保留清理：过期满量连同挂靠增量出列
+    var existing = new List<BackupSlot>();
+    for (int i = 0; i <= 4; i++)
+    {
+        existing.Add(new BackupSlot(anchor.AddDays(i), "full", i));
+        existing.Add(new BackupSlot(anchor.AddDays(i).AddHours(6), "incr", i));
+        if (i >= 3) existing.Add(new BackupSlot(anchor.AddDays(i).AddHours(12), "incr", i));
+    }
+    var prune = BackupPlanner.Prune(existing, policy);
+    Check("备份-过期满量出列", prune.Expired.Count(s => s.Kind == "full") == 2 && prune.RetainedFulls == 3, $"fulls={prune.RetainedFulls}");
+    Check("备份-挂靠增量随全量出列", prune.Expired.Count(s => s.Kind == "incr") == 2 && prune.RetainedIncrs == 5, $"incrs={prune.RetainedIncrs}");
+    Check("备份-策略JSON往返", BackupPlanner.FromJson(BackupPlanner.ToJson(policy)) is { } bp && bp.RetainFulls == 3 && bp.IncrEveryHours == 6, "");
+    Check("备份-坏策略不炸", BackupPlanner.FromJson("{坏") == null, "");
+    bool threwBak = false;
+    try { BackupPlanner.Schedule(new BackupPolicy(0, 0, 1, anchor), anchor, anchor.AddDays(1)); } catch (ArgumentOutOfRangeException) { threwBak = true; }
+    Check("备份-零间隔拒绝", threwBak, "");
+
+    // 3) 权限审计：解析→风险发现→对等回收
+    var grants = PermissionAuditor.Parse(new[]
+    {
+        "GRANT SELECT, INSERT ON app.* TO 'app'@'10.0.0.%';",
+        "GRANT ALL ON *.* TO 'dev'@'%', 'ops'@'10.0.0.5' WITH GRANT OPTION;",
+        "GRANT FILE ON *.* TO 'report'@'10.0.0.7';",
+        "GRANT SELECT ON *.* TO PUBLIC;",
+        "REVOKE SELECT ON app.* FROM 'app'@'10.0.0.%';",
+    });
+    Check("权限-GRANT解析计数", grants.Count == 5, grants.Count.ToString());
+    var app = grants.First(r => r.Grantee == "'app'@'10.0.0.%'");
+    Check("权限-权限与对象解析", app.Privileges.SequenceEqual(new[] { "SELECT", "INSERT" }) && app.Object == "app.*" && !app.WithGrantOption, "");
+    Check("权限-多账号拆分与转授", grants.Count(r => r.Grantee == "'dev'@'%'") == 1 && grants.First(r => r.Grantee == "'ops'@'10.0.0.5'").WithGrantOption, "");
+    var findings = PermissionAuditor.Audit(grants);
+    Check("权限-宽账号全权判danger", findings.Any(f => f.Grantee == "'dev'@'%'" && f.Code == "R101" && f.Severity == "danger"), "");
+    Check("权限-可转授逐条报R102", findings.Count(f => f.Code == "R102") == 2, findings.Count(f => f.Code == "R102").ToString());
+    Check("权限-高危权限报R103", findings.Any(f => f.Grantee == "'report'@'10.0.0.7'" && f.Code == "R103" && f.Message.Contains("FILE")), "");
+    Check("权限-受限SELECT不误报", !findings.Any(f => f.Grantee == "'app'@'10.0.0.%'"), "");
+    Check("权限-PUBLIC只读不算全权", !findings.Any(f => f.Grantee == "PUBLIC" && f.Code == "R101"), "");
+    var revokes = PermissionAuditor.RevokeSql(app);
+    Check("权限-对等REVOKE生成", revokes.Single() == "REVOKE SELECT, INSERT ON app.* FROM 'app'@'10.0.0.%';", revokes.FirstOrDefault() ?? "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
