@@ -1020,6 +1020,41 @@ Layer("集成");
         new Dictionary<string, MaskRule> { ["member_id"] = MaskRule.Phone }) == MaskRule.Phone);
 }
 
+// 10) ChangeAudit 改数留痕审计 + 单条回滚（安全线）
+{
+    var before = new Dictionary<string, string?> { ["id"] = "7", ["age"] = "25", ["city"] = "北京", ["note"] = "it's ok", ["tag"] = null };
+    var after = new Dictionary<string, string?> { ["id"] = "7", ["age"] = "30", ["city"] = "北京", ["note"] = null, ["tag"] = "vip" };
+    var entry = ChangeAudit.CaptureRow("users", "id", "7", before, after, "update users set age = 30 where id = 7");
+    Check("留痕只记改动列", entry.HasChanges && entry.Changes.Count == 3 &&
+        entry.Changes[0].Column == "age" && entry.Changes[1].Column == "note" && entry.Changes[2].Column == "tag",
+        string.Join(",", entry.Changes.Select(c => c.Column)));
+    Check("留痕带时间与语句", entry.TimestampUtc.Length > 0 && entry.Statement.Contains("users", StringComparison.Ordinal));
+    Check("单条回滚语句含NULL旧值", ChangeAudit.UndoSql(entry) ==
+        "UPDATE `users` SET `age` = '25', `note` = 'it''s ok', `tag` = NULL WHERE `id` = '7'", ChangeAudit.UndoSql(entry));
+    Check("回滚转义单引号", ChangeAudit.UndoSql(ChangeAudit.CaptureRow("t", "id", "1",
+        new Dictionary<string, string?> { ["v"] = "it's ok" }, new Dictionary<string, string?> { ["v"] = "x" })) ==
+        "UPDATE `t` SET `v` = 'it''s ok' WHERE `id` = '1'");
+
+    var noChange = ChangeAudit.CaptureRow("users", "id", "7", before, new Dictionary<string, string?>(before));
+    Check("无差异不落账", !noChange.HasChanges && ChangeAudit.UndoSql(noChange) == "");
+
+    var e1 = ChangeAudit.CaptureRow("users", "id", "1", new Dictionary<string, string?> { ["a"] = "1" }, new Dictionary<string, string?> { ["a"] = "2" });
+    var e2 = ChangeAudit.CaptureRow("users", "id", "2", new Dictionary<string, string?> { ["a"] = "1" }, new Dictionary<string, string?> { ["a"] = "3" });
+    var script = ChangeAudit.UndoScript(new List<AuditEntry> { e1, e2 });
+    Check("回滚脚本倒序分号换行", script == "UPDATE `users` SET `a` = '1' WHERE `id` = '2';\nUPDATE `users` SET `a` = '1' WHERE `id` = '1';\n", script.Replace("\n", "\\n", StringComparison.Ordinal));
+
+    var dir = Path.Combine(Path.GetTempPath(), "taodbm-audit-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(dir);
+    var journal = Path.Combine(dir, "audit.jsonl");
+    ChangeAudit.SaveJsonl(journal, new List<AuditEntry> { entry, e1 });
+    var back = ChangeAudit.LoadJsonl(journal);
+    Check("留痕账 JSONL 往返", back.Count == 2 && back[0].Table == "users" &&
+        back[0].Changes.Count == 3 && back[0].Changes[1].OldValue == "it's ok" && back[1].PkValue == "1");
+    File.WriteAllText(journal, "{broken\n" + File.ReadAllText(journal));
+    Check("损坏行容错跳过", ChangeAudit.LoadJsonl(journal).Count == 2);
+    Check("缺账文件按空账", ChangeAudit.LoadJsonl(Path.Combine(dir, "none.jsonl")).Count == 0);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
