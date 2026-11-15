@@ -11,13 +11,13 @@
   <ItemGroup>
     <!-- 拆分后改为工程引用，新增文件无需再逐个登记；
          Exporter 属 App 的 UI 文件但为纯逻辑，保留在 App，此处单独引入（A1 可考虑移入 Core）。 -->
-    <Compile Include="..\..\src\TaoDBM.App\UI\Exporter.cs" Link="Exporter.cs" />
+    <Compile Include="..\..\Src\TaoDBM.App\UI\Exporter.cs" Link="Exporter.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\TaoDBM.Core\TaoDBM.Core.csproj" />
-    <ProjectReference Include="..\..\src\TaoDBM.Core.Abstractions\TaoDBM.Core.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\TaoDBM.Infrastructure\TaoDBM.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Src\TaoDBM.Core\TaoDBM.Core.csproj" />
+    <ProjectReference Include="..\..\Src\TaoDBM.Core.Abstractions\TaoDBM.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Src\TaoDBM.Infrastructure\TaoDBM.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

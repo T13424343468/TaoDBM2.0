@@ -1,15 +1,15 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/TaoDBM.App/TaoDBM.App.csproj" />
-    <Project Path="src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
-    <Project Path="src/TaoDBM.Core/TaoDBM.Core.csproj" />
-    <Project Path="src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
+  <Folder Name="/Src/">
+    <Project Path="Src/TaoDBM.App/TaoDBM.App.csproj" />
+    <Project Path="Src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
+    <Project Path="Src/TaoDBM.Core/TaoDBM.Core.csproj" />
+    <Project Path="Src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/TaoDBM.LogicTest/TaoDBM.LogicTest.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="Tests/TaoDBM.LogicTest/TaoDBM.LogicTest.csproj" />
   </Folder>
-  <Folder Name="/tools/" />
-  <Folder Name="/tools/TaoDBM.TypeCheck/">
-    <Project Path="tools/TaoDBM.TypeCheck/tc.csproj" />
+  <Folder Name="/Tools/" />
+  <Folder Name="/Tools/TaoDBM.TypeCheck/">
+    <Project Path="Tools/TaoDBM.TypeCheck/tc.csproj" />
   </Folder>
 </Solution>

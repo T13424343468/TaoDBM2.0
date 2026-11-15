@@ -1498,16 +1498,16 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var root = ProjRoot();
-    var tray = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", "TrayIcon.cs"));
+    var tray = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", "TrayIcon.cs"));
     Check("托盘注册带主窗句柄（NIM_ADD 成败的唯一键）", tray.Contains("hWnd = _ownerHwnd"));
     Check("托盘添加结果如实记录不被掩盖", tray.Contains("_added = Shell_NotifyIconW(NIM_ADD"));
     Check("explorer 重启后托盘自动补挂", tray.Contains("TaskbarCreated") && tray.Contains("AddToShell"));
     Check("托盘右键带我的连接动态区", tray.Contains("RecentProvider") && tray.Contains("RecentRequested") && tray.Contains("我的连接"));
-    var mwCs3 = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml.cs"));
+    var mwCs3 = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml.cs"));
     Check("主窗接线托盘连接快捷区", mwCs3.Contains("RecentProvider") && mwCs3.Contains("TrayConnect"));
     // 关窗分流铁律（2026-11-03 真机反馈常驻）：托盘没挂上时绝不隐藏玩消失——要么真挂上再拦，要么如实退出
     Check("托盘挂载状态如实可查", tray.Contains("public bool IsAdded"));
@@ -1521,25 +1521,25 @@ Layer("系统");
     Check("子类化其余消息链回原过程", tray.Contains("CallWindowProcW"));
     Check("退出时还原主窗过程", tray.Contains("GWLP_WNDPROC") && tray.Contains("_prevProc"));
     Check("托盘诊断写入日志且带错误码", tray.Contains("Core.AppLog.Write") && tray.Contains("GetLastWin32Error"));
-    Check("日志目录固定在数据根 logs", File.ReadAllText(Path.Combine(root, "src", "TaoDBM.Infrastructure", "AppLog.cs")).Contains("\"logs\""));
+    Check("日志目录固定在数据根 logs", File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.Infrastructure", "AppLog.cs")).Contains("\"logs\""));
     // 陶瓷质感（2026-11-06 用户定稿，对齐 TaoAgent/TaoPad）：卡片面 XAML 资源换纵向釉面微渐变，
     // 三套主题统一生效；异常退回纯色不阻断换肤；墨夜配色本体不被触碰（母本锚点断言在上文主题块）。
-    var antCs = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", "Ant.cs"));
+    var antCs = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", "Ant.cs"));
     Check("陶瓷质感：釉面微渐变挂载到卡片资源且随主题重涂",
         antCs.Contains("ApplyCeramicCard(pal)") && antCs.Contains("LinearGradientBrush") && antCs.Contains("Offset = 0.55"));
     Check("陶瓷质感：通道增减受钳制且异常退回纯色画刷",
         antCs.Contains("Math.Min(255, v + 15)") && antCs.Contains("Math.Max(0, v - 12)")
         && antCs.Contains("Application.Current.Resources[\"AntCard\"] = brush") && antCs.Contains("Application.Current.Resources[\"AntCard\"] = Card"));
-    var csprojText = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "TaoDBM.App.csproj"));
+    var csprojText = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "TaoDBM.App.csproj"));
     // 二期拆分后安装包工程暂未纳入，wxs 存在才校验
-    var wxsPath = Path.Combine(root, "src", "Installer", "Package.wxs");
+    var wxsPath = Path.Combine(root, "Src", "Installer", "Package.wxs");
     var versionOk = csprojText.Contains("<Version>2.0.0<")
         && (!File.Exists(wxsPath) || File.ReadAllText(wxsPath).Contains("Version=\"2.0.0\""));
     Check("版本号升级可验装（标题栏 v2.0.0）", versionOk);
     // 弹窗表单右缘让出滚动条带（2026-11-03 真机截图：浮层滚动条压在输入框右缘像一条越界竖线）
     int bandOk = 0;
     foreach (var f in new[] { "ConnectionDialog.cs", "DataSyncDialog.cs", "FakerDialog.cs", "WorkTab.cs" })
-        if (File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", f)).Contains("Margin = new Thickness(0, 0, 12, 0)")) bandOk++;
+        if (File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", f)).Contains("Margin = new Thickness(0, 0, 12, 0)")) bandOk++;
     Check("弹窗表单统一让出滚动条带（4 处）", bandOk == 4, $"{bandOk}/4");
 }
 {
@@ -1581,13 +1581,13 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var srcRoot = SrcRoot();
-    var xaml = File.ReadAllText(Path.Combine(srcRoot, "src", "TaoDBM.App", "MainWindow.xaml"));
+    var xaml = File.ReadAllText(Path.Combine(srcRoot, "Src", "TaoDBM.App", "MainWindow.xaml"));
     Check("主窗根板钉主题底色", xaml.Contains("<Grid Background=\"{ThemeResource AntBg}\">"));
-    var tab = File.ReadAllText(Path.Combine(srcRoot, "src", "TaoDBM.App", "UI", "WorkTab.cs"));
+    var tab = File.ReadAllText(Path.Combine(srcRoot, "Src", "TaoDBM.App", "UI", "WorkTab.cs"));
     Check("标签根板层色底在位", tab.Contains("Background = Ant.Bg;"));
     bool EmptyHintOk(string marker)
     {
@@ -1602,7 +1602,7 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var treeRoot = TreeRoot();
@@ -1611,7 +1611,7 @@ Layer("系统");
     {
         var rel = p.Substring(treeRoot.Length + 1).Replace('\\', '/');
         if (rel.Contains("/obj/") || rel.Contains("/bin/") || rel.Contains("/.git/") || rel.Contains("/.vs/")
-            || rel.StartsWith("typecheck/") || rel.StartsWith("logictest/") || rel.StartsWith("docs/")) continue;
+            || rel.StartsWith("typecheck/") || rel.StartsWith("logictest/") || rel.StartsWith("Docs/")) continue;
         if (rel.Any(c => c > 127)) { clean = false; hit = rel; break; }
         if (p.EndsWith(".cs") || p.EndsWith(".xaml"))
         {
@@ -1627,10 +1627,10 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
-    var csproj = Path.Combine(ProjRoot(), "src", "TaoDBM.App", "TaoDBM.App.csproj");
+    var csproj = Path.Combine(ProjRoot(), "Src", "TaoDBM.App", "TaoDBM.App.csproj");
     var doc = System.Xml.Linq.XDocument.Load(csproj);
     string[] itemTags = { "Content", "Page", "None", "PackageReference", "ProjectReference", "Reference", "EmbeddedResource", "Compile", "ApplicationDefinition", "Resource", "Folder" };
     var stray = doc.Descendants("PropertyGroup")
@@ -1664,15 +1664,15 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var root = ProjRoot();
-    var mwXaml = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml"));
+    var mwXaml = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml"));
     Check("页面层无写死旧蓝 #1677FF", !mwXaml.Contains("#1677FF"));
-    var mwCs = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml.cs"));
+    var mwCs = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml.cs"));
     Check("标题栏随象而染（AppWindow.TitleBar 钉色在位）", mwCs.Contains("AppWindow.TitleBar") && mwCs.Contains("ButtonHoverBackgroundColor"));
-    var ant = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", "Ant.cs"));
+    var ant = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", "Ant.cs"));
     Check("系统强调色族随主题（accent 挂会变色画刷）", ant.Contains("SystemControlForegroundAccentBrush") && ant.Contains("ThemeApplied"));
 }
 {
@@ -1681,17 +1681,17 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var root = ProjRoot();
-    var appXaml = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "App.xaml"));
+    var appXaml = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "App.xaml"));
     Check("App.xaml 不写死 accent 色族（含浅深变体全由 Ant 运行时管）", !appXaml.Contains("SystemAccentColor") && !appXaml.Contains("#1677FF"));
-    var antCs = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", "Ant.cs"));
+    var antCs = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", "Ant.cs"));
     Check("主色底字随象（OnPrimary 画刷，墨夜近黑，accent 浅深变体同源）",
         antCs.Contains("OnPrimary") && antCs.Contains("131211") && antCs.Contains("SystemAccentColorLight1") && antCs.Contains("SystemAccentColorDark1"));
     string uiHit = "";
-    foreach (var f in Directory.GetFiles(Path.Combine(root, "src", "TaoDBM.App", "UI"), "*.cs"))
+    foreach (var f in Directory.GetFiles(Path.Combine(root, "Src", "TaoDBM.App", "UI"), "*.cs"))
     {
         var s = File.ReadAllText(f);
         bool hardWhite = s.Contains("Colors.White");
@@ -1700,11 +1700,11 @@ Layer("系统");
         if (hardWhite || hardBlue || hlOld) { uiHit = Path.GetFileName(f); break; }
     }
     Check("界面层无写死旧蓝与死白字（首违规: " + uiHit + "）", uiHit == "");
-    var mwXaml = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml"));
+    var mwXaml = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml"));
     Check("顶栏文字随象（AntOnPrimary 资源在位）", mwXaml.Contains("AntOnPrimary") && !mwXaml.Contains("Foreground=\"White\""));
-    var wtCs = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "UI", "WorkTab.cs"));
+    var wtCs = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "UI", "WorkTab.cs"));
     Check("SQL 高亮关键字取主题主色且换肤重刷", wtCs.Contains("Ant.Primary.Color") && wtCs.Contains("Ant.Text.Color") && wtCs.Contains("ThemeApplied"));
-    var rb = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.Core", "ReportBuilder.cs"));
+    var rb = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.Core", "ReportBuilder.cs"));
     Check("HTML 报告取色随主题", !rb.Contains("#1677FF") && rb.Contains("AntPrimary"));
 }
 {
@@ -1714,7 +1714,7 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     static int BCount(byte[] arr, byte[] pat)
@@ -1766,12 +1766,12 @@ Layer("系统");
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && d != null; i++, d = d.Parent!)
-            if (File.Exists(Path.Combine(d.FullName, "src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
+            if (File.Exists(Path.Combine(d.FullName, "Src", "TaoDBM.App", "MainWindow.xaml"))) return d.FullName;
         return AppContext.BaseDirectory;
     }
     var root = ProjRoot();
     // 二期拆分后安装包工程暂未纳入，wxs 存在才校验
-    var wxsPath = Path.Combine(root, "src", "Installer", "Package.wxs");
+    var wxsPath = Path.Combine(root, "Src", "Installer", "Package.wxs");
     if (File.Exists(wxsPath))
     {
         var wxs = File.ReadAllText(wxsPath);
@@ -1779,12 +1779,12 @@ Layer("系统");
     Check("两条快捷方式显式带安装包图标引用", System.Text.RegularExpressions.Regex.Matches(wxs, "Icon=\"TaoDBMIco\"").Count == 2);
     Check("开始菜单目录卸载清理在位", wxs.Contains("RemoveStartMenuDir"));
     }
-    var mwXaml = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml"));
+    var mwXaml = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml"));
     Check("主题菜单独立成钮且在关于左侧（全系勾选样式）",
         mwXaml.Contains("BtnTheme") && mwXaml.IndexOf("BtnTheme") < mwXaml.IndexOf("BtnAbout")
         && System.Text.RegularExpressions.Regex.Matches(mwXaml, "ToggleMenuFlyoutItem").Count == 3
         && !mwXaml.Contains("主题："));
-    var mwCs2 = File.ReadAllText(Path.Combine(root, "src", "TaoDBM.App", "MainWindow.xaml.cs"));
+    var mwCs2 = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "MainWindow.xaml.cs"));
     Check("主题对勾随象刷新（切象同步勾选+启动初始化）",
         mwCs2.Contains("UpdateThemeChecks") && mwCs2.Contains("ThemeInk.IsChecked")
         && mwCs2.Contains("ThemeSky.IsChecked") && mwCs2.Contains("ThemeNight.IsChecked"));

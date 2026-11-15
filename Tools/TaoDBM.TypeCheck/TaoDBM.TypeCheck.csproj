@@ -11,14 +11,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.App/**/*.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.App/**/*.cs" />
     <Compile Include="Stubs.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Core/TaoDBM.Core.csproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)../../src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Core/TaoDBM.Core.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
   </ItemGroup>
 
   <!-- Linux 沙箱 App 层类型闸：用 WinUI/WinRT 托管桩程序集做纯编译校验（不运行 XAML）。

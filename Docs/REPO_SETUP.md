@@ -5,7 +5,7 @@
 1. 配置凭据：`git config --global credential.helper store` 后首次推送输入；或 `git remote set-url` 用 PAT 形式 URL。凭据只进 credential store，不写进仓库文件。
 2. 建两空仓（若老板给 PAT 让自建）：`TaoDBM`（私仓，全量历史）+ `TaoDBM`（公仓，同历史或仅二期树，按老板口径）。
 3. 挂远端：`git remote add origin <私仓地址>`；二期树分支 `main` 与 `phase2/a1-streaming` 均推送：`git push -u origin main phase2/a1-streaming`。
-4. 启用流水线：把 `docs/ci/windows-build.yml` 移入 `.github/workflows/`（本仓库 Write 工具限制，先暂存于此），commit + push，确认 Actions 首跑全绿。
+4. 启用流水线：把 `Docs/Ci/WindowsBuild.yml` 移入 `.github/workflows/`（本仓库 Write 工具限制，先暂存于此），commit + push，确认 Actions 首跑全绿。
 5. 核验：GitHub 网页看提交数与分支；Actions 跑 `windows-build`（Windows 真环境全量编译 + LogicTest）。
 6. 公仓同步：若公仓独立，`git push <公仓地址> main` 并核对提交数一致。
 7. 回报老板：私仓/公仓地址、Actions 首跑结论、DEVICE_CHECKLIST（见下）随包可测。

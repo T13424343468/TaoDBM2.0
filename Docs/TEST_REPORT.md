@@ -22,4 +22,4 @@
 - 覆盖：22 个引擎/模块单测 + 集成/系统/暴力/万链五层回归。
 - 本轮新增：HotspotSalting 热点盐化（盐化方案/FNV 写路由/读扇出，2–1024 槽边界校验）、OnlineDdl 在线改表扇出（pt-osc 式步骤：建影子表→变更→主键分段回填→追平→单语句原子换名→A5-2 对账后清理），合计 23 项断言。
 - Windows 真机/云测：受限未跑；XAML 编译与运行行为待真机验证（兜底口径：云测延后补验）。
-- 提交链：全部本地；远端推送待公仓添加可写 deploy key（见 docs/REPO_SETUP.md 与 scripts/push-phase2.sh）。
+- 提交链：全部本地；远端推送待公仓添加可写 deploy key（见 Docs/REPO_SETUP.md 与 Scripts/PushPhase2.sh）。

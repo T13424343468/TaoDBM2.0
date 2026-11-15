@@ -8,7 +8,7 @@
     <RootNamespace>TaoDBM</RootNamespace>
     <AssemblyName>TaoDBM</AssemblyName>
     <ApplicationIcon>Assets\TaoDBM.ico</ApplicationIcon>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationManifest>App.manifest</ApplicationManifest>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
@@ -36,7 +36,7 @@
   <ItemGroup>
     <Content Include="Assets\TaoDBM.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\TaoDBM.png" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="app.manifest" />
+    <None Update="App.manifest" />
   </ItemGroup>
 
 </Project>
