@@ -1557,6 +1557,106 @@ Layer("集成");
     }
 }
 
+// 智能线 C2 第二批：数据体检报告（空值/重复/分布突变）、查询结果出图聚合、离线快照包（SQLite 真库采样→离线浏览再聚合）
+{
+    // 1) 数据体检：空值与重复
+    var profs = new List<ColumnProfile>
+    {
+        new("orders", "region", 1000, 5, 10, null, new Dictionary<string, double> { ["华东"] = 0.6, ["华北"] = 0.4 }),
+        new("orders", "phone", 1000, 600, 0),
+        new("orders", "email", 1000, 200, 500),
+    };
+    var rep = DataHealthCheck.Inspect(profs);
+    Check("智能线2-空值红线判danger", rep.Findings.Any(f => f.Column == "phone" && f.Code == "H001" && f.Severity == "danger"), "");
+    Check("智能线2-空值偏高判warn", rep.Findings.Any(f => f.Column == "email" && f.Code == "H001" && f.Severity == "warn"), "");
+    Check("智能线2-重复率报H002", rep.Findings.Any(f => f.Column == "email" && f.Code == "H002"), "");
+    Check("智能线2-健康列不误报", !rep.Findings.Any(f => f.Column == "region"), string.Join(",", rep.Findings.Select(f => f.Column)));
+    Check("智能线2-扣分口径", rep.Score == 70, rep.Score.ToString());
+    var repBack = DataHealthCheck.FromJson(DataHealthCheck.ToJson(rep));
+    Check("智能线2-体检报告往返", repBack != null && repBack.Score == rep.Score && repBack.Findings.Count == rep.Findings.Count, "");
+
+    // 2) 分布突变对比：类别占比漂移与均值漂移
+    var before = new List<ColumnProfile>
+    {
+        new("orders", "region", 1000, 0, 0, null, new Dictionary<string, double> { ["华东"] = 0.6, ["华北"] = 0.4 }),
+        new("orders", "amount", 1000, 0, 0, 100.0),
+    };
+    var afterSame = new List<ColumnProfile>
+    {
+        new("orders", "region", 1000, 0, 0, null, new Dictionary<string, double> { ["华东"] = 0.61, ["华北"] = 0.39 }),
+        new("orders", "amount", 1000, 0, 0, 101.0),
+    };
+    Check("智能线2-无突变不报", DataHealthCheck.Compare(afterSame, before).Count == 0, "");
+    var afterDrift = new List<ColumnProfile>
+    {
+        new("orders", "region", 1000, 0, 0, null, new Dictionary<string, double> { ["华东"] = 0.2, ["华北"] = 0.8 }),
+        new("orders", "amount", 1000, 0, 0, 150.0),
+    };
+    var drifts = DataHealthCheck.Compare(afterDrift, before);
+    Check("智能线2-类别占比突变", drifts.Any(f => f.Column == "region" && f.Code == "H003"), string.Join(",", drifts.Select(f => f.Code)));
+    Check("智能线2-均值漂移", drifts.Any(f => f.Column == "amount" && f.Code == "H004"), string.Join(",", drifts.Select(f => f.Code)));
+    Check("智能线2-新列不参与对比", DataHealthCheck.Compare(new List<ColumnProfile> { new("t", "c", 10, 0, 0) }, before).Count == 0, "");
+
+    // 3) 出图聚合：分类 TopN、直方图、时间序列、图型推荐
+    var qr = new QueryResult { Columns = { "city", "age", "day" } };
+    foreach (var (c, a, d) in new[] { ("上海", 20.0, "2026-01-01"), ("北京", 30.0, "2026-01-01"), ("上海", 40.0, "2026-02-01"), ("广州", 50.0, "2026-02-01"), ("上海", 60.0, "2026-03-01") })
+        qr.Rows.Add(new object?[] { c, a, DateTime.Parse(d) });
+    var cat = ChartSpecBuilder.CategoryCount(qr, "city", 2);
+    Check("智能线2-分类TopN计数", cat.Type == "bar" && cat.Labels[0] == "上海" && cat.Values[0] == 3 && cat.Labels.Count == 2, string.Join(",", cat.Labels));
+    var hist = ChartSpecBuilder.Histogram(qr, "age", 4);
+    Check("智能线2-直方图桶数守恒", hist.Type == "histogram" && hist.Labels.Count == 4 && hist.Values.Sum() == 5, string.Join("|", hist.Labels));
+    Check("智能线2-直方图末桶闭区间", hist.Labels[0].StartsWith("[20,") && hist.Labels[3].EndsWith("]"), hist.Labels[3]);
+    Check("智能线2-图型推荐", ChartSpecBuilder.RecommendType(qr, "age") == "histogram" && ChartSpecBuilder.RecommendType(qr, "day") == "line" && ChartSpecBuilder.RecommendType(qr, "city") == "bar", "");
+    var ts = ChartSpecBuilder.TimeSeries(qr, "day", null, "month");
+    Check("智能线2-月度分桶计数", ts.Type == "line" && ts.Labels.Count == 3 && ts.Values[0] == 2 && ts.Values[1] == 2 && ts.Values[2] == 1, string.Join(",", ts.Values));
+    var tsv = ChartSpecBuilder.TimeSeries(qr, "day", "age", "month");
+    Check("智能线2-月度求和", Math.Abs(tsv.Values[0] - 50) < 1e-9 && Math.Abs(tsv.Values[1] - 90) < 1e-9, string.Join(",", tsv.Values));
+    var specBack = ChartSpecBuilder.FromJson(ChartSpecBuilder.ToJson(ts));
+    Check("智能线2-图表规格往返", specBack != null && specBack.ChartId == ts.ChartId && specBack.Values.SequenceEqual(ts.Values), "");
+
+    // 4) 离线快照包：真库采样→打包→往返→指纹→不带库浏览与再聚合
+    var dbPath2 = Path.Combine(Path.GetTempPath(), "taodbm-snap-" + Guid.NewGuid().ToString("N") + ".db");
+    QueryResult sample;
+    await using (var conn3 = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath2}"))
+    {
+        conn3.Open();
+        using (var c = conn3.CreateCommand())
+        {
+            c.CommandText = "CREATE TABLE orders(id INTEGER PRIMARY KEY, region TEXT, amount REAL);" +
+                "INSERT INTO orders(region, amount) VALUES ('华东',10),('华东',20),('华北',30),('华南',40),('华东',50),('华北',60);";
+            c.ExecuteNonQuery();
+        }
+        using var q = conn3.CreateCommand();
+        q.CommandText = "SELECT region, amount FROM orders";
+        using var rd = q.ExecuteReader();
+        sample = new QueryResult { Title = "orders" };
+        for (int i = 0; i < rd.FieldCount; i++) sample.Columns.Add(rd.GetName(i));
+        while (rd.Read()) sample.Rows.Add(Enumerable.Range(0, rd.FieldCount).Select(i => (object?)rd.GetValue(i)).ToArray());
+    }
+    var tbl = SnapshotPackFile.FromQueryResult("orders", sample, maxRows: 4);
+    Check("智能线2-快照截断留痕", tbl.Rows.Count == 4 && tbl.TotalRows == 6, $"{tbl.Rows.Count}/{tbl.TotalRows}");
+    var pack = SnapshotPackFile.Create("订单离线包", "demo", new[] { tbl }, "体检样例");
+    pack.Tables.Add(SnapshotPackFile.FromQueryResult("meta", new QueryResult { Columns = { "k" }, Rows = { new object?[] { "v" } } }));
+    var fp = SnapshotPackFile.Fingerprint(pack);
+    var packJson = SnapshotPackFile.ToJson(pack);
+    Check("智能线2-快照无凭据键", !packJson.Contains("password", StringComparison.OrdinalIgnoreCase), "");
+    var packBack = SnapshotPackFile.FromJson(packJson);
+    Check("智能线2-快照往返", packBack != null && packBack.Tables.Count == 2 && packBack.Tables[0].TotalRows == 6, "");
+    Check("智能线2-指纹一致", packBack != null && SnapshotPackFile.Fingerprint(packBack) == fp, "");
+    packBack!.Tables[0].Rows[0][1] = "999999";
+    Check("智能线2-篡改可发现", SnapshotPackFile.Fingerprint(packBack) != fp, "");
+    var offline = SnapshotPackFile.GetTable(packBack, "orders");
+    Check("智能线2-离线取表不碰原库", offline != null && offline!.Columns.SequenceEqual(new[] { "region", "amount" }), "");
+    Check("智能线2-取不到表返回空", SnapshotPackFile.GetTable(packBack, "nope") == null, "");
+    var offChart = ChartSpecBuilder.CategoryCount(SnapshotPackFile.ToQueryResult(offline!), "region");
+    Check("智能线2-离线再聚合出图", offChart.Labels[0] == "华东" && offChart.Values[0] == 2, string.Join(",", offChart.Labels));
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    for (int attempt = 0; attempt < 5 && System.IO.File.Exists(dbPath2); attempt++)
+    {
+        try { System.IO.File.Delete(dbPath2); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
+    }
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
