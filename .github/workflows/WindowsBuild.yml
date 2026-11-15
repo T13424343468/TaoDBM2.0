@@ -1,7 +1,7 @@
 name: windows-build
 
 # 云端 Windows 验证流水线：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试 + App 发布产物。
-# 失败时把编译错误行以 ::error:: 注解写上 check run（公开仓注解可匿名 API 读取，补无凭据日志缺口）。
+# 失败现场双通道：::error:: 注解 + GITHUB_STEP_SUMMARY（匿名可读的运行摘要），补无凭据日志缺口。
 
 on:
   push:
@@ -32,17 +32,33 @@ jobs:
       - name: Logic tests (Release)
         shell: pwsh
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $out = dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | Tee-Object -Variable to
           $out | ForEach-Object { Write-Host "$_" }
           $out | Out-File -FilePath test-output.txt -Encoding utf8
-          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error|✗|失败" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            "### LogicTest failed (windows-latest, Release)" | Add-Content $env:GITHUB_STEP_SUMMARY
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $out | Select-Object -Last 100 | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $out | Where-Object { "$_" -match "error|✗|失败|Exception|异常" } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            exit $LASTEXITCODE
+          }
 
       - name: Build App (WinUI, 0 warning 0 error gate)
         shell: pwsh
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $out = dotnet build Src/TaoDBM.App -warnaserror 2>&1
           $out | ForEach-Object { Write-Host "$_" }
-          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            "### App build failed (windows-latest)" | Add-Content $env:GITHUB_STEP_SUMMARY
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $out | Select-Object -Last 100 | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $out | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            exit $LASTEXITCODE
+          }
 
       - name: Publish App (win-x64)
         run: dotnet publish Src/TaoDBM.App -c Release -r win-x64 --self-contained false -o publish/app
