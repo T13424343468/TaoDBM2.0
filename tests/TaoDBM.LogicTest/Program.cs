@@ -964,6 +964,37 @@ Layer("集成");
     Check("损坏时间线回空", SchemaTimeline.Parse("{坏").Count == 0 && SchemaTimeline.Parse("").Count == 0 && SchemaTimeline.Parse(null).Count == 0);
 }
 
+// 8) RiskySqlGuard 危险 SQL 拦截引擎（安全线：无 WHERE 预估影响行数）
+{
+    var id = (Func<string, string>)(s => s);   // 通用引擎：标识符不加引号，便于断言
+
+    Check("无WHERE删除判危险", RiskySqlGuard.Inspect("delete from users", DbEngine.MySQL, id) is { Level: "danger", Kind: "no-where", EstimateSql: "SELECT COUNT(*) FROM users" } c1
+        ? c1.Table == "users" : false);
+    Check("无WHERE更新判危险并给预估", RiskySqlGuard.Inspect("UPDATE users SET age = 0", DbEngine.MySQL, id).EstimateSql == "SELECT COUNT(*) FROM users");
+    Check("带WHERE改数放行", RiskySqlGuard.Inspect("delete from users where id = 1", DbEngine.MySQL, id).Level == "ok");
+    Check("WHERE在字符串里不算条件", RiskySqlGuard.Inspect("update t set a = 'where x = 1'", DbEngine.MySQL, id).Kind == "no-where",
+        RiskySqlGuard.Inspect("update t set a = 'where x = 1'", DbEngine.MySQL, id).Kind);
+    Check("WHERE在注释里不算条件", RiskySqlGuard.Inspect("delete from t -- where id = 1\n", DbEngine.MySQL, id).Kind == "no-where");
+    var esc = RiskySqlGuard.Inspect("update t set a = 'it''s ok' where id = 2", DbEngine.MySQL, id);
+    Check("转义引号字面量放行", esc.Level == "ok", esc.Skeleton);
+    Check("DROP判危险", RiskySqlGuard.Inspect("DROP TABLE IF EXISTS logs", DbEngine.MySQL, id) is { Level: "danger", Kind: "drop-table" } c2
+        ? c2.Table == "logs" : false);
+    Check("TRUNCATE判危险", RiskySqlGuard.Inspect("truncate table logs", DbEngine.MySQL, id).Kind == "truncate");
+    Check("删列判危险", RiskySqlGuard.Inspect("alter table users drop column age", DbEngine.MySQL, id).Kind == "drop-column");
+    Check("SELECT不拦", RiskySqlGuard.Inspect("SELECT * FROM users", DbEngine.MySQL, id).Level == "ok");
+
+    // 带条件的预估 SQL 与方言引用符
+    var est = RiskySqlGuard.EstimateRowsSql("delete from `my db`.users where age > 18", DbEngine.MySQL, s => $"`{s}`");
+    Check("带条件预估走WHERE", est == "SELECT COUNT(*) FROM `users` WHERE age > 18", est ?? "(null)");
+    Check("SELECT不给预估", RiskySqlGuard.EstimateRowsSql("select 1", DbEngine.MySQL, id) == null);
+
+    // 脚本级：逐条 + 最危险档
+    var script = RiskySqlGuard.InspectScript("select 1;\nupdate t set a = 1;\n", DbEngine.MySQL, id);
+    Check("脚本拆分逐条检查", script.Count == 2 && script[1].Kind == "no-where");
+    Check("脚本最危险档上浮", RiskySqlGuard.Worst(script).Kind == "no-where" && RiskySqlGuard.Worst(script).Level == "danger");
+    Check("全ok脚本 worst 为 ok", RiskySqlGuard.Worst(RiskySqlGuard.InspectScript("select 1;", DbEngine.MySQL, id)).Level == "ok");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
