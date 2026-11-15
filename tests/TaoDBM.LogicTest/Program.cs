@@ -1224,6 +1224,42 @@ Layer("集成");
     Check("抽样核对SQL", ReconcileEngine.SampleSql("users", "id", 50, DbEngine.MySQL) == "SELECT * FROM `users` ORDER BY `id` LIMIT 50");
 }
 
+// 17) ShardKeyEvaluator 分片键评估与路由预演（分库分区分表底座）
+{
+    var ideal = new ShardKeyCandidate("user_id", 100000, 1.1, 500, Monotonic: false);
+    var skewed = new ShardKeyCandidate("region", 40, 4.0, 300, Monotonic: false);
+    var cold = new ShardKeyCandidate("remark", 5000, 1.0, 0, Monotonic: false);
+    var monotonic = new ShardKeyCandidate("id", 1000000, 1.0, 800, Monotonic: true);
+
+    var verdicts = ShardKeyEvaluator.Evaluate(new[] { skewed, cold, monotonic, ideal });
+    Check("评估按得分降序", verdicts[0].Column == "id" && verdicts[0].Score == 100 && verdicts[^1].Column == "remark",
+        string.Join(",", verdicts.Select(v => $"{v.Column}={v.Score}")));
+    Check("理想键满分建议范围分片", verdicts.First(v => v.Column == "user_id").Score == 100 &&
+        verdicts.First(v => v.Column == "user_id").SuggestedStrategy == "range");
+    Check("倾斜键扣分并出热点提示", verdicts.First(v => v.Column == "region").Score == 70 &&
+        verdicts.First(v => v.Column == "region").Issues.Any(i => i.Contains("热点")));
+    Check("谓词未命中扣分提示全分片扫描", verdicts.First(v => v.Column == "remark").Score == 70 &&
+        verdicts.First(v => v.Column == "remark").Issues.Any(i => i.Contains("全分片扫描")));
+    Check("单调键建议哈希并提示尾部热点", verdicts.First(v => v.Column == "id").SuggestedStrategy == "hash" &&
+        verdicts.First(v => v.Column == "id").Issues.Any(i => i.Contains("尾部热点")));
+    Check("并列得分按列名定序", ShardKeyEvaluator.Evaluate(new[] { new ShardKeyCandidate("b", 10, 1.0, 5, false), new ShardKeyCandidate("a", 10, 1.0, 5, false) })
+        .Select(v => v.Column).SequenceEqual(new[] { "a", "b" }));
+
+    Check("哈希路由确定性", ShardKeyEvaluator.HashRoute("order-42", 8) == ShardKeyEvaluator.HashRoute("order-42", 8));
+    Check("哈希路由取值在分片范围内", ShardKeyEvaluator.HashRoute("order-42", 8) is >= 0 and < 8);
+    var spread = Enumerable.Range(0, 1000).Select(i => ShardKeyEvaluator.HashRoute($"k{i}", 8)).Distinct().Count();
+    Check("哈希路由千键铺满八分片", spread == 8, spread.ToString());
+
+    bool threw = false;
+    try { ShardKeyEvaluator.HashRoute("x", 0); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("非法分片数抛参数异常", threw);
+
+    var bounds = new long[] { 1000, 2000, 3000 };
+    Check("范围路由落首段", ShardKeyEvaluator.RangeRoute(500, bounds) == 0);
+    Check("范围路由上界含入本段", ShardKeyEvaluator.RangeRoute(2000, bounds) == 1);
+    Check("范围路由超界提示扩分片", ShardKeyEvaluator.RangeRoute(3001, bounds) == -1);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
