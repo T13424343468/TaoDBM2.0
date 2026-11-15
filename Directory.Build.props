@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- 全树公共属性：命名与版本之外的构建口径统一收口处 -->
+
+  <!-- NuGet 漏洞审计：SQLitePCLRaw 2.x 全线受 GHSA-2m69-gcr7-jv3q 影响且上游暂无修复版本
+       （dotnet/dev-proxy 等官方仓库同款处置，待 Microsoft.Data.Sqlite 出修复包后移除本条并升级）。 -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
+
+</Project>

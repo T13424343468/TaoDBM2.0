@@ -12,11 +12,11 @@
     <!-- 拆分后改为工程引用，新增文件无需再逐个登记；
          Exporter 属 App 的 UI 文件但为纯逻辑，保留在 App，此处单独引入（A1 可考虑移入 Core）。 -->
     <Compile Include="..\..\Src\TaoDBM.App\UI\Exporter.cs" Link="Exporter.cs" />
-      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.0" />
+      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" />
-    <PackageReference Include="Snappier" Version="1.3.0" />
-    <PackageReference Include="SharpCompress" Version="0.40.0" />
-    <PackageReference Include="MySqlConnector" Version="2.5.0" />
+    <PackageReference Include="Snappier" Version="1.3.1" />
+    <PackageReference Include="SharpCompress" Version="0.47.0" />
+    <PackageReference Include="MySqlConnector" Version="2.6.0" />
   </ItemGroup>
 
   <ItemGroup>
