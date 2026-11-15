@@ -1146,6 +1146,42 @@ Layer("集成");
     Check("现场按等待时长倒序", timeline[0].Waiter == "w2" && timeline[^1].Waiter == "w3");
 }
 
+// 14) DeletedRowRecovery 误删找回：快照+拼回（安全线收官项）
+{
+    var rows = new List<IReadOnlyDictionary<string, string?>>
+    {
+        new Dictionary<string, string?> { ["id"] = "2", ["name"] = "it's bob", ["tag"] = null },
+        new Dictionary<string, string?> { ["id"] = "1", ["name"] = "alice" },
+    };
+    var snap = DeletedRowRecovery.Capture("users", "id", rows);
+    Check("快照列集取并集定序", snap.Columns.SequenceEqual(new[] { "id", "name", "tag" }) && snap.RowCount == 2 && snap.CapturedUtc.Length > 0);
+
+    var script = DeletedRowRecovery.ReinsertScript(snap, DbEngine.MySQL);
+    Check("拼回按主键排序且缺列补NULL", script ==
+        "INSERT INTO `users` (`id`, `name`, `tag`) VALUES ('1', 'alice', NULL), ('2', 'it''s bob', NULL);\n",
+        script.Replace("\n", "\\n", StringComparison.Ordinal));
+
+    var pgScript = DeletedRowRecovery.ReinsertScript(snap, DbEngine.PostgreSQL);
+    Check("PG拼回用双引号标识符", pgScript.StartsWith("INSERT INTO \"users\" (\"id\"", StringComparison.Ordinal));
+
+    var many = DeletedRowRecovery.Capture("t", "id", Enumerable.Range(0, 250)
+        .Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?> { ["id"] = i.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
+    Check("拼回分块每100行一条", DeletedRowRecovery.ReinsertScript(many, DbEngine.MySQL).Count(c => c == '\n') == 3);
+
+    var empty = DeletedRowRecovery.Capture("t", "id", Array.Empty<IReadOnlyDictionary<string, string?>>());
+    Check("空快照拼回为空脚本", DeletedRowRecovery.ReinsertScript(empty, DbEngine.MySQL) == "");
+
+    var dir = Path.Combine(Path.GetTempPath(), "taodbm-recv-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(dir);
+    var snapFile = Path.Combine(dir, "users.snapshot.json");
+    DeletedRowRecovery.SaveJsonl(snapFile, snap);
+    var back = DeletedRowRecovery.LoadJsonl(snapFile);
+    Check("快照 JSONL 往返", back is not null && back.Table == "users" && back.RowCount == 2 && back.Columns.Count == 3 && back.Rows[0][1] == "it's bob");
+    File.WriteAllText(snapFile, "{broken");
+    Check("损坏快照按无快照降级", DeletedRowRecovery.LoadJsonl(snapFile) == null);
+    Check("缺文件按无快照降级", DeletedRowRecovery.LoadJsonl(Path.Combine(dir, "none.json")) == null);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
