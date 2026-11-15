@@ -32,8 +32,9 @@ jobs:
       - name: Logic tests (Release)
         shell: pwsh
         run: |
-          $out = dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1
+          $out = dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | Tee-Object -Variable to
           $out | ForEach-Object { Write-Host "$_" }
+          $out | Out-File -FilePath test-output.txt -Encoding utf8
           if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error|✗|失败" } | Select-Object -First 15 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }; exit $LASTEXITCODE }
 
       - name: Build App (WinUI, 0 warning 0 error gate)
@@ -46,7 +47,15 @@ jobs:
       - name: Publish App (win-x64)
         run: dotnet publish Src/TaoDBM.App -c Release -r win-x64 --self-contained false -o publish/app
 
+      - name: Upload test output (always, 供无凭据侧读取现场)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-test-output
+          path: test-output.txt
+
       - name: Upload artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: taodbm-phase2-win
