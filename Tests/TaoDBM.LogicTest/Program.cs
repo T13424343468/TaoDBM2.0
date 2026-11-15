@@ -808,7 +808,15 @@ Layer("集成");
         var h2 = tc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "占位" });
         Check("任务取消进行中", tc.Cancel(h2.TaskId), "");
     }
-    File.Delete(dbPath);
+    // Windows 差异：Microsoft.Data.Sqlite 连接池在 Dispose 后仍持有句柄，直接删库在 Windows 抛
+    // IOException（Linux 允许删除已打开文件掩盖此问题）；先清池再删，删除失败不吞也不影响判定
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    for (int attempt = 0; attempt < 5 && System.IO.File.Exists(dbPath); attempt++)
+    {
+        try { System.IO.File.Delete(dbPath); }
+        catch (IOException) { await Task.Delay(100); }
+        catch (UnauthorizedAccessException) { await Task.Delay(100); }
+    }
     Environment.SetEnvironmentVariable("DBM_STREAMING", null);
 }
 
