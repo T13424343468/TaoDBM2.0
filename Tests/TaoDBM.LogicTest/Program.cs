@@ -1540,7 +1540,7 @@ Layer("集成");
     await using (var conn2 = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={db2}"))
     {
         conn2.Open();
-        foreach (var ddlSql in back.SetupSql)
+        foreach (var ddlSql in back!.SetupSql)
             using (var c = conn2.CreateCommand()) { c.CommandText = ddlSql; c.ExecuteNonQuery(); }
         using (var c = conn2.CreateCommand())
         {
@@ -1655,6 +1655,83 @@ Layer("集成");
     {
         try { System.IO.File.Delete(dbPath2); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
     }
+}
+
+// 协作线 C3：表单化录入、数据血缘影响地图、团队局域网共享合并（纯引擎，免界面稿）
+{
+    // 1) 表单化录入：字段生成→校验→参数化 INSERT
+    var cols = new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "INT AUTO_INCREMENT", Nullable = false, IsKey = true },
+        new() { Name = "name", DataType = "VARCHAR(50)", Nullable = false },
+        new() { Name = "age", DataType = "INT", Nullable = true },
+        new() { Name = "day", DataType = "DATETIME", Nullable = false },
+        new() { Name = "flag", DataType = "BIT", Nullable = true },
+    };
+    var form = FormSchemaBuilder.Build("customers", cols, new Dictionary<string, (string?, bool?, bool?)> { ["name"] = ("客户名", null, null) });
+    Check("协作-自增主键隐藏", form.First(f => f.Column == "id").Hidden, "");
+    Check("协作-类型推断与必填", form.First(f => f.Column == "age").InputType == "number" && !form.First(f => f.Column == "age").Required
+        && form.First(f => f.Column == "day").InputType == "datetime" && form.First(f => f.Column == "day").Required
+        && form.First(f => f.Column == "flag").InputType == "bool", "");
+    Check("协作-覆盖改标签", form.First(f => f.Column == "name").Label == "客户名" && form.First(f => f.Column == "name").MaxLength == 50, "");
+    var bad = FormSchemaBuilder.Validate(form, new Dictionary<string, string?> { ["name"] = "  ", ["age"] = "abc", ["day"] = "", ["flag"] = "maybe" });
+    Check("协作-必填与类型校验拦截", !bad.Ok && bad.Errors.ContainsKey("name") && bad.Errors.ContainsKey("age") && bad.Errors.ContainsKey("day") && bad.Errors.ContainsKey("flag"),
+        string.Join("|", bad.Errors));
+    var over = FormSchemaBuilder.Validate(form, new Dictionary<string, string?> { ["name"] = new string('长', 51) });
+    Check("协作-超长校验", over.Errors.ContainsKey("name") && over.Errors["name"].Contains("超长"), over.Errors.GetValueOrDefault("name") ?? "");
+    var good = FormSchemaBuilder.Validate(form, new Dictionary<string, string?> { ["name"] = "张三", ["age"] = "30", ["day"] = "2026-11-15 10:00:00", ["flag"] = "true" });
+    Check("协作-合法值通过", good.Ok && good.Errors.Count == 0, string.Join("|", good.Errors));
+    var (insSql, insParams) = FormSchemaBuilder.BuildInsert("customers", form,
+        new Dictionary<string, string?> { ["name"] = "张三", ["age"] = "30", ["day"] = "2026-11-15 10:00:00", ["flag"] = "true", ["id"] = "9" });
+    Check("协作-INSERT跳过隐藏列且参数化", insSql.StartsWith("INSERT INTO customers") && !insSql.Contains("id") && insSql.Contains("@name") && insParams["name"] == "张三", insSql);
+
+    // 2) 数据血缘：建图→逐级追溯→抽验提示
+    var corpus = new List<(LineageObject, string)>
+    {
+        (new LineageObject("orders", "table", "CREATE TABLE orders(id INT)"), "CREATE TABLE orders(id INT)"),
+        (new LineageObject("v_order_sum", "view", "CREATE VIEW v_order_sum AS SELECT region, SUM(amt) FROM orders GROUP BY region"),
+         "CREATE VIEW v_order_sum AS SELECT region, SUM(amt) FROM orders GROUP BY region"),
+        (new LineageObject("v_dash", "view", "CREATE VIEW v_dash AS SELECT * FROM v_order_sum"),
+         "CREATE VIEW v_dash AS SELECT * FROM v_order_sum"),
+        (new LineageObject("sp_alert", "routine", "CREATE PROCEDURE sp_alert AS BEGIN SELECT COUNT(*) FROM v_dash END"),
+         "CREATE PROCEDURE sp_alert AS BEGIN SELECT COUNT(*) FROM v_dash END"),
+    };
+    var map = LineageMapper.Build(corpus);
+    Check("协作-血缘建图直接依赖", map.ContainsKey("orders") && map["orders"].Any(o => o.Name == "v_order_sum"), string.Join(",", map.Keys));
+    var impacts = LineageMapper.Impact(map, "orders");
+    Check("协作-逐级追溯全部下游", impacts.Count == 3 && impacts[0].Object == "v_order_sum" && impacts[1].Object == "v_dash" && impacts[2].Object == "sp_alert",
+        string.Join(",", impacts.Select(i => $"{i.Object}:{i.Path.Count}")));
+    Check("协作-追溯路径逐级", impacts[2].Path.SequenceEqual(new[] { "orders", "v_order_sum", "v_dash", "sp_alert" }), string.Join("←", impacts[2].Path));
+    var hints = LineageMapper.Hints(impacts);
+    Check("协作-提示含抽验片段", hints.Count == 3 && hints[0].Contains("抽验片段") && hints[0].Contains("GROUP BY"), hints.FirstOrDefault() ?? "");
+    Check("协作-无依赖对象空影响", LineageMapper.Impact(map, "items").Count == 0, "");
+
+    // 3) 团队共享：双向合并（后写胜出/平局保本地/墓碑同步）+ 净化 + 往返
+    var t0 = DateTimeOffset.Parse("2026-11-15T10:00:00+08:00");
+    var local = new List<ShareItem>
+    {
+        new("f1", "favorite", "{\"sql\":\"SELECT 1\"}", t0, "甲"),
+        new("f2", "comment", "{\"text\":\"旧评论\"}", t0, "甲"),
+        new("c1", "connection", "{\"host\":\"10.0.0.5\",\"port\":3306}", t0, "甲"),
+    };
+    var remote = new List<ShareItem>
+    {
+        new("f1", "favorite", "{\"sql\":\"SELECT 2\"}", t0.AddMinutes(5), "乙"),
+        new("f2", "comment", "{\"text\":\"旧评论\"}", t0, "乙"),
+        new("f3", "comment", "{\"text\":\"新评论\"}", t0.AddMinutes(1), "乙", true),
+        new("c9", "connection", "{\"host\":\"10.0.0.9\",\"password\":\"leak-me\",\"apikey\":\"k2\"}", t0.AddMinutes(2), "乙"),
+    };
+    var merged = TeamShareMerge.Merge(local, remote);
+    Check("协作-后写胜出", merged.Merged.First(i => i.ItemId == "f1").Payload.Contains("SELECT 2"), "");
+    Check("协作-平局保本地", merged.Merged.First(i => i.ItemId == "f2").Author == "甲", "");
+    Check("协作-合并统计口径", merged.Added == 2 && merged.Updated == 1 && merged.Tombstones == 1, $"{merged.Added}/{merged.Updated}/{merged.Tombstones}");
+    Check("协作-墓碑同步删除意图", merged.Merged.First(i => i.ItemId == "f3").Deleted, "");
+    var (c9, dropped) = TeamShareMerge.Sanitize(merged.Merged.First(i => i.ItemId == "c9"));
+    Check("协作-共享包剔凭据", !c9.Payload.Contains("leak-me") && !c9.Payload.Contains("apikey", StringComparison.OrdinalIgnoreCase)
+        && dropped.Contains("password") && dropped.Contains("apikey"), string.Join(",", dropped));
+    var round = TeamShareMerge.FromJson(TeamShareMerge.ToJson(merged.Merged));
+    Check("协作-共享包往返", round != null && round.Count == merged.Merged.Count && round.First(i => i.ItemId == "f3").Deleted, "");
+    Check("协作-坏包不炸", TeamShareMerge.FromJson("{坏") == null, "");
 }
 
 Layer("系统");
