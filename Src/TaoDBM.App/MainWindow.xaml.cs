@@ -366,6 +366,7 @@ public partial class MainWindow : Window
             case NodeKind.Connection:
                 Item("展开连接", (_, _) => { if (!node.IsExpanded) node.IsExpanded = true; });
                 Item("编辑连接", async (_, _) => await EditConnection(info));
+                Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;

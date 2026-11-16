@@ -1960,6 +1960,51 @@ Layer("集成");
     Check("搬运-空包封验通过", empty.Header.ItemCount == 0 && SharePacketBuilder.Verify(empty).Ok, "");
 }
 
+{
+    // B3 权限接线目录：账号清单 + 授权文本获取 + 展示口径（纯引擎）
+    Check("权限目录-引擎支持面", UserPermissionCatalog.Supported(DbEngine.MySQL)
+        && UserPermissionCatalog.Supported(DbEngine.PostgreSQL)
+        && !UserPermissionCatalog.Supported(DbEngine.SQLite)
+        && !UserPermissionCatalog.Supported(DbEngine.MongoDB), "");
+
+    Check("权限目录-账号清单口径", UserPermissionCatalog.ListAccountsSql(DbEngine.MySQL).Contains("mysql.user")
+        && UserPermissionCatalog.ListAccountsSql(DbEngine.PostgreSQL).Contains("pg_user"), "");
+    bool threwAcc = false;
+    try { UserPermissionCatalog.ListAccountsSql(DbEngine.SQLite); } catch (NotSupportedException) { threwAcc = true; }
+    Check("权限目录-不支持引擎拒绝", threwAcc, "");
+
+    Check("权限目录-授权SQL引号转义", UserPermissionCatalog.GrantsSql(DbEngine.MySQL, "o'brien", "10.0.%").Contains("''")
+        && UserPermissionCatalog.GrantsSql(DbEngine.PostgreSQL, "it's", "-").Contains("''"), "");
+    Check("权限目录-PG合成含授权目录", UserPermissionCatalog.GrantsSql(DbEngine.PostgreSQL, "app_rw", "-")
+        .Contains("information_schema.table_privileges")
+        && UserPermissionCatalog.GrantsSql(DbEngine.PostgreSQL, "app_rw", "-").Contains("WITH GRANT OPTION"), "");
+
+    var grantRows = new List<object?[]>
+    {
+        new object?[] { "Grants for 'root'@'%': GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION" },
+        new object?[] { "GRANT SELECT, DROP ON shop_db.* TO 'app_rw'@'10.0.%' WITH GRANT OPTION" },
+        new object?[] { "1 row in set" },
+    };
+    var texts = UserPermissionCatalog.ExtractGrantTexts(grantRows);
+    Check("权限目录-抠GRANT原文", texts.Count == 2 && texts[1].StartsWith("GRANT SELECT, DROP"), texts.Count.ToString());
+
+    var accRows = new List<object?[]> { new object?[] { "root", "%" }, new object?[] { "app_rw", "10.0.%" }, new object?[] { null, null } };
+    var accounts = UserPermissionCatalog.ExtractAccounts(accRows);
+    Check("权限目录-账号行抽取", accounts.Count == 2 && accounts[0].User == "root" && accounts[1].Host == "10.0.%", accounts.Count.ToString());
+
+    var audited = PermissionAuditor.Audit(PermissionAuditor.Parse(texts));
+    Check("权限目录-解析后可审计", audited.Any(f => f.Code == "R101") && audited.Any(f => f.Code == "R102")
+        && audited.Any(f => f.Code == "R103"), string.Join(",", audited.Select(f => f.Code).Distinct()));
+
+    Check("权限目录-展示口径", UserPermissionCatalog.AccountLabel(DbEngine.MySQL, "root", "%") == "'root'@'%'"
+        && UserPermissionCatalog.AccountLabel(DbEngine.PostgreSQL, "app_rw", "-") == "app_rw", "");
+
+    var back = UserPermissionCatalog.SplitGrantee("'app_rw'@'10.0.%'");
+    Check("权限目录-账号键往返", back is { } b && b.User == "app_rw" && b.Host == "10.0.%",
+        back is { } c ? c.User : "null");
+    Check("权限目录-裸词不拆", UserPermissionCatalog.SplitGrantee("PUBLIC") == null, "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
