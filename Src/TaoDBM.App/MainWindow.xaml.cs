@@ -521,7 +521,7 @@ public partial class MainWindow : Window
                             {
                                 Kind = NodeKind.ObjectDef, Category = info.Category,
                                 Profile = info.Profile, Provider = catProv, Name = objName, Db = info.Db,
-                                RowText = string.Join("  |  ", row.Where(v => v is not null).Select(v => v.ToString())),
+                                RowText = string.Join("  |  ", row.Where(v => v is not null).Select(v => v!.ToString())),
                             };
                             var oNode = new TreeViewNode { Content = "▪ " + objName };
                             _nodeMap[oNode] = oInfo;
