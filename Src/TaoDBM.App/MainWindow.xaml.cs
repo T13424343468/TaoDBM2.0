@@ -9,7 +9,7 @@ using TaoDBM.UI;
 
 namespace TaoDBM;
 
-public enum NodeKind { Connection, Database, Table, Column, Key }
+public enum NodeKind { Connection, Database, Table, Column, Key, Category, ObjectDef }
 
 /// <summary>树节点附加信息。</summary>
 public class NodeInfo
@@ -20,6 +20,8 @@ public class NodeInfo
     public string Db = "";
     public string Name = "";
     public bool Loaded;
+    public string Category = "";  // B2 对象树：views/indexes/fks/routines/triggers
+    public string RowText = "";   // B2 对象树：目录行原文（索引/外键无 DDL，直接展示）
 }
 
 public partial class MainWindow : Window
@@ -382,6 +384,16 @@ public partial class MainWindow : Window
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
                 Item("拟真数据", (_, _) => OpenFaker(info));
                 break;
+            case NodeKind.Category:
+                Item("刷新", (_, _) => RefreshNode(node));
+                break;
+            case NodeKind.ObjectDef:
+                Item("查看定义", (_, _) => _ = ShowObjectDefinition(info));
+                if (info.Category is "views" or "routines" or "triggers")
+                    Item("打开到查询窗口", (_, _) => _ = OpenObjectToQuery(info));
+                else
+                    Item("详情", (_, _) => _ = InfoAsync(info.RowText.Length > 0 ? info.RowText : "（无详情）"));
+                break;
         }
         fly.ShowAt(e.OriginalSource as FrameworkElement ?? ConnTree);
     }
@@ -472,6 +484,51 @@ public partial class MainWindow : Window
                     }
                     if (children.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Name}：{children.Count} 个{(prov.IsNoSql ? prov.BrowseLabel : "表")}");
+                    // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载）
+                    if (!prov.IsNoSql && ObjectTreeCatalog.Supported(info.Profile.Engine))
+                    {
+                        foreach (var (cat, label) in new[] { ("views", "视图"), ("indexes", "索引"), ("fks", "外键"), ("routines", "例程"), ("triggers", "触发器") })
+                        {
+                            var catInfo = new NodeInfo { Kind = NodeKind.Category, Category = cat, Profile = info.Profile, Provider = prov, Name = label, Db = info.Db };
+                            var catNode = new TreeViewNode { Content = "▸ " + label };
+                            catNode.Children.Add(new TreeViewNode { Content = "…" });
+                            _nodeMap[catNode] = catInfo;
+                            node.Children.Add(catNode);
+                        }
+                    }
+                    break;
+
+                case NodeKind.Category:
+                    // B2：按目录引擎生成查询，列出该类对象
+                    var catProv = info.Provider!;
+                    var catSql = info.Category switch
+                    {
+                        "views" => ObjectTreeCatalog.ListViews(info.Profile.Engine, info.Db),
+                        "indexes" => ObjectTreeCatalog.ListIndexes(info.Profile.Engine, info.Db),
+                        "fks" => ObjectTreeCatalog.ListForeignKeys(info.Profile.Engine, info.Db),
+                        "routines" => ObjectTreeCatalog.ListRoutines(info.Profile.Engine, info.Db),
+                        _ => ObjectTreeCatalog.ListTriggers(info.Profile.Engine, info.Db),
+                    };
+                    var catRs = await catProv.Execute(info.Db, catSql);
+                    int objCount = 0;
+                    if (catRs.Count > 0)
+                        foreach (var row in catRs[0].Rows)
+                        {
+                            var objName = row.Length > 0 ? row[0]?.ToString() ?? "" : "";
+                            if (objName.Length == 0) continue;
+                            objCount++;
+                            var oInfo = new NodeInfo
+                            {
+                                Kind = NodeKind.ObjectDef, Category = info.Category,
+                                Profile = info.Profile, Provider = catProv, Name = objName, Db = info.Db,
+                                RowText = string.Join("  |  ", row.Where(v => v is not null).Select(v => v.ToString())),
+                            };
+                            var oNode = new TreeViewNode { Content = "▪ " + objName };
+                            _nodeMap[oNode] = oInfo;
+                            node.Children.Add(oNode);
+                        }
+                    if (objCount == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
+                    SetStatus($"{info.Db} · {info.Name}：{objCount} 项");
                     break;
             }
         }
@@ -499,6 +556,9 @@ public partial class MainWindow : Window
                 break;
             case NodeKind.Table when info.Provider is MongoProvider mp:
                 mp.CurrentCollection = info.Name;
+                break;
+            case NodeKind.ObjectDef:
+                _ = ShowObjectDefinition(info);
                 break;
         }
     }
@@ -591,20 +651,21 @@ public partial class MainWindow : Window
         WorkTabs.SelectedItem = tab;
     }
 
-    private void OpenQueryTab(NodeInfo? info)
+    private void OpenQueryTab(NodeInfo? info, string? initialSql = null)
     {
         if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
         var (db, hint) = info.Kind switch
         {
             NodeKind.Database => (info.Name, ""),
             NodeKind.Table => (info.Db, DefaultSnippet(info)),
+            NodeKind.ObjectDef => (info.Db, ""),
             _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
         };
         if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
         if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
 
         var tab = new TabViewItem { Header = $"查询 · {info.Name}" };
-        var wt = new UI.WorkTab(this, info.Provider!, db, info.Kind == NodeKind.Table ? info.Name : "", UI.WorkMode.Query, hint.Length > 0 ? hint : null);
+        var wt = new UI.WorkTab(this, info.Provider!, db, info.Kind == NodeKind.Table ? info.Name : "", UI.WorkMode.Query, hint.Length > 0 ? hint : initialSql);
         tab.Content = wt;
         WorkTabs.TabItems.Add(tab);
         _workTabs[tab] = wt;
@@ -700,6 +761,78 @@ public partial class MainWindow : Window
     }
 
     // ---------- 对话框辅助 ----------
+
+    /// <summary>B2：对象定义 SQL。视图在 MySQL/PostgreSQL 有专用取定义口径（ShowDefinition 的例程口径不覆盖视图），其余走通用入口。</summary>
+    private static string ObjectDefSql(NodeInfo info) => info.Category switch
+    {
+        "views" when info.Profile.Engine == DbEngine.MySQL =>
+            $"SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = '{info.Db.Replace("'", "''")}' AND TABLE_NAME = '{info.Name.Replace("'", "''")}'",
+        "views" when info.Profile.Engine == DbEngine.PostgreSQL =>
+            $"SELECT pg_get_viewdef('{info.Name.Replace("'", "''")}'::regclass, true)",
+        _ => ObjectTreeCatalog.ShowDefinition(info.Profile.Engine, info.Name),
+    };
+
+    /// <summary>B2：读取对象定义文本；失败或为空时弹窗说明并返回 null。</summary>
+    private async Task<string?> TryReadDefinition(NodeInfo info)
+    {
+        if (info.Provider is null) { await InfoAsync("连接不可用，请重新展开后再试。"); return null; }
+        try
+        {
+            SetStatus($"正在读取 {info.Name} 定义…");
+            var rs = await info.Provider.Execute(info.Db, ObjectDefSql(info));
+            var ddl = rs.Count > 0 && rs[0].Rows.Count > 0
+                ? rs[0].Rows[0].LastOrDefault(v => v is not null)?.ToString() ?? ""
+                : "";
+            if (ddl.Length == 0) { await InfoAsync("未取到定义（对象可能已被删除）。"); return null; }
+            SetStatus($"已载入 {info.Name} 定义");
+            return ddl;
+        }
+        catch (Exception ex) { await InfoAsync("读取定义失败：" + ex.Message); return null; }
+    }
+
+    /// <summary>B2：查看对象定义。视图/例程/触发器弹等宽只读 DDL 预览（可打开到查询窗口），索引/外键无 DDL 直接展示目录行详情。</summary>
+    private async Task ShowObjectDefinition(NodeInfo info)
+    {
+        if (info.Category is "indexes" or "fks")
+        {
+            await InfoAsync(info.RowText.Length > 0 ? info.RowText : "（无详情）");
+            return;
+        }
+        var ddl = await TryReadDefinition(info);
+        if (ddl is null) return;
+        var text = new TextBox
+        {
+            Text = ddl,
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.NoWrap,
+            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+            MinHeight = 300,
+        };
+        var dlg = new ContentDialog
+        {
+            Title = $"{info.Name} 定义",
+            Content = new ScrollViewer
+            {
+                Content = text,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            },
+            PrimaryButtonText = "打开到查询窗口",
+            CloseButtonText = "关闭",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() == ContentDialogResult.Primary) OpenQueryTab(info, ddl);
+    }
+
+    /// <summary>B2：把对象 DDL 直接打到新查询标签。</summary>
+    private async Task OpenObjectToQuery(NodeInfo info)
+    {
+        var ddl = await TryReadDefinition(info);
+        if (ddl is null) return;
+        OpenQueryTab(info, ddl);
+    }
 
     private async Task InfoAsync(string msg)
     {
