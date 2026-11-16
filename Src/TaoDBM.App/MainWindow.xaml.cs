@@ -370,6 +370,10 @@ public partial class MainWindow : Window
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                Item("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
+                Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
+                Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
+                Item("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
