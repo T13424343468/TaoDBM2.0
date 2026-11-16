@@ -369,6 +369,7 @@ public partial class MainWindow : Window
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
+                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
@@ -379,6 +380,7 @@ public partial class MainWindow : Window
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
+                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 break;
             case NodeKind.Table:
                 Item("刷新", (_, _) => RefreshNode(node));

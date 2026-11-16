@@ -73,6 +73,31 @@ public static class ErdDialog
         var pngBtn = new Button { Content = "导出 PNG", CornerRadius = new CornerRadius(4) };
         var saveBtn = new Button { Content = "保存布局", CornerRadius = new CornerRadius(4) };
         var openBtn = new Button { Content = "打开布局", CornerRadius = new CornerRadius(4) };
+        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = new CornerRadius(4) };
+        ddlBtn.Click += async (_, _) =>
+        {
+            if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型，再正向生成 DDL。"; return; }
+            var r = ErdForward.Generate(_model);
+            if (!r.Ok || r.Ddl.Count == 0) { _hint.Text = "生成失败：" + string.Join("；", r.Errors); return; }
+            var box = new TextBox
+            {
+                AcceptsReturn = true,
+                IsReadOnly = true,
+                Text = string.Join("\n\n", r.Ddl),
+                FontFamily = new FontFamily("Consolas"),
+                MinWidth = 640,
+                MinHeight = 420,
+                TextWrapping = TextWrapping.NoWrap,
+            };
+            await new ContentDialog
+            {
+                Title = "正向生成 · 建库 DDL",
+                Content = box,
+                CloseButtonText = "关闭",
+                XamlRoot = owner.Content.XamlRoot,
+            }.ShowThemedAsync();
+            _hint.Text = $"已按模型生成 {r.Ddl.Count} 条 DDL（只读预览，可复制到查询窗口执行）。";
+        };
 
         Task<(string Db, IDbProvider Prov)?> Selected()
         {
@@ -109,6 +134,7 @@ public static class ErdDialog
         bar.Children.Add(pngBtn);
         bar.Children.Add(saveBtn);
         bar.Children.Add(openBtn);
+        bar.Children.Add(ddlBtn);
 
         var panel = new StackPanel { Spacing = 4, MinWidth = 800, MinHeight = 640 };
         panel.Children.Add(bar);

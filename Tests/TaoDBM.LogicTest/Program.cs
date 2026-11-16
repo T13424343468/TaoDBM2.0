@@ -2968,6 +2968,58 @@ Console.WriteLine("== AtomicWrite 原子落盘（三.6 断电模拟）==");
 }
 
 RealDbCheck.Run(Check);
+
+Console.WriteLine("\n== B12 诊断优化引擎 ==");
+Layer("系统");
+{
+    // T001：值长度远超声明宽度，SQLite → TEXT
+    var cols = new List<ColumnMeta> { new("users", "nickname", "VARCHAR", 10, false, "SQLite") };
+    var len = new List<ColumnLen> { new(1000, 5, 100, "users", "nickname") };
+    var r = TypeLengthAdvisor.Inspect(cols, len, null);
+    var f = r.Findings.FirstOrDefault(x => x.Table == "users" && x.Column == "nickname");
+    Check("T001 SQLite 超宽报 TEXT", f?.Code == "O001" && f.Suggestion?.Contains("TEXT") == true && f.Suggestion?.Contains("VARCHAR(1000)") == true);
+
+    // T002：值宽度小且有小数位（NULL 宽度计数时不含小数点）
+    var cols2 = new List<ColumnMeta> { new("s", "amount", "DECIMAL", 10, false, "MySQL") };
+    var len2 = new List<ColumnLen> { new(10, 10, 8, "s", "amount") };
+    var r2 = TypeLengthAdvisor.Inspect(cols2, len2, null);
+    var f2 = r2.Findings.FirstOrDefault(x => x.Code == "O002");
+    Check("T002 DECIMAL 精度收缩", f2?.Suggestion?.Contains("DECIMAL(10,2)") == true && f2.Suggestion?.Contains("DECIMAL(10,2)") != f2.Suggestion?.Contains("回退"));
+
+    // T003：DATETIME 列发现秒以下未使用 → DATE
+    var cols3 = new List<ColumnMeta> { new("logs", "created_dt", "DATETIME", 0, false, "MySQL") };
+    var len3 = new List<ColumnLen> { new(19, 19, 19, "logs", "created_dt") };
+    var r3 = TypeLengthAdvisor.Inspect(cols3, len3, null);
+    Check("T003 DATETIME 粒度建议", r3.Findings.Any(x => x.Code == "O004" && x.Suggestion?.Contains("DATE") == true));
+
+    // T004：主键列不动
+    var cols4 = new List<ColumnMeta> { new("users", "id", "VARCHAR", 5, true, "SQLite") };
+    var len4 = new List<ColumnLen> { new(1000, 5, 100, "users", "id") };
+    var r4 = TypeLengthAdvisor.Inspect(cols4, len4, null);
+    Check("T004 主键跳过", !r4.Findings.Any(x => x.Table == "users" && x.Column == "id"));
+
+    // T005：刚声明类型不动
+    var cols5 = new List<ColumnMeta> { new("n", "c", "NVARCHAR", 50, false, "SQLite") };
+    var len5 = new List<ColumnLen> { new(40, 5, 50, "n", "c") };
+    var r5 = TypeLengthAdvisor.Inspect(cols5, len5, null);
+    Check("T005 NVARCHAR 不重复建议", !r5.Findings.Any(x => x.Table == "n"));
+
+    // T006：回退语句存在且不含分号
+    var cols6 = new List<ColumnMeta> { new("users", "nickname", "VARCHAR", 10, false, "SQLite") };
+    var len6 = new List<ColumnLen> { new(1000, 5, 100, "users", "nickname") };
+    var r6 = TypeLengthAdvisor.Inspect(cols6, len6, null);
+    var f6 = r6.Findings.FirstOrDefault();
+    Check("T006 回退语句生成", f6 != null && f6.RollbackSql?.StartsWith("-- 回退") == true && f6.RollbackSql?.Split(';').Length == 2);
+
+    // T007：报告 JSON 往返
+    var j = TypeLengthAdvisor.ToJson(r6);
+    var b6 = TypeLengthAdvisor.FromJson(j);
+    Check("T007 JSON 往返", b6?.Findings.Count == r6.Findings.Count && b6?.Findings[0].Code == f6?.Code);
+
+    // T008：Report 表含已执行/已回退路径说明
+    var rep = TypeLengthAdvisor.Report(r6, true);
+    Check("T008 报告文本", rep.Contains("执行已选优化") && rep.Contains("一键还原"));
+}
 }
 
 Console.WriteLine("\n== 分层结果 ==");
