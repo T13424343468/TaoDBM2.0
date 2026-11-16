@@ -2005,6 +2005,69 @@ Layer("集成");
     Check("权限目录-裸词不拆", UserPermissionCatalog.SplitGrantee("PUBLIC") == null, "");
 }
 
+{
+    // B10 主从管理面目录：角色探测 + 拓扑解析 + 延迟分级 + 管理草稿（纯引擎）
+    Check("复制目录-引擎支持面", ReplicationCatalog.Supported(DbEngine.MySQL)
+        && ReplicationCatalog.Supported(DbEngine.PostgreSQL)
+        && !ReplicationCatalog.Supported(DbEngine.SQLite)
+        && !ReplicationCatalog.Supported(DbEngine.MongoDB), "");
+
+    Check("复制目录-探测与节点口径", ReplicationCatalog.RoleProbeSql(DbEngine.PostgreSQL).Contains("pg_is_in_recovery")
+        && ReplicationCatalog.RoleProbeSql(DbEngine.MySQL).StartsWith("SHOW REPLICA STATUS")
+        && ReplicationCatalog.ReplicasSql(DbEngine.MySQL) == "SHOW REPLICAS"
+        && ReplicationCatalog.ReplicasSql(DbEngine.PostgreSQL).Contains("pg_stat_replication"), "");
+
+    var lagNone = ReplicationCatalog.LagClass(null);
+    Check("复制目录-延迟分级", ReplicationCatalog.LagClass(0.4) == ("正常", "ok")
+        && ReplicationCatalog.LagClass(12.6) == ("延迟偏高", "warn")
+        && ReplicationCatalog.LagClass(90) == ("严重滞后", "danger")
+        && lagNone == ("—", "none"), "");
+
+    var pgCols = new List<string> { "name", "addr", "state", "sync_state", "lag_seconds" };
+    var pgRows = new List<object?[]>
+    {
+        new object?[] { "replica-1", "10.0.0.11", "streaming", "async", 0.4 },
+        new object?[] { "replica-2", "10.0.0.12", "streaming", "async", 12.6 },
+        new object?[] { "replica-3", "10.0.0.13", "startup", "async", null },
+    };
+    var topo = ReplicationCatalog.BuildFromPrimary(DbEngine.PostgreSQL, pgCols, pgRows);
+    Check("复制目录-PG拓扑解析", topo.Count == 4 && topo[0].Role == "主库"
+        && topo[1].State == "正常" && topo[2].State == "延迟偏高" && topo[3].State == "连接中", topo.Count.ToString());
+
+    var myCols = new List<string> { "Server_name", "Host", "Port" };
+    var myRows = new List<object?[]> { new object?[] { "replica-1", "10.0.0.11", 3307 } };
+    var topoMy = ReplicationCatalog.BuildFromPrimary(DbEngine.MySQL, myCols, myRows);
+    Check("复制目录-MySQL主视角拓扑", topoMy.Count == 2 && topoMy[1].Name == "replica-1" && topoMy[1].Role == "从库", topoMy.Count.ToString());
+
+    var repCols = new List<string> { "Replica_IO_Running", "Replica_SQL_Running", "Seconds_BehindSource", "Source_Host" };
+    var repRows = new List<object?[]> { new object?[] { "Yes", "Yes", 12, "master-1" } };
+    var selfOk = ReplicationCatalog.BuildFromReplica(DbEngine.MySQL, repCols, repRows);
+    var repBad = new List<object?[]> { new object?[] { "Yes", "No", null, "master-1" } };
+    var selfBad = ReplicationCatalog.BuildFromReplica(DbEngine.MySQL, repCols, repBad);
+    Check("复制目录-从视角状态", selfOk.State == "延迟偏高" && selfOk.LagSeconds == 12
+        && selfBad.State == "已断开", selfOk.State);
+
+    Check("复制目录-列名兼容旧版", ReplicationCatalog.Col(repCols, repRows[0], "Seconds_BehindSource", "Seconds_Behind_Master") == "12"
+        || ReplicationCatalog.Col(repCols, repRows[0], "Seconds_Behind_Master", "Seconds_BehindSource") == "12", "");
+
+    var pause = ReplicationCatalog.PauseReplicaSql(DbEngine.MySQL, true);
+    var resume = ReplicationCatalog.PauseReplicaSql(DbEngine.MySQL, false);
+    Check("复制目录-暂停恢复草稿", pause[0] == "STOP REPLICA;" && resume[0] == "START REPLICA;"
+        && ReplicationCatalog.PauseReplicaSql(DbEngine.PostgreSQL, true)[0].Contains("pg_wal_replay_pause"), "");
+
+    var reconnect = ReplicationCatalog.ReconnectTemplateSql(DbEngine.MySQL, "master-1", 3306, "repl", "shop_db");
+    Check("复制目录-重建通道模板", reconnect.Count == 4 && reconnect[1].Contains("SOURCE_HOST='master-1'")
+        && reconnect[1].Contains("SOURCE_PORT=3306") && reconnect[1].Contains("<口令现场填入>"), reconnect[1]);
+
+    var switchover = ReplicationCatalog.SwitchoverDraftSql(DbEngine.MySQL, "master-1");
+    Check("复制目录-切换主库高危草稿", switchover[0] == "STOP REPLICA;" && switchover[1] == "RESET REPLICA ALL;"
+        && switchover[3].Contains("master-1") && switchover[3].Contains("双主"), "");
+
+    bool threwRepl = false;
+    try { ReplicationCatalog.PauseReplicaSql(DbEngine.SQLite, true); } catch (NotSupportedException) { threwRepl = true; }
+    Check("复制目录-不支持引擎拒绝", threwRepl, "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留

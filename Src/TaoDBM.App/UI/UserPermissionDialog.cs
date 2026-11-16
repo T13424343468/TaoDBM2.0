@@ -151,49 +151,9 @@ public static class UserPermissionDialog
         await loadTask;
     }
 
-    /// <summary>草稿预览：逐条勾选，确认后执行并写本地操作历史。</summary>
-    private static async Task ConfirmExecuteAsync(MainWindow owner, IDbProvider prov, string title, List<string> drafts, TextBlock status)
-    {
-        var checks = drafts.Select(d => new CheckBox { Content = new TextBlock { Text = d, FontFamily = new FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.Wrap }, IsChecked = true }).ToList();
-        var list = new StackPanel { Spacing = 6 };
-        foreach (var c in checks) list.Children.Add(c);
-        var warn = new TextBlock
-        {
-            Text = "仅执行勾选项。回收是授权的回滚路径；执行前请确认连接账号具备对应权限。",
-            FontSize = 12,
-            Foreground = Ant.Error,
-            TextWrapping = TextWrapping.Wrap,
-        };
-        var box = new StackPanel { Spacing = 10, MinWidth = 560 };
-        box.Children.Add(warn);
-        box.Children.Add(new ScrollViewer { Content = list, MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
-
-        var dlg = new ContentDialog
-        {
-            Title = title,
-            Content = box,
-            PrimaryButtonText = "执行勾选项",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
-        var picked = checks.Where(c => c.IsChecked == true)
-            .Select(c => ((TextBlock)((CheckBox)c).Content).Text)
-            .Where(s => s.Length > 0).ToList();
-        if (picked.Count == 0) return;
-        try
-        {
-            await prov.Execute("", string.Join("\n", picked));
-            Safe.Run(() => File.AppendAllLines(TaoPaths.FilePath("permops.log"),
-                picked.Select(s => $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{s}")), "权限操作历史");
-            status.Text = $"已执行 {picked.Count} 条语句。";
-        }
-        catch (Exception ex)
-        {
-            status.Text = "执行失败：" + ex.Message;
-        }
-    }
+    /// <summary>草稿预览执行：公共口径见 DraftOps（逐条勾选，确认后执行并写本地操作历史）。</summary>
+    private static Task ConfirmExecuteAsync(MainWindow owner, IDbProvider prov, string title, List<string> drafts, TextBlock status)
+        => DraftOps.ConfirmExecuteAsync(owner, prov, title, drafts, status);
 
     /// <summary>新建用户草稿：只生成 CREATE USER（不含口令，口令由数据库自身流程设置），预览确认后执行。</summary>
     private static async Task NewUserDraftAsync(MainWindow owner, DbEngine engine, IDbProvider prov, TextBlock status)
