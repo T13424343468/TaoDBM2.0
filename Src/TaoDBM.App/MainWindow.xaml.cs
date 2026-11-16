@@ -368,6 +368,7 @@ public partial class MainWindow : Window
                 Item("编辑连接", async (_, _) => await EditConnection(info));
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
+                Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
@@ -653,7 +654,7 @@ public partial class MainWindow : Window
         WorkTabs.SelectedItem = tab;
     }
 
-    private void OpenQueryTab(NodeInfo? info, string? initialSql = null)
+    public void OpenQueryTab(NodeInfo? info, string? initialSql = null)
     {
         if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
         var (db, hint) = info.Kind switch

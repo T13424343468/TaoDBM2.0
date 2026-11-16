@@ -2068,6 +2068,41 @@ Layer("集成");
     Check("复制目录-不支持引擎拒绝", threwRepl, "");
 }
 
+{
+    // B11 分库分区分表向导：方案生成 + 现状目录 + 倾斜判定 + 盐化摘要（纯引擎）
+    Check("分片向导-引擎支持面", ShardingWizard.Supported(DbEngine.MySQL)
+        && ShardingWizard.Supported(DbEngine.PostgreSQL)
+        && !ShardingWizard.Supported(DbEngine.SQLite)
+        && !ShardingWizard.Supported(DbEngine.MongoDB), "");
+
+    var myPlan = ShardingWizard.HashPartitionSql(DbEngine.MySQL, "orders", "user_id", 4);
+    Check("分片向导-MySQL哈希方案", myPlan.Count == 2 && myPlan[0] == "ALTER TABLE `orders` PARTITION BY HASH (`user_id`) PARTITIONS 4;"
+        && myPlan[1].Contains("information_schema.PARTITIONS"), myPlan[0]);
+
+    var pgPlan = ShardingWizard.HashPartitionSql(DbEngine.PostgreSQL, "orders", "user_id", 4);
+    Check("分片向导-PG声明式方案", pgPlan.Count == 7 && pgPlan[0].StartsWith("-- PostgreSQL")
+        && pgPlan[1].Contains("PARTITION BY HASH") && pgPlan[1].Contains("_pnew")
+        && pgPlan[2].Contains("MODULUS 4, REMAINDER 0") && pgPlan[5].Contains("REMAINDER 3")
+        && pgPlan[6].StartsWith("-- 迁移"), pgPlan.Count.ToString());
+
+    bool threwShard = false;
+    try { ShardingWizard.HashPartitionSql(DbEngine.MySQL, "t", "k", 1); } catch (ArgumentOutOfRangeException) { threwShard = true; }
+    Check("分片向导-分片数下限", threwShard, "");
+
+    Check("分片向导-现状目录口径", ShardingWizard.PartitionsInfoSql(DbEngine.MySQL, "shop_db", "orders").Contains("PARTITIONS")
+        && ShardingWizard.PartitionsInfoSql(DbEngine.PostgreSQL, "shop_db", "orders").Contains("pg_inherits"), "");
+
+    var even = new List<(string, long)> { ("p0", 1208), ("p1", 1201), ("p2", 1210), ("p3", 1211) };
+    var skew = new List<(string, long)> { ("p0", 4000), ("p1", 100), ("p2", 100), ("p3", 100) };
+    Check("分片向导-倾斜判定", ShardingWizard.AnalyzeDistribution(even).Skewed == false
+        && ShardingWizard.AnalyzeDistribution(skew).Skewed == true
+        && ShardingWizard.AnalyzeDistribution(new List<(string, long)>()).Skewed == false
+        && ShardingWizard.AnalyzeDistribution(even).Parts[0].Name == "p3", "");
+
+    var salt = ShardingWizard.SaltingSummary("user_id", 8);
+    Check("分片向导-盐化摘要", salt.Contains("user_id") && salt.Contains("8"), salt);
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
