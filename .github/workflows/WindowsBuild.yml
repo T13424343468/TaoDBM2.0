@@ -206,11 +206,21 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $msi = (Resolve-Path *.msi).Path
-          Write-Host "[MSI] $msi size=$((Get-Item $msi).Length) bytes"
+          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { Write-Host "[TREE] $($_.FullName)" }
+          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
+          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
+          $msi = $found.FullName
+          Write-Host "[MSI] $msi size=$($found.Length) bytes"
           $ok = $false
           for ($try = 1; $try -le 3; $try++) {
-            $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
+            try {
+              $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
+            } catch {
+              Write-Host "::error::try$try Start-Process msiexec threw: $($_.Exception.Message)"
+              "### install try$try threw: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              if ($try -lt 3) { Start-Sleep -Seconds 20 }
+              continue
+            }
             Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
             if ($p.ExitCode -eq 0) { $ok = $true; break }
             # 失败现场双通道：注解 + 匿名可读摘要（含退出码与日志尾）
