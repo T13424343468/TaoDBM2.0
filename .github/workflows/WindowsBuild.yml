@@ -190,3 +190,96 @@ jobs:
           if ($alive) { Write-Host "[OK] trimmed app alive after 10s" } else { Write-Host "::error::trimmed app exited early code=$($p.ExitCode)" }
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
           if (-not $alive) { exit 1 }
+
+  ui-smoke:
+    # 真机实况截图：装 MSI -> 真启动 TaoDBM -> 截真实窗口 -> 推公开分支供查看
+    runs-on: windows-latest
+    timeout-minutes: 20
+    needs: msi
+    steps:
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: taodbm-phase2-msi
+
+      - name: Silent install
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path *.msi).Path
+          $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
+          Write-Host "[INSTALL] exit=$($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { Get-Content install-smoke.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
+          $dir = (Get-ItemProperty HKLM:\Software\TaoDBM).InstallDir
+          if (-not (Test-Path "$dir/TaoDBM.exe")) { Write-Host "::error::exe missing at $dir"; exit 1 }
+          Write-Host "[OK] installed at $dir"
+          "TaoDBMDir=$dir" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
+
+      - name: Launch and screenshot real UI
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+          $src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }'
+          Add-Type -TypeDefinition $src
+          $dir = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMDir=',''
+          $proc = Start-Process "$dir/TaoDBM.exe" -WorkingDirectory $dir -PassThru
+          $handle = [IntPtr]::Zero
+          for ($i = 0; $i -lt 60; $i++) {
+            Start-Sleep -Milliseconds 500
+            $proc.Refresh()
+            if ($proc.MainWindowHandle -ne [IntPtr]::Zero) { $handle = $proc.MainWindowHandle; break }
+          }
+          if ($handle -eq [IntPtr]::Zero) {
+            if ($proc.HasExited) { Write-Host "::error::app exited early code=$($proc.ExitCode)" } else { Write-Host "::error::no main window after 30s" }
+            exit 1
+          }
+          [WinNative]::ShowWindow($handle, 3) | Out-Null
+          [WinNative]::SetForegroundWindow($handle) | Out-Null
+          Start-Sleep -Seconds 8
+          $proc.Refresh()
+          if ($proc.HasExited) { Write-Host "::error::app exited before screenshot code=$($proc.ExitCode)"; exit 1 }
+          $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen
+          $bmp = New-Object System.Drawing.Bitmap($vs.Width, $vs.Height)
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen(0, 0, 0, 0, $bmp.Size)
+          $bmp.Save("$PWD/ui-smoke.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          Write-Host "[SCREENSHOT] ui-smoke.png $((Get-Item ui-smoke.png).Length) bytes, screen $([Math]::Round($vs.Width))x$([Math]::Round($vs.Height))"
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+
+      - name: Uninstall (restore clean state)
+        if: always()
+        shell: pwsh
+        run: |
+          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if ($arp) {
+            $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru
+            Write-Host "[UNINSTALL] exit=$($p.ExitCode)"
+          }
+
+      - name: Push screenshot to public branch
+        if: success()
+        shell: pwsh
+        run: |
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch --depth 1 origin ui-smoke-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          Copy-Item ..\ui-smoke.png -Force
+          git add ui-smoke.png
+          git commit -m "ui-smoke screenshot run ${{ github.run_id }}" | Out-Null
+          git push origin ui-smoke-latest --force
+          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
+
+      - name: Upload UI smoke files (always, 供无凭据侧读取现场)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-ui-smoke
+          path: |
+            ui-smoke.png
+            install-smoke.log
