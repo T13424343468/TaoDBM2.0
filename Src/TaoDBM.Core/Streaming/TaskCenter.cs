@@ -164,6 +164,6 @@ public sealed class TaskCenter
     }
 
     /// <summary>执行体由宿主注入：把 TaskHandle 变成实际工作（查询/导出/同步/导入）。</summary>
-    internal Func<TaskHandle, Task>? Runner { get; set; }
+    public Func<TaskHandle, Task>? Runner { get; set; }
     private Task RunAsync(TaskHandle h) => Runner is null ? Task.CompletedTask : Runner(h);
 }

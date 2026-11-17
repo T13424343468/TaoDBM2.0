@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using TaoDBM.Core;
 using TaoDBM.Core.Streaming;
-using TaoDBM.Infrastructure.Providers;
 
 namespace TaoDBM.UI;
 

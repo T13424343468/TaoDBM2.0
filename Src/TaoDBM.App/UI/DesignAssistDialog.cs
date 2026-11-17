@@ -206,7 +206,7 @@ public static class DesignAssistDialog
                     VerticalAlignment = VerticalAlignment.Center,
                     FontSize = 12,
                     MinWidth = 160,
-                    Foreground = Ant.TextMain,
+                    Foreground = Ant.Text,
                 });
                 row.Children.Add(input);
                 report.Children.Add(row);
@@ -349,6 +349,25 @@ public static class DesignAssistDialog
         {
             status.Text = "追溯失败：" + ex.Message;
         }
+    }
+
+    private static void AddSection(StackPanel p, string title)
+    {
+        p.Children.Add(new TextBlock
+        {
+            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
+        });
+    }
+
+    private static void AddLine(StackPanel p, string text, Brush? brush = null, int indent = 0)
+    {
+        p.Children.Add(new TextBlock
+        {
+            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
+            FontFamily = new FontFamily("Consolas"),
+        });
     }
 
     private static string CurrentDb(NodeInfo info)

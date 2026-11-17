@@ -249,7 +249,7 @@ public static class SmartToolsDialog
             }
 
             var raw = new QueryReproPack.ReproPack("1", "未命名复现包", "MySQL", text,
-                new List<string>(), System.DateTimeOffset.UtcNow, "local");
+                new Dictionary<string, string>(), new List<string>(), null, System.DateTimeOffset.UtcNow);
             var clean = QueryReproPack.Sanitize(raw);
             var json = QueryReproPack.ToJson(clean);
             AddSection(report, "脱敏复现包");

@@ -33,6 +33,7 @@ public static class MaskPreviewDialog
 
         runBtn.Click += async (_, _) => await RunAsync(prov, CurrentDb(info), tableBox.Text, limitBox.Text, output, status);
 
+        var panel = new StackPanel { Spacing = 10 };
         panel.Children.Add(new TextBlock
         {
             Text = "按列名推断敏感档位（手机 / 邮箱 / 证件号 / 姓名 / 银行卡 / 密码类）并打码预览，只读少量行，不改库中数据；正式导出走同一套规则。",
@@ -132,14 +133,14 @@ public static class MaskPreviewDialog
         int shown = 0;
         foreach (var row in rs.Rows)
         {
-            var pairs = new List<KeyValuePair<string, string?>>();
+            var pairs = new List<KeyValuePair<string, string>>();
             for (int i = 0; i < rs.Columns.Count && i < row.Length; i++)
             {
                 var v = row[i];
-                pairs.Add(new KeyValuePair<string, string?>(rs.Columns[i], v is null ? null : v.ToString()));
+                pairs.Add(new KeyValuePair<string, string>(rs.Columns[i], v is null ? "" : v.ToString() ?? ""));
             }
             var masked = MaskEngine.MaskRow(pairs);
-            sb.AppendLine("  " + string.Join(" | ", masked.Select(kv => $"{kv.Key}={kv.Value ?? "NULL"}")));
+            sb.AppendLine("  " + string.Join(" | ", masked.Select(kv => $"{kv.Key}={kv.Value}")));
             shown++;
             if (shown >= 50)
             {

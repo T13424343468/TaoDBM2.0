@@ -2,7 +2,6 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using TaoDBM.Core;
-using TaoDBM.Infrastructure.Providers;
 
 namespace TaoDBM.UI;
 
@@ -39,7 +38,8 @@ public static class SnapshotPackDialog
                 var rs = await prov.Execute(db, $"SELECT * FROM {prov.Quote(table)}");
                 if (rs.Count == 0) { status.Text = "查询未返回结果。"; return; }
                 var snap = SnapshotPackFile.FromQueryResult(table, rs[0], maxRows);
-                var pack = SnapshotPackFile.Create((titleBox.Text ?? "").Trim().Length == 0 ? $"快照 {table}" : titleBox.Text.Trim(),
+                var title = (titleBox.Text ?? "").Trim();
+                var pack = SnapshotPackFile.Create(title.Length == 0 ? $"快照 {table}" : title,
                     $"{prov.EngineName}/{db}", new[] { snap });
                 _pending = pack;
                 saveBtn.IsEnabled = true;
@@ -48,7 +48,7 @@ public static class SnapshotPackDialog
                 foreach (var t in pack.Tables)
                 {
                     AddLine(report, $"表 {t.Name}：{t.Columns.Count} 列，已载 {t.Rows.Count} 行（全表 {t.TotalRows} 行）");
-                    AddLine(report, $"  列：{string.Join(\", \", t.Columns)}", null, 1);
+                    AddLine(report, $"  列：{string.Join(", ", t.Columns)}", null, 1);
                 }
                 status.Text = "快照就绪：可另存为 JSON 归档，或留作比对。";
             }

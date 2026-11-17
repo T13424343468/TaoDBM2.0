@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using TaoDBM.Core;
 using TaoDBM.Core.Streaming;
-using TaoDBM.Infrastructure.Providers;
 
 namespace TaoDBM.UI;
 
@@ -44,7 +43,7 @@ public static class TaskCenterDialog
             var h = Shared.Submit(new TaskSpec
             {
                 Kind = "query",
-                Title = (titleBox.Text ?? "").Trim().Length == 0 ? "查询任务" : titleBox.Text.Trim(),
+                Title = ((titleBox.Text ?? "").Trim().Length == 0 ? "查询任务" : (titleBox.Text ?? "").Trim()),
                 Db = db,
                 Sql = sql,
             });
