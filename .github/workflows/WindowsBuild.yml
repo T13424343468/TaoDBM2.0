@@ -232,8 +232,12 @@ jobs:
             if ($try -lt 3) { Start-Sleep -Seconds 20 }
           }
           if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
-          $dir = (Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir
-          if (-not (Test-Path "$dir/TaoDBM.exe")) { Write-Host "::error::exe missing at $dir"; exit 1 }
+          $dir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/')
+          if (-not (Test-Path (Join-Path $dir 'TaoDBM.exe'))) {
+            Write-Host "::error::exe missing at $dir"
+            Get-ChildItem -Recurse -Depth 1 $dir -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object { Write-Host "[INSTDIR] $($_.FullName)" }
+            exit 1
+          }
           Write-Host "[OK] installed at $dir"
           "TaoDBMDir=$dir" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
 
