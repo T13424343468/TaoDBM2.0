@@ -378,6 +378,9 @@ public partial class MainWindow : Window
                 Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
                 Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
                 Item("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
+                Item("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
+                Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
+                Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
