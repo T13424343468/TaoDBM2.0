@@ -381,6 +381,7 @@ public partial class MainWindow : Window
                 Item("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
                 Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
                 Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
+                Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
@@ -396,6 +397,7 @@ public partial class MainWindow : Window
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
                 Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
+                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 break;
