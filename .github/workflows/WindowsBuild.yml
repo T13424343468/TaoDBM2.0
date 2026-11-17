@@ -232,14 +232,34 @@ jobs:
             if ($try -lt 3) { Start-Sleep -Seconds 20 }
           }
           if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
-          $dir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/')
-          if (-not (Test-Path (Join-Path $dir 'TaoDBM.exe'))) {
-            Write-Host "::error::exe missing at $dir"
-            Get-ChildItem -Recurse -Depth 1 $dir -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object { Write-Host "[INSTDIR] $($_.FullName)" }
+          # 程序文件定位三路兜底：卸载表 DisplayIcon(去 ,0) -> 注册表 InstallDir -> 常规安装位置递归搜
+          $exe = $null
+          $cand = @()
+          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
+          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
+          $regdir = $null
+          try { $regdir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/') } catch { $regdir = $null }
+          if ($regdir) { $cand += (Join-Path $regdir 'TaoDBM.exe') }
+          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
+          }
+          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
+          $diag = "regdir=$regdir`ncandidates=$($cand -join '; ')"
+          if (-not $exe) {
+            "### exe missing after install" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $diag | Add-Content $env:GITHUB_STEP_SUMMARY
+            foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+              if (Test-Path $root) {
+                "#### tree $root" | Add-Content $env:GITHUB_STEP_SUMMARY
+                Get-ChildItem -Recurse -Depth 1 $root -ErrorAction SilentlyContinue | Select-Object -First 60 | ForEach-Object { $_.FullName | Add-Content $env:GITHUB_STEP_SUMMARY }
+              } else { "root absent: $root" | Add-Content $env:GITHUB_STEP_SUMMARY }
+            }
+            Write-Host "::error::TaoDBM.exe not found; diag=$diag"
             exit 1
           }
-          Write-Host "[OK] installed at $dir"
-          "TaoDBMDir=$dir" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
+          Write-Host "[OK] exe at $exe"
+          "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
 
       - name: Launch and screenshot real UI
         shell: pwsh
@@ -248,8 +268,9 @@ jobs:
           Add-Type -AssemblyName System.Windows.Forms,System.Drawing
           $src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }'
           Add-Type -TypeDefinition $src
-          $dir = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMDir=',''
-          $proc = Start-Process "$dir/TaoDBM.exe" -WorkingDirectory $dir -PassThru
+          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
+          $dir = Split-Path $exe -Parent
+          $proc = Start-Process $exe -WorkingDirectory $dir -PassThru
           $handle = [IntPtr]::Zero
           for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep -Milliseconds 500
