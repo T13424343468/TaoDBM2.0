@@ -370,6 +370,10 @@ public partial class MainWindow : Window
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
+                Item("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info));
+                Item("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info));
+                Item("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info));
                 Item("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
                 Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
                 Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
@@ -387,6 +391,8 @@ public partial class MainWindow : Window
                 Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
                 Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
+                Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
+                Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 break;
