@@ -1,4 +1,4 @@
-name: windows-build
+﻿name: windows-build
 
 # 云端 Windows 验证流水线：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试 + App 发布产物。
 # 失败现场双通道：::error:: 注解 + GITHUB_STEP_SUMMARY（匿名可读的运行摘要），补无凭据日志缺口。
@@ -205,11 +205,24 @@ jobs:
       - name: Silent install
         shell: pwsh
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $msi = (Resolve-Path *.msi).Path
-          $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
-          Write-Host "[INSTALL] exit=$($p.ExitCode)"
-          if ($p.ExitCode -ne 0) { Get-Content install-smoke.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
-          $dir = (Get-ItemProperty HKLM:\Software\TaoDBM).InstallDir
+          Write-Host "[MSI] $msi size=$((Get-Item $msi).Length) bytes"
+          $ok = $false
+          for ($try = 1; $try -le 3; $try++) {
+            $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
+            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
+            if ($p.ExitCode -eq 0) { $ok = $true; break }
+            # 失败现场双通道：注解 + 匿名可读摘要（含退出码与日志尾）
+            "### install try$try exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            Get-Content install-smoke.log -Tail 80 -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+            Get-Content install-smoke.log -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { $t="try$try $_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            if ($try -lt 3) { Start-Sleep -Seconds 20 }
+          }
+          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
+          $dir = (Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir
           if (-not (Test-Path "$dir/TaoDBM.exe")) { Write-Host "::error::exe missing at $dir"; exit 1 }
           Write-Host "[OK] installed at $dir"
           "TaoDBMDir=$dir" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
