@@ -2969,6 +2969,166 @@ Console.WriteLine("== AtomicWrite 原子落盘（三.6 断电模拟）==");
 
 RealDbCheck.Run(Check);
 
+Console.WriteLine("\n== P-3 多表联查问法 ==");
+Layer("单元");
+{
+    var Users = new MultiTableSpec("users", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "name", DataType = "varchar" },
+        new() { Name = "city", DataType = "varchar" },
+        new() { Name = "created_at", DataType = "datetime" },
+    });
+    var Orders = new MultiTableSpec("orders", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "user_id", DataType = "int" },
+        new() { Name = "amount", DataType = "decimal" },
+        new() { Name = "status", DataType = "varchar" },
+        new() { Name = "created_at", DataType = "datetime" },
+    });
+    var Items = new MultiTableSpec("order_items", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "order_id", DataType = "int" },
+        new() { Name = "qty", DataType = "int" },
+    });
+    var Products = new MultiTableSpec("products", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "title", DataType = "varchar" },
+    });
+    var Payments = new MultiTableSpec("payments", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "pay_no", DataType = "varchar" },
+    });
+    var Two = new[] { Orders, Users };
+
+    var j01 = NaturalLanguageJoinQuery.Ask("orders 表关联 users 表", Two, DbEngine.MySQL);
+    Check("J01 基础联查生成 JOIN/ON", j01.Ok && j01.Sql.Contains("FROM `orders` JOIN `users` ON `orders`.`user_id` = `users`.`id`"), j01.Sql);
+    var j02 = NaturalLanguageJoinQuery.Ask("orders 表关联 users 表", Two, DbEngine.PostgreSQL);
+    Check("J02 PG 方言双引号", j02.Ok && j02.Sql.Contains("FROM \"orders\" JOIN \"users\" ON \"orders\".\"user_id\" = \"users\".\"id\""), j02.Sql);
+    var j03 = NaturalLanguageJoinQuery.Ask("orders 跟 users 一起看", Two, DbEngine.MySQL);
+    Check("J03 口语变体·一起", j03.Ok && j03.Sql.Contains("JOIN `users` ON"), j03.Sql);
+    var j04 = NaturalLanguageJoinQuery.Ask("users 以及 orders", Two, DbEngine.MySQL);
+    Check("J04 口语变体·以及（顺序反转仍可连）", j04.Ok && j04.Sql.Contains("FROM `users` JOIN `orders` ON `users`.`id` = `orders`.`user_id`"), j04.Sql);
+    var j05 = NaturalLanguageJoinQuery.Ask("orders 加上 users", Two, DbEngine.MySQL);
+    Check("J05 口语变体·加上", j05.Ok && j05.Sql.Contains("JOIN `users` ON"), j05.Sql);
+    var j06 = NaturalLanguageJoinQuery.Ask("orders join users", Two, DbEngine.MySQL);
+    Check("J06 英文 join 词", j06.Ok && j06.Sql.Contains("JOIN `users` ON"), j06.Sql);
+
+    var j07 = NaturalLanguageJoinQuery.Ask("orders 关联 users 关联 order_items", new[] { Orders, Users, Items }, DbEngine.MySQL);
+    Check("J07 三表两段 JOIN", j07.Ok && j07.Sql.Contains("JOIN `users` ON `orders`.`user_id` = `users`.`id`")
+        && j07.Sql.Contains("JOIN `order_items` ON `orders`.`id` = `order_items`.`order_id`"), j07.Sql);
+    var j08 = NaturalLanguageJoinQuery.Ask("orders 关联 users 关联 order_items 一共多少条", new[] { Orders, Users, Items }, DbEngine.MySQL);
+    Check("J08 三表计数", j08.Ok && j08.Sql.Contains("COUNT(*)") && j08.Sql.Split("JOIN ").Length == 3, j08.Sql);
+
+    var j09 = NaturalLanguageJoinQuery.Ask("orders 关联 products", new[] { Orders, Products }, DbEngine.MySQL);
+    Check("J09 无外键关联明确报因", !j09.Ok && j09.UnsupportedReason!.Contains("不支持该问法") && j09.UnsupportedReason.Contains("模型兜底"), j09.UnsupportedReason ?? "");
+    var j10 = NaturalLanguageJoinQuery.Ask("orders 表 amount 大于 100", new[] { Orders }, DbEngine.MySQL);
+    Check("J10 单表不成联查", !j10.Ok && j10.UnsupportedReason!.Contains("不支持该问法"), j10.UnsupportedReason ?? "");
+    var j11 = NaturalLanguageJoinQuery.Ask("orders 还有 users 看看", Two, DbEngine.MySQL);
+    Check("J11 无联查意图词明确报因", !j11.Ok && j11.UnsupportedReason!.Contains("不支持该问法") && j11.UnsupportedReason.Contains("模型兜底"), j11.UnsupportedReason ?? "");
+
+    var j12 = NaturalLanguageJoinQuery.Ask("删除 orders 关联 users 的数据", Two, DbEngine.MySQL);
+    Check("J12 危险语义·删除拒绝", !j12.Ok && j12.UnsupportedReason!.Contains("只读"), j12.UnsupportedReason ?? "");
+    var j13 = NaturalLanguageJoinQuery.Ask("orders 关联 users，然后 drop 表", Two, DbEngine.MySQL);
+    Check("J13 危险语义·DDL 拒绝", !j13.Ok && j13.UnsupportedReason!.Contains("危险"), j13.UnsupportedReason ?? "");
+    var j21 = NaturalLanguageJoinQuery.Ask("orders 关联 users 表的记录", Two, DbEngine.MySQL);
+    Check("J14 产物只读 SELECT", j21.Ok && j21.Sql.StartsWith("SELECT ") && !j21.Sql.Contains("DELETE") && !j21.Sql.Contains("UPDATE") && !j21.Sql.Contains("INSERT"), j21.Sql);
+
+    var j14 = NaturalLanguageJoinQuery.Ask("orders 关联 users 一共有多少条", Two, DbEngine.MySQL);
+    Check("J15 两表计数", j14.Ok && j14.Sql.Contains("COUNT(*)") && j14.Sql.Contains("WHERE") == false, j14.Sql);
+    var j15 = NaturalLanguageJoinQuery.Ask("orders 关联 users amount 最大的前 5 条", Two, DbEngine.MySQL);
+    Check("J16 排序+LIMIT", j15.Ok && j15.Sql.Contains("ORDER BY `orders`.`amount` DESC") && j15.Sql.Contains("LIMIT 5"), j15.Sql);
+    var j16 = NaturalLanguageJoinQuery.Ask("orders 关联 users amount 大于 100", Two, DbEngine.MySQL);
+    Check("J17 跨表条件带前缀", j16.Ok && j16.Sql.Contains("`orders`.`amount` > 100"), j16.Sql);
+    var j17 = NaturalLanguageJoinQuery.Ask("orders 关联 users 最近 7 天的记录", Two, DbEngine.MySQL);
+    Check("J18 时间过滤 MySQL 关键字", j17.Ok && j17.Sql.Contains("`orders`.`created_at` >= NOW() - INTERVAL 7 DAY"), j17.Sql);
+    var j18 = NaturalLanguageJoinQuery.Ask("orders 关联 users 最近 7 天的记录", Two, DbEngine.PostgreSQL);
+    Check("J19 时间过滤 PG 关键字", j18.Ok && j18.Sql.Contains("\"orders\".\"created_at\" >= CURRENT_DATE - INTERVAL '7 DAY'"), j18.Sql);
+    var j19 = NaturalLanguageJoinQuery.Ask("orders 关联 users 今天的记录", Two, DbEngine.MySQL);
+    Check("J20 今天·MySQL", j19.Ok && j19.Sql.Contains(">= CURDATE()"), j19.Sql);
+    var j20 = NaturalLanguageJoinQuery.Ask("orders 关联 users 今天的记录", Two, DbEngine.PostgreSQL);
+    Check("J21 今天·PG", j20.Ok && j20.Sql.Contains(">= CURRENT_DATE") && !j20.Sql.Contains("CURDATE()"), j20.Sql);
+
+    var j22 = NaturalLanguageJoinQuery.Ask("payments 关联 orders",
+        new[] { Payments, Orders },
+        DbEngine.MySQL,
+        new[] { new ErdEdge { FromTable = "orders", FromCol = "user_id", ToTable = "payments" } });
+    Check("J22 已知关系优先", j22.Ok && j22.Sql.Contains("`payments`.`id` = `orders`.`user_id`"), j22.Sql);
+
+    var j23 = NaturalLanguageJoinQuery.Ask("orders 关联 users", Two, DbEngine.MongoDB);
+    Check("J23 非关系库明确拒绝", !j23.Ok && j23.UnsupportedReason!.Contains("关系型"), j23.UnsupportedReason ?? "");
+    var j24 = NaturalLanguageJoinQuery.Ask("orders 关联 users", Two, DbEngine.MySQL);
+    Check("J24 置信度与人话解释", j24.Confidence == "high" && j24.Interpretation.Contains("联查"), j24.Interpretation);
+    var j25 = NaturalLanguageJoinQuery.Ask("orders 关联 users 谁在 city 是 上海", Two, DbEngine.MySQL);
+    Check("J25 文本等值条件", j25.Ok && j25.Sql.Contains("`users`.`city` = '上海'"), j25.Sql);
+    var j26 = NaturalLanguageJoinQuery.Ask("orders 关联 users，status 包含 paid", Two, DbEngine.MySQL);
+    Check("J26 LIKE 条件", j26.Ok && j26.Sql.Contains("`orders`.`status` LIKE '%paid%'"), j26.Sql);
+    var j27 = NaturalLanguageJoinQuery.Ask("orders 关联 users 按修改时间最近 7 天看", Two, DbEngine.MySQL);
+    Check("J27 修改时间不是写库语义", j27.Ok && j27.Sql.Contains("`orders`.`created_at` >= NOW() - INTERVAL 7 DAY"), j27.Sql);
+    var j28 = NaturalLanguageJoinQuery.Ask("orders 关联 users 修改状态", Two, DbEngine.MySQL);
+    Check("J28 裸写库语义仍拒绝", !j28.Ok && j28.UnsupportedReason!.Contains("危险"), j28.UnsupportedReason ?? "");
+}
+
+Console.WriteLine("\n== P-3 问答记忆（成长机制）==");
+Layer("单元");
+{
+    var MemOrders = new MultiTableSpec("orders", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "user_id", DataType = "int" },
+        new() { Name = "amount", DataType = "decimal" },
+        new() { Name = "created_at", DataType = "datetime" },
+    });
+    var MemUsers = new MultiTableSpec("users", new List<ColumnSpec>
+    {
+        new() { Name = "id", DataType = "int", IsKey = true },
+        new() { Name = "name", DataType = "varchar" },
+    });
+    var MemTwo = new[] { MemOrders, MemUsers };
+
+    var mPath = Path.Combine(Path.GetTempPath(), "taodbm_qamem_" + Guid.NewGuid().ToString("N") + ".jsonl");
+    var mem = QaMemoryStore.Load(mPath);
+    var m1 = mem.Record("orders 表关联 users 表", "SELECT * FROM `orders` JOIN `users` ON `orders`.`user_id` = `users`.`id`;",
+        DbEngine.MySQL, "rule");
+    Check("M01 登记默认未确认", m1 is { Confirmed: false } && mem.Count == 1, m1?.Id.ToString() ?? "null");
+    Check("M02 未确认样本不召回", mem.Recall("orders 表关联 users 表", "MySQL") is null, "");
+    Check("M03 确认后精确召回 1.0", mem.Confirm(m1!.Id) && mem.Recall("orders 表关联 users 表", "MySQL") is { Score: 1.0 }, "");
+    var h4 = mem.Recall("orders 表关联 users 表的记录", "MySQL");
+    Check("M04 相似问法可召回", h4 is not null && h4.Score >= 0.8 && h4.Entry.Id == m1.Id, h4?.Score.ToString("0.00") ?? "无");
+    Check("M05 无关问法不误召回", mem.Recall("查询库存表里商品的数量", "MySQL") is null, "");
+    Check("M06 方言隔离不串库", mem.Recall("orders 表关联 users 表", "PostgreSQL") is null, "");
+
+    var mBad = mem.Record("orders 关联 users", "Server=10.0.0.1;Password=secret123;Database=app;", DbEngine.MySQL, "manual");
+    Check("M07 疑似凭据拒绝落盘", mBad is null && mem.Count == 1, "");
+
+    var mem2 = QaMemoryStore.Load(mPath);
+    Check("M08 JSONL 重载记忆仍在", mem2.Count == 1 && mem2.Recall("orders 表关联 users 表", "MySQL") is { Score: 1.0 }, "");
+
+    var xPath = Path.Combine(Path.GetTempPath(), "taodbm_qaexp_" + Guid.NewGuid().ToString("N") + ".jsonl");
+    var exported = mem2.Export(xPath);
+    var lines = File.ReadAllLines(xPath);
+    Check("M09 导出 JSONL 带确认标记", exported == 1 && lines.Length == 1 && lines[0].Contains("\"Confirmed\":true"), lines.Length.ToString());
+    Check("M10 清理接口生效", mem2.Clear() == 1 && mem2.Count == 0 && mem2.Recall("orders 表关联 users 表", "MySQL") is null, "");
+    Check("M11 清理后落盘同步收缩", File.ReadAllLines(mPath).Length == 0, "");
+
+    var mem3 = QaMemoryStore.Load(Path.Combine(Path.GetTempPath(), "taodbm_qamem_" + Guid.NewGuid().ToString("N") + ".jsonl"));
+    var a1 = QaAssistant.AskMultiTable("orders 关联 users", MemTwo, DbEngine.MySQL, mem3);
+    Check("M12 记忆未命中走规则层", a1.Ok && a1.Sql.Contains("JOIN `users` ON"), a1.Sql);
+    var saved = mem3.Record("orders 关联 users", a1.Sql, DbEngine.MySQL, "rule", confirmed: true);
+    Check("M13 规则确认样本入库", saved is { Confirmed: true }, "");
+    var a2 = QaAssistant.AskMultiTable("orders 关联 users", MemTwo, DbEngine.MySQL, mem3);
+    Check("M14 命中记忆优先复用", a2.Ok && a2.Interpretation.Contains("记忆") && a2.Sql == saved!.Sql, a2.Interpretation);
+    var a3 = QaAssistant.AskSingleTable("orders 表有多少条", "orders", MemOrders.Columns, DbEngine.MySQL, mem3);
+    Check("M15 单表问法未命中走规则", a3.Ok && a3.Sql.Contains("COUNT"), a3.Sql);
+    mem3.Record("orders 表有多少条", a3.Sql, DbEngine.MySQL, "model", confirmed: true);
+    var a4 = QaAssistant.AskSingleTable("orders 表有多少条", "orders", MemOrders.Columns, DbEngine.MySQL, mem3);
+    Check("M16 模型来源样本同库复用", a4.Ok && a4.Interpretation.Contains("记忆") && a4.Sql == a3.Sql, a4.Interpretation);
+}
+
 Console.WriteLine("\n== B12 诊断优化引擎 ==");
 Layer("系统");
 {
