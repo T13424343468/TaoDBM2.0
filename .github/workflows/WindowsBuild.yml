@@ -355,12 +355,20 @@ jobs:
           "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
           "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
 
-      - name: Launch and walk real UI (walk-page smoke, v3.12)
+      - name: Generate real SQLite test DB (dirty data + expected values)
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb failed"; exit 1 }
+          "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
+          "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
+
+      - name: Launch and walk real UI (v3.13 real-db, checklist-driven)
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
 
       - name: Uninstall (restore clean state)

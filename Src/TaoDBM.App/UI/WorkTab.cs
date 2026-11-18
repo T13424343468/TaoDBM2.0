@@ -142,6 +142,14 @@ public class WorkTab : Grid
         Children.Add(msgBorder);
         SetRow(msgBorder, 4);
 
+        // UIA 自动化标识（界面自动化走查定位用）
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_runBtn, "work-run");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_csvBtn, "work-csv");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_messageBox, "work-message");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_pageInfo, "work-pageinfo");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_resultsHost, "work-results");
+
         _runBtn.Click += (_, _) => _ = RunOrRefresh();
         _csvBtn.Click += (_, _) => _ = ExportAsync(true);
         _insBtn.Click += (_, _) => _ = ExportAsync(false);

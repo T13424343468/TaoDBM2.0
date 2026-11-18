@@ -34,6 +34,16 @@ public class ConnectionDialog
     public ConnectionDialog(ConnectionProfile profile)
     {
         Profile = profile;
+        // UIA 自动化标识（界面自动化走查定位用）
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_engine, "conn-engine");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_name, "conn-name");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_host, "conn-host");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_port, "conn-port");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_user, "conn-user");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_pass, "conn-pass");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_database, "conn-database");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_file, "conn-file");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_params, "conn-params");
         foreach (var e in EngineInfo.All) _engine.Items.Add(EngineInfo.Name(e));
         _engine.SelectedIndex = (int)profile.Engine;
         _engine.SelectionChanged += (_, _) => OnEngineChanged();

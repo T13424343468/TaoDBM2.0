@@ -16,7 +16,7 @@
         <Border Grid.Row="0" Background="{ThemeResource AntPrimary}">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0" Spacing="10">
-                    <Button x:Name="BtnLogo" Background="Transparent" BorderThickness="0" Padding="4">
+                    <Button x:Name="BtnLogo" Background="Transparent" BorderThickness="0" Padding="4" AutomationProperties.AutomationId="BtnLogo">
                         <Button.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedLeft">
                                 <MenuFlyoutItem Text="刷新" Click="OnRefreshSel"/>
@@ -40,10 +40,10 @@
                                Foreground="{ThemeResource AntOnPrimary}" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" Spacing="8">
-                    <Button x:Name="BtnNewConn" Content="＋ 新建连接" Click="OnNewConn"
+                    <Button x:Name="BtnNewConn" Content="＋ 新建连接" Click="OnNewConn" AutomationProperties.AutomationId="BtnNewConn"
                             Background="{ThemeResource AntCard}" Foreground="{ThemeResource AntPrimary}" BorderThickness="0"
                             CornerRadius="4" Padding="12,5"/>
-                    <Button x:Name="BtnTheme" Content="主题" ClickMode="Press"
+                    <Button x:Name="BtnTheme" Content="主题" ClickMode="Press" AutomationProperties.AutomationId="BtnTheme"
                             Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5">
                         <Button.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedRight">
@@ -53,7 +53,7 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
-                    <Button x:Name="BtnAbout" Content="关于" Click="OnAbout" ClickMode="Press"
+                    <Button x:Name="BtnAbout" Content="关于" Click="OnAbout" ClickMode="Press" AutomationProperties.AutomationId="BtnAbout"
                             Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                 </StackPanel>
             </Grid>
@@ -68,7 +68,7 @@
 
             <!-- 左侧连接树：仅显示连接 / 库 / 表 -->
             <Border Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
-                <TreeView x:Name="ConnTree"
+                <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
                           Expanding="OnNodeExpanding"
                           SelectionChanged="OnTreeSelection"
                           RightTapped="OnTreeRightTapped"/>

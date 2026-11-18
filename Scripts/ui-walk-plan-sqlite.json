@@ -1,0 +1,154 @@
+{
+  "version": "v3.13-real-db-sqlite",
+  "steps": [
+    {
+      "id": "S01",
+      "feature": "新建连接-打开对话框",
+      "action": "click",
+      "find": { "controlType": "Button", "name": "＋ 新建连接" },
+      "shot": "shot-05-newconn-dialog.png"
+    },
+    {
+      "id": "S02",
+      "feature": "连接-选择SQLite引擎",
+      "action": "setcombo",
+      "find": { "automationId": "conn-engine" },
+      "value": "SQLite"
+    },
+    {
+      "id": "S03",
+      "feature": "连接-填写名称",
+      "action": "setvalue",
+      "find": { "automationId": "conn-name" },
+      "value": "__CONN_NAME__"
+    },
+    {
+      "id": "S04",
+      "feature": "连接-填写数据库文件",
+      "action": "setvalue",
+      "find": { "automationId": "conn-file" },
+      "value": "__DBFILE__"
+    },
+    {
+      "id": "S05",
+      "feature": "连接-保存",
+      "action": "click",
+      "find": { "controlType": "Button", "name": "保存" },
+      "critical": true,
+      "shot": "shot-06-conn-saved.png"
+    },
+    {
+      "id": "S06",
+      "feature": "对象树-连接节点出现",
+      "action": "tree-contains",
+      "value": "__CONN_NAME__",
+      "critical": true
+    },
+    {
+      "id": "S07",
+      "feature": "对象树-展开连接",
+      "action": "expand",
+      "prefix": "🗄️ __CONN_NAME__",
+      "sleepAfter": 6
+    },
+    {
+      "id": "S08",
+      "feature": "对象树-展开数据库",
+      "action": "expand",
+      "prefix": "📁 main",
+      "sleepAfter": 6
+    },
+    {
+      "id": "S09",
+      "feature": "对象树-真实表清单",
+      "action": "tree-contains-all",
+      "value": ["__TBL1__", "__TBL2__"],
+      "critical": true,
+      "shot": "shot-07-table-tree.png"
+    },
+    {
+      "id": "S10",
+      "feature": "查询-选中连接",
+      "action": "select",
+      "prefix": "🗄️ __CONN_NAME__",
+      "critical": true
+    },
+    {
+      "id": "S11",
+      "feature": "查询-新建查询入口",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "新建查询",
+      "critical": true
+    },
+    {
+      "id": "S12",
+      "feature": "SQL真实执行-计数",
+      "action": "query",
+      "sql": "SELECT COUNT(*) AS c FROM orders;",
+      "expectContains": ["__ORDERS_COUNT__"],
+      "pageInfoContains": "共 1 条",
+      "critical": true,
+      "shot": "shot-08-count-5000.png"
+    },
+    {
+      "id": "S13",
+      "feature": "SQL真实执行-聚合",
+      "action": "query",
+      "sql": "SELECT SUM(amount) AS s FROM orders;",
+      "expectContains": ["__SUM_AMOUNT__"],
+      "critical": true,
+      "shot": "shot-09-sum.png"
+    },
+    {
+      "id": "S14",
+      "feature": "SQL真实执行-空值过滤",
+      "action": "query",
+      "sql": "SELECT COUNT(*) AS c FROM products WHERE email IS NULL;",
+      "expectContains": ["__NULLEMAILS__"],
+      "critical": true,
+      "shot": "shot-10-null-emails.png"
+    },
+    {
+      "id": "S15",
+      "feature": "SQL真实执行-取值比对",
+      "action": "query",
+      "sql": "SELECT name FROM products WHERE id = 7;",
+      "expectContains": ["__NAME7__"],
+      "critical": true,
+      "shot": "shot-11-cell-value.png"
+    },
+    {
+      "id": "S16",
+      "feature": "SQL真实执行-脏数据行",
+      "action": "query",
+      "sql": "SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;",
+      "expectContains": ["__NULLNOTES__"],
+      "critical": true,
+      "shot": "shot-12-dirty-rows.png"
+    },
+    {
+      "id": "S17",
+      "feature": "导出CSV",
+      "action": "export-csv",
+      "allowMiss": true,
+      "shot": "shot-13-export-csv.png"
+    },
+    {
+      "id": "S18",
+      "feature": "主题切换",
+      "action": "soft-page",
+      "page": "theme",
+      "allowMiss": true,
+      "shot": "shot-14-theme.png"
+    },
+    {
+      "id": "S19",
+      "feature": "关于页",
+      "action": "soft-page",
+      "page": "about",
+      "allowMiss": true,
+      "shot": "shot-15-about.png"
+    }
+  ]
+}
