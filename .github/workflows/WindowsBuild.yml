@@ -33,16 +33,16 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $out = dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | Tee-Object -Variable to
-          $out | ForEach-Object { Write-Host "$_" }
-          $out | Out-File -FilePath test-output.txt -Encoding utf8
-          if ($LASTEXITCODE -ne 0) {
-            "### LogicTest failed (windows-latest, Release)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','Release' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
+          Get-Content test-output.txt | ForEach-Object { Write-Host "$_" }
+          if ($p.ExitCode -ne 0) {
+            "### LogicTest failed (windows-latest, Release) exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+            $tail = @(Get-Content test-output.txt | Select-Object -Last 60) + @('--- stderr tail ---') + @(Get-Content test-stderr.txt -ErrorAction SilentlyContinue | Select-Object -Last 60)
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $out | Select-Object -Last 100 | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+            $tail | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $out | Where-Object { "$_" -match "error|✗|失败|Exception|异常" } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
-            exit $LASTEXITCODE
+            $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            exit $p.ExitCode
           }
 
       - name: Build App (WinUI, 0 warning 0 error gate)
@@ -68,7 +68,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: taodbm-test-output
-          path: test-output.txt
+          path: |
+            test-output.txt
+            test-stderr.txt
 
       - name: Upload artifacts
         if: success()
