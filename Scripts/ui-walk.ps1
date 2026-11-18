@@ -423,7 +423,13 @@ foreach ($s in $plan.steps) {
           Start-Sleep -Seconds 1
         }
         foreach ($v in $needles) {
-          if (-not $txt.Contains($v)) { throw "tree text missing: $v" }
+          if (-not $txt.Contains($v)) {
+            # 真红入账：把树文本快照推上证据分支，定谳「表名缺失＝子级未渲染还是读树口径」
+            $snap = ($txt -replace '\r?\n', ' | ')
+            if ($snap.Length -gt 300) { $snap = $snap.Substring(0, 300) }
+            Push-Evidence "treetxt $snap"
+            throw "tree text missing: $v"
+          }
         }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
@@ -435,35 +441,42 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds $sleepSec
       }
       'expand-keyboard' {
-        # 静置探针定谳：死亡追随 S08 动作而非启动时钟——UIA Expand+Descendants 轮询在十余台机器上稳定伴随代理进程死
-        # 改键盘导航：Select 连接节点后 {RIGHT}（→聚焦库节点→展开），全程不做 Descendants 全扫、不调 ExpandCollapse 模式；
-        # 5de8999 轮定谳：键盘导航后代理进程存活（死亡点解除），但 S09 真红 tree text missing——{RIGHT} 是否真展开库节点不可见
-        # 本轮升级为「键盘展开＋单次定性核验」：树域内单次 FindAll（非轮询）读库节点 ExpandCollapseState 入证据；
-        # 坍缩态则对该单元素补一次 Expand 并复读写账，S09 tree-contains-all 仍按真实表清单终审
+        # 1686ec1 轮定谳：kb-state=notfound——键盘 {RIGHT} 后树域里根本找不到「📁 main」（12 秒后单次扫描仍无），
+        # 与旧轮询 15 秒找不到一致＝问题不在展开动作，在「库节点是否存在/叫什么」。本轮：
+        # ①匹配放宽到去掉表情前缀的关键字（📁 main → main）；②notfound 时把树内全部 TreeItem 名入证据定谳命名；
         $sel = Select-TreeItem (Tpl $s.selectPrefix) 10
         if ($null -eq $sel) { throw "tree item not found: $(Tpl $s.selectPrefix)" }
         try { $sel.SetFocus() } catch { }
         Start-Sleep -Milliseconds 500
         [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
         Start-Sleep -Milliseconds 800
+        $needle = (Tpl $s.childPrefix) -replace '^[^\s]+\s+', ''
         $dbState = 'notfound'
         $dbItem = $null
+        $itemNames = @()
         try {
           $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
           if ($treeEl) {
             $all = $treeEl.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
             foreach ($e in $all) {
               try {
-                if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem' -and $e.Current.Name -like ("*" + (Tpl $s.childPrefix) + "*")) {
-                  $dbItem = $e
-                  $dbState = ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
-                  break
+                if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem') {
+                  $itemNames += $e.Current.Name
+                  if ($e.Current.Name -like ("*" + $needle + "*")) {
+                    $dbItem = $e
+                    $dbState = ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
+                  }
                 }
               } catch { }
             }
           }
         } catch { }
-        Push-Evidence "kb-state $(Tpl $s.childPrefix) $dbState"
+        if ($itemNames.Count -gt 0) {
+          Push-Evidence ("kb-tree-items " + (($itemNames | Select-Object -First 20) -join ' | '))
+        } else {
+          Push-Evidence "kb-tree-items none"
+        }
+        Push-Evidence "kb-state $needle $dbState"
         if ($dbItem -and $dbState -ne 'Expanded') {
           # 单元素补一发 Expand：疑似触发点在轮询 FindAll＋反复 Expand 的组合，而非单次调用
           try {
@@ -471,10 +484,10 @@ foreach ($s in $plan.steps) {
             Start-Sleep -Seconds 1
             $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
           } catch { $dbState = 'expand-threw' }
-          Push-Evidence "kb-state-after $(Tpl $s.childPrefix) $dbState"
+          Push-Evidence "kb-state-after $needle $dbState"
         }
         Assert-AppAlive "expand-keyboard $(Tpl $s.selectPrefix)"
-        Push-Evidence ("expand-kb-ok {0} child={1} state={2}" -f (Tpl $s.selectPrefix), (Tpl $s.childPrefix), $dbState)
+        Push-Evidence ("expand-kb-ok {0} child={1} state={2}" -f (Tpl $s.selectPrefix), $needle, $dbState)
         $sleepSec = 3
         if ($s.sleepAfter) { $sleepSec = [int]$s.sleepAfter }
         Start-Sleep -Seconds $sleepSec
