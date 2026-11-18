@@ -21,6 +21,20 @@ public static class AtomicWrite
             w.Flush();
             fs.Flush(true);   // 强制落盘：断电后 tmp 要么完整要么不存在，move 后目标必完整
         }
-        System.IO.File.Move(tmp, path, overwrite: true);
+        // Windows 现实环境（杀软实时扫描/搜索索引）可能短暂持有刚关闭的 tmp 句柄，Move 立刻被拒
+        // （UnauthorizedAccessException/IOException）。有界退避重试后放行，绝不吞异常、绝不放弃原子性。
+        // 实锤：GH Actions windows-latest Defender 锁 tmp，run #63 N38 后秒挂，2026-11-18。
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                System.IO.File.Move(tmp, path, overwrite: true);
+                return;
+            }
+            catch (Exception ex) when (attempt < 10 && ex is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(attempt * 25);   // 最坏约 1.1s：杀软扫描窗口通常 <100ms
+            }
+        }
     }
 }

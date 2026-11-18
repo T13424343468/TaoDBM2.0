@@ -7,6 +7,10 @@ on:
   push:
   workflow_dispatch:
 
+# 失败现场要推公开分支，token 需要写权限（匿名取证通道）
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
