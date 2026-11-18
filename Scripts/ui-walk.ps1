@@ -54,6 +54,19 @@ Start-Sleep -Seconds 8
 $proc.Refresh()
 if ($proc.HasExited) { Write-Host "::error::app exited before walk code=$($proc.ExitCode)"; exit 1 }
 
+# 定时炸弹探针（#83 死亡现场判定：六次死亡恒定落在应用启动后 45-60 秒，与步骤可能只是相关）：
+# 静置 45 秒不做任何 UIA 操作并分段留证——死在静置期＝应用/环境时间引爆，与 S08 无关；死回 S08＝动作因果
+Log "probe quiet-watch start (45s, no UIA)"
+Push-Evidence "quiet-watch start"
+for ($qw = 1; $qw -le 9; $qw++) {
+  Start-Sleep -Seconds 5
+  $proc.Refresh()
+  if ($proc.HasExited) { Write-Host "::error::app exited during quiet-watch q$qw code=$($proc.ExitCode)"; exit 1 }
+  if ($qw % 3 -eq 0) { Push-Evidence "quiet-watch q$qw" }
+}
+Log "probe quiet-watch done"
+Push-Evidence "quiet-watch done"
+
 Save-Shot "shot-01-start.png"
 
 # ---------- 2. 主窗口控件覆盖率首账 ----------
@@ -253,6 +266,7 @@ function Expand-TreeItem([string]$prefix, [int]$seconds) {
   $scope = $desktop
   try { if ($script:mainRoot) { $scope = $script:mainRoot } } catch { }
   $deadline = (Get-Date).AddSeconds($seconds)
+  $polls = 0
   while ((Get-Date) -lt $deadline) {
     try {
       $allEls = $scope.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
@@ -265,6 +279,8 @@ function Expand-TreeItem([string]$prefix, [int]$seconds) {
       }
     } catch { }
     Assert-AppAlive "expand $prefix"
+    $polls++
+    if ($polls % 8 -eq 0) { Push-Evidence "poll $prefix n$polls" }
     Start-Sleep -Milliseconds 600
   }
   return $null
