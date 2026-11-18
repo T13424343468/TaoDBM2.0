@@ -459,7 +459,22 @@ foreach ($s in $plan.steps) {
   }
   Cov $id $feature $outcome
   $proc.Refresh()
-  if ($proc.HasExited) { Write-Host "::error::app exited during walk at step $id"; $hardFail = $true; break }
+  if ($proc.HasExited) {
+    Write-Host "::error::app exited during walk at step $id exitcode=$($proc.ExitCode)"
+    Log "APP EXITED at step $id exitcode=$($proc.ExitCode)"
+    Save-Shot "shot-99-death-$id.png"
+    try {
+      $evts = Get-WinEvent -LogName Application -MaxEvents 80 -ErrorAction Stop | Where-Object {
+        $_.ProviderName -in @('.NET Runtime','Application Error','Windows Error Reporting') -or $_.Message -match 'TaoDBM'
+      } | Select-Object -First 8
+      foreach ($e in $evts) {
+        $m = $e.Message
+        if ($m.Length -gt 500) { $m = $m.Substring(0, 500) }
+        Log "EVT $($e.TimeCreated) [$($e.ProviderName)] $($m -replace "\r?\n", ' | ')"
+      }
+    } catch { Log "eventlog read failed: $($_.Exception.Message)" }
+    $hardFail = $true; break
+  }
 }
 
 # ---------- 6. 收档 ----------
@@ -469,5 +484,17 @@ Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
 $summary = "walk finished; shots=" + ($shots -join ',') + "; hardFail=$hardFail; coverage: " + ($funcCov -join ' ;; ')
 $summary | Set-Content ui-walk-report.txt -Encoding utf8
 Get-Content ui-walk-report.txt | ForEach-Object { Write-Host "[REPORT] $_" }
+if ($env:GITHUB_STEP_SUMMARY) {
+  try {
+    "## ui-walk walk log (public evidence)" | Add-Content $env:GITHUB_STEP_SUMMARY
+    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    $walkLog | ForEach-Object { $_ -replace '<', '&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    "## ui-walk feature coverage" | Add-Content $env:GITHUB_STEP_SUMMARY
+    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    $funcCov | ForEach-Object { $_ -replace '<', '&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
+    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+  } catch { }
+}
 if ($hardFail) { exit 1 }
 exit 0
