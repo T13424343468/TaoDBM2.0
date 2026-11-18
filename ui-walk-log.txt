@@ -1,30 +1,30 @@
 probe quiet-watch start (45s, no UIA)
 probe quiet-watch done
-shot shot-01-start.png 38080 bytes
+shot shot-01-start.png 38032 bytes
 coverage: 15 named elements in main window
-shot shot-05-newconn-dialog.png 51204 bytes
+shot shot-05-newconn-dialog.png 51160 bytes
 coverage-func S01 新建连接-打开对话框 => pass
 coverage-func S02 连接-选择SQLite引擎 => pass
 coverage-func S03 连接-填写名称 => pass
 coverage-func S04 连接-填写数据库文件 => pass
-shot shot-06-conn-saved.png 40096 bytes
+shot shot-06-conn-saved.png 40115 bytes
 coverage-func S05 连接-保存 => pass
 coverage-func S06 对象树-连接节点出现 => pass
 coverage-func S07 对象树-展开连接 => pass
 coverage-func S08 对象树-展开数据库 => pass
-shot shot-07-table-tree.png 44338 bytes
+shot shot-07-table-tree.png 44355 bytes
 coverage-func S09 对象树-真实表清单 => pass
 coverage-func S10 查询-选中连接 => pass
 coverage-func S11 查询-新建查询入口 => pass
 APP EXITED at step S11 exitcode=-1073741189
-shot shot-99-death-S11.png 249403 bytes
-EVT 11/18/2026 21:34:58 [Application Error] Faulting application name: TaoDBM.exe, version: 2.0.0.0, time stamp: 0x6ae30000 | Faulting module name: Microsoft.UI.Xaml.dll, version: 3.3.0.0, time stamp: 0x870df769 | Exception code: 0xc000027b | Fault offset: 0x00000000003d1699 | Faulting process id: 0x1BA8 | Faulting application start time: 0x1DD77A45E253A84 | Faulting application path: C:\Program Files\TaoDBM\TaoDBM.exe | Faulting module path: C:\Program Files\TaoDBM\Microsoft.UI.Xaml.dll | Report Id: f0cef8f5-11da-44ec-b385-9de2d5472380 | Faulting package full name:  | Faulting package-relative application ID: 
-EVT 11/18/2026 21:32:42 [MsiInstaller] Ending a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 6228.
-EVT 11/18/2026 21:32:41 [MsiInstaller] Windows Installer installed the product. Product Name: TaoDBM. Product Version: 2.0.0. Product Language: 0. Manufacturer: TaoDBM. Installation success or error status: 0.
-EVT 11/18/2026 21:32:41 [MsiInstaller] Product: TaoDBM -- Installation completed successfully.
-EVT 11/18/2026 21:32:35 [MsiInstaller] Beginning a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 6228.
+shot shot-99-death-S11.png 257640 bytes
+EVT 11/18/2026 22:01:00 [Application Error] Faulting application name: TaoDBM.exe, version: 2.0.0.0, time stamp: 0x6ae30000 | Faulting module name: Microsoft.UI.Xaml.dll, version: 3.3.0.0, time stamp: 0x870df769 | Exception code: 0xc000027b | Fault offset: 0x00000000003d1699 | Faulting process id: 0x1F50 | Faulting application start time: 0x1DD77A803620429 | Faulting application path: C:\Program Files\TaoDBM\TaoDBM.exe | Faulting module path: C:\Program Files\TaoDBM\Microsoft.UI.Xaml.dll | Report Id: 90ac288b-4daa-45cb-a78b-82451de07507 | Faulting package full name:  | Faulting package-relative application ID: 
+EVT 11/18/2026 21:58:50 [MsiInstaller] Ending a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 5852.
+EVT 11/18/2026 21:58:50 [MsiInstaller] Windows Installer installed the product. Product Name: TaoDBM. Product Version: 2.0.0. Product Language: 0. Manufacturer: TaoDBM. Installation success or error status: 0.
+EVT 11/18/2026 21:58:50 [MsiInstaller] Product: TaoDBM -- Installation completed successfully.
+EVT 11/18/2026 21:58:45 [MsiInstaller] Beginning a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 5852.
 crashlog D:\TaoDBMData\TaoDBM\crash.log (tail 40):
-CRASHLOG [2026-11-18 21:34:58] UnhandledException: No such interface supported
+CRASHLOG [2026-11-18 22:00:59] UnhandledException: No such interface supported
 CRASHLOG 
 CRASHLOG System.InvalidCastException: No such interface supported
 CRASHLOG 
