@@ -117,7 +117,6 @@ public static class TableDesignerDialog
             Title = table == null ? $"新建表 · {db}" : $"改表结构 · {table}",
             Content = content,
             CloseButtonText = "关闭",
-            DefaultButton = ContentDialogButton.Primary,
             XamlRoot = owner.Content.XamlRoot,
         };
 
@@ -173,6 +172,24 @@ public static class TableDesignerDialog
             var (stmts, _, text) = await BuildAsync();
             preview.Text = text;
             if (stmts.Count == 0) return;
+            // 建表 / 改表直接落库：执行前给预览 + 确认，不静默改库。
+            var confirm = new ContentDialog
+            {
+                Title = table == null ? "确认新建表" : "确认修改表结构",
+                Content = new TextBlock
+                {
+                    Text = (table == null
+                        ? $"将在 {db} 新建表 {Read().TableName}。"
+                        : $"将修改 {db}.{table} 的结构，被删除 / 改类型的列会丢数据。")
+                        + "\n变更语句见上方预览框，确认执行？",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                PrimaryButtonText = "执行",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
             runBtn.IsEnabled = false;
             try
             {
