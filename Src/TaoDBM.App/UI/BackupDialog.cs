@@ -121,6 +121,34 @@ public static class BackupDialog
             if (db.Length == 0) { output.Text = "请先选择数据库。"; return; }
             if (file.Length == 0) { output.Text = "请先选择文件。"; return; }
             bool backup = isBackup.IsChecked == true;
+            if (!backup)
+            {
+                // 还原是覆盖现有数据的危险操作：不静默执行，先给确认（说明写回对象与不可撤销）。
+                string effect = profile.Engine switch
+                {
+                    DbEngine.SqlServer => $"将用 {file} 的备份内容覆盖服务器上 {db} 的现有数据。",
+                    DbEngine.SQLite => $"将用 {file} 覆盖当前库文件：\n{profile.Database}\n\n请先关闭其他占用该文件的程序。",
+                    _ => $"将把 {file} 的内容写回 {db}，现有数据会被覆盖。",
+                };
+                var confirm = new ContentDialog
+                {
+                    Title = "确认还原",
+                    Content = new TextBlock
+                    {
+                        Text = effect + "\n\n还原会覆盖现有数据且不可撤销，请确认已有其他备份。",
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    PrimaryButtonText = "执行还原",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = owner.Content.XamlRoot,
+                };
+                if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary)
+                {
+                    output.Text = "已取消。";
+                    return;
+                }
+            }
             runBtn.IsEnabled = false;
             output.Text = "执行中…";
             try
@@ -171,15 +199,6 @@ public static class BackupDialog
                         }
                         else
                         {
-                            var confirm = new ContentDialog
-                            {
-                                Title = "确认还原",
-                                Content = new TextBlock { Text = $"将用 {file} 覆盖当前库文件：\n{profile.Database}\n\n请确认已关闭其他占用该文件的程序。", TextWrapping = TextWrapping.Wrap },
-                                PrimaryButtonText = "还原",
-                                CloseButtonText = "取消",
-                                XamlRoot = owner.Content.XamlRoot,
-                            };
-                            if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) { output.Text = "已取消。"; runBtn.IsEnabled = true; return; }
                             BackupTools.SqliteRestore(profile.Database, file);
                             output.Text = $"还原完成：{file} → {profile.Database}";
                         }
