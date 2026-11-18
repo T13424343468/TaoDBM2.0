@@ -1,7 +1,21 @@
 ﻿﻿﻿using System;
+using System.Diagnostics;
 using System.Text;
 using TaoDBM.Core;
 using TaoDBM.UI;
+
+// 云端尸检：每断言/层切换立即追加落盘（文件级真落盘，进程任何形式死亡后都能对出最后位置与时间线）
+var swAll = Stopwatch.StartNew();
+string ckptPath = Environment.GetEnvironmentVariable("TAODBM_CKPT") ?? "test-progress.txt";
+void Ck(string msg)
+{
+    try { System.IO.File.AppendAllText(ckptPath, $"[{swAll.Elapsed.TotalSeconds:0.000}s] {msg}\r\n", Encoding.UTF8); } catch { /* 尸检记录绝不影响主流程 */ }
+}
+AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+{
+    Ck($"UNHANDLED-EXCEPTION terminating={e.IsTerminating} {e.ExceptionObject}");
+    try { Console.Error.WriteLine($"UNHANDLED-EXCEPTION terminating={e.IsTerminating} {e.ExceptionObject}"); Console.Error.Flush(); } catch { }
+};
 
 int pass = 0, fail = 0;
 var layerPass = new Dictionary<string, int>();
@@ -13,6 +27,8 @@ void Layer(string name)
     layerPass.TryAdd(name, 0);
     layerFail.TryAdd(name, 0);
     Console.WriteLine($"\n========== {name}层 ==========");
+    Console.Out.Flush();
+    Ck($"LAYER {name}");
 }
 void Check(string name, bool ok, string detail = "")
 {
@@ -20,7 +36,10 @@ void Check(string name, bool ok, string detail = "")
     layerFail.TryAdd(layer, 0);
     if (ok) { pass++; layerPass[layer]++; Console.WriteLine($"  ✓ {name}"); }
     else { fail++; layerFail[layer]++; Console.WriteLine($"  ✗ {name}  {detail}"); }
+    Console.Out.Flush();
+    Ck($"#[{pass + fail}] {layer} {(ok ? "✓" : "✗")} {name}{(ok ? "" : "  " + detail)}");
 }
+Ck($"START os={Environment.OSVersion} net={Environment.Version} cwd={Environment.CurrentDirectory}");
 Layer("单元");
 
 Console.WriteLine("== SqlSplitter ==");
@@ -3467,6 +3486,7 @@ Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");
 Console.WriteLine($"\n通过 {pass} / {pass + fail}");
+Ck($"ALL-DONE pass={pass} fail={fail}");
 return fail == 0 ? 0 : 1;
 
 // 测试用最小 Provider：复用 RelationalProvider 的 Quote 逻辑

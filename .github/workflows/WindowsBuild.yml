@@ -33,31 +33,55 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          Remove-Item test-progress.txt -ErrorAction SilentlyContinue
+          Write-Host "[T0] logic test start $(Get-Date -Format o)"
           $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','Release' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
+          $code = $p.ExitCode
+          Write-Host "[T1] logic test end $(Get-Date -Format o) exit=$code"
           Get-Content test-output.txt | ForEach-Object { Write-Host "$_" }
-          if ($p.ExitCode -ne 0) {
-            "### LogicTest failed (windows-latest, Release) exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $tail = @(Get-Content test-output.txt | Select-Object -Last 60) + @('--- stderr tail ---') + @(Get-Content test-stderr.txt -ErrorAction SilentlyContinue | Select-Object -Last 60)
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $tail | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $errLines = @(Get-Content test-stderr.txt -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
-            if ($errLines.Count -gt 0) {
+          if ($code -ne 0) {
+            try {
+              $hex = '0x{0:X}' -f $code
+              $stat = Get-Item test-output.txt -ErrorAction SilentlyContinue
+              $nlines = @(Get-Content test-output.txt -ErrorAction SilentlyContinue).Count
+              "### LogicTest failed (windows-latest, Release) exit=$code ($hex)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              "output file: $($stat.Length) bytes / $nlines lines; ended $(Get-Date -Format o)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              $tail = @(Get-Content test-output.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 60) + @('--- stderr tail ---') + @(Get-Content test-stderr.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 60)
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              $tail | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              # Windows 事件日志取证：.NET 未处理异常(1026)/崩溃(1000) 即使 stderr 为空也会留痕
+              "### Windows event log (last 40min)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              Get-WinEvent -FilterHashtable @{LogName='Application'; Id=@(1000,1001,1026); StartTime=(Get-Date).AddMinutes(-40)} -ErrorAction SilentlyContinue | Select-Object -First 6 | ForEach-Object {
+                ("[{0}] {1}" -f $_.Id, ($_.Message -replace "`r`n"," | ").Substring(0, [Math]::Min(900, $_.Message.Length))) | Add-Content $env:GITHUB_STEP_SUMMARY
+              }
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              "### progress checkpoint tail（真落盘时间线）" | Add-Content $env:GITHUB_STEP_SUMMARY
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              Get-Content test-progress.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 50 | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
+              "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
+              $ck = @(Get-Content test-progress.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
+              $ck | ForEach-Object { $t="$_"; Write-Host "::error::[ckpt] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
+              $errLines = @(Get-Content test-stderr.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
               $errLines | ForEach-Object { $t="$_"; Write-Host "::error::[stderr] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
-            } else {
-              $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+              if ($ck.Count -eq 0 -and $errLines.Count -eq 0) {
+                $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+              }
+              $scene = Join-Path $env:RUNNER_TEMP 'autopsy'
+              New-Item -ItemType Directory -Force -Path $scene | Out-Null
+              Copy-Item test-output.txt, test-stderr.txt, test-progress.txt -Destination $scene -ErrorAction SilentlyContinue
+              Push-Location $scene
+              git init -q
+              git checkout -q -b ci-autopsy-latest
+              git add -A
+              git -c user.name=ci-autopsy-bot -c user.email=actions@users.noreply.github.com commit -qm "LogicTest failure scene exit=$code ($hex) $(Get-Date -ToUniversalTime -Format o)"
+              git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-autopsy-latest
+              Pop-Location
+            } catch {
+              Write-Host "::error::autopsy reporting failed: $($_.Exception.Message)"
             }
-            $scene = Join-Path $env:RUNNER_TEMP 'autopsy'
-            New-Item -ItemType Directory -Force -Path $scene | Out-Null
-            Copy-Item test-output.txt, test-stderr.txt -Destination $scene -ErrorAction SilentlyContinue
-            Push-Location $scene
-            git init -q
-            git checkout -q -b ci-autopsy-latest
-            git add -A
-            git -c user.name=ci-autopsy-bot -c user.email=actions@users.noreply.github.com commit -qm "LogicTest failure scene exit=$($p.ExitCode) (0x{0:X}) $(date -u +'%Y-%m-%dT%H:%M:%SZ')" -f $p.ExitCode
-            git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-autopsy-latest
-            Pop-Location
-            exit $p.ExitCode
+            exit $code
           }
 
       - name: Build App (WinUI, 0 warning 0 error gate)
@@ -86,6 +110,7 @@ jobs:
           path: |
             test-output.txt
             test-stderr.txt
+            test-progress.txt
 
       - name: Upload artifacts
         if: success()
