@@ -65,7 +65,9 @@ jobs:
               "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
               Get-Content test-progress.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 50 | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
               "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-              $ck = @(Get-Content test-progress.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
+              $ckAll = @(Get-Content test-progress.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' })
+              $failCk = @($ckAll | Where-Object { "$_" -match '✗' } | Select-Object -Last 6)
+              $ck = @($failCk + @($ckAll | Select-Object -Last 3))
               $ck | ForEach-Object { $t="$_"; Write-Host "::error::[ckpt] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
               $errLines = @(Get-Content test-stderr.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
               $errLines | ForEach-Object { $t="$_"; Write-Host "::error::[stderr] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
@@ -79,7 +81,7 @@ jobs:
               git init -q
               git checkout -q -b ci-autopsy-latest
               git add -A
-              git -c user.name=ci-autopsy-bot -c user.email=actions@users.noreply.github.com commit -qm "LogicTest failure scene exit=$code ($hex) $(Get-Date -ToUniversalTime -Format o)"
+              git -c user.name=ci-autopsy-bot -c user.email=actions@users.noreply.github.com commit -qm "LogicTest failure scene exit=$code ($hex) $((Get-Date).ToUniversalTime().ToString('o'))"
               git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-autopsy-latest
               Pop-Location
             } catch {
