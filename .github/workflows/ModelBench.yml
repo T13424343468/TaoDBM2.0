@@ -11,7 +11,7 @@ permissions:
 jobs:
   bench:
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -44,11 +44,10 @@ jobs:
           ./llama-bench-bin/llama-bench.exe -m models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf -t 4 -r 3 -p 128 -n 128 > Tools/ModelBench/out/bench_r115b.txt 2>&1 || true
           cat Tools/ModelBench/out/bench_qwen17b.txt Tools/ModelBench/out/bench_r115b.txt
 
-      - name: Realistic QA fallback (per-question)
+      - name: Realistic QA fallback (per-question, parallel feeding)
         shell: bash
         run: |
-          bash Tools/ModelBench/run-cloud.sh models/Qwen3-1.7B-Q4_K_M.gguf qwen17b 512
-          bash Tools/ModelBench/run-cloud.sh models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf dsr15b 768
+          bash Tools/ModelBench/run-cloud-parallel.sh models/Qwen3-1.7B-Q4_K_M.gguf qwen17b 512 4
           cat Tools/ModelBench/out/run.log
 
       - name: Summarize
