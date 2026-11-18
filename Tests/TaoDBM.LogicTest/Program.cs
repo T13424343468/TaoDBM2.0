@@ -3277,6 +3277,40 @@ Console.WriteLine("== NotificationDispatcher ==");
         NotifyPrefs.UseFile("");
         try { File.Delete(pFile); } catch { /* 清理失败不影响测试 */ }
     }
+
+    Console.WriteLine("== TaskCenter 完成事件 ==");
+    {
+        var tc = new TaoDBM.Core.Streaming.TaskCenter
+        {
+            Runner = async h => { await Task.Delay(30, h.Token); },
+        };
+        var doneSrc = new TaskCompletionSource<TaoDBM.Core.Streaming.TaskSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        tc.TaskCompleted += s => { if (s.State == "done") doneSrc.TrySetResult(s); };
+        var h = tc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "事件测试", Db = "app", Sql = "SELECT 1" });
+        var done = await doneSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Check("N30 任务完成事件携带快照", done.TaskId == h.TaskId && done.State == "done" && done.EndedAt is not null);
+
+        var failSrc = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var failTc = new TaoDBM.Core.Streaming.TaskCenter
+        {
+            Runner = _ => throw new InvalidOperationException("炸了"),
+        };
+        failTc.TaskCompleted += s => { if (s.State == "failed") failSrc.TrySetResult(s.Message); };
+        failTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "失败测试", Sql = "SELECT 1" });
+        var failMsg = await failSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Check("N31 任务失败事件带错误信息", failMsg.Contains("炸了"));
+
+        var cancelSrc = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slowTc = new TaoDBM.Core.Streaming.TaskCenter
+        {
+            Runner = async h => { await Task.Delay(5000, h.Token); },
+        };
+        slowTc.TaskCompleted += s => { if (s.State == "canceled") cancelSrc.TrySetResult(s.TaskId); };
+        var slow = slowTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "取消测试", Sql = "SELECT 1" });
+        Check("N32 运行中可取消", slowTc.Cancel(slow.TaskId));
+        var cancelId = await cancelSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Check("N33 任务取消事件派发", cancelId == slow.TaskId);
+    }
 }
 }
 

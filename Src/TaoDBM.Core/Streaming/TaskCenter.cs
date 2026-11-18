@@ -126,13 +126,19 @@ public sealed class TaskCenter
         return true;
     }
 
+    /// <summary>任务终态事件（done/failed/canceled）：P4 起宿主可订阅接通知调度；回调在后台线程派发，碰 UI 需自行切线程。</summary>
+    public event Action<TaskSnapshot>? TaskCompleted;
+
     internal void Complete(string taskId, string state, string message)
     {
+        TaskSnapshot? done = null;
         lock (_lock)
         {
             if (!_states.TryGetValue(taskId, out var s)) return;
-            _states[taskId] = s with { State = state, Message = message, EndedAt = DateTimeOffset.Now };
+            done = s with { State = state, Message = message, EndedAt = DateTimeOffset.Now };
+            _states[taskId] = done;
         }
+        TaskCompleted?.Invoke(done);
     }
 
     private async Task LoopAsync()
