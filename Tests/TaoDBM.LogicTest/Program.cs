@@ -3180,6 +3180,104 @@ Layer("系统");
     var rep = TypeLengthAdvisor.Report(r6, true);
     Check("T008 报告文本", rep.Contains("执行已选优化") && rep.Contains("一键还原"));
 }
+
+Console.WriteLine("== NotificationDispatcher ==");
+{
+    static NotifyEvent Evt(NotifyKind kind, string key = "", DateTime? at = null) =>
+        new(kind, key, "标题", "内容", at ?? new DateTime(2026, 11, 18, 12, 0, 0));
+
+    // ---- 够格判断 ----
+    {
+        var d = new NotificationDispatcher(new NotifyOptions(), () => new DateTime(2026, 11, 18, 12, 0, 0));
+        Check("N01 默认配置事件够格", d.TryAccept(Evt(NotifyKind.Backup, "orderdb")) && d.Evaluate(Evt(NotifyKind.Backup, "otherdb")).Reason == "ok");
+        var off = new NotificationDispatcher(new NotifyOptions { Enabled = false }, () => DateTime.Now);
+        Check("N02 总开关拦截", !off.TryAccept(Evt(NotifyKind.Backup)) && off.Evaluate(Evt(NotifyKind.Backup)).Reason == "global-off");
+        var kindOff = new NotificationDispatcher(new NotifyOptions
+        {
+            KindToggles = new Dictionary<NotifyKind, bool> { [NotifyKind.Backup] = false },
+        }, () => DateTime.Now);
+        Check("N03 单类开关拦截", !kindOff.TryAccept(Evt(NotifyKind.Backup)) && kindOff.Evaluate(Evt(NotifyKind.Backup)).Reason == "kind-off");
+        Check("N04 未配置种类默认开启", kindOff.TryAccept(Evt(NotifyKind.LongTask)));
+        Check("N05 默认 KindToggles 全开", NotifyOptions.AllOn().Count == Enum.GetValues<NotifyKind>().Length
+            && NotifyOptions.AllOn().Values.All(v => v));
+    }
+
+    // ---- 免打扰时段 ----
+    {
+        NotifyOptions Opts(TimeOnly start, TimeOnly end, bool dndOn = true) => new() { DndEnabled = dndOn, DndStart = start, DndEnd = end };
+        var clock = new DateTime(2026, 11, 18, 2, 0, 0);   // 凌晨两点
+        var d = new NotificationDispatcher(Opts(new TimeOnly(23, 0), new TimeOnly(7, 0)), () => clock);
+        Check("N06 跨零点窗口内拦截", !d.TryAccept(Evt(NotifyKind.Backup)) && d.Evaluate(Evt(NotifyKind.Backup, "k")).Reason == "dnd");
+        var noon = new NotificationDispatcher(Opts(new TimeOnly(23, 0), new TimeOnly(7, 0)), () => new DateTime(2026, 11, 18, 12, 0, 0));
+        Check("N07 白天正常放行", noon.TryAccept(Evt(NotifyKind.Backup)));
+        var lateNight = new NotificationDispatcher(Opts(new TimeOnly(23, 0), new TimeOnly(7, 0)), () => new DateTime(2026, 11, 18, 23, 30, 0));
+        Check("N08 窗口起点之后拦截", !lateNight.TryAccept(Evt(NotifyKind.Backup)));
+        var normal = new NotificationDispatcher(Opts(new TimeOnly(1, 0), new TimeOnly(5, 0)), () => new DateTime(2026, 11, 18, 12, 0, 0));
+        Check("N09 不跨零点窗口外放行", normal.TryAccept(Evt(NotifyKind.Backup)));
+        var atStart = new NotificationDispatcher(Opts(new TimeOnly(1, 0), new TimeOnly(5, 0)), () => new DateTime(2026, 11, 18, 1, 0, 0));
+        Check("N10 窗口含起点即拦截", !atStart.TryAccept(Evt(NotifyKind.Backup)));
+        var atEnd = new NotificationDispatcher(Opts(new TimeOnly(1, 0), new TimeOnly(5, 0)), () => new DateTime(2026, 11, 18, 5, 0, 0));
+        Check("N11 窗口终点即放行", atEnd.TryAccept(Evt(NotifyKind.Backup)));
+        var dndOff = new NotificationDispatcher(Opts(new TimeOnly(23, 0), new TimeOnly(7, 0), dndOn: false), () => clock);
+        Check("N12 免打扰未启用不拦截", dndOff.TryAccept(Evt(NotifyKind.Backup)));
+        var zeroLen = new NotificationDispatcher(Opts(new TimeOnly(2, 0), new TimeOnly(2, 0)), () => clock);
+        Check("N13 零长度窗口不拦截", zeroLen.TryAccept(Evt(NotifyKind.Backup)));
+    }
+
+    // ---- 节流去重 ----
+    {
+        var now = new DateTime(2026, 11, 18, 12, 0, 0);
+        DateTime clock = now;
+        var d = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 5 }, () => clock);
+        Check("N14 首条放行", d.TryAccept(Evt(NotifyKind.LongTask, "t1")));
+        Check("N15 窗口内同键拦截", !d.TryAccept(Evt(NotifyKind.LongTask, "t1")) && d.Evaluate(Evt(NotifyKind.LongTask, "t1")).Reason == "throttled");
+        Check("N16 同键不同类不互斥", d.TryAccept(Evt(NotifyKind.Backup, "t1")));
+        Check("N17 同类异键不互斥", d.TryAccept(Evt(NotifyKind.LongTask, "t2")));
+        clock = now.AddMinutes(5);   // 窗口恰满即过期（左闭右开）
+        Check("N18 窗口过后放行", d.TryAccept(Evt(NotifyKind.LongTask, "t1")));
+        Check("N19 被拦事件不续窗口", true);
+        // 被节流/免打扰拦下的不记录时间戳：拦截期间不发事件，窗口过后第一条自然通过
+        clock = now.AddMinutes(6);
+        d.TryAccept(Evt(NotifyKind.LongTask, "t3"));
+        clock = now.AddMinutes(7);
+        Check("N20 窗口内第三条被拦", !d.TryAccept(Evt(NotifyKind.LongTask, "t3")));
+        clock = now.AddMinutes(11);
+        Check("N21 窗口过后第三条放行", d.TryAccept(Evt(NotifyKind.LongTask, "t3")));
+        var noThrottle = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 0 }, () => clock);
+        Check("N22 节流关闭时全放行", noThrottle.TryAccept(Evt(NotifyKind.LongTask, "x")) && noThrottle.TryAccept(Evt(NotifyKind.LongTask, "x")));
+        var blank = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 5 }, () => now);
+        Check("N23 空键整类共桶", blank.TryAccept(Evt(NotifyKind.HealthCheck)) && !blank.TryAccept(Evt(NotifyKind.HealthCheck, "  ")));
+        Check("N24 节流键含种类与键", NotificationDispatcher.ThrottleKey(Evt(NotifyKind.Backup, " a ")) == "Backup:a");
+        d.Reset();
+        Check("N25 重置后同键再放行", d.TryAccept(Evt(NotifyKind.LongTask, "t1")));
+    }
+
+    // ---- 偏好持久化 ----
+    {
+        var opts = new NotifyOptions
+        {
+            Enabled = false,
+            DndEnabled = true,
+            DndStart = new TimeOnly(22, 30),
+            DndEnd = new TimeOnly(6, 15),
+            ThrottleMinutes = 10,
+            KindToggles = new Dictionary<NotifyKind, bool> { [NotifyKind.Backup] = false, [NotifyKind.LongTask] = true },
+        };
+        var round = NotifyPrefs.FromJson(NotifyPrefs.ToJson(opts));
+        Check("N26 偏好 JSON 往返", round is not null && !round.Enabled && round.DndEnabled
+            && round.DndStart == new TimeOnly(22, 30) && round.DndEnd == new TimeOnly(6, 15)
+            && round.ThrottleMinutes == 10 && round.IsKindEnabled(NotifyKind.Backup) == false
+            && round.IsKindEnabled(NotifyKind.LongTask) == true);
+        Check("N27 损坏 JSON 安全回落", NotifyPrefs.FromJson("not-json") is null);
+        Check("N28 未配置种类回读仍默认开", round!.IsKindEnabled(NotifyKind.HealthCheck));
+        var pFile = Path.Combine(Path.GetTempPath(), "taodbm_notifyprefs_" + Guid.NewGuid().ToString("N") + ".json");
+        NotifyPrefs.UseFile(pFile);
+        NotifyPrefs.Save(opts);
+        Check("N29 文件落盘重载一致", NotifyPrefs.Load().DndStart == new TimeOnly(22, 30));
+        NotifyPrefs.UseFile("");
+        try { File.Delete(pFile); } catch { /* 清理失败不影响测试 */ }
+    }
+}
 }
 
 Console.WriteLine("\n== 分层结果 ==");
