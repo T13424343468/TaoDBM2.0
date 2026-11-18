@@ -64,7 +64,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT method, COUNT(*) FROM payments
 
-[ Prompt: 143.6 t/s | Generation: 30.3 t/s ]
+[ Prompt: 112.4 t/s | Generation: 19.0 t/s ]
 
 
 Exiting...

@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，可能用户的问题中的“门店”是指用户所在的城市，所以需要关联
 
-[ Prompt: 131.3 t/s | Generation: 24.6 t/s ]
+[ Prompt: 102.9 t/s | Generation: 15.8 t/s ]
 
 
 Exiting...

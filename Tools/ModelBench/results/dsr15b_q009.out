@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(amount) FROM payments
 
-[ Prompt: 141.1 t/s | Generation: 30.1 t/s ]
+[ Prompt: 112.2 t/s | Generation: 19.3 t/s ]
 
 
 Exiting...

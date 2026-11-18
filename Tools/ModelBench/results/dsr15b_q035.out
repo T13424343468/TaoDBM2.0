@@ -81,7 +81,7 @@ WHERE id NOT IN (SELECT id FROM orders);
 SELECT name FROM users
 WHERE id NOT IN (SELECT id FROM orders);
 
-[ Prompt: 143.9 t/s | Generation: 29.6 t/s ]
+[ Prompt: 111.8 t/s | Generation: 18.9 t/s ]
 
 
 Exiting...

@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT FROM payments WHERE payment_amount > 1000
 
-[ Prompt: 144.6 t/s | Generation: 29.9 t/s ]
+[ Prompt: 112.0 t/s | Generation: 18.9 t/s ]
 
 
 Exiting...

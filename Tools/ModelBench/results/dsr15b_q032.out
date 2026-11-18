@@ -63,7 +63,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT u.name, COUNT(o.id) FROM users u LEFT JOIN orders o ON u.user_id = o.user_id, (SELECT COUNT(*) FROM orders WHERE user_id = u.user_id) AS total FROM users u LEFT JOIN orders o ON u.user_id = o.user_id, (SELECT COUNT(*) FROM orders WHERE user_id = u.user_id) AS total FROM users u LEFT JOIN orders o ON u.user_id = o.user_id, (SELECT COUNT(*) FROM orders WHERE user_id = u.user_id) AS total FROM users u LEFT JOIN orders o ON u.user_id = o.user_id, (SELECT
 
-[ Prompt: 142.7 t/s | Generation: 29.1 t/s ]
+[ Prompt: 112.8 t/s | Generation: 18.6 t/s ]
 
 
 Exiting...

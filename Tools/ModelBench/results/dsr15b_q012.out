@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT MAX(amount) AS 最贵支付； FROM order_items； LIMIT 1
 
-[ Prompt: 143.0 t/s | Generation: 30.3 t/s ]
+[ Prompt: 112.5 t/s | Generation: 19.1 t/s ]
 
 
 Exiting...

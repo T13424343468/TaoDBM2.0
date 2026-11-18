@@ -55,7 +55,7 @@ WHERE orders.created_at BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND CURDAT
 
 不过，这里可能需要调整日期范围，比如如果当前日期是2023-10-15，那么上个月的日期是2023-09-01到2023-09-30。但使用DATE_SUB(CURDATE(), INTERVAL 1 MONTH)会得到上个月的开始日期，而CURDATE() - INTERVAL 1 DAY会得到上个月的
 
-[ Prompt: 130.4 t/s | Generation: 25.6 t/s ]
+[ Prompt: 103.0 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

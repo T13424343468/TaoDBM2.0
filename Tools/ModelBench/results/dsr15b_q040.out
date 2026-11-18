@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT COUNT(DISTINCT user_id) AS 新用户数，COUNT(order_id) AS 订单数，(COUNT(order_id) / COUNT(DISTINCT user_id)) * 100 AS 转化率 FROM users, orders
 
-[ Prompt: 143.9 t/s | Generation: 29.8 t/s ]
+[ Prompt: 114.0 t/s | Generation: 19.1 t/s ]
 
 
 Exiting...

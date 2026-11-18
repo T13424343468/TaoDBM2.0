@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT * FROM orders DROP COLUMN product_id DROP COLUMN quantity DROP COLUMN unit_price
 
-[ Prompt: 145.1 t/s | Generation: 29.8 t/s ]
+[ Prompt: 112.8 t/s | Generation: 19.3 t/s ]
 
 
 Exiting...

@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 所以最终的SQL应该是这样的：
 
-[ Prompt: 132.0 t/s | Generation: 25.7 t/s ]
+[ Prompt: 104.0 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT user_id, COUNT(*) AS order_count FROM orders GROUP BY user_id;
 
-[ Prompt: 132.2 t/s | Generation: 26.7 t/s ]
+[ Prompt: 102.7 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

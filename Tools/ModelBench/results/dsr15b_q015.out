@@ -78,7 +78,7 @@ LIMIT 1;
 不过，这可能不正确，因为每个订单中的数量需要累加。正确的做法应该是：
 SELECT name, COALESCE(SUM(qty) AS total_qty) FROM products
 
-[ Prompt: 143.0 t/s | Generation: 29.5 t/s ]
+[ Prompt: 112.3 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

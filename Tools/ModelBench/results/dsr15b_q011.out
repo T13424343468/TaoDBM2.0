@@ -64,7 +64,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 所以，最终的查询应该是SELECT SUM(COUNT(*) FROM order_items)
 
-[ Prompt: 145.7 t/s | Generation: 29.5 t/s ]
+[ Prompt: 113.8 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

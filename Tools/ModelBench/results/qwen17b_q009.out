@@ -59,7 +59,7 @@ SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id;
 
 SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id;
 
-[ Prompt: 131.3 t/s | Generation: 25.3 t/s ]
+[ Prompt: 101.4 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

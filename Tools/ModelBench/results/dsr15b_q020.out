@@ -57,7 +57,7 @@ SELECT id, name, city FROM users WHERE name LIKE '%red%';
 
 SELECT id, name, city FROM users WHERE name LIKE '%red%';
 
-[ Prompt: 142.2 t/s | Generation: 30.1 t/s ]
+[ Prompt: 111.7 t/s | Generation: 19.0 t/s ]
 
 
 Exiting...

@@ -50,7 +50,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT users.name FROM users JOIN orders ON users.id = orders.user_id JOIN payments ON orders.id = payments.order_id WHERE payments.method = '支付宝';
 
-[ Prompt: 133.1 t/s | Generation: 26.1 t/s ]
+[ Prompt: 104.0 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

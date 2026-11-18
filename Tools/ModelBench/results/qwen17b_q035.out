@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT id, name FROM users LEFT JOIN orders ON users.id = orders.user_id WHERE orders.id IS NULL;
 
-[ Prompt: 130.8 t/s | Generation: 26.4 t/s ]
+[ Prompt: 101.9 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

@@ -69,7 +69,7 @@ SELECT category, COUNT(DISTINCT name) AS quantity FROM products GROUP BY categor
 
 SELECT category, COUNT(DISTINCT name) AS quantity FROM products GROUP BY category;
 
-[ Prompt: 143.9 t/s | Generation: 30.3 t/s ]
+[ Prompt: 112.7 t/s | Generation: 19.2 t/s ]
 
 
 Exiting...

@@ -60,7 +60,7 @@ GROUP BY p.category;
 
 因此，正确的SQL应该是将order_items和products表关联，按
 
-[ Prompt: 132.1 t/s | Generation: 25.6 t/s ]
+[ Prompt: 102.0 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

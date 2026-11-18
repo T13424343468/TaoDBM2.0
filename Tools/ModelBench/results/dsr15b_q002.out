@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT category FROM products
 
-[ Prompt: 143.6 t/s | Generation: 30.3 t/s ]
+[ Prompt: 111.9 t/s | Generation: 19.3 t/s ]
 
 
 Exiting...

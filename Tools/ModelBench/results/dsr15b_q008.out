@@ -70,7 +70,7 @@ SELECT city, COUNT(*) AS 用户数 FROM (SELECT id FROM users LEFT JOIN city ON 
 
 SELECT city, COUNT(*) AS 用户数 FROM (SELECT id FROM users LEFT JOIN city ON users.id = city.id) GROUP BY city
 
-[ Prompt: 143.8 t/s | Generation: 29.5 t/s ]
+[ Prompt: 113.0 t/s | Generation: 18.8 t/s ]
 
 
 Exiting...

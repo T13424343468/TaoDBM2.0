@@ -38,7 +38,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 DROP TABLE orders;
 
-[ Prompt: 131.9 t/s | Generation: 26.4 t/s ]
+[ Prompt: 102.3 t/s | Generation: 16.4 t/s ]
 
 
 Exiting...

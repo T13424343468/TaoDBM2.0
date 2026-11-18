@@ -55,7 +55,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 2. 对每个订单，计算其总金额（sum of unit_price * quantity）。
 3.
 
-[ Prompt: 133.0 t/s | Generation: 25.5 t/s ]
+[ Prompt: 82.9 t/s | Generation: 14.3 t/s ]
 
 
 Exiting...

@@ -68,7 +68,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，这样可能会重复计算，因为同一个用户可能在多个订单中。所以，可能需要先从
 
-[ Prompt: 143.6 t/s | Generation: 29.3 t/s ]
+[ Prompt: 112.9 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

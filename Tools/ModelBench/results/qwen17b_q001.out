@@ -50,7 +50,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT name FROM users;
 
-[ Prompt: 131.2 t/s | Generation: 26.6 t/s ]
+[ Prompt: 98.7 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

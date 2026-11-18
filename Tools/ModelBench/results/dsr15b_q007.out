@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT * FROM payments
 
-[ Prompt: 143.8 t/s | Generation: 30.4 t/s ]
+[ Prompt: 111.5 t/s | Generation: 19.2 t/s ]
 
 
 Exiting...

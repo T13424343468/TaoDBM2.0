@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT * FROM products WHERE price >= 100 AND price <= 500
 
-[ Prompt: 142.7 t/s | Generation: 29.9 t/s ]
+[ Prompt: 109.8 t/s | Generation: 19.1 t/s ]
 
 
 Exiting...

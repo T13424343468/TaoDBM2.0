@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT DISTINCT method FROM payments;
 
-[ Prompt: 131.1 t/s | Generation: 26.4 t/s ]
+[ Prompt: 102.5 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

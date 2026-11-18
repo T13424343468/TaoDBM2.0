@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE - INTERVAL '7' DAY;
 
-[ Prompt: 132.2 t/s | Generation: 26.3 t/s ]
+[ Prompt: 102.9 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

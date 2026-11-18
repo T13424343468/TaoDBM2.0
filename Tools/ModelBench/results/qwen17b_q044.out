@@ -59,7 +59,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(o.total) AS total_re
 
-[ Prompt: 131.6 t/s | Generation: 23.5 t/s ]
+[ Prompt: 102.7 t/s | Generation: 15.8 t/s ]
 
 
 Exiting...

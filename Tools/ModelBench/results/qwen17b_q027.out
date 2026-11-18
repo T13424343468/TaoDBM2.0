@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 另外，需要注意，如果用户的问题中的“上个月”指的是从当前日期往前一个月，那么可能需要使用CURDATE()函数来获取当前日期，然后计算上个月的日期范围。例如，如果当前日期是2023-10
 
-[ Prompt: 131.7 t/s | Generation: 25.4 t/s ]
+[ Prompt: 103.6 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

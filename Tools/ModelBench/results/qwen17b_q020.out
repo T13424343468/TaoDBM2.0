@@ -42,7 +42,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT * FROM users WHERE name LIKE '%红%';
 
-[ Prompt: 122.9 t/s | Generation: 23.8 t/s ]
+[ Prompt: 102.6 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

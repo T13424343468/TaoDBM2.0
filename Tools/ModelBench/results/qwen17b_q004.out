@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT name FROM users WHERE city = '北京';
 
-[ Prompt: 132.9 t/s | Generation: 25.5 t/s ]
+[ Prompt: 103.4 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

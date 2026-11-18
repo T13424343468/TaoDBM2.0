@@ -57,7 +57,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT AVG(price) AS 平均价格 FROM products WHERE price > 100
 
-[ Prompt: 144.4 t/s | Generation: 30.0 t/s ]
+[ Prompt: 113.4 t/s | Generation: 18.8 t/s ]
 
 
 Exiting...

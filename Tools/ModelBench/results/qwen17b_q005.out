@@ -42,7 +42,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT name, price FROM products ORDER BY price DESC LIMIT 1
 
-[ Prompt: 132.0 t/s | Generation: 26.7 t/s ]
+[ Prompt: 101.7 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

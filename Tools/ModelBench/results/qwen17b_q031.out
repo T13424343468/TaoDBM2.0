@@ -63,7 +63,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户的问题可能更简单，比如每个城市的订单总金额，可能是指每个城市的订单总金额，而不管订单的金额。或者，可能是指每个城市的订单总金额，即每个订单的总金额，然后按城市
 
-[ Prompt: 109.1 t/s | Generation: 21.4 t/s ]
+[ Prompt: 86.3 t/s | Generation: 15.8 t/s ]
 
 
 Exiting...

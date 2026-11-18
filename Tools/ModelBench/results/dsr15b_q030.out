@@ -59,7 +59,7 @@ SELECT COUNT(*) FROM orders GROUP BY user_id;
 
 SELECT COUNT(*) FROM orders GROUP BY user_id;
 
-[ Prompt: 144.0 t/s | Generation: 30.3 t/s ]
+[ Prompt: 112.5 t/s | Generation: 19.1 t/s ]
 
 
 Exiting...

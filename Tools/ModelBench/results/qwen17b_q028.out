@@ -43,7 +43,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户的问题可能希望的是精确的3月，所以可能需要使用具体的日期范围。但如果没有年份，可能需要使用当前日期的
 
-[ Prompt: 133.9 t/s | Generation: 23.4 t/s ]
+[ Prompt: 103.8 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

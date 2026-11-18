@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT AVG(price) FROM products WHERE price > 100;
 
-[ Prompt: 132.4 t/s | Generation: 26.5 t/s ]
+[ Prompt: 101.9 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

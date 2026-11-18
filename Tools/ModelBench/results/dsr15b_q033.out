@@ -68,7 +68,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 或者，我可以先从用户表中查询用户id，然后
 
-[ Prompt: 142.9 t/s | Generation: 29.5 t/s ]
+[ Prompt: 113.5 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

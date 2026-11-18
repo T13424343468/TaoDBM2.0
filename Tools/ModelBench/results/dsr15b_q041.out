@@ -86,7 +86,7 @@ LEFT JOIN payments p16 ON o.id = p16.order_id
 LEFT JOIN payments p17 ON o.id = p17.order_id
 LEFT JOIN
 
-[ Prompt: 145.7 t/s | Generation: 29.4 t/s ]
+[ Prompt: 112.6 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

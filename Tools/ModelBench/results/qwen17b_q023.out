@@ -55,7 +55,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但问题中的“退款状态”可能指的是订单的状态，所以可能直接查询orders
 
-[ Prompt: 129.8 t/s | Generation: 25.5 t/s ]
+[ Prompt: 102.3 t/s | Generation: 12.5 t/s ]
 
 
 Exiting...

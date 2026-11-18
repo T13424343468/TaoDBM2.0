@@ -69,7 +69,7 @@ SELECT users.name FROM users
 JOIN payments p ON p.user_id = users.id
 WHERE p.method = '支付宝支付';
 
-[ Prompt: 143.7 t/s | Generation: 29.8 t/s ]
+[ Prompt: 110.2 t/s | Generation: 18.9 t/s ]
 
 
 Exiting...

@@ -57,7 +57,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT COUNT(order_id) FROM orders;
 
-[ Prompt: 144.5 t/s | Generation: 29.8 t/s ]
+[ Prompt: 113.6 t/s | Generation: 19.3 t/s ]
 
 
 Exiting...

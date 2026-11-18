@@ -53,7 +53,7 @@ SELECT id, created_at, CONCAT(user_id, ' - ', user_id) FROM orders;
 
 SELECT id, created_at, CONCAT(user_id, ' - ', user_id) FROM orders;
 
-[ Prompt: 145.5 t/s | Generation: 30.0 t/s ]
+[ Prompt: 113.4 t/s | Generation: 19.0 t/s ]
 
 
 Exiting...

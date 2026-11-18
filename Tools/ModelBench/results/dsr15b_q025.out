@@ -78,7 +78,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但是，用户表中的
 
-[ Prompt: 144.1 t/s | Generation: 29.5 t/s ]
+[ Prompt: 112.6 t/s | Generation: 18.8 t/s ]
 
 
 Exiting...

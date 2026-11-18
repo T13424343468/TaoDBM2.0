@@ -67,7 +67,7 @@ GROUP BY product_id
 ORDER BY total_quantity DESC
 LIMIT 1;
 
-[ Prompt: 133.1 t/s | Generation: 25.9 t/s ]
+[ Prompt: 102.0 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

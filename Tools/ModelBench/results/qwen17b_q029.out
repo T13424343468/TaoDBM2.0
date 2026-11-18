@@ -56,7 +56,7 @@ WHERE p.paid_at >= CURDATE();
 
 因此，正确的SQL应该是
 
-[ Prompt: 123.9 t/s | Generation: 25.1 t/s ]
+[ Prompt: 104.5 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

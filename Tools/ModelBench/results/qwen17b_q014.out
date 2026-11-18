@@ -44,7 +44,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT category, COUNT(*) FROM products GROUP BY category;
 
-[ Prompt: 132.5 t/s | Generation: 26.1 t/s ]
+[ Prompt: 102.1 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

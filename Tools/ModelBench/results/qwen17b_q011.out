@@ -52,7 +52,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(quantity) FROM order_items;
 
-[ Prompt: 132.1 t/s | Generation: 26.1 t/s ]
+[ Prompt: 103.9 t/s | Generation: 14.0 t/s ]
 
 
 Exiting...

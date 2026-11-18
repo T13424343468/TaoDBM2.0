@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(amount) AS total_payment FROM payments WHERE created_at > CURRENT_DATE ORDER BY total_payment DESC LIMIT 1
 
-[ Prompt: 145.1 t/s | Generation: 30.3 t/s ]
+[ Prompt: 113.4 t/s | Generation: 19.3 t/s ]
 
 
 Exiting...

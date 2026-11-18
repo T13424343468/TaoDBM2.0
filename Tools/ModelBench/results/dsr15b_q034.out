@@ -80,7 +80,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 或者，我可以先计算每个订单
 
-[ Prompt: 142.6 t/s | Generation: 29.3 t/s ]
+[ Prompt: 111.1 t/s | Generation: 18.7 t/s ]
 
 
 Exiting...

@@ -61,7 +61,7 @@ SELECT COUNT(*) AS total_orders
 FROM orders
 WHERE created_at >= '2023-12-01' AND created_at < '2024-01-01';
 
-[ Prompt: 142.9 t/s | Generation: 29.9 t/s ]
+[ Prompt: 112.6 t/s | Generation: 19.0 t/s ]
 
 
 Exiting...

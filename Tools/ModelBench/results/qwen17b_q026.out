@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id WHERE o.created_at BETWEEN '2023-01-01' AND '2023-12-31';
 
-[ Prompt: 132.1 t/s | Generation: 26.4 t/s ]
+[ Prompt: 104.3 t/s | Generation: 16.4 t/s ]
 
 
 Exiting...

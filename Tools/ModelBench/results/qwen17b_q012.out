@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT MAX(amount) FROM payments;
 
-[ Prompt: 131.9 t/s | Generation: 26.3 t/s ]
+[ Prompt: 97.3 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT name FROM products WHERE stock < 10
 
-[ Prompt: 142.9 t/s | Generation: 30.1 t/s ]
+[ Prompt: 112.1 t/s | Generation: 19.2 t/s ]
 
 
 Exiting...

@@ -78,7 +78,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 可能
 
-[ Prompt: 142.1 t/s | Generation: 29.4 t/s ]
+[ Prompt: 111.5 t/s | Generation: 18.8 t/s ]
 
 
 Exiting...

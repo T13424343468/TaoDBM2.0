@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT AVG(amount) FROM payments;
 
-[ Prompt: 134.2 t/s | Generation: 27.0 t/s ]
+[ Prompt: 103.1 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

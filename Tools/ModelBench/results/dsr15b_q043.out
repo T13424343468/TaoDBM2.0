@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT o.id AS user_id, o.status AS status, o.created_at AS expire_at, o.优惠券类型 AS优惠券类型 FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.优惠券类型id IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20);
 
-[ Prompt: 142.2 t/s | Generation: 29.9 t/s ]
+[ Prompt: 111.9 t/s | Generation: 19.1 t/s ]
 
 
 Exiting...

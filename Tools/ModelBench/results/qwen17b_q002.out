@@ -40,7 +40,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT DISTINCT category FROM products;
 
-[ Prompt: 130.6 t/s | Generation: 27.0 t/s ]
+[ Prompt: 102.1 t/s | Generation: 16.5 t/s ]
 
 
 Exiting...

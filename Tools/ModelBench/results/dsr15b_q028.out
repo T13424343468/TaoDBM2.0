@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT COUNT(*) FROM orders WHERE month(3) AND status = '取消'
 
-[ Prompt: 143.6 t/s | Generation: 29.9 t/s ]
+[ Prompt: 110.4 t/s | Generation: 19.2 t/s ]
 
 
 Exiting...
