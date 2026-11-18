@@ -186,6 +186,12 @@ public static class BackupDialog
                         break;
                     }
                 }
+                // P4：备份 / 还原结果接通知调度（规则判定不够格就静默）；消息取结果首行，超长截断
+                var firstLine = output.Text.Split('\n')[0].Trim();
+                if (firstLine.Length > 120) firstLine = firstLine[..120];
+                ToastCenter.Publish(new NotifyEvent(
+                    backup ? NotifyKind.Backup : NotifyKind.Restore, db,
+                    backup ? "备份结果" : "还原结果", firstLine, DateTime.Now));
                 QueryHistory.Add(prov.EngineName, db, $"-- {(backup ? "备份" : "还原")}：{file}");
             }
             catch (Exception ex)

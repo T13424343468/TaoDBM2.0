@@ -71,10 +71,46 @@ public partial class MainWindow : Window
         // 标题栏保持系统默认（Standard）；在此显式设置会触发 WindowsAppSDK 0x8007139F 崩溃，勿再加回。
         AppWindow.Closing += OnAppWinClosing;
 
+        // P4：通知点击路由——NotificationInvoked 在后台线程派发，这里切回 UI 线程再跳入口
+        UI.ToastCenter.RouteRequested += OnToastRoute;
+
         LoadConnections();
         AddWelcomeTab();
         RestoreSession();
         Closed += (_, _) => { SaveSession(); SshTunnel.StopAll(); };
+    }
+
+    /// <summary>系统通知点击跳转：回主窗并打开对应功能入口（P4）。路由键见 ToastCenter.Route。</summary>
+    private void OnToastRoute(string target)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            ShowFromTray();
+            switch (target)
+            {
+                case "taskcenter":
+                    if (SelectedInfo() is { } ti) _ = UI.TaskCenterDialog.Show(this, ti);
+                    else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
+                    break;
+                case "backup":
+                    OnBackupSel(this, new RoutedEventArgs());
+                    break;
+                case "risky":
+                    if (SelectedInfo() is { } ri) _ = UI.RiskySqlGuardDialog.Show(this, ri);
+                    else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
+                    break;
+                case "migration":
+                    if (SelectedInfo() is { } mi) _ = UI.MigrationResumeDialog.Show(this, mi);
+                    else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
+                    break;
+                case "health":
+                    SetStatus("健康检查异常：详情见最近一次数据体检报告。");
+                    break;
+                default:
+                    SetStatus("来自系统通知。");
+                    break;
+            }
+        });
     }
 
     // ---------- 托盘与关闭行为 ----------
@@ -334,6 +370,9 @@ public partial class MainWindow : Window
         ConnectionStore.Save(_profiles);
         RebuildRoots();
         SetStatus($"已删除连接 {info.Profile.DisplayName}");
+        // P4：危险操作执行完成 → 通知调度（规则判定不够格就静默）
+        ToastCenter.Publish(new NotifyEvent(NotifyKind.RiskySqlDone, info.Profile.DisplayName,
+            "危险操作完成", $"连接 {info.Profile.DisplayName} 已删除", DateTime.Now));
     }
 
     // ---------- 树交互 ----------

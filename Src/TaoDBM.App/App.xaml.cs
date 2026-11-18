@@ -23,6 +23,9 @@ public partial class App : Application
         {
             // Tao 系列存储默认 D 盘：首次运行把旧 C 盘数据迁过去（已有同名文件不覆盖）
             Core.TaoPaths.MigrateLegacyFiles();
+            // P4：系统通知注册（官方流程：先挂 NotificationInvoked 再 Register）。注册失败只进日志，不拖垮启动。
+            // 需真机验证：通知弹窗样式与点击跳转，沙箱无法真机验证。
+            UI.ToastCenter.EnsureRegistered();
             // 水墨为默认主题：安装资源画刷并应用已存选择（Tao 系列默认水墨，可切回清爽蓝）
             UI.Ant.ApplyTheme(Core.ThemeStore.Load());
             Shell = new MainWindow();

@@ -10,6 +10,23 @@ namespace TaoDBM.UI;
 /// 快照导出。提交即后台执行，本对话框只管理任务，不阻塞主流程。</summary>
 public static class TaskCenterDialog
 {
+    static TaskCenterDialog()
+    {
+        // P4：长任务终态接通知调度（Publish 内部按用户配置判定够不够格，回调在后台线程）
+        Shared.TaskCompleted += s => ToastCenter.Publish(new NotifyEvent(
+            NotifyKind.LongTask, s.TaskId, "长任务" + StateLabel(s.State),
+            s.Title + (s.Kind.Length == 0 ? "" : $"（{s.Kind}）") + (s.Message.Length == 0 ? "" : " " + s.Message),
+            DateTime.Now));
+    }
+
+    private static string StateLabel(string state) => state switch
+    {
+        "done" => "完成",
+        "failed" => "失败",
+        "canceled" => "已取消",
+        _ => state,
+    };
+
     private static readonly TaskCenter Shared = new()
     {
         // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交
