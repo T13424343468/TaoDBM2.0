@@ -7,7 +7,7 @@ OUT="Tools/ModelBench/out"
 BIN="llama-bench-bin/llama-cli.exe"
 mkdir -p "$OUT"
 
-for qf in Tools/ModelBench/questions/*.txt; do
+for qf in Tools/ModelBench/questions_gen/*.txt; do
   qid=$(basename "$qf" .txt)
   res="$OUT/${TAG}_${qid}.out"
   start=$(date +%s)
