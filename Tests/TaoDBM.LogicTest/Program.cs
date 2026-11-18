@@ -3384,6 +3384,79 @@ Console.WriteLine("== NotificationDispatcher ==");
         var yearQ = AskNL("今年的支付总额是多少", "payments", payCols);
         Check("N38 今年总额带年度条件", yearQ.Ok && yearQ.Sql.Contains("SUM(") && yearQ.Sql.Contains("%Y-01-01"));
     }
+
+    Console.WriteLine("== 性能护栏（L5 流式管线/原子落盘）==");
+    {
+        // N34：多页流式导出 5 万行账面一致（不丢行、不重行、不整体物化）
+        {
+            var lazyPages = new List<TaoDBM.Core.Streaming.QueryPage>();
+            for (int p = 0; p < 50; p++)
+                lazyPages.Add(new TaoDBM.Core.Streaming.QueryPage
+                {
+                    Rows = Enumerable.Range(0, 1000).Select(j => new object[] { p * 1000 + j }).ToArray(),
+                    HasMore = p < 49,
+                });
+            var sink = new StringWriter();
+            long n34 = Exporter.CsvStream(lazyPages, new[] { "id" }, sink);
+            var lines = sink.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            Check("N34 多页流式导出账面一致", n34 == 50000 && lines.Length == 50001
+                && lines[0] == "\uFEFFid" && lines[1] == "0" && lines[50000] == "49999", $"n={n34}, lines={lines.Length}");
+        }
+        // N35：小批次口径 BatchSize=7 批批受控（低内存导入路径）
+        {
+            var csv35 = "id\n" + string.Join("\n", Enumerable.Range(1, 100));
+            var bs = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(csv35),
+                new TaoDBM.Core.Streaming.ImportOptions { BatchSize = 7 }).ToList();
+            Check("N35 小批次全受控", bs.Count == 15 && bs.Take(14).All(b => b.Rows.Count == 7) && bs[14].Rows.Count == 2,
+                $"count={bs.Count}, sizes={string.Join(",", bs.Select(b => b.Rows.Count))}");
+        }
+        // N36：小批次溢出落盘行数账面一致
+        {
+            var csv36 = "id\n" + string.Join("\n", Enumerable.Range(1, 100));
+            using var spill36 = new TaoDBM.Infrastructure.TempFileSpillStore();
+            var sum36 = TaoDBM.Core.Streaming.ImportStreaming.CsvIngest(new StringReader(csv36), spill36,
+                new TaoDBM.Core.Streaming.ImportOptions { BatchSize = 7 });
+            Check("N36 小批次溢出账面一致", sum36.TotalRows == 100 && spill36.BatchCount == 15,
+                $"rows={sum36.TotalRows}, batches={spill36.BatchCount}");
+        }
+        // N37：AtomicWrite 1MB 大文本往返一致
+        {
+            var big37 = new string('#', 1 << 20);
+            var f37 = Path.Combine(Path.GetTempPath(), "taodbm_atombig_" + Guid.NewGuid().ToString("N") + ".json");
+            AtomicWrite.Text(f37, big37);
+            var back37 = File.ReadAllText(f37);
+            Check("N37 大文本原子往返", back37.Length == big37.Length && back37 == big37);
+            // N38：落盘完成后无 tmp 残留
+            Check("N38 原子写无 tmp 残留", !File.Exists(f37 + ".tmp"));
+            File.Delete(f37);
+        }
+        // N39：目标为目录时 Move 失败抛异常且目录不被破坏（坏写不毁旧值）
+        {
+            var dir39 = Path.Combine(Path.GetTempPath(), "taodbm_atomdir_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir39);
+            var raised = false;
+            try { AtomicWrite.Text(dir39, "x"); }
+            catch (System.IO.IOException) { raised = true; }
+            Check("N39 目标异常不毁旧值", raised && Directory.Exists(dir39));
+            try { File.Delete(dir39 + ".tmp"); } catch { /* 残留清理失败不影响测试 */ }
+            Directory.Delete(dir39, true);
+        }
+        // N40：导出→导入闭环（CsvStream 产物可被 CsvBatches 无损读回，含逗号/引号转义往返）
+        {
+            var pages40 = new List<TaoDBM.Core.Streaming.QueryPage>
+            {
+                new() { Rows = new object[][] { new object[] { 1, "甲" }, new object[] { 2, "乙,含逗号" } }, HasMore = true },
+                new() { Rows = new object[][] { new object[] { 3, "丙\"含引号" } }, HasMore = false },
+            };
+            var sw40 = new StringWriter();
+            Exporter.CsvStream(pages40, new[] { "id", "name" }, sw40);
+            var back40 = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(sw40.ToString())).ToList();
+            Check("N40 导出导入闭环无损", back40.Count == 1 && back40[0].Rows.Count == 3
+                && back40[0].Rows[1].SequenceEqual(new string?[] { "2", "乙,含逗号" })
+                && back40[0].Rows[2].SequenceEqual(new string?[] { "3", "丙\"含引号" }),
+                $"batches={back40.Count}");
+        }
+    }
 }
 }
 
