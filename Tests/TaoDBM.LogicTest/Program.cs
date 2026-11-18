@@ -1432,6 +1432,61 @@ Layer("集成");
     Check("零批大小拒绝", threw);
 }
 
+// 24) ShardingWizard 三策略分片方案与分片键依据（P-6「图形化分库分区分表」四步向导）
+{
+    // 按范围：MySQL 一条 ALTER，尾段 MAXVALUE 兜底
+    var rngM = ShardingWizard.RangePartitionSql(DbEngine.MySQL, "orders", "order_time", new[] { "100", "200", "300" });
+    Check("范围MySQL主语句RANGE", rngM[0].StartsWith("ALTER TABLE `orders` PARTITION BY RANGE (`order_time`)"));
+    Check("范围MySQL含尾段MAXVALUE", rngM[0].Contains("PARTITION p2 VALUES LESS THAN (300)") && rngM[0].Contains("PARTITION pn VALUES LESS THAN (MAXVALUE)"));
+    Check("范围MySQL附现状查询", rngM.Count == 2 && rngM[1].Contains("information_schema.PARTITIONS"));
+
+    // 按范围：PG 声明式分区，首段 MINVALUE 起
+    var rngP = ShardingWizard.RangePartitionSql(DbEngine.PostgreSQL, "orders", "order_time", new[] { "100", "200" });
+    Check("范围PG建新表分区", rngP[1] == "CREATE TABLE orders_pnew (LIKE orders INCLUDING ALL) PARTITION BY RANGE (order_time);");
+    Check("范围PG首段MINVALUE", rngP[2] == "CREATE TABLE orders_p0 PARTITION OF orders_pnew FOR VALUES FROM (MINVALUE) TO (100);");
+    Check("范围PG续段接上界", rngP[3] == "CREATE TABLE orders_p1 PARTITION OF orders_pnew FOR VALUES FROM (100) TO (200);");
+
+    // 按类别：MySQL VALUES IN，数字原样、字符串重转义
+    var lstM = ShardingWizard.ListPartitionSql(DbEngine.MySQL, "orders", "region",
+        new (string, IReadOnlyList<string>)[] { ("south", new[] { "1", "2" }), ("north", new[] { "3" }), ("other", new[] { "us'east", "eu-west" }) });
+    Check("类别MySQL数字原样", lstM[0].Contains("PARTITION south VALUES IN (1, 2)") && lstM[0].Contains("PARTITION north VALUES IN (3)"));
+    Check("类别MySQL字符串重转义", lstM[0].Contains("PARTITION other VALUES IN ('us''east', 'eu-west')"), lstM[0]);
+
+    // 按类别：PG FOR VALUES IN
+    var lstP = ShardingWizard.ListPartitionSql(DbEngine.PostgreSQL, "orders", "region",
+        new (string, IReadOnlyList<string>)[] { ("south", new[] { "1" }), ("north", new[] { "2" }) });
+    Check("类别PG建新表分区", lstP[1] == "CREATE TABLE orders_pnew (LIKE orders INCLUDING ALL) PARTITION BY LIST (region);");
+    Check("类别PG取值IN", lstP[2] == "CREATE TABLE orders_south PARTITION OF orders_pnew FOR VALUES IN (1);");
+
+    // 非法输入拒绝
+    bool threw = false;
+    try { ShardingWizard.RangePartitionSql(DbEngine.MySQL, "t", "k", new[] { "100" }); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("范围单上界拒绝", threw);
+    threw = false; try { ShardingWizard.ListPartitionSql(DbEngine.MySQL, "t", "k", Array.Empty<(string, IReadOnlyList<string>)>()); } catch (ArgumentOutOfRangeException) { threw = true; }
+    Check("类别空组拒绝", threw);
+    threw = false; try { ShardingWizard.ListPartitionSql(DbEngine.MySQL, "t", "k", new (string, IReadOnlyList<string>)[] { ("", new[] { "1" }) }); } catch (ArgumentException) { threw = true; }
+    Check("类别空组名拒绝", threw);
+    threw = false; try { ShardingWizard.RangePartitionSql(DbEngine.SQLite, "t", "k", new[] { "1", "2" }); } catch (NotSupportedException) { threw = true; }
+    Check("不支持方言拒绝", threw);
+
+    // 分片键依据判定：索引元数据不区分大小写
+    Check("有索引字段有依据", ShardingWizard.KeyBacked("User_ID", new[] { "user_id", "city" }));
+    Check("无索引字段无依据", !ShardingWizard.KeyBacked("nickname", new[] { "user_id", "city" }));
+    Check("空索引清单全无依据", !ShardingWizard.KeyBacked("user_id", Array.Empty<string>()));
+
+    // 熟手解锁审计行与读写分离提示
+    Check("解锁审计行格式", ShardingWizard.UnlockAudit("orders", "熟手开关解锁全部字段") == "SHARDKEY-UNLOCK\torders\t熟手开关解锁全部字段");
+    Check("解锁审计空原因兜底", ShardingWizard.UnlockAudit("orders", "  ") == "SHARDKEY-UNLOCK\torders\t解锁全部字段（熟手）");
+    Check("解锁审计表名去制表符", ShardingWizard.UnlockAudit("or\tders", "") == "SHARDKEY-UNLOCK\tor ders\t解锁全部字段（熟手）");
+    threw = false; try { ShardingWizard.UnlockAudit("  ", ""); } catch (ArgumentException) { threw = true; }
+    Check("解锁审计空表名拒绝", threw);
+    Check("读写分离提示含片数", ShardingWizard.ReadSplitHint(4).Contains("4 片") && ShardingWizard.ReadSplitHint(4).Contains("读路由"));
+
+    // 策略名与向导枚举一致（四步向导第 2 步点选口径）
+    Check("策略名三选齐备", ShardingWizard.StrategyNames.Length == 3 && ShardingWizard.StrategyNames[0].Contains("范围") &&
+        ShardingWizard.StrategyNames[1].Contains("哈希") && ShardingWizard.StrategyNames[2].Contains("类别"));
+}
+
 // 智能线 C1 第一批：慢查询诊断+一键优化闭环（含复测）、容量增长预测、查询复现包（纯引擎，SQLite 真库验证）
 {
     // 1) 静态诊断

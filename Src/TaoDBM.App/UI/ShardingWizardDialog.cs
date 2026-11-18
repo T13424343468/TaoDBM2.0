@@ -5,10 +5,15 @@ using TaoDBM.Core;
 
 namespace TaoDBM.UI;
 
-/// <summary>B11 图形化分库分区分表向导对话框：三步生成分片方案（预览+确认执行）、分区现状分布（倾斜标红）、
-/// 热点盐化摘要与在线改表计划（只读展示，@last 占位符不可直接执行，引导到查询窗口逐段执行）。</summary>
+/// <summary>P-6 图形化分库分区分表向导：四步式（选表 → 选拆分方式 → 选分片键 → 确认方案），
+/// 三种分片策略（按范围 / 按哈希 / 按类别）全量点选。分片键默认只允许主键 / 有索引等有依据的字段
+/// （索引元数据判断），提供熟手开关解锁全部字段（解锁动作写 permops.log 审计）；
+/// 选了无依据字段黄牌提醒 + 二次确认。执行复用 DraftOps 草稿执行器（预览 + 勾选确认 + permops.log 留痕）；
+/// 在线改表复用 OnlineDdl.Plan 计划；分区现状、热点盐化与读写分离提示随方案顺路展示。</summary>
 public static class ShardingWizardDialog
 {
+    private const int StepTable = 0, StepStrategy = 1, StepKey = 2, StepConfirm = 3;
+
     public static async Task Show(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
@@ -20,40 +25,326 @@ public static class ShardingWizardDialog
         }
 
         var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        string db = profile.Database;
 
-        // ── 块一：向导三步（表 / 分片键 / 分片数 2–16 → 生成方案 → 预览执行） ──
-        var tableBox = new TextBox { PlaceholderText = "表名，如 orders", Width = 180 };
-        var keyBox = new TextBox { PlaceholderText = "分片键列名，如 user_id", Width = 180 };
+        // ── 向导状态 ──
+        int step = StepTable;
+        var drafts = new List<string>();
+        var indexedCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        bool expertUnlocked = false;
+
+        // ── 第 1 步：选表 ──
+        var tableBox = new ComboBox { Width = 260, PlaceholderText = "选择目标表" };
+        var stepPanels = new Grid();
+        stepPanels.Children.Add(Wrap(new StackPanel { Spacing = 10 }, StepTable));
+
+        // ── 第 2 步：选拆分方式 ──
+        var strategyBox = new ComboBox { Width = 260, SelectedIndex = 1, PlaceholderText = "选拆分方式" };
+        foreach (var n in ShardingWizard.StrategyNames) strategyBox.Items.Add(new ComboBoxItem { Content = n });
+        strategyBox.SelectedIndex = 1; // 默认按哈希
+        var hashRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var shardBox = new ComboBox { Width = 88, SelectedIndex = 2 };
         for (int i = 2; i <= 16; i++) shardBox.Items.Add(new ComboBoxItem { Content = i.ToString() });
         shardBox.SelectedIndex = 2; // 4 片
-        var genBtn = new Button { Content = "生成分片方案", CornerRadius = new CornerRadius(4) };
+        hashRow.Children.Add(new TextBlock { Text = "分片数", VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = Ant.TextSub });
+        hashRow.Children.Add(shardBox);
+        var rangeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var boundsBox = new TextBox { PlaceholderText = "升序上界，如 100,200,300", Width = 260 };
+        rangeRow.Children.Add(boundsBox);
+        var listRow = new StackPanel { Spacing = 6 };
+        var catsBox = new TextBox
+        {
+            AcceptsReturn = true,
+            Height = 90,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 12,
+            PlaceholderText = "每行一组：组名=取值，如 south=1,2",
+        };
+        listRow.Children.Add(new TextBlock { Text = "类别组（每行 组名=取值，逗号分隔）：", FontSize = 12, Foreground = Ant.TextSub });
+        listRow.Children.Add(catsBox);
+        var strategyPanel = new StackPanel { Spacing = 10 };
+        strategyPanel.Children.Add(strategyBox);
+        strategyPanel.Children.Add(hashRow);
+        strategyPanel.Children.Add(rangeRow);
+        strategyPanel.Children.Add(listRow);
+        stepPanels.Children.Add(Wrap(strategyPanel, StepStrategy));
+
+        // ── 第 3 步：选分片键 ──
+        var keyBox = new ComboBox { Width = 260, PlaceholderText = "选择分片键" };
+        var columnCache = new List<string>();
+        var expertCheck = new CheckBox
+        {
+            Content = "解锁全部字段（熟手；无索引依据字段需黄牌二次确认）",
+            FontSize = 12,
+        };
+        var keyHint = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
+        var keyPanel = new StackPanel { Spacing = 10 };
+        keyPanel.Children.Add(keyBox);
+        keyPanel.Children.Add(keyHint);
+        keyPanel.Children.Add(expertCheck);
+        stepPanels.Children.Add(Wrap(keyPanel, StepKey));
+
+        // ── 第 4 步：确认方案 ──
+        var summaryText = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
         var planPanel = new StackPanel { Spacing = 4 };
         var execBtn = new Button { Content = "预览并执行方案", CornerRadius = new CornerRadius(4), IsEnabled = false };
-        List<string> drafts = new();
-        genBtn.Click += (_, _) =>
+        var confirmPanel = new StackPanel { Spacing = 10 };
+        confirmPanel.Children.Add(summaryText);
+        confirmPanel.Children.Add(new ScrollViewer { Content = planPanel, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        confirmPanel.Children.Add(execBtn);
+        stepPanels.Children.Add(Wrap(confirmPanel, StepConfirm));
+
+        // ── 导航与步骤指示 ──
+        var prevBtn = new Button { Content = "上一步", CornerRadius = new CornerRadius(4) };
+        var nextBtn = new Button { Content = "下一步", CornerRadius = new CornerRadius(4) };
+        var navRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
+        navRow.Children.Add(prevBtn);
+        navRow.Children.Add(nextBtn);
+        var stepChips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var chipNames = new[] { "① 选表", "② 选拆分方式", "③ 选分片键", "④ 确认方案" };
+        var chips = chipNames.Select(n => new Border
         {
-            var t = tableBox.Text.Trim();
-            var k = keyBox.Text.Trim();
-            if (t.Length == 0 || k.Length == 0) { status.Text = "请先填写表名与分片键。"; return; }
-            int n = shardBox.SelectedIndex + 2;
+            Padding = new Thickness(10, 4, 10, 4),
+            CornerRadius = new CornerRadius(999),
+            Background = Ant.Bg,
+            Child = new TextBlock { Text = n, FontSize = 12, Foreground = Ant.TextSub },
+        }).ToList();
+        foreach (var c in chips) stepChips.Children.Add(c);
+
+        void ShowStep(int s)
+        {
+            step = s;
+            foreach (var child in stepPanels.Children.OfType<Border>())
+                child.Visibility = (int)child.Tag == s ? Visibility.Visible : Visibility.Collapsed;
+            for (int i = 0; i < chips.Count; i++)
+            {
+                chips[i].Background = i == s ? Ant.Primary : Ant.Bg;
+                ((TextBlock)chips[i].Child).Foreground = i == s ? Ant.OnPrimary : Ant.TextSub;
+            }
+            prevBtn.IsEnabled = s > StepTable;
+            nextBtn.Content = s == StepConfirm ? "生成分片方案" : "下一步";
+            status.Text = "";
+        }
+
+        // ── 第 1 步交互：拉表清单 ──
+        _ = LoadTablesAsync();
+        async Task LoadTablesAsync()
+        {
             try
             {
-                drafts = ShardingWizard.HashPartitionSql(profile.Engine, t, k, n).ToList();
+                var tables = await prov.GetChildren(db);
+                tableBox.Items.Clear();
+                foreach (var t in tables) tableBox.Items.Add(new ComboBoxItem { Content = t, Tag = t });
+                status.Text = tables.Count == 0 ? "当前库没有可分片的表。" : $"共 {tables.Count} 张表可选。";
+            }
+            catch (Exception ex) { status.Text = "表清单获取失败：" + ex.Message; }
+        }
+        tableBox.SelectionChanged += async (_, _) =>
+        {
+            if (Selected(tableBox) is not { Length: > 0 } table) return;
+            await LoadKeyMetadataAsync(table);
+        };
+
+        async Task LoadKeyMetadataAsync(string table)
+        {
+            keyBox.Items.Clear();
+            indexedCols.Clear();
+            columnCache.Clear();
+            keyHint.Text = "";
+            try
+            {
+                var cols = await prov.GetColumns(db, table);
+                columnCache.AddRange(cols.Select(c => c.Name).Where(n => n.Length > 0));
+                var rs = await prov.Execute("", ShardingWizard.IndexColumnsSql(profile.Engine, db, table));
+                if (rs.Count > 0)
+                    foreach (var row in rs[0].Rows)
+                    {
+                        var col = row[0]?.ToString();
+                        if (!string.IsNullOrEmpty(col)) indexedCols.Add(col);
+                    }
+                FillKeyBox(columnCache);
+                keyHint.Text = indexedCols.Count == 0
+                    ? "未查到该表的索引列，主键 / 有索引字段不可用；可用熟手开关解锁全部字段。"
+                    : $"主键 / 有索引字段 {indexedCols.Count} 个（默认仅这些可选）。";
+                if (expertUnlocked)
+                    Safe.Run(() => File.AppendAllLines(TaoPaths.FilePath("permops.log"),
+                        new[] { $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{ShardingWizard.UnlockAudit(table, "熟手开关解锁全部字段（选表后补记）")}" }), "分片键解锁审计");
+            }
+            catch (Exception ex) { status.Text = "列与索引元数据获取失败：" + ex.Message; }
+        }
+
+        void FillKeyBox(IEnumerable<string> allCols)
+        {
+            keyBox.Items.Clear();
+            foreach (var c in allCols)
+            {
+                bool backed = indexedCols.Contains(c);
+                if (!backed && !expertUnlocked) continue;
+                var item = new ComboBoxItem { Content = backed ? c : c + "（无索引依据）", Tag = c };
+                keyBox.Items.Add(item);
+            }
+            keyBox.SelectedIndex = keyBox.Items.Count > 0 ? 0 : -1;
+        }
+
+        // 熟手开关：解锁动作本身写操作记录（permops.log 审计留痕）。
+        expertCheck.Click += (_, _) =>
+        {
+            bool unlocking = expertCheck.IsChecked == true && !expertUnlocked;
+            expertUnlocked = expertCheck.IsChecked == true;
+            if (unlocking && Selected(tableBox) is { Length: > 0 } table)
+            {
+                Safe.Run(() => File.AppendAllLines(TaoPaths.FilePath("permops.log"),
+                    new[] { $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{ShardingWizard.UnlockAudit(table, "熟手开关解锁全部字段")}" }), "分片键解锁审计");
+                status.Text = "已解锁全部字段，解锁动作已写入操作记录。";
+            }
+            FillKeyBox(columnCache);
+        };
+
+        // ── 策略联动 ──
+        void SyncStrategyRows()
+        {
+            hashRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.Hash ? Visibility.Visible : Visibility.Collapsed;
+            rangeRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.Range ? Visibility.Visible : Visibility.Collapsed;
+            listRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.List ? Visibility.Visible : Visibility.Collapsed;
+        }
+        strategyBox.SelectionChanged += (_, _) => SyncStrategyRows();
+        SyncStrategyRows();
+
+        // ── 导航逻辑 ──
+        nextBtn.Click += async (_, _) =>
+        {
+            switch (step)
+            {
+                case StepTable when Selected(tableBox) is { Length: > 0 }:
+                    ShowStep(StepStrategy);
+                    break;
+                case StepTable:
+                    status.Text = "请先选择目标表。";
+                    break;
+                case StepStrategy when ParseStrategyInput(status):
+                    ShowStep(StepKey);
+                    break;
+                case StepStrategy:
+                    break; // 解析失败，status 已带原因
+                case StepKey:
+                    await TryGoConfirmAsync();
+                    break;
+                case StepConfirm:
+                    GenerateDrafts();
+                    break;
+            }
+        };
+        prevBtn.Click += (_, _) => { if (step > StepTable) ShowStep(step - 1); };
+
+        async Task TryGoConfirmAsync()
+        {
+            if (Selected(keyBox) is not { Length: > 0 } key || Selected(tableBox) is not { Length: > 0 } table)
+            {
+                status.Text = "请先选择分片键。";
+                return;
+            }
+            if (!ShardingWizard.KeyBacked(key, indexedCols))
+            {
+                // 黄牌提醒 + 二次确认：无索引依据字段不给静默通过。
+                status.Text = $"黄牌提醒：{key} 无主键 / 索引依据，查询可能退化为全分片扫描。";
+                var warn = new ContentDialog
+                {
+                    Title = "黄牌确认：无索引依据的分片键",
+                    Content = new TextBlock
+                    {
+                        Text = $"字段 {key} 不是主键 / 索引列，作分片键将使未携带该键的查询退化为全分片扫描。\n确认仍选它作分片键？",
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    PrimaryButtonText = "仍用该字段",
+                    CloseButtonText = "重新选择",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = owner.Content.XamlRoot,
+                };
+                if (await warn.ShowThemedAsync() != ContentDialogResult.Primary)
+                {
+                    status.Text = "请重新选择有依据的分片键。";
+                    return;
+                }
+            }
+            ShowStep(StepConfirm);
+        }
+
+        // 解析第 2 步输入（写回策略上下文），失败在 status 给原因。
+        bool ParseStrategyInput(TextBlock st)
+        {
+            var strategy = (ShardingWizard.ShardStrategy)Math.Max(0, strategyBox.SelectedIndex);
+            try
+            {
+                drafts.Clear();
+                var table = Selected(tableBox) ?? "";
+                var key = Selected(keyBox) ?? "";
+                drafts.AddRange(strategy switch
+                {
+                    ShardingWizard.ShardStrategy.Hash => ShardingWizard.HashPartitionSql(profile.Engine, table, key, shardBox.SelectedIndex + 2),
+                    ShardingWizard.ShardStrategy.Range => ShardingWizard.RangePartitionSql(profile.Engine, table, key, Bounds()),
+                    ShardingWizard.ShardStrategy.List => ShardingWizard.ListPartitionSql(profile.Engine, table, key, Categories()),
+                    _ => throw new NotSupportedException("未知的拆分方式"),
+                });
+                return true;
             }
             catch (Exception ex)
             {
-                status.Text = "方案生成失败：" + ex.Message;
-                return;
+                st.Text = "输入有误：" + ex.Message;
+                return false;
             }
+
+            List<string> Bounds()
+            {
+                var list = boundsBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                if (list.Count < 2) throw new ArgumentException("范围分片至少需要 2 个上界，逗号分隔且升序");
+                var nums = list.Select(s => long.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToList();
+                for (int i = 1; i < nums.Count; i++)
+                    if (nums[i] <= nums[i - 1]) throw new ArgumentException("范围上界必须严格升序");
+                return list;
+            }
+
+            List<(string Name, IReadOnlyList<string> Values)> Categories()
+            {
+                var groups = new List<(string Name, IReadOnlyList<string> Values)>();
+                foreach (var line in catsBox.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var seg = line.Split('=', 2);
+                    if (seg.Length != 2 || seg[0].Trim().Length == 0)
+                        throw new ArgumentException($"类别组格式有误：{line}（应为 组名=取值）");
+                    var vals = seg[1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                    if (vals.Count == 0) throw new ArgumentException($"类别组 {seg[0]} 至少需要一个取值");
+                    groups.Add((seg[0].Trim(), vals));
+                }
+                return groups;
+            }
+        }
+
+        void GenerateDrafts()
+        {
             planPanel.Children.Clear();
             foreach (var d in drafts)
-                planPanel.Children.Add(new TextBlock { Text = d, FontFamily = new FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.Wrap });
-            execBtn.IsEnabled = true;
+                planPanel.Children.Add(new TextBlock
+                {
+                    Text = d,
+                    FontFamily = new FontFamily("Consolas"),
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+            var table = Selected(tableBox) ?? "";
+            var key = Selected(keyBox) ?? "";
+            var strategy = (ShardingWizard.ShardStrategy)Math.Max(0, strategyBox.SelectedIndex);
+            int pieces = strategy == ShardingWizard.ShardStrategy.Hash
+                ? shardBox.SelectedIndex + 2
+                : strategy == ShardingWizard.ShardStrategy.Range
+                    ? boundsBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries).Length + 1
+                    : catsBox.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+            summaryText.Text = $"目标表 {table}，分片键 {key}，算法 {ShardingWizard.StrategyNames[(int)strategy].Trim('（', '）')}。\n{ShardingWizard.ReadSplitHint(pieces)}";
+            execBtn.IsEnabled = drafts.Count > 0;
             status.Text = profile.Engine == DbEngine.PostgreSQL
                 ? "PG 为声明式分区：方案含建新表 + 分区 + 迁移注释，执行前请逐条核对。"
-                : "MySQL 为一条 ALTER HASH 分区 + 现状目录查询。";
-        };
+                : "方案已生成，确认后执行（草稿执行器会再次预览 + 勾选确认）。";
+        }
+
         execBtn.Click += async (_, _) =>
         {
             var snapshot = drafts.ToList();
@@ -61,16 +352,22 @@ public static class ShardingWizardDialog
             await DraftOps.ConfirmExecuteAsync(owner, prov, "执行分片方案（草稿）", snapshot, status);
         };
 
-        // ── 块二：分区现状分布（行数降序 + 倾斜标红） ──
-        var dbBox = new TextBox { PlaceholderText = "库名", Text = profile.Database, Width = 180 };
+        ShowStep(StepTable);
+
+        // ── 向导之外的既有能力块：分区现状 / 热点盐化 / 在线改表 ──
+        TextBlock Head(string s) => new()
+        {
+            Text = s,
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+        };
+
+        // 分区现状分布（行数降序 + 倾斜标红）
         var distBtn = new Button { Content = "查询分区现状", CornerRadius = new CornerRadius(4) };
         var distPanel = new StackPanel { Spacing = 4 };
         distBtn.Click += async (_, _) =>
         {
-            var t = tableBox.Text.Trim();
-            var db = dbBox.Text.Trim();
-            if (t.Length == 0) { status.Text = "请先填写表名。"; return; }
-            if (db.Length == 0 && profile.Engine == DbEngine.MySQL) { status.Text = "MySQL 需要库名限定 information_schema 查询。"; return; }
+            if (Selected(tableBox) is not { Length: > 0 } t) { status.Text = "请先在第 1 步选择目标表。"; return; }
             try
             {
                 var rs = await prov.Execute("", ShardingWizard.PartitionsInfoSql(profile.Engine, db, t));
@@ -103,7 +400,7 @@ public static class ShardingWizardDialog
             }
         };
 
-        // ── 块三：热点盐化摘要（展示用） ──
+        // 热点盐化摘要（展示用）
         var saltKeyBox = new TextBox { PlaceholderText = "热点键，如 user_id", Width = 180 };
         var saltCountBox = new TextBox { Text = "8", Width = 88 };
         var saltBtn = new Button { Content = "生成盐化摘要", CornerRadius = new CornerRadius(4) };
@@ -115,8 +412,12 @@ public static class ShardingWizardDialog
             if (!int.TryParse(saltCountBox.Text.Trim(), out int sc) || sc < 2 || sc > 64) { status.Text = "盐桶数需为 2–64 的整数。"; return; }
             saltText.Text = ShardingWizard.SaltingSummary(k, sc);
         };
+        var saltRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        saltRow.Children.Add(saltKeyBox);
+        saltRow.Children.Add(saltCountBox);
+        saltRow.Children.Add(saltBtn);
 
-        // ── 块四：在线改表计划（MySQL 方言，只读展示；@last 占位符不可直接执行） ──
+        // 在线改表计划（MySQL 方言，复用 OnlineDdl.Plan；@last 占位符不可直接执行）
         var estBox = new TextBox { PlaceholderText = "预估行数", Text = "1000000", Width = 130 };
         var batchBox = new TextBox { Text = "2000", Width = 90 };
         var pkBox = new TextBox { PlaceholderText = "回填主键列", Width = 130 };
@@ -128,15 +429,16 @@ public static class ShardingWizardDialog
         {
             onlineBtn.Click += (_, _) =>
             {
-                var t = tableBox.Text.Trim();
-                var k = keyBox.Text.Trim();
-                if (t.Length == 0 || k.Length == 0) { status.Text = "请先填写表名与分片键。"; return; }
+                if (Selected(tableBox) is not { Length: > 0 } t || Selected(keyBox) is not { Length: > 0 } k)
+                {
+                    status.Text = "请先完成向导的选表与选分片键。";
+                    return;
+                }
                 if (!long.TryParse(estBox.Text.Trim(), out long rows) || rows < 0) { status.Text = "预估行数需为非负整数。"; return; }
                 if (!int.TryParse(batchBox.Text.Trim(), out int batch) || batch < 1) { status.Text = "批大小需为正整数。"; return; }
-                int n = shardBox.SelectedIndex + 2;
                 try
                 {
-                    var alterClause = $"PARTITION BY HASH (`{k.Replace("`", "")}`) PARTITIONS {n}";
+                    var alterClause = $"PARTITION BY HASH (`{k.Replace("`", "")}`) PARTITIONS {shardBox.SelectedIndex + 2}";
                     var plan = OnlineDdl.Plan(t, alterClause, pkBox.Text.Trim(), rows, batch);
                     int backfills = plan.Steps.Count(s => s.Phase == "backfill");
                     var lines = new List<string>
@@ -163,7 +465,7 @@ public static class ShardingWizardDialog
         }
         else
         {
-            onlineText.Text = "在线改表计划当前为 MySQL 方言，PG 连接下一批补齐；PG 分区迁移请使用块一方案的注释流程。";
+            onlineText.Text = "在线改表计划当前为 MySQL 方言，PG 连接下一批补齐；PG 分区迁移请用方案中的注释流程。";
         }
 
         var estRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -171,37 +473,18 @@ public static class ShardingWizardDialog
         estRow.Children.Add(batchBox);
         estRow.Children.Add(pkBox);
 
-        var step1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        step1.Children.Add(tableBox);
-        step1.Children.Add(keyBox);
-        step1.Children.Add(shardBox);
-        step1.Children.Add(genBtn);
-
-        var saltRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        saltRow.Children.Add(saltKeyBox);
-        saltRow.Children.Add(saltCountBox);
-        saltRow.Children.Add(saltBtn);
-
-        TextBlock Head(string s) => new()
-        {
-            Text = s,
-            FontSize = 13,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-        };
-
-        var panel = new StackPanel { Spacing = 12, MinWidth = 560 };
-        panel.Children.Add(Head("① 分片方案（表 → 分片键 → 分片数）"));
-        panel.Children.Add(step1);
-        panel.Children.Add(execBtn);
-        panel.Children.Add(new ScrollViewer { Content = planPanel, MaxHeight = 200, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
-        panel.Children.Add(Head("② 分区现状分布"));
-        panel.Children.Add(dbBox);
+        var panel = new StackPanel { Spacing = 12, MinWidth = 580 };
+        panel.Children.Add(Head("四步向导：选表 → 选拆分方式 → 选分片键 → 确认方案"));
+        panel.Children.Add(stepChips);
+        panel.Children.Add(stepPanels);
+        panel.Children.Add(navRow);
+        panel.Children.Add(Head("分区现状分布"));
         panel.Children.Add(distBtn);
         panel.Children.Add(new ScrollViewer { Content = distPanel, MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
-        panel.Children.Add(Head("③ 热点盐化摘要"));
+        panel.Children.Add(Head("热点盐化摘要"));
         panel.Children.Add(saltRow);
         panel.Children.Add(saltText);
-        panel.Children.Add(Head("④ 在线改表计划（只读，@last 不可直接执行）"));
+        panel.Children.Add(Head("在线改表计划（只读，@last 不可直接执行）"));
         panel.Children.Add(onlineBtn);
         if (profile.Engine == DbEngine.MySQL) panel.Children.Add(estRow);
         panel.Children.Add(new ScrollViewer { Content = onlineText, MaxHeight = 200, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
@@ -218,4 +501,16 @@ public static class ShardingWizardDialog
         _ = dlg.ShowThemedAsync();
         await Task.CompletedTask;
     }
+
+    /// <summary>把步骤内容包进 Border，用 Tag 记步骤号，ShowStep 按可见性切换。</summary>
+    private static Border Wrap(UIElement content, int step) => new()
+    {
+        Tag = step,
+        Visibility = step == StepTable ? Visibility.Visible : Visibility.Collapsed,
+        Child = content,
+    };
+
+    /// <summary>取 ComboBox 选中项的 Tag（表名 / 列名都放 Tag）。</summary>
+    private static string? Selected(ComboBox box) =>
+        box.SelectedItem is ComboBoxItem item ? item.Tag?.ToString() : null;
 }
