@@ -3460,6 +3460,9 @@ Console.WriteLine("== NotificationDispatcher ==");
 }
 }
 
+Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");
+TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
+
 Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");
