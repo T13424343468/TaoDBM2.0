@@ -12,8 +12,14 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  # 多开并行（2026-11-18 老板令：多开云真机，把免费额度榨干）：LogicTest Debug+Release 双档各占一台云真机同时跑
+  logic-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -27,19 +33,19 @@ jobs:
         run: |
           $fail = 0
           foreach ($p in @('Src/TaoDBM.Core.Abstractions','Src/TaoDBM.Core','Src/TaoDBM.Infrastructure')) {
-            $out = dotnet build $p -warnaserror 2>&1
+            $out = dotnet build $p -c ${{ matrix.config }} -warnaserror 2>&1
             $out | ForEach-Object { Write-Host "$_" }
             if ($LASTEXITCODE -ne 0) { $fail = 1; $out | Where-Object { "$_" -match "error" } | Select-Object -First 10 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" } }
           }
           if ($fail -ne 0) { exit 1 }
 
-      - name: Logic tests (Release)
+      - name: Logic tests (${{ matrix.config }})
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           Remove-Item test-progress.txt -ErrorAction SilentlyContinue
           Write-Host "[T0] logic test start $(Get-Date -Format o)"
-          $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','Release' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
+          $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','${{ matrix.config }}' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
           $code = $p.ExitCode
           Write-Host "[T1] logic test end $(Get-Date -Format o) exit=$code"
           Get-Content test-output.txt | ForEach-Object { Write-Host "$_" }
@@ -48,7 +54,7 @@ jobs:
               $hex = '0x{0:X}' -f $code
               $stat = Get-Item test-output.txt -ErrorAction SilentlyContinue
               $nlines = @(Get-Content test-output.txt -ErrorAction SilentlyContinue).Count
-              "### LogicTest failed (windows-latest, Release) exit=$code ($hex)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              "### LogicTest failed (${{ matrix.config }}, windows-latest) exit=$code ($hex)" | Add-Content $env:GITHUB_STEP_SUMMARY
               "output file: $($stat.Length) bytes / $nlines lines; ended $(Get-Date -Format o)" | Add-Content $env:GITHUB_STEP_SUMMARY
               $tail = @(Get-Content test-output.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 60) + @('--- stderr tail ---') + @(Get-Content test-stderr.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 60)
               "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
@@ -90,6 +96,29 @@ jobs:
             exit $code
           }
 
+      # 编译机与测试机并行（多开）：App 层零错零警闸 + 发布产物，不串行等测试
+  app-build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build libraries (Core/Abstractions/Infrastructure)
+        shell: pwsh
+        run: |
+          $fail = 0
+          foreach ($p in @('Src/TaoDBM.Core.Abstractions','Src/TaoDBM.Core','Src/TaoDBM.Infrastructure')) {
+            $out = dotnet build $p -warnaserror 2>&1
+            $out | ForEach-Object { Write-Host "$_" }
+            if ($LASTEXITCODE -ne 0) { $fail = 1; $out | Where-Object { "$_" -match "error" } | Select-Object -First 10 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" } }
+          }
+          if ($fail -ne 0) { exit 1 }
+
       - name: Build App (WinUI, 0 warning 0 error gate)
         shell: pwsh
         run: |
@@ -127,11 +156,26 @@ jobs:
             publish/app/
             Tests/TaoDBM.LogicTest/bin/
 
+  typecheck:
+    # 应用层类型闸（Linux 免费档并行）：桩编译核 0 错 0 警，与 Windows 线并行多开
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: TypeCheck (App layer stub compile, warnaserror)
+        run: dotnet build Tools/TaoDBM.TypeCheck/TaoDBM.TypeCheck.csproj -c Debug -warnaserror
+
   msi:
     # MSI 唯一安装交付形态：WiX 5 收割 publish 产物，静默装卸链真机验证（复用一期同口径）
     runs-on: windows-latest
     timeout-minutes: 30
-    needs: build
+    needs: [app-build, logic-test, typecheck]
     steps:
       - uses: actions/checkout@v4
 
@@ -200,7 +244,7 @@ jobs:
     # 独立 job 不碰主交付链；启动冒烟 10 秒判存活，裁出问题立刻红灯
     runs-on: windows-latest
     timeout-minutes: 30
-    needs: build
+    needs: app-build
     steps:
       - uses: actions/checkout@v4
 
