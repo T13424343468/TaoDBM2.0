@@ -3365,6 +3365,24 @@ Console.WriteLine("== NotificationDispatcher ==");
         Check("N32 运行中可取消", slowTc.Cancel(slow.TaskId));
         var cancelId = await cancelSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
         Check("N33 任务取消事件派发", cancelId == slow.TaskId);
+
+        // P-3 问库规则修复回归：聚合优先级 / 时间条件 / Top-N
+        static TaoDBM.Core.NLQueryResult AskNL(string q, string table, params (string Name, string Type, bool Key)[] cols)
+        {
+            var list = cols.Select(c => new TaoDBM.Core.ColumnSpec { Name = c.Name, DataType = c.Type, IsKey = c.Key }).ToList();
+            return TaoDBM.Core.NaturalLanguageQuery.Ask(q, table, list, DbEngine.MySQL);
+        }
+        var payCols = new[] { ("id", "INT", true), ("amount", "DECIMAL", false), ("paid_at", "DATETIME", false) };
+        var avgQ = AskNL("平均每笔支付多少钱", "payments", payCols);
+        Check("N34 平均问句不被计数抢先", avgQ.Ok && avgQ.Sql.Contains("AVG(") && !avgQ.Sql.Contains("COUNT"));
+        var cntQ = AskNL("订单有多少条", "orders", new[] { ("id", "INT", true), ("created_at", "DATETIME", false) });
+        Check("N35 明确计数问句仍走计数", cntQ.Ok && cntQ.Sql.Contains("COUNT"));
+        var lastMonthQ = AskNL("上个月的订单有哪些", "orders", new[] { ("id", "INT", true), ("created_at", "DATETIME", false) });
+        Check("N36 上个月时间条件拼入", lastMonthQ.Ok && lastMonthQ.Sql.Contains("%Y-%m-01") && lastMonthQ.Sql.Contains("INTERVAL 1 MONTH"));
+        var topNQ = AskNL("上个月成交最多的三单", "orders", new[] { ("id", "INT", true), ("amount", "DECIMAL", false), ("created_at", "DATETIME", false) });
+        Check("N37 最多三单按TopN行", topNQ.Ok && topNQ.Sql.Contains("LIMIT 3") && topNQ.Sql.Contains("ORDER BY") && topNQ.Sql.Contains("%Y-%m-01"));
+        var yearQ = AskNL("今年的支付总额是多少", "payments", payCols);
+        Check("N38 今年总额带年度条件", yearQ.Ok && yearQ.Sql.Contains("SUM(") && yearQ.Sql.Contains("%Y-01-01"));
     }
 }
 }

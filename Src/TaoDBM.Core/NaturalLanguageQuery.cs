@@ -38,15 +38,17 @@ public static class NaturalLanguageQuery
 
         // ---- 聚合词 ----
         bool wantsDistinct = q.Contains("不同") || q.Contains("去重");
-        bool wantsCount = Regex.IsMatch(q, "多少|几条|几行|几笔|几只|总数|行数");
         bool wantsAvg = q.Contains("平均");
         bool wantsMax = q.Contains("最大") || q.Contains("最高") || q.Contains("最多") || q.Contains("最晚");
         bool wantsMin = q.Contains("最小") || q.Contains("最低") || q.Contains("最少") || q.Contains("最早");
-        bool wantsSum = q.Contains("总和") || q.Contains("合计") || q.Contains("总共多少");
+        bool wantsSum = q.Contains("总和") || q.Contains("合计") || Regex.IsMatch(q, "总额|总价|总金额|总共多少");
         bool isAgg = wantsAvg || wantsMax || wantsMin || wantsSum;
+        // 计数优先级：明确计数词（几条/行数/总数/统计/多少条…）才认计数；裸“多少”让位于明确的聚合词（平均/最大/总和），修复“平均…多少钱”被计数抢先
+        bool explicitCount = Regex.IsMatch(q, "几条|几行|几笔|几只|多少条|多少行|多少笔|行数|总数|统计");
+        bool wantsCount = explicitCount || (!isAgg && Regex.IsMatch(q, "多少"));
 
         int? limit = null;
-        var mTop = Regex.Match(q, @"前(\d+|[一二三四五六七八九十]+)名?|([一二三四五六七八九十]+)条");
+        var mTop = Regex.Match(q, @"前(\d+|[一二三四五六七八九十]+)名?|(\d+|[一二三四五六七八九十]+)(?:条|单|个|名|件)");
         if (mTop.Success) limit = ParseNum(mTop.Groups[1].Success ? mTop.Groups[1].Value : mTop.Groups[2].Value);
         bool wantsOrder = wantsMax || wantsMin || q.Contains("排序") || q.Contains("从高到低") || q.Contains("从低到高") || limit is not null;
 
@@ -57,6 +59,14 @@ public static class NaturalLanguageQuery
         {
             string where = BuildConditions(q, c, Quote(engine, c.Name), engine);
             if (!string.IsNullOrEmpty(where)) conditions.Add(where);
+        }
+        // 问句含时间范围但未点名时间列时，落到表内首个时间列；修复“上个月的订单有哪些”时间条件丢失
+        bool hasTimeIntent = TimeRange(q, engine, qt) is not null;
+        if (hasTimeIntent)
+        {
+            var tc = mentioned.FirstOrDefault(IsTimeCol) ?? cols.FirstOrDefault(IsTimeCol);
+            string? range = tc is null ? null : TimeRange(q, engine, Quote(engine, tc.Name));
+            if (range is not null) conditions.Add(range);
         }
 
         // ---- 聚合目标列 ----
@@ -71,6 +81,9 @@ public static class NaturalLanguageQuery
 
         string select;
         string human;
+        // 带“N 条/单”上限的“最多/最少”按 Top-N 行处理（排序取前 N 行），不做单值聚合；修复“上个月成交最多的三单”被算成 MAX
+        bool topN = limit is > 0 && (wantsMax || wantsMin);
+        bool aggPath = isAgg && !topN;
         if (wantsCount && wantsDistinct)
         {
             var dc = FindCol(DistinctText(q)) ?? mentioned.FirstOrDefault();
@@ -83,7 +96,7 @@ public static class NaturalLanguageQuery
             select = $"SELECT COUNT(*) AS cnt FROM {qt}";
             human = $"统计表 {table} 的总行数。";
         }
-        else if (isAgg)
+        else if (aggPath)
         {
             string fn = wantsAvg ? "AVG" : wantsMax ? "MAX" : wantsMin ? "MIN" : "SUM";
             string fnName = wantsAvg ? "平均值" : wantsMax ? "最大值" : wantsMin ? "最小值" : "总和";
@@ -105,14 +118,15 @@ public static class NaturalLanguageQuery
         if (conditions.Count > 0)
             select += " WHERE " + string.Join(" AND ", conditions);
 
-        if (wantsOrder && !wantsCount && !wantsAvg && !wantsMax && !wantsMin && !wantsSum)
+        if (wantsOrder && !wantsCount && !aggPath)
         {
-            var oc = mentioned.FirstOrDefault();
+            var oc = mentioned.FirstOrDefault(IsNumCol) ?? mentioned.FirstOrDefault()
+                     ?? cols.FirstOrDefault(IsNumCol);
             if (oc is not null)
                 select += $" ORDER BY {Quote(engine, oc.Name)} {(wantsMin ? "ASC" : "DESC")}";
         }
 
-        if (limit is > 0 && !wantsCount && !wantsAvg && !wantsMax && !wantsMin && !wantsSum)
+        if (limit is > 0 && !wantsCount && !aggPath)
         {
             select += engine switch
             {
@@ -170,13 +184,6 @@ public static class NaturalLanguageQuery
         if (mc.Success && !isNum && !isTime)
             conds.Add($"{qc} LIKE '%{mc.Groups[1].Value.Replace("'", "''")}%'");
 
-        // 时间条件：交给日期列
-        if (isTime)
-        {
-            string? range = TimeRange(q, engine, qc);
-            if (range is not null) conds.Add(range);
-        }
-
         return string.Join(" AND ", conds);
     }
 
@@ -197,6 +204,27 @@ public static class NaturalLanguageQuery
             return engine == DbEngine.MySQL
                 ? $"{qc} >= CURDATE() - INTERVAL 1 DAY"
                 : $"{qc} >= CURRENT_DATE - INTERVAL '1 DAY'";
+        // 上个月 / 本月 / 今年 / 上周 / 本周（MySQL 与标准引擎分别拼装，月界用月初口径）
+        if (q.Contains("上个月") || q.Contains("上月"))
+            return engine == DbEngine.MySQL
+                ? $"{qc} >= DATE_FORMAT(CURDATE(), '%Y-%m-01') - INTERVAL 1 MONTH AND {qc} < DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+                : $"{qc} >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 MONTH' AND {qc} < DATE_TRUNC('month', CURRENT_DATE)";
+        if (q.Contains("本月") || q.Contains("这个月") || q.Contains("这月"))
+            return engine == DbEngine.MySQL
+                ? $"{qc} >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+                : $"{qc} >= DATE_TRUNC('month', CURRENT_DATE)";
+        if (q.Contains("今年") || q.Contains("本年"))
+            return engine == DbEngine.MySQL
+                ? $"{qc} >= DATE_FORMAT(CURDATE(), '%Y-01-01')"
+                : $"{qc} >= DATE_TRUNC('year', CURRENT_DATE)";
+        if (q.Contains("上周"))
+            return engine == DbEngine.MySQL
+                ? $"{qc} >= CURDATE() - INTERVAL 1 WEEK AND {qc} < CURDATE()"
+                : $"{qc} >= CURRENT_DATE - INTERVAL '7 DAY' AND {qc} < CURRENT_DATE";
+        if (q.Contains("本周") || q.Contains("这周"))
+            return engine == DbEngine.MySQL
+                ? $"{qc} >= CURDATE() - INTERVAL 1 WEEK"
+                : $"{qc} >= CURRENT_DATE - INTERVAL '7 DAY'";
         return null;
     }
 
