@@ -1,0 +1,59 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12499-401563f10
+model      : models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+
+嗯，我现在需要解决的问题是：从MySQL表中列出金额超过1000的支付记录。首先，我得理解问题，明确要做什么。问题要求我生成一个查询语句，只输出一条SQL，不需要任何解释。
+
+首先，我应该分析表结构。表中有多个子表，比如orders、order_items、payments。其中，order_items表记录的是订单中的商品信息，包括数量、单位价格和总金额。payments表记录的是订单的支付信息，包括金额、方法和支付时间。
+
+问题要求列出金额超过1000的支付记录，所以我要从payments表中筛选出金额大于1000的记录。也就是说，我需要在payments表中使用WHERE条件，检查金额是否大于1000。
+
+接下来，我需要考虑如何构造这个查询语句。在MySQL中，SELECT语句用于选择需要返回的列，LIMIT用于限制结果的数量，LIMIT 1可以只返回一条记录。然后是FROM语句，从哪个表开始，这里是payments表。
+
+然后，我要使用WHERE子句，条件是payment_amount > 1000。这里要注意，payment_amount是否是表中的列名，可能需要确认表中的字段名是否正确。假设表中的列名是payment_amount，那么条件就是payment_amount > 1000。
+
+最后，把这些部分组合起来，形成完整的查询语句。确保语句正确，没有语法错误，只输出一条SQL，不需要任何解释。
+
+总结一下，查询语句应该是SELECT FROM payments表中的payment_amount > 1000的记录。这样就能列出金额超过1000的支付记录了。
+[End thinking]
+
+
+
+SELECT FROM payments WHERE payment_amount > 1000
+
+[ Prompt: 144.6 t/s | Generation: 29.9 t/s ]
+
+
+Exiting...

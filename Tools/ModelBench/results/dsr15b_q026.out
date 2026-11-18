@@ -1,0 +1,55 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12499-401563f10
+model      : models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+
+嗯，我现在需要解决的问题是：“今年的支付总额是多少？”首先，我得理解这个问题的意思。支付总额应该是指所有订单中支付的总金额，也就是所有订单的`amount`字段的总和。
+
+接下来，我需要查看相关的表结构。表中有关于`orders`、`payments`的表。`orders`表包含每个订单的信息，包括`order_id`、`user_id`、`status`、`created_at`。`payments`表包含每个订单的支付信息，包括`order_id`、`amount`、`method`、`paid_at`。
+
+为了计算支付总额，我需要从`payments`表中提取所有订单的`amount`，然后求和。所以，我应该使用`SUM`函数来计算总和。同时，我需要确保只计算今年的支付，也就是`created_at`大于当前日期的订单。
+
+所以，我应该使用`SUM`函数来计算`amount`的总和，然后在`WHERE`条件中过滤`created_at`大于当前日期。这样就能得到今年的支付总额了。
+
+最后，我需要将这些条件和函数组合成一个查询语句，并且只输出这个查询语句，不需要任何解释。
+[End thinking]
+
+
+
+SELECT SUM(amount) AS total_payment FROM payments WHERE created_at > CURRENT_DATE ORDER BY total_payment DESC LIMIT 1
+
+[ Prompt: 145.1 t/s | Generation: 30.3 t/s ]
+
+
+Exiting...

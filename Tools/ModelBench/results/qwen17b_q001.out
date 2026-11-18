@@ -1,0 +1,56 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12499-401563f10
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题和表结构写出一个MySQL查询语句。用户的问题是“列出所有用户的姓名”，而表结构中有users表，里面包含name字段。
+
+首先，用户要求只输出SQL，不要任何解释。所以我要确保只写查询语句，不加任何注释或说明。表结构中的users表有id、name、city、created_at这些字段，其中name是需要查询的字段。
+
+接下来，我需要确定查询的条件。用户的问题是“列出所有用户的姓名”，没有给出任何过滤条件，所以应该返回users表中所有的name值。这意味着SELECT语句中只需要选name字段，不需要其他字段。
+
+然后，考虑表的结构。users表的主键是id，但查询中不需要使用id，因为问题只是要姓名。所以SELECT name FROM users; 这样就可以了。
+
+检查是否有其他可能的字段或条件。比如，是否有其他表关联用户，但根据问题，用户只是要列出所有用户的姓名，所以不需要关联其他表。因此，直接查询users表的name字段即可。
+
+最后，确保SQL语句正确，没有语法错误。比如，表名是否正确，字段名是否正确，是否有遗漏的逗号或分号。这里表名是users，字段是name，所以正确的SQL应该是SELECT name FROM users;。
+
+总结，正确的SQL语句就是SELECT name FROM users;。
+[End thinking]
+
+SELECT name FROM users;
+
+[ Prompt: 131.2 t/s | Generation: 26.6 t/s ]
+
+
+Exiting...
