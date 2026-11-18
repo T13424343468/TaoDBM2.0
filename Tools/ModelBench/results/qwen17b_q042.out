@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -38,7 +38,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 DROP TABLE orders;
 
-[ Prompt: 102.3 t/s | Generation: 16.4 t/s ]
+[ Prompt: 134.5 t/s | Generation: 26.8 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -56,7 +56,7 @@ WHERE p.paid_at >= CURDATE();
 
 因此，正确的SQL应该是
 
-[ Prompt: 104.5 t/s | Generation: 16.0 t/s ]
+[ Prompt: 124.9 t/s | Generation: 25.6 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT id, name FROM users LEFT JOIN orders ON users.id = orders.user_id WHERE orders.id IS NULL;
 
-[ Prompt: 101.9 t/s | Generation: 16.1 t/s ]
+[ Prompt: 132.2 t/s | Generation: 26.0 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -59,7 +59,7 @@ GROUP BY p.id
 ORDER BY total DESC 
 LIMIT 1;
 
-[ Prompt: 103.8 t/s | Generation: 15.9 t/s ]
+[ Prompt: 133.1 t/s | Generation: 25.8 t/s ]
 
 
 Exiting...

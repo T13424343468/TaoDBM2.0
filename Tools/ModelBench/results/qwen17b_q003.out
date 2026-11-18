@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT name FROM products WHERE stock < 10;
 
-[ Prompt: 103.6 t/s | Generation: 16.2 t/s ]
+[ Prompt: 132.8 t/s | Generation: 26.2 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -44,7 +44,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT method, COUNT(*) FROM payments GROUP BY method;
 
-[ Prompt: 102.1 t/s | Generation: 16.2 t/s ]
+[ Prompt: 131.9 t/s | Generation: 26.2 t/s ]
 
 
 Exiting...

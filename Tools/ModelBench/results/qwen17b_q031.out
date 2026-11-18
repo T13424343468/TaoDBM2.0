@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -63,7 +63,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户的问题可能更简单，比如每个城市的订单总金额，可能是指每个城市的订单总金额，而不管订单的金额。或者，可能是指每个城市的订单总金额，即每个订单的总金额，然后按城市
 
-[ Prompt: 86.3 t/s | Generation: 15.8 t/s ]
+[ Prompt: 133.2 t/s | Generation: 25.8 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 2. 对每个订单，计算其总金额（sum of unit_price * quantity）。
 3.
 
-[ Prompt: 82.9 t/s | Generation: 14.3 t/s ]
+[ Prompt: 126.2 t/s | Generation: 25.5 t/s ]
 
 
 Exiting...

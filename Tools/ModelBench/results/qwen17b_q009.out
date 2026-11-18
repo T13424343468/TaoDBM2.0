@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -59,7 +59,7 @@ SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id;
 
 SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id;
 
-[ Prompt: 101.4 t/s | Generation: 15.7 t/s ]
+[ Prompt: 132.0 t/s | Generation: 24.2 t/s ]
 
 
 Exiting...

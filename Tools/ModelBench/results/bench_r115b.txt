@@ -1,8 +1,8 @@
 load_backend: loaded RPC backend from D:\a\TaoDBM2.0\TaoDBM2.0\llama-bench-bin\ggml-rpc.dll
-load_backend: loaded CPU backend from D:\a\TaoDBM2.0\TaoDBM2.0\llama-bench-bin\ggml-cpu-icelake.dll
+load_backend: loaded CPU backend from D:\a\TaoDBM2.0\TaoDBM2.0\llama-bench-bin\ggml-cpu-zen4.dll
 | model                          |       size |     params | backend    | threads |            test |                  t/s |
 | ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
-| qwen2 1.5B Q4_K - Medium       |   1.04 GiB |     1.78 B | CPU        |       4 |           pp128 |        110.76 ± 2.50 |
-| qwen2 1.5B Q4_K - Medium       |   1.04 GiB |     1.78 B | CPU        |       4 |           tg128 |         20.03 ± 0.11 |
+| qwen2 1.5B Q4_K - Medium       |   1.04 GiB |     1.78 B | CPU        |       4 |           pp128 |        146.76 ± 0.73 |
+| qwen2 1.5B Q4_K - Medium       |   1.04 GiB |     1.78 B | CPU        |       4 |           tg128 |         32.97 ± 0.21 |
 
-build: 401563f10 (12499)
+build: 4577932fa (12503)

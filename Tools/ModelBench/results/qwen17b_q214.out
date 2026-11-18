@@ -1,0 +1,60 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，用户让我根据表结构和问题生成一个SQL Server查询，只输出SQL，不要解释。问题中的“左去空格”可能是指需要处理字符串中的空格，比如在name或city字段中去除前导空格。不过，我需要仔细分析表结构和问题。
+
+首先，查看表结构。users表有name和city字段，都是VARCHAR类型。可能的问题是需要清理这些字段中的空格，比如去除前导或后导空格。但SQL Server的字符串函数中，LTRIM和RTRIM可以去除空格，但用户可能希望用更直接的方法，比如使用TRIM函数。
+
+不过，用户的问题描述可能有误，因为“左去空格”可能是指左移空格，但更可能的是需要去除空格。比如，如果name字段中有前导空格，需要去除。这时候可以使用LTRIM或者TRIM函数。
+
+但用户的问题可能是指在查询中处理空格，比如在条件判断中使用TRIM函数。例如，WHERE name LIKE '% %'可能需要处理空格，但用户的问题可能更简单，比如需要去除空格。
+
+不过，用户可能希望生成一个查询，比如使用TRIM函数来清理数据，或者在查询中处理空格。例如，SELECT TRIM(name) FROM users WHERE TRIM(name) IS NOT NULL。
+
+但根据问题中的“左去空格”，可能是指在查询中处理空格，比如在WHERE子句中使用TRIM函数。例如，WHERE TRIM(name) = 'John'，但可能用户希望去除前导空格，所以使用LTRIM。
+
+不过，用户可能希望生成一个简单的SQL，比如使用TRIM函数来清理数据。例如，SELECT TRIM(name) FROM users。
+
+但需要确认问题的具体需求。如果问题中的“左去空格”是指在查询中处理空格，那么可能需要使用TRIM函数。但如果没有具体说明，可能需要生成一个通用的SQL，比如使用TRIM函数来清理字段中的空格。
+
+因此，最终的SQL可能是SELECT TRIM(name) FROM users; 或者使用LTRIM，但TRIM更常见。所以最终的SQL应该是SELECT TRIM(name) FROM users; 或者类似的结构。
+[End thinking]
+
+SELECT TRIM(name) FROM users;
+
+[ Prompt: 133.9 t/s | Generation: 25.8 t/s ]
+
+
+Exiting...

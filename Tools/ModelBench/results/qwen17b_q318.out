@@ -1,0 +1,61 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题和表结构写出一个SQL Server查询语句，只输出一条SQL，不要任何解释。用户的问题是“单价保留两位小数格式化输出”，所以我要找出相关的表和字段。
+
+首先，看表结构。单价在products表里，是price字段，类型是DECIMAL(10,2)，所以直接查询price字段就可以了。但用户要求的是保留两位小数，可能需要格式化输出。不过SQL Server的DECIMAL类型本身已经存储了两位小数，所以直接查询price字段应该没问题。但用户可能希望显示的时候格式化，比如用CONVERT或者FORMAT函数。
+
+不过问题里提到的是“单价保留两位小数格式化输出”，可能需要使用格式化函数。比如，使用CONVERT或者FORMAT函数来确保显示两位小数。但用户可能希望直接查询price字段，而不需要额外的处理，因为DECIMAL类型已经存储了两位小数。不过可能需要确认是否需要格式化，比如在结果中显示两位小数，即使数值本身是整数。
+
+比如，如果price是100，那么显示为100.00。这时候可能需要用CONVERT或者FORMAT。但用户的问题可能希望直接查询price字段，而不需要额外处理，因为数据库已经存储了两位小数。不过可能需要确认是否需要格式化输出，比如在结果中显示两位小数。
+
+但根据问题描述，用户可能希望查询时格式化输出，所以可能需要使用CONVERT或者FORMAT。例如，使用CONVERT来转换为DECIMAL(10,2)，或者使用FORMAT函数。但SQL Server中FORMAT函数在较新版本中可用，而CONVERT可能更通用。
+
+不过用户要求只输出SQL，所以需要确定正确的SQL语句。例如，如果直接查询price字段，那么SQL就是SELECT price FROM products。但用户可能希望格式化输出，比如显示两位小数，所以可能需要使用CONVERT或者FORMAT。例如：
+
+SELECT CONVERT(DECIMAL(10,2), price) AS formatted_price FROM products;
+
+或者使用FORMAT：
+
+SELECT FORMAT(price, '0.00') AS formatted_price FROM products;
+
+但需要确认是否允许使用FORMAT函数。在SQL Server 2012及以后版本中，FORMAT函数可用。如果用户使用的是较旧的版本，可能需要使用CONVERT。
+
+但问题中没有提到版本，所以可能需要使用CONVERT。不过用户
+
+[ Prompt: 133.2 t/s | Generation: 25.6 t/s ]
+
+
+Exiting...

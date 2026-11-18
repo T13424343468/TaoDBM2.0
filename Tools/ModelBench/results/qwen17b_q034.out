@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -60,7 +60,7 @@ GROUP BY p.category;
 
 因此，正确的SQL应该是将order_items和products表关联，按
 
-[ Prompt: 102.0 t/s | Generation: 15.6 t/s ]
+[ Prompt: 132.8 t/s | Generation: 25.8 t/s ]
 
 
 Exiting...

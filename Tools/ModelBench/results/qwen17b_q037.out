@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -50,7 +50,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT users.name FROM users JOIN orders ON users.id = orders.user_id JOIN payments ON orders.id = payments.order_id WHERE payments.method = '支付宝';
 
-[ Prompt: 104.0 t/s | Generation: 15.9 t/s ]
+[ Prompt: 133.9 t/s | Generation: 26.0 t/s ]
 
 
 Exiting...

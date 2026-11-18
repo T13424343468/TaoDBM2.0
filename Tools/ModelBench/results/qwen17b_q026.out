@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -46,7 +46,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT SUM(p.amount) FROM payments p JOIN orders o ON p.order_id = o.id WHERE o.created_at BETWEEN '2023-01-01' AND '2023-12-31';
 
-[ Prompt: 104.3 t/s | Generation: 16.4 t/s ]
+[ Prompt: 114.6 t/s | Generation: 25.0 t/s ]
 
 
 Exiting...

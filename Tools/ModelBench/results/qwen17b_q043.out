@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12499-401563f10
+build      : b12503-4577932fa
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 可能的解决方案是：假设存在一个优惠券表，比如coupon，然后将优惠券分配给所有用户。例如，插入一个优惠
 
-[ Prompt: 102.2 t/s | Generation: 15.8 t/s ]
+[ Prompt: 133.3 t/s | Generation: 24.8 t/s ]
 
 
 Exiting...
