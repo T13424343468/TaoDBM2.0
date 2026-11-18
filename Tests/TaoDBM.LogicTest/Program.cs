@@ -3420,10 +3420,16 @@ Console.WriteLine("== NotificationDispatcher ==");
                 });
             var sink = new StringWriter();
             long n34 = Exporter.CsvStream(lazyPages, new[] { "id" }, sink);
-            // 平台差异：Windows TextWriter.NewLine=\r\n，Linux=\n——账面一致性看内容，换行符归一后再切分（同 N39 口径）
-            var lines = sink.ToString().Replace("\r\n", "\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            Check("N34 多页流式导出账面一致", n34 == 50000 && lines.Length == 50001
-                && lines[0] == "\uFEFFid" && lines[1] == "0" && lines[50000] == "49999", $"n={n34}, lines={lines.Length}");
+            // 平台差异：Windows TextWriter.NewLine=\r\n，Linux=\n——账面一致性看内容，先剥净 \r 再按 \n 切分（老于：不依赖 NewLine 配对形状）
+            var lines = sink.ToString().Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            bool headOk = lines.Length > 0 && lines[0] == "\uFEFFid";
+            bool firstOk = lines.Length > 1 && lines[1] == "0";
+            bool lastOk = lines.Length > 50000 && lines[50000] == "49999";
+            static string DumpHead(string s) => string.Join(" ", s.Take(6).Select(c => $"U+{((int)c):X4}"));
+            Check("N34 多页流式导出 行数账", n34 == 50000 && lines.Length == 50001, $"n={n34}, lines={lines.Length}, nl={Environment.NewLine.Replace(((char)13).ToString(), "CR").Replace(((char)10).ToString(), "LF")}");
+            Check("N34 多页流式导出 头行带BOM", headOk, lines.Length > 0 ? $"head=[{DumpHead(lines[0])}]" : "lines empty");
+            Check("N34 多页流式导出 首行0", firstOk, lines.Length > 1 ? $"first=[{DumpHead(lines[1])}]" : "lines short");
+            Check("N34 多页流式导出 尾行49999", lastOk, lines.Length > 50000 ? $"last=[{DumpHead(lines[50000])}]" : "lines short");
         }
         // N35：小批次口径 BatchSize=7 批批受控（低内存导入路径）
         {
