@@ -209,6 +209,30 @@ public static class FakerDialog
                 statusText.Foreground = Ant.Warn;
                 return;
             }
+            // 清空是覆盖式危险操作：即使用户已勾选，也再给一次黄牌确认，不静默清库（Mongo 不清空，无需确认）。
+            if (clearBox.IsChecked == true && provider is not MongoProvider)
+            {
+                var names = plan.Select(p => p.Table.Name).ToList();
+                var warn = new ContentDialog
+                {
+                    Title = "黄牌确认：先清空再生成",
+                    Content = new TextBlock
+                    {
+                        Text = $"以下 {names.Count} 张表会先被清空，原数据不可恢复：\n{string.Join("、", names)}\n\n确认继续？",
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    PrimaryButtonText = "清空并生成",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = owner.Content.XamlRoot,
+                };
+                if (await warn.ShowThemedAsync() != ContentDialogResult.Primary)
+                {
+                    statusText.Text = "已取消执行；可取消勾选「先清空」后重试。";
+                    statusText.Foreground = Ant.TextSub;
+                    return;
+                }
+            }
             sender.IsPrimaryButtonEnabled = false;
             progress.Visibility = Visibility.Visible;
             progress.Value = 0;
