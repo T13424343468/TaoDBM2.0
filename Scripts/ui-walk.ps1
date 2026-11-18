@@ -525,15 +525,21 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds 1
       }
       'menu' {
+        # #88 S11 连三轮崩且 applog 零打点＝死点在步内未细分辨：找按钮/Invoke/找菜单项逐段留证（崩前最后一条即凶手段位）
+        Push-Evidence "menu-find-start"
         $btn = Find-ElWait @{ automationId = $s.buttonAutomationId } 6 $mainRoot
         if ($null -eq $btn) { $btn = Find-ElWait @{ controlType = 'Button'; name = $s.buttonAutomationId } 3 $mainRoot }
         if ($null -eq $btn) { throw "menu button not found: $($s.buttonAutomationId)" }
+        Push-Evidence "menu-button-found"
         Invoke-El $btn
+        Push-Evidence "menu-button-invoked"
         # 菜单项先从主窗根找（弹层挂在应用窗 UIA 树内），桌面全根全扫是压舱雷，找不到再降级全根
         $item = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
         if ($null -eq $item) { $item = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
         if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
+        Push-Evidence "menu-item-found"
         Invoke-El $item
+        Push-Evidence "menu-item-invoked"
         Start-Sleep -Seconds 3
       }
       'query' {
@@ -670,6 +676,8 @@ foreach ($s in $plan.steps) {
         }
       } catch { Log "crashlog read failed: $($_.Exception.Message)" }
     }
+    # 死亡现场落公开分支：crash.log/事件日志已入 walklog，随最后一次推送固化（否则登录侧与 redaction 后什么都拿不到）
+    Push-Evidence "app-exited $id"
     $hardFail = $true; break
   }
 }
