@@ -43,8 +43,8 @@ public class WorkTab : Grid
     private readonly Button _delKeyBtn = new() { Content = "删除此键", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _favBtn = new() { Content = "收藏", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = 12 };
-    private readonly Button _prevBtn = new() { Content = "◀ 上一页", Padding = new Thickness(8, 3, 8, 3) };
-    private readonly Button _nextBtn = new() { Content = "下一页 ▶", Padding = new Thickness(8, 3, 8, 3) };
+    private readonly Button _prevBtn = new() { Content = "◀ 上一页", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
+    private readonly Button _nextBtn = new() { Content = "下一页 ▶", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
 
     private readonly ScrollViewer _resultsHost = new()
     {
@@ -305,7 +305,7 @@ public class WorkTab : Grid
     private async Task DeleteKeyAsync()
     {
         if (_provider is not RedisProvider rp) return;
-        bool ok = await _owner.ConfirmAsync($"确定删除键“{_child}”吗？");
+        bool ok = await _owner.ConfirmAsync($"确定删除键“{_child}”吗？删除后数据不可自动恢复，请确认不再需要这个键。");
         if (!ok) return;
         try
         {
@@ -427,10 +427,16 @@ public class WorkTab : Grid
             if (existing == null || KeyCol is null) return;
             var confirm = new ContentDialog
             {
-                Title = "确认删除",
-                Content = new TextBlock { Text = $"确定删除 {_child} 中 {KeyCol!.Name} = {inputs[_cols.IndexOf(KeyCol)].Text} 的这一行吗？", TextWrapping = TextWrapping.Wrap },
+                Title = "确认删除这一行",
+                Content = new TextBlock
+                {
+                    Text = $"将删除 {_child} 中 {KeyCol!.Name} = {inputs[_cols.IndexOf(KeyCol)].Text} 的这一行，删除后需自行恢复数据，请确认。",
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = Ant.Error,
+                },
                 PrimaryButtonText = "删除",
                 CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
                 XamlRoot = _owner.Content.XamlRoot,
             };
             if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
@@ -509,7 +515,7 @@ public class WorkTab : Grid
             if (isJson)
             {
                 (headers, rows) = JsonImporter.Parse(text);
-                if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "JSON 内容为空或不是对象数组 / 行式 JSON。"; return; }
+                if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "JSON 内容为空，或不是「对象数组 / 每行一个对象」的格式，未能读出数据。"; return; }
             }
             if (_cols.Count == 0) _cols = await _provider.GetColumns(_db, _child);
 
@@ -596,7 +602,7 @@ public class WorkTab : Grid
             var empty = new ContentDialog
             {
                 Title = "查询收藏",
-                Content = new TextBlock { Text = "还没有收藏。把编辑器里的 SQL 写好后，点「收藏」→「保存当前 SQL」即可。", Foreground = Ant.TextSub },
+                Content = new TextBlock { Text = "还没有收藏。把编辑器里的 SQL 写好后，点「收藏」→「保存当前 SQL」即可。", Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "好的",
                 XamlRoot = _owner.Content.XamlRoot,
             };
@@ -654,7 +660,7 @@ public class WorkTab : Grid
             var empty = new ContentDialog
             {
                 Title = "查询历史",
-                Content = new TextBlock { Text = "还没有历史记录。", Foreground = Ant.TextSub },
+                Content = new TextBlock { Text = "还没有历史记录。执行过的语句会出现在这里。", Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "好的",
                 XamlRoot = _owner.Content.XamlRoot,
             };
@@ -713,7 +719,7 @@ public class WorkTab : Grid
         }
         var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = new CornerRadius(4) };
         var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub });
+        panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = 12 });
         panel.Children.Add(lv);
         panel.Children.Add(exportBtn);
         var dlg = new ContentDialog
