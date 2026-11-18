@@ -12,7 +12,7 @@ for qf in Tools/ModelBench/questions_gen/*.txt; do
   res="$OUT/${TAG}_${qid}.out"
   start=$(date +%s)
   "$BIN" -m "$MODEL" -p "$(cat "$qf")" -n "$NTOK" --temp 0 --single-turn \
-    -c 4096 -t 4 2>"$res"
+    -c 4096 -t 4 >"$res" 2>"$OUT/${TAG}_${qid}.err"
   end=$(date +%s)
   echo "$TAG $qid wall=$((end-start))s" >> "$OUT/run.log"
 done
