@@ -33,9 +33,9 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 [Start thinking]
 
-好的，用户的问题是“用户名倒序输出”，但需要根据提供的表结构来写SQL。首先，我需要理解用户的需求。用户可能希望从users表中获取name列，并按倒序排列。不过，用户提到的是“用户名倒序输出”，可能是指按name的字母顺序倒序，或者按某种排序方式。
+好的，用户的问题是“用户名倒序输出”，但需要根据提供的表结构来写SQL。首先，我需要理解用户的需求。用户可能希望从users表中获取name列，并按倒序排列。不过，用户提到“用户名倒序输出”，可能是指按name的字母顺序倒序，或者按某种排序方式。
 
-但问题描述可能有歧义。比如，是否要按name的字典序倒序，或者是否要按其他条件排序。不过，用户没有指定具体的排序条件，所以可能需要默认按name倒序排列。
+但问题描述可能有歧义。比如，是否要按name的字典序倒序，或者是否要按其他条件排序。不过，用户没有给出具体的排序条件，所以可能需要默认按name倒序排列。
 
 接下来，检查表结构。users表有id、name、city、created_at。所以需要从users表中选择name列，并按name倒序排列。因此，SQL语句应该是SELECT name FROM users ORDER BY name DESC。
 
@@ -44,7 +44,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 SELECT name FROM users ORDER BY name DESC
 
-[ Prompt: 133.1 t/s | Generation: 26.8 t/s ]
+[ Prompt: 19.3 t/s | Generation: 7.1 t/s ]
 
 
 Exiting...

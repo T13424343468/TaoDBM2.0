@@ -1,0 +1,59 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句。用户的问题是关于每10分钟执行归档存储过程的代理作业安排。首先，我需要理解问题的具体要求。
+
+用户提到的“代理作业安排”可能是指创建一个SQL Server代理的作业，这个作业每10分钟执行一次归档存储过程。归档存储过程可能是指某个存储过程，比如ARCHIVE_PROCEDURE，但用户没有具体说明存储过程的名称。不过，问题中没有给出具体的存储过程名称，所以可能需要假设一个通用的名称，或者可能用户希望我使用一个占位符。
+
+接下来，我需要考虑如何创建一个SQL Server代理作业。SQL Server代理作业的创建通常使用EXECUTE AS或类似命令，但更常见的是使用作业步骤来定义任务。例如，使用EXECUTE命令来执行存储过程，设置触发时间。
+
+问题中提到每10分钟执行一次，所以需要设置作业的调度时间。在SQL Server中，作业调度可以通过作业步骤来设置，比如使用SCHEDULED_AT或REPEAT_INTERVAL。但具体语法可能需要根据SQL Server的版本来调整。
+
+假设用户希望创建一个作业，名称为ArchiveJob，每天执行一次，每10分钟一次。但可能用户希望的是每10分钟执行一次，所以可能需要设置作业的重复时间间隔为10分钟。不过，SQL Server的作业调度可能需要使用REPEAT_INTERVAL属性，比如每10分钟一次。
+
+但用户的问题中没有给出具体的存储过程名称，所以可能需要使用一个占位符，比如ARCHIVE_PROCEDURE。因此，创建作业的步骤可能如下：
+
+1. 创建作业，名称为ArchiveJob。
+2. 添加一个步骤，执行存储过程ARCHIVE_PROCEDURE。
+3. 设置步骤的执行频率为每10分钟。
+
+不过，具体的SQL语句可能需要使用EXECUTE命令，或者使用作业的步骤属性来设置重复时间。例如，使用REPEAT_INTERVAL='FREQ=HOURLY'可能不适用，因为用户需要每10分钟一次。可能需要使用更精确的间隔，比如FREQ=MINUTE, INTERVAL=10，但需要确认SQL Server的语法。
+
+不过，SQL Server的作业调度中，重复间隔的设置可能需要使用特定的参数，比如FREQ=HOURLY, INTERVAL=1，但用户需要的是每10分钟，可能需要使用
+
+[ Prompt: 19.5 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

@@ -1,0 +1,64 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要帮用户创建一个MySQL事件，每小时整点归档30天前的订单。首先，我得理解用户的需求。他们想要每个小时执行一次，归档那些在30天前的订单。那这个事件应该设置在每个小时的某个时间点触发。
+
+首先，确定事件的名称，可能用“archive_orders”比较合适。然后，事件的触发时间应该是每小时的0分，比如0:00。接下来，需要执行的SQL语句是归档订单。归档可能涉及将订单数据转移到另一个表或者删除旧数据。不过用户没有提到具体如何归档，所以可能需要假设一个简单的操作，比如将订单移到另一个表，或者标记为已归档。
+
+不过，用户可能希望删除这些订单，或者至少标记它们为已归档。但根据问题描述，可能只需要归档，而不需要删除。但需要确认。不过通常归档可能涉及将数据移到另一个表，或者更新状态。但用户没有说明，所以可能需要假设一个简单的操作，比如更新一个状态字段。
+
+不过，用户的问题中提到的是“归档”，所以可能需要将这些订单从当前表中删除。但需要考虑数据的保留时间。比如，30天前的订单，所以需要在事件中执行删除操作。
+
+不过，事件的触发时间是每小时一次，所以需要在每个小时的0分执行。因此，事件的定义应该包含一个定时的触发时间，比如每小时的0分。
+
+接下来，编写事件的SQL语句。事件的定义通常包括定义名称、触发时间、执行的SQL。例如：
+
+CREATE EVENT archive_orders
+ON SCHEDULE EVERY 1 HOUR
+DO
+BEGIN
+  DELETE FROM orders WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 DAY;
+END;
+
+不过，这里需要注意，如果用户希望归档到另一个表，可能需要将数据移到另一个表，但用户没有提到，所以可能只需要删除。但需要确认是否需要保留数据。如果用户希望归档到另一个表，可能需要添加INSERT语句，但如果没有说明，可能默认是删除。
+
+另外，需要确保表结构允许这样的操作。例如，orders表的created_at字段是DATETIME，所以比较正确。同时，事件的触发时间是每小时的0分，所以需要设置ON SCHEDULE EVERY 1 HOUR，且在0分执行。
+
+所以最终的SQL应该是创建事件，
+
+[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...
