@@ -475,21 +475,43 @@ foreach ($s in $plan.steps) {
         Push-Evidence ("kb-tree-items " + (($itemNames | Select-Object -First 20) -join ' | '))
         Push-Evidence "kb-state $needle $dbState"
         if ($dbItem -and $dbState -ne 'Expanded') {
-          # 单元素补一发展开：ExpandCollapse 可用则直接 Expand（S07 同款）；否则 Select＋SetFocus＋{RIGHT}
+          # 3c05bf6 轮定谳：单元素 Expand() 打上后状态仍 Collapsed——UIA 展开对库子节点静默无效（连接根节点 S07 同款却成功）。
+          # 有界自愈序列，每步复读状态入账：
+          # A) Expand() 重试一发；B) Select＋SetFocus＋{RIGHT} 键盘；C) 再 {RIGHT}（焦点已在节点上时展开）
           try {
             ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand()
-            Start-Sleep -Seconds 1
+            Start-Sleep -Milliseconds 1500
             $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
-          } catch {
+          } catch { $dbState = 'expand-threw' }
+          Push-Evidence "kb-state-afterA $needle $dbState"
+          if ($dbState -ne 'Expanded') {
             try {
-              ($dbItem.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
-            } catch { try { $dbItem.SetFocus() } catch { } }
-            Start-Sleep -Milliseconds 400
-            [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
-            Start-Sleep -Seconds 1
-            try { $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState } catch { $dbState = 'kb-fallback' }
+              try { ($dbItem.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select() } catch { }
+              try { $dbItem.SetFocus() } catch { }
+              Start-Sleep -Milliseconds 400
+              [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+              Start-Sleep -Milliseconds 1500
+              try { $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState } catch { $dbState = 'kbB-threw' }
+            } catch { $dbState = 'kbB-threw' }
+            Push-Evidence "kb-state-afterB $needle $dbState"
           }
-          Push-Evidence "kb-state-after $needle $dbState"
+          if ($dbState -ne 'Expanded') {
+            try {
+              [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+              Start-Sleep -Milliseconds 1500
+              try { $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState } catch { $dbState = 'kbC-threw' }
+            } catch { $dbState = 'kbC-threw' }
+            Push-Evidence "kb-state-afterC $needle $dbState"
+          }
+          # 终态复核：不论状态账如何，重新全名扫一遍看表名是否已落地
+          try {
+            $all2 = $mainRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+            $names2 = @()
+            foreach ($e2 in $all2) {
+              try { $n2 = $e2.Current.Name; if (-not [string]::IsNullOrWhiteSpace($n2)) { $names2 += $n2 } } catch { }
+            }
+            Push-Evidence ("kb-tree-items-after " + (($names2 | Select-Object -First 24) -join ' | '))
+          } catch { }
         }
         Assert-AppAlive "expand-keyboard $(Tpl $s.selectPrefix)"
         Push-Evidence ("expand-kb-ok {0} child={1} state={2}" -f (Tpl $s.selectPrefix), $needle, $dbState)
