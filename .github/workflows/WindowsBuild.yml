@@ -171,8 +171,9 @@ jobs:
             Tests/TaoDBM.LogicTest/bin/
 
   typecheck:
-    # 应用层类型闸（Linux 免费档并行）：桩编译核 0 错 0 警，与 Windows 线并行多开
-    runs-on: ubuntu-latest
+    # 应用层类型闸：桩编译核 0 错 0 警，与 Windows 线并行多开
+    # ubuntu 实测不可行（#68/#69）：App 层引用 Microsoft.Windows.SDK.NET.dll，Linux 无法解析 SDK 版本——回 Windows 档，仍与测试机并行
+    runs-on: windows-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -181,8 +182,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-linux-${{ hashFiles('**/*.csproj') }}
-          restore-keys: nuget-linux-
+          key: nuget-tc-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-tc-
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
@@ -310,6 +311,9 @@ jobs:
     timeout-minutes: 20
     needs: msi
     steps:
+      - name: Checkout (walk script from source)
+        uses: actions/checkout@v4
+
       - name: Download MSI artifact
         uses: actions/download-artifact@v4
         with:
@@ -374,38 +378,13 @@ jobs:
           "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
           "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
 
-      - name: Launch and screenshot real UI
+      - name: Launch and walk real UI (walk-page smoke, v3.12)
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-          $src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }'
-          Add-Type -TypeDefinition $src
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          $dir = Split-Path $exe -Parent
-          $proc = Start-Process $exe -WorkingDirectory $dir -PassThru
-          $handle = [IntPtr]::Zero
-          for ($i = 0; $i -lt 60; $i++) {
-            Start-Sleep -Milliseconds 500
-            $proc.Refresh()
-            if ($proc.MainWindowHandle -ne [IntPtr]::Zero) { $handle = $proc.MainWindowHandle; break }
-          }
-          if ($handle -eq [IntPtr]::Zero) {
-            if ($proc.HasExited) { Write-Host "::error::app exited early code=$($proc.ExitCode)" } else { Write-Host "::error::no main window after 30s" }
-            exit 1
-          }
-          [WinNative]::ShowWindow($handle, 3) | Out-Null
-          [WinNative]::SetForegroundWindow($handle) | Out-Null
-          Start-Sleep -Seconds 8
-          $proc.Refresh()
-          if ($proc.HasExited) { Write-Host "::error::app exited before screenshot code=$($proc.ExitCode)"; exit 1 }
-          $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen
-          $bmp = New-Object System.Drawing.Bitmap($vs.Width, $vs.Height)
-          $g = [System.Drawing.Graphics]::FromImage($bmp)
-          $g.CopyFromScreen(0, 0, 0, 0, $bmp.Size)
-          $bmp.Save("$PWD/ui-smoke.png", [System.Drawing.Imaging.ImageFormat]::Png)
-          Write-Host "[SCREENSHOT] ui-smoke.png $((Get-Item ui-smoke.png).Length) bytes, screen $([Math]::Round($vs.Width))x$([Math]::Round($vs.Height))"
-          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
 
       - name: Uninstall (restore clean state)
         if: always()
@@ -430,9 +409,12 @@ jobs:
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch --depth 1 origin ui-smoke-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          Copy-Item ..\ui-smoke.png -Force
-          git add ui-smoke.png
-          git commit -m "ui-smoke screenshot run ${{ github.run_id }}" | Out-Null
+          Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
+          git add shot-*.png ui-coverage.txt ui-walk-report.txt 2>$null
+          if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
+          git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
           git push origin ui-smoke-latest --force
           Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
 
@@ -442,5 +424,11 @@ jobs:
         with:
           name: taodbm-ui-smoke
           path: |
+            shot-01-start.png
+            shot-02-connect.png
+            shot-03-theme.png
+            shot-04-about.png
+            ui-coverage.txt
+            ui-walk-report.txt
             ui-smoke.png
             install-smoke.log
