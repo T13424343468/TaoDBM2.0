@@ -1,4 +1,4 @@
-﻿name: windows-build
+name: windows-build
 
 # 云端 Windows 验证流水线：Windows 真环境全量编译（含 WinUI App）+ 逻辑测试 + App 发布产物。
 # 失败现场双通道：::error:: 注解 + GITHUB_STEP_SUMMARY（匿名可读的运行摘要），补无凭据日志缺口。
