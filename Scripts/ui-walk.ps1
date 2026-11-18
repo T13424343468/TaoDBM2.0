@@ -441,9 +441,11 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds $sleepSec
       }
       'expand-keyboard' {
-        # 1686ec1 轮定谳：kb-state=notfound——键盘 {RIGHT} 后树域里根本找不到「📁 main」（12 秒后单次扫描仍无），
-        # 与旧轮询 15 秒找不到一致＝问题不在展开动作，在「库节点是否存在/叫什么」。本轮：
-        # ①匹配放宽到去掉表情前缀的关键字（📁 main → main）；②notfound 时把树内全部 TreeItem 名入证据定谳命名；
+        # dd6edf3 轮定谳（treetxt 快照）：树文本一直读的是主窗回退（Find-ElWait ConnTree 从未命中），
+        # 主窗 FindAll 实际读得到「📁 main」——库节点在且已渲染，只是没展开（表名 orders 缺）；
+        # 旧 kb 扫描在 null 的 ConnTree scope 上被跳过才报 none，且嵌套项 ControlType 未必是 TreeItem。
+        # 本轮：扫描回退主窗、不限 ControlType 按名找 main 节点；有 ExpandCollapse 就单元素展开（S07 同款已验证安全），
+        # 没有就 Select＋SetFocus＋{RIGHT}；S09 仍按真实表清单终审
         $sel = Select-TreeItem (Tpl $s.selectPrefix) 10
         if ($null -eq $sel) { throw "tree item not found: $(Tpl $s.selectPrefix)" }
         try { $sel.SetFocus() } catch { }
@@ -455,35 +457,38 @@ foreach ($s in $plan.steps) {
         $dbItem = $null
         $itemNames = @()
         try {
-          $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
-          if ($treeEl) {
-            $all = $treeEl.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
-            foreach ($e in $all) {
-              try {
-                if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem') {
-                  $itemNames += $e.Current.Name
-                  if ($e.Current.Name -like ("*" + $needle + "*")) {
-                    $dbItem = $e
-                    $dbState = ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
-                  }
+          $scanRoot = $mainRoot
+          $all = $scanRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+          foreach ($e in $all) {
+            try {
+              $nm = $e.Current.Name
+              if (-not [string]::IsNullOrWhiteSpace($nm)) {
+                $itemNames += $nm
+                if ($dbItem -eq $null -and $nm -like ("*" + $needle + "*")) {
+                  $dbItem = $e
+                  try { $dbState = ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState } catch { $dbState = 'no-pattern' }
                 }
-              } catch { }
-            }
+              }
+            } catch { }
           }
         } catch { }
-        if ($itemNames.Count -gt 0) {
-          Push-Evidence ("kb-tree-items " + (($itemNames | Select-Object -First 20) -join ' | '))
-        } else {
-          Push-Evidence "kb-tree-items none"
-        }
+        Push-Evidence ("kb-tree-items " + (($itemNames | Select-Object -First 20) -join ' | '))
         Push-Evidence "kb-state $needle $dbState"
         if ($dbItem -and $dbState -ne 'Expanded') {
-          # 单元素补一发 Expand：疑似触发点在轮询 FindAll＋反复 Expand 的组合，而非单次调用
+          # 单元素补一发展开：ExpandCollapse 可用则直接 Expand（S07 同款）；否则 Select＋SetFocus＋{RIGHT}
           try {
             ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand()
             Start-Sleep -Seconds 1
             $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
-          } catch { $dbState = 'expand-threw' }
+          } catch {
+            try {
+              ($dbItem.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select()
+            } catch { try { $dbItem.SetFocus() } catch { } }
+            Start-Sleep -Milliseconds 400
+            [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+            Start-Sleep -Seconds 1
+            try { $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState } catch { $dbState = 'kb-fallback' }
+          }
           Push-Evidence "kb-state-after $needle $dbState"
         }
         Assert-AppAlive "expand-keyboard $(Tpl $s.selectPrefix)"
