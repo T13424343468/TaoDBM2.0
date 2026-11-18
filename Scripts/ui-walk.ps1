@@ -565,20 +565,20 @@ foreach ($s in $plan.steps) {
         while ((Get-Date) -lt $deadline) {
           Start-Sleep -Milliseconds 700
           $msg = ""
-          $msgEl = Find-El @{ automationId = 'work-message' } $mainRoot
+          $msgEl = Find-El $mainRoot @{ automationId = 'work-message' }
           if ($msgEl) {
             try { $msg = ($msgEl.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Value } catch { }
             if ([string]::IsNullOrEmpty($msg)) { $msg = $msgEl.Current.Name }
           }
           if ($msg -match '错误：') { throw "execution error: $msg" }
           $resTxt = ""
-          $resEl = Find-El @{ automationId = 'work-results' } $mainRoot
+          $resEl = Find-El $mainRoot @{ automationId = 'work-results' }
           if ($resEl) { $resTxt = Get-ScopeText $resEl }
           $allHit = $true
           foreach ($want in $expects) { if (-not $resTxt.Contains($want)) { $allHit = $false } }
           if ($allHit) {
             if ($pageNeed.Length -gt 0) {
-              $pgEl = Find-El @{ automationId = 'work-pageinfo' } $mainRoot
+              $pgEl = Find-El $mainRoot @{ automationId = 'work-pageinfo' }
               $pgName = ""
               if ($pgEl) { $pgName = $pgEl.Current.Name }
               if (-not $pgName.Contains($pageNeed)) { throw "pageinfo mismatch: got '$pgName' want '$pageNeed'" }
