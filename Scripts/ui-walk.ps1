@@ -220,6 +220,22 @@ function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [
   try { Invoke-El $item; return $true } catch { }
   return $false
 }
+function Push-Evidence([string]$tag) {
+  # 证据分步落公开分支：机器死亡时最后一次成功推送即死亡现场（#79-#82 四轮六杀全死在走查中途，登录侧什么都拿不到）
+  try {
+    if (-not (Test-Path .git)) { return }
+    Copy-Item ui-walk-log.txt ev-walklog.txt -Force -ErrorAction SilentlyContinue
+    foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+      if (Test-Path $lg) { Get-Content $lg -Tail 60 | Set-Content ev-applog.txt -Encoding utf8; break }
+    }
+    $amem = 0
+    try { $script:proc.Refresh(); $amem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
+    "tag=$tag time=$(Get-Date -Format o) appMem=$amem MB" | Add-Content ev-meta.txt
+    git add ev-walklog.txt ev-applog.txt ev-meta.txt 2>$null
+    git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "evi $tag" 2>$null | Out-Null
+    git push origin HEAD:ui-smoke-evidence --force 2>$null | Out-Null
+  } catch { }
+}
 function Assert-AppAlive([string]$where) {
   # 就地定谳：应用一死立刻红场注解带 applog/屏上现场，不等下一撞（#79-#81 机器死在走查中途且无应用侧取证）
   try {
@@ -243,6 +259,7 @@ function Expand-TreeItem([string]$prefix, [int]$seconds) {
       foreach ($e in $allEls) {
         if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem' -and $e.Current.Name -like ("*" + $prefix + "*")) {
           try { ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand() } catch { }
+          Push-Evidence "expand-ok $prefix"
           return $e
         }
       }
@@ -338,6 +355,7 @@ foreach ($s in $plan.steps) {
   $appMem = 0
   try { $script:proc.Refresh(); $appMem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
   Write-Host ("::notice::WALK step {0} start ({1}; app={2}MB)" -f $id, $feature, $appMem)
+  Push-Evidence "step-start $id"
   $critical = ($s.critical -eq $true) -or ($action -eq 'query')
   $allowMiss = ($s.allowMiss -eq $true)
   $outcome = 'pass'
