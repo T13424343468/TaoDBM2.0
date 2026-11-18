@@ -487,13 +487,13 @@ Get-Content ui-walk-report.txt | ForEach-Object { Write-Host "[REPORT] $_" }
 if ($env:GITHUB_STEP_SUMMARY) {
   try {
     "## ui-walk walk log (public evidence)" | Add-Content $env:GITHUB_STEP_SUMMARY
-    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    '```' | Add-Content $env:GITHUB_STEP_SUMMARY
     $walkLog | ForEach-Object { $_ -replace '<', '&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
-    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    '```' | Add-Content $env:GITHUB_STEP_SUMMARY
     "## ui-walk feature coverage" | Add-Content $env:GITHUB_STEP_SUMMARY
-    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    '```' | Add-Content $env:GITHUB_STEP_SUMMARY
     $funcCov | ForEach-Object { $_ -replace '<', '&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
-    "```" | Add-Content $env:GITHUB_STEP_SUMMARY
+    '```' | Add-Content $env:GITHUB_STEP_SUMMARY
   } catch { }
 }
 if ($hardFail) { exit 1 }
