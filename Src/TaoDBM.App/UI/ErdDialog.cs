@@ -37,6 +37,8 @@ public static class ErdDialog
         _hint = new TextBlock
         {
             Foreground = Ant.TextSub,
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(12, 10, 0, 0),
             Text = "选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。",
         };
@@ -227,7 +229,7 @@ public static class ErdDialog
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 0, 0, 4),
         });
-        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = 11, LineHeight = 16, Foreground = Ant.TextSub });
+        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = 12, LineHeight = 16, Foreground = Ant.TextSub });
         box.Child = stack;
 
         double startX = 0, startY = 0, baseX = t.X, baseY = t.Y;
