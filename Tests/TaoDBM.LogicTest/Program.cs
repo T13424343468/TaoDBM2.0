@@ -3454,8 +3454,10 @@ Console.WriteLine("== NotificationDispatcher ==");
             var dir39 = Path.Combine(Path.GetTempPath(), "taodbm_atomdir_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir39);
             var raised = false;
+            // 平台差异：Windows 上 Move 覆盖目录抛 UnauthorizedAccessException，Linux 抛 IOException——两种都算「抛异常」
             try { AtomicWrite.Text(dir39, "x"); }
             catch (System.IO.IOException) { raised = true; }
+            catch (System.UnauthorizedAccessException) { raised = true; }
             Check("N39 目标异常不毁旧值", raised && Directory.Exists(dir39));
             try { File.Delete(dir39 + ".tmp"); } catch { /* 残留清理失败不影响测试 */ }
             Directory.Delete(dir39, true);

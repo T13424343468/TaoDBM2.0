@@ -23,7 +23,8 @@ public static class AtomicWrite
         }
         // Windows 现实环境（杀软实时扫描/搜索索引）可能短暂持有刚关闭的 tmp 句柄，Move 立刻被拒
         // （UnauthorizedAccessException/IOException）。有界退避重试后放行，绝不吞异常、绝不放弃原子性。
-        // 实锤：GH Actions windows-latest Defender 锁 tmp，run #63 N38 后秒挂，2026-11-18。
+        // 注意：目标 path 已是目录时 Move 必败（Windows 报 UnauthorizedAccessException，Linux 报 IOException），
+        // 属确定性失败，不做无谓重试、立刻原样抛出（N39 平台差异实锤，2026-11-18 run #63/#64）。
         for (int attempt = 1; ; attempt++)
         {
             try
@@ -31,7 +32,8 @@ public static class AtomicWrite
                 System.IO.File.Move(tmp, path, overwrite: true);
                 return;
             }
-            catch (Exception ex) when (attempt < 10 && ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (attempt < 10 && !Directory.Exists(path)
+                && ex is IOException or UnauthorizedAccessException)
             {
                 Thread.Sleep(attempt * 25);   // 最坏约 1.1s：杀软扫描窗口通常 <100ms
             }
