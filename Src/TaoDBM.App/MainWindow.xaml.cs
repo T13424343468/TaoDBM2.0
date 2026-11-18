@@ -774,24 +774,36 @@ public partial class MainWindow : Window
 
     public void OpenQueryTab(NodeInfo? info, string? initialSql = null)
     {
-        if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
-        var (db, hint) = info.Kind switch
+        try
         {
-            NodeKind.Database => (info.Name, ""),
-            NodeKind.Table => (info.Db, DefaultSnippet(info)),
-            NodeKind.ObjectDef => (info.Db, ""),
-            _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
-        };
-        if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
-        if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
+            if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
+            Core.AppLog.Write($"[新建查询] enter kind={info.Kind} name={info.Name} provider={(info.Provider is null ? "null" : "ok")}");
+            var (db, hint) = info.Kind switch
+            {
+                NodeKind.Database => (info.Name, ""),
+                NodeKind.Table => (info.Db, DefaultSnippet(info)),
+                NodeKind.ObjectDef => (info.Db, ""),
+                _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
+            };
+            if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
+            if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
 
-        var tab = new TabViewItem { Header = $"查询 · {info.Name}" };
-        var wt = new UI.WorkTab(this, info.Provider!, db, info.Kind == NodeKind.Table ? info.Name : "", UI.WorkMode.Query, hint.Length > 0 ? hint : initialSql);
-        tab.Content = wt;
-        WorkTabs.TabItems.Add(tab);
-        _workTabs[tab] = wt;
-        SaveSession();
-        WorkTabs.SelectedItem = tab;
+            var tab = new TabViewItem { Header = $"查询 · {info.Name}" };
+            var wt = new UI.WorkTab(this, info.Provider!, db, info.Kind == NodeKind.Table ? info.Name : "", UI.WorkMode.Query, hint.Length > 0 ? hint : initialSql);
+            Core.AppLog.Write($"[新建查询] worktab built db={db}");
+            tab.Content = wt;
+            WorkTabs.TabItems.Add(tab);
+            _workTabs[tab] = wt;
+            SaveSession();
+            WorkTabs.SelectedItem = tab;
+            Core.AppLog.Write("[新建查询] tab selected");
+        }
+        catch (Exception ex)
+        {
+            // #88 S11 红场（0xC000027B）：首跑云路径异常不得带崩整个应用——落账＋界面提示，走查按 work-editor 缺席定谳
+            Core.AppLog.Write($"[新建查询] {ex.GetType().Name}: {ex.Message}");
+            _ = InfoAsync($"新建查询失败：{ex.Message}");
+        }
     }
 
     private static string DefaultSnippet(NodeInfo info) => info.Provider switch
