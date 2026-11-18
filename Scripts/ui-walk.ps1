@@ -220,11 +220,26 @@ function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [
   try { Invoke-El $item; return $true } catch { }
   return $false
 }
+function Assert-AppAlive([string]$where) {
+  # 就地定谳：应用一死立刻红场注解带 applog/屏上现场，不等下一撞（#79-#81 机器死在走查中途且无应用侧取证）
+  try {
+    $script:proc.Refresh()
+    if ($script:proc.HasExited) {
+      Write-Host "::error::app exited at $where code=$($script:proc.ExitCode)"
+      Log "APP EXITED at $where exitcode=$($script:proc.ExitCode)"
+      foreach ($d in (Get-WalkDiagnostics)) { Write-Host ("::error::" + $d) }
+      exit 1
+    }
+  } catch { }
+}
 function Expand-TreeItem([string]$prefix, [int]$seconds) {
+  # 扫描限缩到主窗 scope：原实现在全桌面 Descendants 上 600ms 轮询重扫 15 秒，是 #79-#81 走查中途机器死亡的头号嫌疑
+  $scope = $desktop
+  try { if ($script:mainRoot) { $scope = $script:mainRoot } } catch { }
   $deadline = (Get-Date).AddSeconds($seconds)
   while ((Get-Date) -lt $deadline) {
     try {
-      $allEls = $desktop.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+      $allEls = $scope.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
       foreach ($e in $allEls) {
         if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem' -and $e.Current.Name -like ("*" + $prefix + "*")) {
           try { ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand() } catch { }
@@ -232,15 +247,18 @@ function Expand-TreeItem([string]$prefix, [int]$seconds) {
         }
       }
     } catch { }
+    Assert-AppAlive "expand $prefix"
     Start-Sleep -Milliseconds 600
   }
   return $null
 }
 function Select-TreeItem([string]$prefix, [int]$seconds) {
+  $scope = $desktop
+  try { if ($script:mainRoot) { $scope = $script:mainRoot } } catch { }
   $deadline = (Get-Date).AddSeconds($seconds)
   while ((Get-Date) -lt $deadline) {
     try {
-      $allEls = $desktop.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+      $allEls = $scope.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
       foreach ($e in $allEls) {
         if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem' -and $e.Current.Name -like ("*" + $prefix + "*")) {
           try { ($e.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select() } catch { try { $e.SetFocus() } catch { } }
@@ -314,8 +332,12 @@ $failed = $false
 foreach ($s in $plan.steps) {
   $id = $s.id; $feature = Tpl ([string]$s.feature); $action = $s.action
   # 步进进度注解：近期 #79/#80 机器回收死在走查中途且零红，公开注解只剩启动告警——每步起点留里程碑，
-  # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步
-  Write-Host "::notice::WALK step $id start ($feature)"
+  # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步；
+  # 同时带应用内存读数并断言存活，把 S08 一带的静默死亡变成可读账
+  Assert-AppAlive "step $id"
+  $appMem = 0
+  try { $script:proc.Refresh(); $appMem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
+  Write-Host ("::notice::WALK step {0} start ({1}; app={2}MB)" -f $id, $feature, $appMem)
   $critical = ($s.critical -eq $true) -or ($action -eq 'query')
   $allowMiss = ($s.allowMiss -eq $true)
   $outcome = 'pass'
