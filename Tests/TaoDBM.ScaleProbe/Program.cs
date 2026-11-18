@@ -4,6 +4,10 @@ using TaoDBM.Core;
 // B11 后千万档回归探针：对真库（MySQL/MariaDB 与 PostgreSQL）各跑千万行口径，测产品真实代码路径
 // （ProviderFactory 建连接 → Execute / Browse），记录耗时与进程内存峰值；不走 UI，不做写操作。
 // 用法：dotnet run -c Release --project Tests/TaoDBM.ScaleProbe -- <engine:mysql|pgsql> <host> <port> <user> <password> <database>
+// 子命令：export-sync [行数上限档位] —— 走 PerfExportSyncProbe（导出/同步内存曲线，不触真库）
+
+if (args.Length > 0 && args[0] == "export-sync")
+    return PerfExportSyncProbe.Run(args.Skip(1).ToArray());
 
 long PeakMb() => Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024;
 var sw = Stopwatch.StartNew();
