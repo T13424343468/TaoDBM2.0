@@ -3,8 +3,7 @@ name: ModelBench
 on:
   workflow_dispatch:
   push:
-    paths: ['Tools/ModelBench/**']
-    paths-ignore: ['Tools/ModelBench/results/**']
+    paths: ['Tools/ModelBench/**', '!Tools/ModelBench/results/**']
 
 permissions:
   contents: write
