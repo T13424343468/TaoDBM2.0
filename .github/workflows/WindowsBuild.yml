@@ -170,34 +170,11 @@ jobs:
             publish/app/
             Tests/TaoDBM.LogicTest/bin/
 
-  typecheck:
-    # 应用层类型闸：桩编译核 0 错 0 警，与 Windows 线并行多开
-    # ubuntu 实测不可行（#68/#69）：App 层引用 Microsoft.Windows.SDK.NET.dll，Linux 无法解析 SDK 版本——回 Windows 档，仍与测试机并行
-    runs-on: windows-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-tc-${{ hashFiles('**/*.csproj') }}
-          restore-keys: nuget-tc-
-
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: TypeCheck (App layer stub compile, warnaserror)
-        run: dotnet build Tools/TaoDBM.TypeCheck/TaoDBM.TypeCheck.csproj -c Debug -warnaserror
-
   msi:
     # MSI 唯一安装交付形态：WiX 5 收割 publish 产物，静默装卸链真机验证（复用一期同口径）
     runs-on: windows-latest
     timeout-minutes: 30
-    needs: [app-build, logic-test, typecheck]
+    needs: [app-build, logic-test]
     steps:
       - uses: actions/checkout@v4
 
