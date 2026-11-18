@@ -313,6 +313,9 @@ function Cov([string]$id, [string]$feature, [string]$outcome) {
 $failed = $false
 foreach ($s in $plan.steps) {
   $id = $s.id; $feature = Tpl ([string]$s.feature); $action = $s.action
+  # 步进进度注解：近期 #79/#80 机器回收死在走查中途且零红，公开注解只剩启动告警——每步起点留里程碑，
+  # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步
+  Write-Host "::notice::WALK step $id start ($feature)"
   $critical = ($s.critical -eq $true) -or ($action -eq 'query')
   $allowMiss = ($s.allowMiss -eq $true)
   $outcome = 'pass'
