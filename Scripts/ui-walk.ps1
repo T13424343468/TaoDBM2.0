@@ -434,6 +434,23 @@ foreach ($s in $plan.steps) {
         if ($s.sleepAfter) { $sleepSec = [int]$s.sleepAfter }
         Start-Sleep -Seconds $sleepSec
       }
+      'expand-keyboard' {
+        # 静置探针定谳：死亡追随 S08 动作而非启动时钟——UIA Expand+Descendants 轮询在十余台机器上稳定伴随代理进程死
+        # 改键盘导航：Select 连接节点后连发 {RIGHT}（→聚焦库节点→展开），全程不做 Descendants 全扫、不调 ExpandCollapse 模式；
+        # 展开是否成功由后续 S09 tree-contains-all 按真实表清单定谳
+        $sel = Select-TreeItem (Tpl $s.selectPrefix) 10
+        if ($null -eq $sel) { throw "tree item not found: $(Tpl $s.selectPrefix)" }
+        Start-Sleep -Milliseconds 500
+        [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+        Start-Sleep -Milliseconds 800
+        [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+        Start-Sleep -Seconds 2
+        Assert-AppAlive "expand-keyboard $(Tpl $s.selectPrefix)"
+        Push-Evidence ("expand-kb-ok {0} child={1}" -f (Tpl $s.selectPrefix), (Tpl $s.childPrefix))
+        $sleepSec = 3
+        if ($s.sleepAfter) { $sleepSec = [int]$s.sleepAfter }
+        Start-Sleep -Seconds $sleepSec
+      }
       'select' {
         $el = Select-TreeItem (Tpl $s.prefix) 10
         if ($null -eq $el) { throw "tree item not found: $(Tpl $s.prefix)" }

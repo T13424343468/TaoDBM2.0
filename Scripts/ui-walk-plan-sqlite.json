@@ -54,8 +54,9 @@
     {
       "id": "S08",
       "feature": "对象树-展开数据库",
-      "action": "expand",
-      "prefix": "📁 main",
+      "action": "expand-keyboard",
+      "selectPrefix": "🗄️ __CONN_NAME__",
+      "childPrefix": "📁 main",
       "sleepAfter": 6
     },
     {
