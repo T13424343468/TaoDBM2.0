@@ -19,7 +19,7 @@ $shots = New-Object System.Collections.Generic.List[string]
 $walkLog = New-Object System.Collections.Generic.List[string]
 $funcCov = New-Object System.Collections.Generic.List[string]
 $hardFail = $false
-function Log([string]$m) { $walkLog.Add($m); Write-Host "[WALK] $m" }
+function Log([string]$m) { $walkLog.Add($m); Write-Host "[WALK] $m"; try { $walkLog | Set-Content ui-walk-log.txt -Encoding utf8 } catch { } }
 
 function Save-Shot([string]$name) {
   try {
@@ -317,17 +317,32 @@ foreach ($s in $plan.steps) {
         if (-not (Set-TextValue $el (Tpl $s.value))) { throw "set value failed" }
       }
       'tree-contains' {
-        $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
-        $sc = if ($treeEl) { $treeEl } else { $mainRoot }
-        $txt = Get-ScopeText $sc
-        if (-not $txt.Contains((Tpl $s.value))) { throw "tree text missing: $(Tpl $s.value)" }
+        # 保存→RebuildRoots 异步重建，单次读树会竞速（#76 S06 误报嫌疑）：轮询 10 秒等节点出现
+        $needle = Tpl $s.value
+        $txt = ''
+        for ($i = 0; $i -lt 10; $i++) {
+          $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
+          $sc = if ($treeEl) { $treeEl } else { $mainRoot }
+          $txt = Get-ScopeText $sc
+          if ($txt.Contains($needle)) { break }
+          Start-Sleep -Seconds 1
+        }
+        if (-not $txt.Contains($needle)) { throw "tree text missing: $needle" }
       }
       'tree-contains-all' {
-        $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
-        $sc = if ($treeEl) { $treeEl } else { $mainRoot }
-        $txt = Get-ScopeText $sc
-        foreach ($v in $s.value) {
-          if (-not $txt.Contains((Tpl $v))) { throw "tree text missing: $(Tpl $v)" }
+        $needles = @($s.value | ForEach-Object { Tpl ([string]$_) })
+        $txt = ''
+        for ($i = 0; $i -lt 10; $i++) {
+          $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
+          $sc = if ($treeEl) { $treeEl } else { $mainRoot }
+          $txt = Get-ScopeText $sc
+          $allFound = $true
+          foreach ($v in $needles) { if (-not $txt.Contains($v)) { $allFound = $false; break } }
+          if ($allFound) { break }
+          Start-Sleep -Seconds 1
+        }
+        foreach ($v in $needles) {
+          if (-not $txt.Contains($v)) { throw "tree text missing: $v" }
         }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }

@@ -277,28 +277,52 @@ public partial class MainWindow : Window
 
     private async void OnNewConn(object sender, RoutedEventArgs e)
     {
-        var dlg = new UI.ConnectionDialog(new ConnectionProfile());
-        bool saved = await dlg.ShowAsync(this, isNew: true);
-        if (saved)
+        // 保存链路（_profiles.Add→ConnectionStore.Save→RebuildRoots）任何一环抛错都曾是 async void 停存异常崩溃点
+        //（云端 #73/#75 实锤 0xC000027B）：业务主体走 Safe.RunAsync 兜底，保存失败改为界面报错不崩（#76 定谳修复）。
+        await Safe.RunAsync(async () =>
         {
-            _profiles.Add(dlg.Profile);
-            ConnectionStore.Save(_profiles);
-            RebuildRoots();
-            SetStatus($"已添加连接 {dlg.Profile.DisplayName}");
-        }
+            var dlg = new UI.ConnectionDialog(new ConnectionProfile());
+            bool saved = await dlg.ShowAsync(this, isNew: true);
+            if (saved)
+            {
+                try
+                {
+                    _profiles.Add(dlg.Profile);
+                    ConnectionStore.Save(_profiles);
+                    RebuildRoots();
+                    SetStatus($"已添加连接 {dlg.Profile.DisplayName}");
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Write($"[新建连接] 保存失败: {ex.Message}");
+                    await InfoAsync($"连接保存失败：{ex.Message}");
+                }
+            }
+        }, "新建连接");
     }
 
     private async void OnEditConn(object sender, RoutedEventArgs e)
     {
-        var info = SelectedInfo();
-        if (info?.Kind != NodeKind.Connection) { await InfoAsync("请先在左侧树中选中一个连接。"); return; }
-        var dlg = new UI.ConnectionDialog(info.Profile);
-        bool saved = await dlg.ShowAsync(this, isNew: false);
-        if (saved)
+        await Safe.RunAsync(async () =>
         {
-            ConnectionStore.Save(_profiles);
-            RebuildRoots();
-        }
+            var info = SelectedInfo();
+            if (info?.Kind != NodeKind.Connection) { await InfoAsync("请先在左侧树中选中一个连接。"); return; }
+            var dlg = new UI.ConnectionDialog(info.Profile);
+            bool saved = await dlg.ShowAsync(this, isNew: false);
+            if (saved)
+            {
+                try
+                {
+                    ConnectionStore.Save(_profiles);
+                    RebuildRoots();
+                }
+                catch (Exception ex)
+                {
+                    AppLog.Write($"[编辑连接] 保存失败: {ex.Message}");
+                    await InfoAsync($"连接保存失败：{ex.Message}");
+                }
+            }
+        }, "编辑连接");
     }
 
     private void OnThemeInk(object sender, RoutedEventArgs e) => SwitchTheme("ink");
@@ -352,9 +376,12 @@ public partial class MainWindow : Window
 
     private async void OnDelConn(object sender, RoutedEventArgs e)
     {
-        var info = SelectedInfo();
-        if (info?.Kind != NodeKind.Connection) { await InfoAsync("请先选中一个连接。"); return; }
-        await DeleteConnection(info);
+        await Safe.RunAsync(async () =>
+        {
+            var info = SelectedInfo();
+            if (info?.Kind != NodeKind.Connection) { await InfoAsync("请先选中一个连接。"); return; }
+            await DeleteConnection(info);
+        }, "删除连接");
     }
 
     /// <summary>删除连接：确认 → 断开隧道 → 关闭该连接已打开的页签 → 移除并重建树。</summary>
