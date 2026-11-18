@@ -529,7 +529,9 @@ foreach ($s in $plan.steps) {
         if ($null -eq $btn) { $btn = Find-ElWait @{ controlType = 'Button'; name = $s.buttonAutomationId } 3 $mainRoot }
         if ($null -eq $btn) { throw "menu button not found: $($s.buttonAutomationId)" }
         Invoke-El $btn
-        $item = Find-ElWait @{ name = (Tpl $s.itemName) } 8 $null
+        # 菜单项先从主窗根找（弹层挂在应用窗 UIA 树内），桌面全根全扫是压舱雷，找不到再降级全根
+        $item = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+        if ($null -eq $item) { $item = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
         if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
         Invoke-El $item
         Start-Sleep -Seconds 3

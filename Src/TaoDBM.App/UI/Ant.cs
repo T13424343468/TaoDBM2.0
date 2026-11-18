@@ -157,14 +157,21 @@ public static class FlyoutExt
     {
         fly.Opening += (_, _) =>
         {
-            if (fly is MenuFlyout mf)
+            // #88 S11 红场：本回调由 WinRT 原生层直接调用，内部抛错会成为 stowed exception（0xC000027B）带崩整个进程——
+            // 钉主题失败只落账不外溢；另留 opening 落账供崩溃定位（崩溃发生在 Click 之前时靠它分辨段位）。
+            Core.AppLog.Write("[Flyout] opening");
+            try
             {
-                mf.MenuFlyoutPresenterStyle = new Style
+                if (fly is MenuFlyout mf)
                 {
-                    TargetType = typeof(MenuFlyoutPresenter),
-                    Setters = { new Setter(FrameworkElement.RequestedThemeProperty, Ant.ElementTheme) }
-                };
+                    mf.MenuFlyoutPresenterStyle = new Style
+                    {
+                        TargetType = typeof(MenuFlyoutPresenter),
+                        Setters = { new Setter(FrameworkElement.RequestedThemeProperty, Ant.ElementTheme) }
+                    };
+                }
             }
+            catch (Exception ex) { Core.AppLog.Write($"[Flyout] 钉主题失败: {ex.Message}"); }
         };
     }
 }
