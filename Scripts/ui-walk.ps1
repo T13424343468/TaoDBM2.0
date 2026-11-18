@@ -135,6 +135,28 @@ function Invoke-El([System.Windows.Automation.AutomationElement]$el) {
   try { $el.SetFocus(); return $true } catch { }
   return $false
 }
+function Get-WalkDiagnostics {
+  # 红场诊断（#77 教训：云端日志锁在登录侧、runner 还会在红后回收）：当场把屏上窗口与程序日志写成注解，注解在取消后仍公开可见
+  $out = New-Object System.Collections.Generic.List[string]
+  try {
+    $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))
+    $names = @()
+    foreach ($w in $wins) { $names += ("[{0}]" -f $w.Current.Name) }
+    $out.Add("windows-on-screen: " + ($names -join ' '))
+  } catch { $out.Add("window enum failed: $($_.Exception.Message)") }
+  foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+    try {
+      if (Test-Path $lg) {
+        $out.Add("applog $lg tail:")
+        $tail = (Get-Content $lg -Tail 25) -join ' | '
+        if ($tail.Length -gt 2900) { $tail = $tail.Substring($tail.Length - 2900) }
+        $out.Add("APPLOG: $tail")
+        break
+      }
+    } catch { $out.Add("applog read failed: $($_.Exception.Message)") }
+  }
+  return $out
+}
 function Close-ExtraWindows($mainHwnd) {
   try {
     $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))
@@ -469,7 +491,12 @@ foreach ($s in $plan.steps) {
     $outcome = 'fail'
     if ($allowMiss) { $outcome = 'miss' }
     Log "step $id $feature => $outcome : $($_.Exception.Message)"
-    if ($outcome -eq 'fail' -and $critical) { $hardFail = $true; Write-Host "::error::step $id $feature failed: $($_.Exception.Message)" }
+    if ($outcome -eq 'fail' -and $critical) {
+      $hardFail = $true
+      Write-Host "::error::step $id $feature failed: $($_.Exception.Message)"
+      # 红场当场取证为注解：登录侧与 runner 回收都动不了它（#77 教训）
+      foreach ($d in (Get-WalkDiagnostics)) { Write-Host ("::error::" + $d) }
+    }
     Close-ExtraWindows $handle
   }
   Cov $id $feature $outcome
