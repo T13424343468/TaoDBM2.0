@@ -469,10 +469,19 @@ foreach ($s in $plan.steps) {
       } | Select-Object -First 8
       foreach ($e in $evts) {
         $m = $e.Message
-        if ($m.Length -gt 500) { $m = $m.Substring(0, 500) }
+        if ($m.Length -gt 2500) { $m = $m.Substring(0, 2500) }
         Log "EVT $($e.TimeCreated) [$($e.ProviderName)] $($m -replace "\r?\n", ' | ')"
       }
     } catch { Log "eventlog read failed: $($_.Exception.Message)" }
+    # 应用崩溃日志（crash.log 双根兜底）：未处理异常文本直接取证
+    foreach ($clog in @('D:\TaoDBMData\TaoDBM\crash.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\crash.log'))) {
+      try {
+        if (Test-Path $clog) {
+          Log "crashlog $clog (tail 40):"
+          Get-Content $clog -Tail 40 | ForEach-Object { Log "CRASHLOG $_" }
+        }
+      } catch { Log "crashlog read failed: $($_.Exception.Message)" }
+    }
     $hardFail = $true; break
   }
 }
@@ -481,6 +490,7 @@ foreach ($s in $plan.steps) {
 "feature-level coverage account:" | Add-Content ui-coverage.txt -Encoding utf8
 $funcCov | Add-Content ui-coverage.txt -Encoding utf8
 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+$walkLog | Set-Content ui-walk-log.txt -Encoding utf8
 $summary = "walk finished; shots=" + ($shots -join ',') + "; hardFail=$hardFail; coverage: " + ($funcCov -join ' ;; ')
 $summary | Set-Content ui-walk-report.txt -Encoding utf8
 Get-Content ui-walk-report.txt | ForEach-Object { Write-Host "[REPORT] $_" }

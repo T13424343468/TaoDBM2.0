@@ -383,7 +383,7 @@ jobs:
           }
 
       - name: Push screenshot to public branch
-        if: success()
+        if: always()
         shell: pwsh
         run: |
           git config --global user.email "ci@taodbm.local"
@@ -397,7 +397,8 @@ jobs:
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt 2>$null
+          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
+          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
           if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
           git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
           git push origin ui-smoke-latest --force
@@ -415,5 +416,6 @@ jobs:
             shot-04-about.png
             ui-coverage.txt
             ui-walk-report.txt
+            ui-walk-log.txt
             ui-smoke.png
             install-smoke.log
