@@ -23,7 +23,11 @@ def extract_sql(text):
     m = re.search(r'```(?:sql)?\s*(.*?)```', t, flags=re.S | re.I)
     if m:
         t = m.group(1)
-    # 取第一条以 SELECT/INSERT/UPDATE/DELETE/WITH 开头的语句
+    # DDL/过程类：CREATE/CALL/EXEC/ALTER/DROP 开头取整段（过程体内含分号）
+    m = re.search(r'\b(CREATE(?:\s+OR\s+REPLACE)?|CALL|EXEC(?:UTE)?|ALTER|DROP|SHOW)\b.*', t, flags=re.I | re.S)
+    if m:
+        return m.group(0).strip().rstrip(';').strip()
+    # 取第一条以 SELECT/WITH 开头的语句
     m = re.search(r'\b(SELECT|WITH)\b[^;]*;?', t, flags=re.I | re.S)
     if m:
         return m.group(0).strip().rstrip(';').strip()
@@ -73,17 +77,20 @@ def main():
                 scores[tag]['details'].append((qid, item['id'], 'EMPTY', '', wall))
                 continue
             got, exp = norm(sql), norm(item['expected'])
-            expected_refuse = item['expected'].startswith('-- REFUSE')
+            exps = [item['expected']] + item.get('alts', [])
+            expected_refuse = item['expected'].startswith('--')
             if expected_refuse:
                 # 陷阱题：答案里不应编造表名/直接给出查询
                 ok = ('limit' not in got and not re.search(r'\bfrom\b', got)) or '不知道' in raw or '无法' in raw or '不存在' in raw
             else:
-                if got == exp:
-                    ok = True
-                else:
-                    gk, ek = sim_key(got), sim_key(exp)
-                    # 表名、聚合函数、关键列都命中即算通过（宽松口径，逐条人工可复核）
-                    ok = (ek <= gk) or (len(gk & ek) >= max(2, len(ek) - 2))
+                ok = any(got == norm(e) for e in exps)
+                if not ok:
+                    for e in exps:
+                        gk, ek = sim_key(got), sim_key(norm(e))
+                        # 表名、聚合函数、关键列都命中即算通过（宽松口径，逐条人工可复核）
+                        if (ek <= gk) or (len(gk & ek) >= max(2, len(ek) - 2)):
+                            ok = True
+                            break
             if ok:
                 scores[tag]['ok'] += 1
             else:
