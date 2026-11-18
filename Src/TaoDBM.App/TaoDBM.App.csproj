@@ -23,6 +23,10 @@
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- 保全口径补丁（2026-11-18 #78 云端定谳）：PublishTrimmed 会隐式关闭反射式 System.Text.Json
+         （运行时报 Reflection-based serialization has been disabled），连接存盘等所有 JsonSerializer 调用在
+         MSI 裁剪发布下必挂。TrimMode=partial 本就不裁应用元数据，显式恢复反射序列化器。 -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 
   <ItemGroup>

@@ -287,16 +287,19 @@ public partial class MainWindow : Window
             {
                 // 树随内存立即重建，与存盘成败解耦：存盘抛错只弹提示，树不得缺节点（#77 S06 红场，2026-11-18）
                 _profiles.Add(dlg.Profile);
+                string? saveErr = null;
                 try
                 {
                     ConnectionStore.Save(_profiles);
                 }
                 catch (Exception ex)
                 {
+                    saveErr = ex.Message;
                     AppLog.Write($"[新建连接] 存盘失败: {ex.Message}");
-                    await InfoAsync($"连接存盘失败：{ex.Message}");
                 }
+                // 树先随内存重建再弹错：模态报错框会挂起其后代码，RebuildRoots 排在弹框后时框不关树不刷（#78 定谳）
                 RebuildRoots();
+                if (saveErr != null) await InfoAsync($"连接存盘失败：{saveErr}");
                 SetStatus($"已添加连接 {dlg.Profile.DisplayName}");
             }
         }, "新建连接");
@@ -313,16 +316,19 @@ public partial class MainWindow : Window
             if (saved)
             {
                 // 树随内存立即重建，与存盘成败解耦：存盘抛错只弹提示，树不得缺节点（#77 S06 红场，2026-11-18）
+                string? saveErr = null;
                 try
                 {
                     ConnectionStore.Save(_profiles);
                 }
                 catch (Exception ex)
                 {
+                    saveErr = ex.Message;
                     AppLog.Write($"[编辑连接] 存盘失败: {ex.Message}");
-                    await InfoAsync($"连接存盘失败：{ex.Message}");
                 }
+                // 树先随内存重建再弹错：模态报错框会挂起其后代码（#78 定谳）
                 RebuildRoots();
+                if (saveErr != null) await InfoAsync($"连接存盘失败：{saveErr}");
             }
         }, "编辑连接");
     }
@@ -396,17 +402,20 @@ public partial class MainWindow : Window
         var dead = _workTabs.Where(kv => kv.Value.SessionConnectionId == info.Profile.Id).Select(kv => kv.Key).ToList();
         foreach (var tab in dead) { _workTabs.Remove(tab); WorkTabs.TabItems.Remove(tab); }
         _profiles.Remove(info.Profile);
+        string? saveErr = null;
         try
         {
             ConnectionStore.Save(_profiles);
         }
         catch (Exception ex)
         {
+            saveErr = ex.Message;
             AppLog.Write($"[删除连接] 存盘失败: {ex.Message}");
-            await InfoAsync($"连接存盘失败：{ex.Message}");
         }
+        // 树先随内存重建再弹错：模态报错框会挂起其后代码（#78 定谳）
         RebuildRoots();
         SetStatus($"已删除连接 {info.Profile.DisplayName}");
+        if (saveErr != null) await InfoAsync($"连接存盘失败：{saveErr}");
         // P4：危险操作执行完成 → 通知调度（规则判定不够格就静默）
         ToastCenter.Publish(new NotifyEvent(NotifyKind.RiskySqlDone, info.Profile.DisplayName,
             "危险操作完成", $"连接 {info.Profile.DisplayName} 已删除", DateTime.Now));
@@ -513,16 +522,19 @@ public partial class MainWindow : Window
         if (saved)
         {
             // 树随内存立即重建，与存盘成败解耦：存盘抛错只弹提示，树不得缺节点（#77 S06 红场，2026-11-18）
+            string? saveErr = null;
             try
             {
                 ConnectionStore.Save(_profiles);
             }
             catch (Exception ex)
             {
+                saveErr = ex.Message;
                 AppLog.Write($"[编辑连接-树右键] 存盘失败: {ex.Message}");
-                await InfoAsync($"连接存盘失败：{ex.Message}");
             }
+            // 树先随内存重建再弹错：模态报错框会挂起其后代码（#78 定谳）
             RebuildRoots();
+            if (saveErr != null) await InfoAsync($"连接存盘失败：{saveErr}");
         }
     }
 
