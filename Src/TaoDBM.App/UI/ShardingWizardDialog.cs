@@ -203,9 +203,9 @@ public static class ShardingWizardDialog
         // ── 策略联动 ──
         void SyncStrategyRows()
         {
-            hashRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.Hash ? Visibility.Visible : Visibility.Collapsed;
-            rangeRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.Range ? Visibility.Visible : Visibility.Collapsed;
-            listRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.List ? Visibility.Visible : Visibility.Collapsed;
+            hashRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.ShardStrategy.Hash ? Visibility.Visible : Visibility.Collapsed;
+            rangeRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.ShardStrategy.Range ? Visibility.Visible : Visibility.Collapsed;
+            listRow.Visibility = strategyBox.SelectedIndex == (int)ShardingWizard.ShardStrategy.List ? Visibility.Visible : Visibility.Collapsed;
         }
         strategyBox.SelectionChanged += (_, _) => SyncStrategyRows();
         SyncStrategyRows();
