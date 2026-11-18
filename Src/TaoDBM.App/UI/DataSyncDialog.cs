@@ -46,7 +46,7 @@ public static class DataSyncDialog
         var tableList = new ListView { SelectionMode = ListViewSelectionMode.None, Height = 200 };
         var chkAll = new CheckBox { Content = "全选", IsChecked = true };
         var syncStruct = new CheckBox { Content = "结构同步（补缺失列，可选对齐类型）", IsChecked = true };
-        var alignTypes = new CheckBox { Content = "对齐共有列类型（会改目标表列，谨慎）", IsChecked = false, Margin = new Thickness(20, 0, 0, 0) };
+        var alignTypes = new CheckBox { Content = "对齐共有列的类型（会修改目标表已有列，谨慎勾选）", IsChecked = false, Margin = new Thickness(20, 0, 0, 0) };
         var sendData = new CheckBox { Content = "传输数据（全量，不清空目标表）", IsChecked = true };
         alignTypes.IsEnabled = false;
         syncStruct.Checked += (_, _) => alignTypes.IsEnabled = true;
@@ -121,6 +121,26 @@ public static class DataSyncDialog
                 output.Text = "请把源 / 目标连接、库和要传的表都选好。";
                 return;
             }
+            // 目标库会被直接建表 / 改表 / 写入，属危险操作：先给预览 + 确认，不静默执行。
+            var steps = new[] { syncStruct.IsChecked == true ? "结构同步（补缺失列" + (alignTypes.IsChecked == true ? "，并对齐共有列类型" : "") + "）" : null,
+                                sendData.IsChecked == true ? "数据写入（全量追加，不清空目标表）" : null }
+                .Where(s => s is not null).ToList();
+            var confirm = new ContentDialog
+            {
+                Title = "确认传输",
+                Content = new TextBlock
+                {
+                    Text = $"将把源库 {sdb} 中选中的 {tables.Count} 张表传到目标库 {ddb}：\n" +
+                           (steps.Count > 0 ? string.Join("；\n", steps) + "。\n\n" : "") +
+                           "目标库会按上面勾选直接变更，源库只读不动，传输不可自动回退。确认执行？",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                PrimaryButtonText = "开始传输",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
             runBtn.IsEnabled = false;
             int done = 0, failed = 0;
             output.Text = "开始传输…\n";
@@ -182,6 +202,13 @@ public static class DataSyncDialog
         };
 
         var content = new StackPanel { Spacing = 10, MinWidth = 620, Margin = new Thickness(0, 0, 12, 0) };
+        content.Children.Add(new TextBlock
+        {
+            Text = "源库只读；目标库会被直接建表、改列、写入数据。点「开始传输」后会先给出确认，确认才会动目标库。",
+            FontSize = 12,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+        });
         var rowA = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         rowA.Children.Add(new TextBlock { Text = "源", VerticalAlignment = VerticalAlignment.Center });
         rowA.Children.Add(srcBox);
