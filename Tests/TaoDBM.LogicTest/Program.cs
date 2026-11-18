@@ -3420,7 +3420,8 @@ Console.WriteLine("== NotificationDispatcher ==");
                 });
             var sink = new StringWriter();
             long n34 = Exporter.CsvStream(lazyPages, new[] { "id" }, sink);
-            var lines = sink.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            // 平台差异：Windows TextWriter.NewLine=\r\n，Linux=\n——账面一致性看内容，换行符归一后再切分（同 N39 口径）
+            var lines = sink.ToString().Replace("\r\n", "\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
             Check("N34 多页流式导出账面一致", n34 == 50000 && lines.Length == 50001
                 && lines[0] == "\uFEFFid" && lines[1] == "0" && lines[50000] == "49999", $"n={n34}, lines={lines.Length}");
         }
