@@ -6,7 +6,7 @@ on:
     paths: ['Tools/ModelBench/**']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   bench:
@@ -74,6 +74,20 @@ jobs:
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
+
+      - name: Publish results to public branch
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p publish && cp -r Tools/ModelBench/out publish/ 2>/dev/null || true
+          cd publish
+          git init -q
+          git checkout -q -b model-bench-latest
+          git add -A
+          git -c user.name=model-bench-bot -c user.email=actions@users.noreply.github.com commit -qm "ModelBench results $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" model-bench-latest
       - name: Upload raw outputs
         if: always()
         uses: actions/upload-artifact@v4
