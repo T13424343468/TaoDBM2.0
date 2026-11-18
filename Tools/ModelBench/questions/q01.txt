@@ -1,0 +1,7 @@
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50));
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, amount DECIMAL(10,2), status VARCHAR(20), created_at DATETIME);
+问题：)
+把 status 为 cancelled 的订单的 amount 总和算出来是多少？
+注意：只输出 SQL。
