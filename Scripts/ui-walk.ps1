@@ -436,17 +436,45 @@ foreach ($s in $plan.steps) {
       }
       'expand-keyboard' {
         # 静置探针定谳：死亡追随 S08 动作而非启动时钟——UIA Expand+Descendants 轮询在十余台机器上稳定伴随代理进程死
-        # 改键盘导航：Select 连接节点后连发 {RIGHT}（→聚焦库节点→展开），全程不做 Descendants 全扫、不调 ExpandCollapse 模式；
-        # 展开是否成功由后续 S09 tree-contains-all 按真实表清单定谳
+        # 改键盘导航：Select 连接节点后 {RIGHT}（→聚焦库节点→展开），全程不做 Descendants 全扫、不调 ExpandCollapse 模式；
+        # 5de8999 轮定谳：键盘导航后代理进程存活（死亡点解除），但 S09 真红 tree text missing——{RIGHT} 是否真展开库节点不可见
+        # 本轮升级为「键盘展开＋单次定性核验」：树域内单次 FindAll（非轮询）读库节点 ExpandCollapseState 入证据；
+        # 坍缩态则对该单元素补一次 Expand 并复读写账，S09 tree-contains-all 仍按真实表清单终审
         $sel = Select-TreeItem (Tpl $s.selectPrefix) 10
         if ($null -eq $sel) { throw "tree item not found: $(Tpl $s.selectPrefix)" }
+        try { $sel.SetFocus() } catch { }
         Start-Sleep -Milliseconds 500
         [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
         Start-Sleep -Milliseconds 800
-        [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
-        Start-Sleep -Seconds 2
+        $dbState = 'notfound'
+        $dbItem = $null
+        try {
+          $treeEl = Find-ElWait @{ automationId = 'ConnTree' } 6 $mainRoot
+          if ($treeEl) {
+            $all = $treeEl.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($e in $all) {
+              try {
+                if ($e.Current.ControlType.ProgrammaticName -eq 'ControlType.TreeItem' -and $e.Current.Name -like ("*" + (Tpl $s.childPrefix) + "*")) {
+                  $dbItem = $e
+                  $dbState = ($e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
+                  break
+                }
+              } catch { }
+            }
+          }
+        } catch { }
+        Push-Evidence "kb-state $(Tpl $s.childPrefix) $dbState"
+        if ($dbItem -and $dbState -ne 'Expanded') {
+          # 单元素补一发 Expand：疑似触发点在轮询 FindAll＋反复 Expand 的组合，而非单次调用
+          try {
+            ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand()
+            Start-Sleep -Seconds 1
+            $dbState = ($dbItem.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Current.ExpandCollapseState
+          } catch { $dbState = 'expand-threw' }
+          Push-Evidence "kb-state-after $(Tpl $s.childPrefix) $dbState"
+        }
         Assert-AppAlive "expand-keyboard $(Tpl $s.selectPrefix)"
-        Push-Evidence ("expand-kb-ok {0} child={1}" -f (Tpl $s.selectPrefix), (Tpl $s.childPrefix))
+        Push-Evidence ("expand-kb-ok {0} child={1} state={2}" -f (Tpl $s.selectPrefix), (Tpl $s.childPrefix), $dbState)
         $sleepSec = 3
         if ($s.sleepAfter) { $sleepSec = [int]$s.sleepAfter }
         Start-Sleep -Seconds $sleepSec
