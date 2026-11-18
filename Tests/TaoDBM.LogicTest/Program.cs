@@ -122,6 +122,9 @@ Console.WriteLine("== Exporter ==");
     try { Exporter.CsvStream(CancelOnSecond(), new[] { "id", "name" }, new StringWriter(), cts.Token); }
     catch (OperationCanceledException) { canceled = true; }
     Check("流式导出可取消", canceled);
+    // 中断恢复（测试规范三.8）：取消后不得残留全局污染，新一次导出照常完整
+    var recovered = Exporter.CsvStream(pages, new[] { "id", "name" }, new StringWriter());
+    Check("流式导出取消后恢复", recovered == 3, $"recovered={recovered}");
 }
 
 Console.WriteLine("== EngineInfo ==");
@@ -3484,8 +3487,105 @@ Console.WriteLine("== NotificationDispatcher ==");
 Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");
 TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
 
+// 制度补齐层：tao-testing-standard 标准测试项与 v3.3 新增把尺逐项落测（2026-11-18 老板令「按制度全覆盖无死角补齐」）
+Layer("制度补齐");
+
+Console.WriteLine("== 行为探针（测试规范三.5：类型全装载+构造冒烟）==");
+{
+    int probedTypes = 0;
+    var probeErrors = new List<string>();
+    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies()
+        .Where(a => (a.GetName().Name ?? "").StartsWith("TaoDBM", StringComparison.Ordinal)))
+    {
+        Type[] types;
+        try { types = asm.GetTypes(); }
+        catch (System.Reflection.ReflectionTypeLoadException ex)
+        {
+            probeErrors.Add($"{asm.GetName().Name}: 装载失败 {ex.LoaderExceptions.Length} 处，首个 {ex.LoaderExceptions[0]?.GetType().Name}");
+            continue;
+        }
+        foreach (var t in types)
+        {
+            if (string.IsNullOrEmpty(t.Namespace) || !t.Namespace.StartsWith("TaoDBM.", StringComparison.Ordinal)) continue;
+            probedTypes++;
+            try
+            {
+                // 元数据级全装载：属性/方法/接口解析任何 TypeLoad/Missing 成员都算断
+                _ = t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+                _ = t.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly);
+                _ = t.GetInterfaces();
+                // 构造冒烟：非抽象、非泛型、有公共无参构造的类真实实例化一次（临时文件类实例用后即弃）
+                if (t.IsClass && !t.IsAbstract && !t.IsGenericType && t.GetConstructor(Type.EmptyTypes) is System.Reflection.ConstructorInfo ctor)
+                {
+                    var inst = Activator.CreateInstance(t);
+                    (inst as IDisposable)?.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                probeErrors.Add($"{t.FullName}: {ex.GetType().Name} {ex.Message}");
+            }
+        }
+    }
+    Check($"行为探针-类型全装载与构造冒烟零断裂({probedTypes} 型)", probeErrors.Count == 0, string.Join("; ", probeErrors.Take(3)));
+}
+
+Console.WriteLine("== 版本锚（测试规范三.6：Windows 交付版本一致性）==");
+{
+    string? root = null;
+    for (var dir = new System.IO.DirectoryInfo(Environment.CurrentDirectory); dir != null; dir = dir.Parent)
+    {
+        if (File.Exists(Path.Combine(dir.FullName, "Src", "TaoDBM.App", "TaoDBM.App.csproj"))) { root = dir.FullName; break; }
+    }
+    if (root != null)
+    {
+        var proj = File.ReadAllText(Path.Combine(root, "Src", "TaoDBM.App", "TaoDBM.App.csproj"));
+        string? Val(string tag)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(proj, "<" + tag + ">([^<]+)</" + tag + ">");
+            return m.Success ? m.Groups[1].Value : null;
+        }
+        var ver = Val("Version"); var fv = Val("FileVersion"); var av = Val("AssemblyVersion");
+        Check("版本锚-App 三版本一致", ver != null && fv == ver + ".0" && av == ver + ".0", $"Version={ver} FileVersion={fv} AssemblyVersion={av}");
+    }
+    else
+    {
+        Check("版本锚-App 三版本一致", false, "未定位到仓库根 " + Environment.CurrentDirectory);
+    }
+}
+
+Console.WriteLine("== 跨平台路径双分隔符回归（测试规范三.1）==");
+{
+    var baseDir = Path.Combine(Path.GetTempPath(), "taodbm-path-regression-" + Guid.NewGuid().ToString("N"));
+    var mixed = baseDir + Path.AltDirectorySeparatorChar + "sub" + Path.DirectorySeparatorChar
+        + Path.DirectorySeparatorChar + "deep" + Path.AltDirectorySeparatorChar + "f.json";
+    bool wrote = false; string? content = null;
+    try { AtomicWrite.Text(mixed, "{\"k\":1}"); wrote = true; content = File.ReadAllText(Path.GetFullPath(mixed)); }
+    catch (Exception ex) { content = "异常:" + ex.Message; }
+    Check("双分隔符路径-混用分隔符原子写目录自建", wrote && content == "{\"k\":1}", content ?? "");
+    Check("双分隔符路径-落盘位置前缀断言", wrote
+        && Path.GetFullPath(mixed).StartsWith(Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+    try { Directory.Delete(baseDir, true); } catch { }
+}
+
+Console.WriteLine("== 断盘/写坏注入（测试规范三.8/二.4）==");
+{
+    // 同名文件占位目录：目录创建必败——异常必须原样抛出且不吞，目标旧值不被破坏
+    var dir1 = Path.Combine(Path.GetTempPath(), "taodbm-diskfail-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(dir1);
+    var blocker = Path.Combine(dir1, "occupied");
+    File.WriteAllText(blocker, "旧值-不可被破坏");
+    bool threw = false; string? after = null;
+    try { AtomicWrite.Text(Path.Combine(blocker, "f.json"), "新值"); }
+    catch { threw = true; }
+    after = File.ReadAllText(blocker);
+    Check("断盘注入-目录占位写失败必抛且旧值完好", threw && after == "旧值-不可被破坏", after ?? "");
+    try { Directory.Delete(dir1, true); } catch { }
+    // Move 目标为目录的确定性失败侧已由 N39 覆盖（坏写不毁旧值），此处补目录创建失败侧，两路合围断盘语义
+}
+
 Console.WriteLine("\n== 分层结果 ==");
-foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链" })
+foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链", "制度补齐" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");
 Console.WriteLine($"\n通过 {pass} / {pass + fail}");
 Ck($"ALL-DONE pass={pass} fail={fail}");
