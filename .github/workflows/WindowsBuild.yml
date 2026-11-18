@@ -41,7 +41,22 @@ jobs:
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
             $tail | ForEach-Object { $_ -replace '<','&lt;' } | Add-Content $env:GITHUB_STEP_SUMMARY
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            $errLines = @(Get-Content test-stderr.txt -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
+            if ($errLines.Count -gt 0) {
+              $errLines | ForEach-Object { $t="$_"; Write-Host "::error::[stderr] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
+            } else {
+              $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            }
+            $scene = Join-Path $env:RUNNER_TEMP 'autopsy'
+            New-Item -ItemType Directory -Force -Path $scene | Out-Null
+            Copy-Item test-output.txt, test-stderr.txt -Destination $scene -ErrorAction SilentlyContinue
+            Push-Location $scene
+            git init -q
+            git checkout -q -b ci-autopsy-latest
+            git add -A
+            git -c user.name=ci-autopsy-bot -c user.email=actions@users.noreply.github.com commit -qm "LogicTest failure scene exit=$($p.ExitCode) (0x{0:X}) $(date -u +'%Y-%m-%dT%H:%M:%SZ')" -f $p.ExitCode
+            git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-autopsy-latest
+            Pop-Location
             exit $p.ExitCode
           }
 
