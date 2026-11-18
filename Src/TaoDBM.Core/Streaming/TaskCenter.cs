@@ -118,11 +118,15 @@ public sealed class TaskCenter
 
     public bool Cancel(string taskId)
     {
+        TaskSnapshot? canceled = null;
         lock (_lock)
         {
             if (!_states.TryGetValue(taskId, out var s) || s.State != "running") return false;
-            _states[taskId] = s with { State = "canceled", EndedAt = DateTimeOffset.Now };
+            canceled = s with { State = "canceled", EndedAt = DateTimeOffset.Now };
+            _states[taskId] = canceled;
         }
+        // P4：取消即终态，事件在此派发（开跑前取消走不到 Complete，队列循环会静默跳过）
+        TaskCompleted?.Invoke(canceled);
         return true;
     }
 
