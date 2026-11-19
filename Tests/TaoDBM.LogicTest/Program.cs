@@ -4,6 +4,10 @@ using System.Text;
 using TaoDBM.Core;
 using TaoDBM.UI;
 
+// .sql 三件套（2026-11-19 23:52 老板令）：GBK 编码口径依赖 CodePages 提供者（App 启动已注册，测试进程自行补注册）
+try { Encoding.RegisterProvider(CodePagesEncodingProvider.Instance); }
+catch (Exception ex) { Console.Error.WriteLine($"CodePages 注册失败: {ex.Message}"); }
+
 // 云端尸检：每断言/层切换立即追加落盘（文件级真落盘，进程任何形式死亡后都能对出最后位置与时间线）
 var swAll = Stopwatch.StartNew();
 string ckptPath = Environment.GetEnvironmentVariable("TAODBM_CKPT") ?? "test-progress.txt";
@@ -3639,6 +3643,79 @@ Console.WriteLine("== 断盘/写坏注入（测试规范三.8/二.4）==");
     Check("断盘注入-目录占位写失败必抛且旧值完好", threw && after == "旧值-不可被破坏", after ?? "");
     try { Directory.Delete(dir1, true); } catch { }
     // Move 目标为目录的确定性失败侧已由 N39 覆盖（坏写不毁旧值），此处补目录创建失败侧，两路合围断盘语义
+}
+
+Console.WriteLine("\n== P-4 窗口记忆/.sql 三件套（2026-11-19 23:52 老板令）==");
+Layer("单元");
+{
+    // --- WindowStateStore：默认尺寸边界（工作区 80% 封顶 1600×900，<1350 吃满） ---
+    var (w1, h1) = WindowStateStore.DefaultSize(1350, 1000);
+    Check("WS-默认尺寸-1350临界走80%封顶", Math.Abs(w1 - 1080) < 0.01 && Math.Abs(h1 - 800) < 0.01, $"{w1}x{h1}");
+    var (w2, h2) = WindowStateStore.DefaultSize(1349, 800);
+    Check("WS-默认尺寸-1349小屏吃满", w2 == 1349 && h2 == 800, $"{w2}x{h2}");
+    var (w3, h3) = WindowStateStore.DefaultSize(1920, 1080);
+    Check("WS-默认尺寸-1080p走80%", Math.Abs(w3 - 1536) < 0.01 && Math.Abs(h3 - 864) < 0.01, $"{w3}x{h3}");
+    var (w4, h4) = WindowStateStore.DefaultSize(2560, 1440);
+    Check("WS-默认尺寸-大屏封顶1600x900", w4 == 1600 && h4 == 900, $"{w4}x{h4}");
+    var (w5, h5) = WindowStateStore.DefaultSize(800, 600);
+    Check("WS-默认尺寸-微屏吃满", w5 == 800 && h5 == 600, $"{w5}x{h5}");
+
+    // --- IsRestorable：拔显示器/NaN 坐标回默认居中 ---
+    var item = new WindowStateItem { X = 100, Y = 100, Width = 1200, Height = 800 };
+    Check("WS-恢复-坐标在屏可恢复", WindowStateStore.IsRestorable(item, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+    Check("WS-恢复-空显示器表回默认", !WindowStateStore.IsRestorable(item, Array.Empty<(double, double, double, double)>()));
+    var nanItem = new WindowStateItem { X = double.NaN, Y = 100, Width = 1200, Height = 800 };
+    Check("WS-恢复-NaN坐标回默认", !WindowStateStore.IsRestorable(nanItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+    var offItem = new WindowStateItem { X = -5000, Y = -5000, Width = 1200, Height = 800 };
+    Check("WS-恢复-拔显示器旧坐标失效", !WindowStateStore.IsRestorable(offItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+    Check("WS-恢复-零尺寸无效", !WindowStateStore.IsRestorable(new WindowStateItem { X = 100, Y = 100, Width = 0, Height = 800 }, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+
+    // --- ClampLeftPane：树 200 起、主区 480 保底 ---
+    Check("WS-分栏-过窄夹到200", WindowStateStore.ClampLeftPane(80, 1000) == 200);
+    Check("WS-分栏-过宽夹到主区480保底", WindowStateStore.ClampLeftPane(10000, 1000) == 520);
+    Check("WS-分栏-区间内原样保留", WindowStateStore.ClampLeftPane(300, 1000) == 300);
+    Check("WS-分栏-极小屏上限即200", WindowStateStore.ClampLeftPane(350, 600) == 200);
+
+    // --- 状态存取：写读一致、损坏回落默认 ---
+    var wsFile = Path.Combine(Path.GetTempPath(), "taodbm-ws-test-" + Guid.NewGuid().ToString("N") + ".json");
+    WindowStateStore.UseFile(wsFile);
+    var saved = new WindowStateItem { X = 50, Y = 60, Width = 1100, Height = 760, Maximized = true, LeftPaneWidth = 260, TreeCollapsed = false };
+    WindowStateStore.Save(saved);
+    var loaded = WindowStateStore.Load();
+    Check("WS-存取-全字段写读一致", loaded.X == 50 && loaded.Y == 60 && loaded.Width == 1100 && loaded.Maximized && Math.Abs(loaded.LeftPaneWidth - 260) < 0.01);
+    File.WriteAllText(wsFile, "{坏的json");
+    Check("WS-存取-损坏回落默认", WindowStateStore.Load().Width == 0 && !WindowStateStore.Load().Maximized);
+    try { File.Delete(wsFile); } catch { }
+    WindowStateStore.UseFile("");
+
+    // --- SqlFileIo：三态往返 / BOM / GBK 中文 ---
+    var sqlContent = "SELECT '你好，世界' AS greeting;\n-- 中文注释不乱码\nINSERT INTO t VALUES (1);";
+    var sqlDir = Path.Combine(Path.GetTempPath(), "taodbm-sql-test-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(sqlDir);
+    Check("SQL-IO-UTF8无BOM往返", SqlFileIo.RoundTrip(Path.Combine(sqlDir, "a.sql"), sqlContent, gbk: false, bom: false));
+    Check("SQL-IO-UTF8带BOM往返", SqlFileIo.RoundTrip(Path.Combine(sqlDir, "b.sql"), sqlContent, gbk: false, bom: true));
+    Check("SQL-IO-GBK中文往返", SqlFileIo.RoundTrip(Path.Combine(sqlDir, "c.sql"), sqlContent, gbk: true, bom: false));
+    var bomBytes = File.ReadAllBytes(Path.Combine(sqlDir, "b.sql"));
+    Check("SQL-IO-BOM字节锚", bomBytes.Length >= 3 && bomBytes[0] == 0xEF && bomBytes[1] == 0xBB && bomBytes[2] == 0xBF);
+    var gbkBytes = File.ReadAllBytes(Path.Combine(sqlDir, "c.sql"));
+    Check("SQL-IO-GBK确无BOM", !(gbkBytes.Length >= 3 && gbkBytes[0] == 0xEF && gbkBytes[1] == 0xBB && gbkBytes[2] == 0xBF));
+    Check("SQL-IO-编码探测-UTF8无BOM", SqlFileIo.DetectEncoding(Path.Combine(sqlDir, "a.sql")) is UTF8Encoding u8 && !u8.GetPreamble().Any());
+    Check("SQL-IO-编码探测-UTF8带BOM", SqlFileIo.DetectEncoding(Path.Combine(sqlDir, "b.sql")) is UTF8Encoding u8b && u8b.GetPreamble().Any());
+    Check("SQL-IO-编码探测-GBK", SqlFileIo.DetectEncoding(Path.Combine(sqlDir, "c.sql")).CodePage == 936);
+    try { Directory.Delete(sqlDir, true); } catch { }
+
+    // --- SqlOpenPrefs：写读一致、损坏回落默认（默认开=最近激活窗口） ---
+    var prefFile = Path.Combine(Path.GetTempPath(), "taodbm-sqlopen-test-" + Guid.NewGuid().ToString("N") + ".json");
+    SqlOpenPrefs.UseFile(prefFile);
+    Check("SQL-打开偏好-缺省为开", SqlOpenPrefs.Load());
+    SqlOpenPrefs.Save(false);
+    Check("SQL-打开偏好-关后保持关", !SqlOpenPrefs.Load());
+    SqlOpenPrefs.Save(true);
+    Check("SQL-打开偏好-重开生效", SqlOpenPrefs.Load());
+    File.WriteAllText(prefFile, "not json at all");
+    Check("SQL-打开偏好-损坏回落开", SqlOpenPrefs.Load());
+    try { File.Delete(prefFile); } catch { }
+    SqlOpenPrefs.UseFile("");
 }
 
 Console.WriteLine("\n== 分层结果 ==");
