@@ -242,20 +242,50 @@ jobs:
 
       - name: Publish MSI to public branch (anonymous download)
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $ErrorActionPreference = 'Stop'
           $msi = Get-ChildItem out -Filter *.msi -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $msi) { Write-Host "::warning::no msi to publish"; exit 0 }
+          # 交付命名：大驼峰 ASCII 零中文，按运行号唯一（每次交付换新文件名）；#126 定谳：原步 Write-Host 字符串少闭合引号=整段解析红
+          $dest = "TaoDBM-2.0.0-x64-$env:GITHUB_RUN_NUMBER.msi"
+          $sha = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash
+          Write-Host "[RELEASE] msi=$dest size=$($msi.Length) sha256=$sha"
+          $msiKeep = Join-Path $env:TEMP $dest
+          Copy-Item $msi.FullName -Destination $msiKeep -Force
+          # 通道一：GitHub Release（REST+token，无 100MB 单文件限，公开仓匿名一键下载）
+          $headers = @{ Authorization = "token $env:GH_TOKEN"; Accept = 'application/vnd.github+json'; 'User-Agent' = 'taodbm-ci' }
+          $repo = $env:GITHUB_REPOSITORY
+          $tag = "msi-run-$env:GITHUB_RUN_NUMBER"
+          $rel = $null
+          try { $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers } catch { }
+          if (-not $rel) {
+            $body = @{ tag_name = $tag; name = "TaoDBM MSI run $env:GITHUB_RUN_NUMBER"; body = "SHA256: $sha"; draft = $false; prerelease = $false } | ConvertTo-Json
+            $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases" -Headers $headers -Method Post -ContentType 'application/json' -Body $body
+          }
+          $browser = "https://github.com/$repo/releases/download/$tag/$dest"
+          if (-not ($rel.assets | Where-Object { $_.name -eq $dest })) {
+            $upUrl = ($rel.upload_url -split '\{')[0] + "?name=$dest"
+            $null = Invoke-RestMethod -Uri $upUrl -Headers $headers -Method Post -ContentType 'application/octet-stream' -InFile $msiKeep
+          }
+          Write-Host "[RELEASE-URL] $browser"
+          "PHASE release-url=$browser" | Add-Content $env:GITHUB_STEP_SUMMARY
+          # 通道二：匿名 git 分支（codeload 直下）；加固：orphan 后清空除 .git 外整个工作树，
+          # 否则 out/publish 未跟踪大产物被 add -A 打进提交顶爆 100MB 单文件限拒推
           git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
           git fetch --depth 1 origin ui-release-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-release-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-release-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          # 交付命名：大驼峰 ASCII 零中文，按运行号唯一（每次交付换新文件名）
-          $dest = "TaoDBM-2.0.0-x64-$env:GITHUB_RUN_NUMBER.msi"
-          Copy-Item $msi.FullName -Destination $dest -Force
+          if ($LASTEXITCODE -eq 0) { git checkout -B ui-release-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-release-latest 2>$null | Out-Null }
+          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          "# TaoDBM MSI latest`n`nrun $env:GITHUB_RUN_NUMBER`nfile: $dest`nsha256: $sha`nrelease: $browser`n" | Set-Content README.txt
+          if ($msi.Length -le 95MB) { Copy-Item $msiKeep -Destination $dest -Force } else { Write-Host "[RELEASE] msi over 95MB, branch carries README only; download via release asset" }
           git add -A
           git commit --allow-empty -m "release msi run $env:GITHUB_RUN_ID" | Out-Null
-          git push origin ui-release-latest --force
-          Write-Host "[RELEASE] $dest published to ui-release-latest (anonymous download via codeload)
+          $pushLog = git push origin ui-release-latest --force 2>&1
+          if ($LASTEXITCODE -ne 0) { $pushLog | Select-Object -First 20 | ForEach-Object { Write-Host "::error::branch push: $_" }; exit 1 }
+          Write-Host "[RELEASE] branch ui-release-latest updated (codeload anonymous download)"
 
   trim-r2r:
     # 裁剪+预编译可行性验证（保全口径）：TrimMode=partial 只裁框架、应用壳不裁；R2R 预编译启动提速
