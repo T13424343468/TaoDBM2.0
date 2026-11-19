@@ -704,6 +704,177 @@ jobs:
             ui-smoke.png
             install-smoke.log
 
+  ui-smoke-servers:
+    # 真库并行走查·服务器双库（2026-11-19 老板令：抓紧真库测试）：MySQL/SQL Server 各占一台免费 runner，
+    # 同一份 SQLite 数据口径（同 5000/1200 行同期望值），各库本机装机、真连接真执行真对比；
+    # 矩阵隔离：谁红修谁的；装机失败红在装库分支，不连坐其他库型。
+    needs: msi
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [mysql, mssql]
+    steps:
+      - name: Checkout (walk script from source)
+        uses: actions/checkout@v4
+
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: taodbm-phase2-msi
+
+      - name: Install database server (mysql)
+        if: matrix.db == 'mysql'
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          choco install mysql -y --no-progress | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::choco mysql failed"; exit 1 }
+          # 服务就绪探测：最多 120 秒
+          $ready = $false
+          for ($i = 0; $i -lt 24; $i++) {
+            (Get-Command mysql -ErrorAction SilentlyContinue) | Out-Null
+            Start-Sleep -Seconds 5
+            $probe = Get-Service -Name MySQL -ErrorAction SilentlyContinue
+            if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
+          }
+          if (-not $ready) { Write-Host "::error::mysql service not running after wait"; exit 1 }
+          Write-Host "[MYSQL] service running; connectivity check"
+          & mysql -uroot -e "SELECT VERSION();" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql connectivity failed"; exit 1 }
+          "MYSQLOK=1" | Add-Content $env:GITHUB_ENV
+
+      - name: Install database server (mssql)
+        if: matrix.db == 'mssql'
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $saPass = "Ta0DBM-ui!42"
+          choco install sqlserver-express -y --no-progress --params "/SAPWD:$saPass /TCPENABLED:1" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::choco sqlserver-express failed"; exit 1 }
+          # 实例名 SQL EXPRESS；服务就绪探测
+          $ready = $false
+          for ($i = 0; $i -lt 36; $i++) {
+            Start-Sleep -Seconds 5
+            $probe = Get-Service -Name 'MSSQL$SQLEXPRESS' -ErrorAction SilentlyContinue
+            if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
+          }
+          if (-not $ready) { Write-Host "::error::sqlexpress service not running after wait"; exit 1 }
+          Write-Host "[MSSQL] service running; connectivity check"
+          & sqlcmd -S ".\SQLEXPRESS" -U sa -P $saPass -Q "SELECT @@VERSION" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::sqlcmd connectivity failed"; exit 1 }
+          "MSSQLOK=1" | Add-Content $env:GITHUB_ENV
+          "SAPASS=$saPass" | Add-Content $env:GITHUB_ENV
+
+      - name: Silent install
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { Write-Host "[TREE] $($_.FullName)" }
+          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
+          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
+          $msi = $found.FullName
+          Write-Host "[MSI] $msi size=$($found.Length) bytes"
+          $ok = $false
+          for ($try = 1; $try -le 3; $try++) {
+            try {
+              $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
+            } catch {
+              Write-Host "::error::try$try Start-Process msiexec threw: $($_.Exception.Message)"
+              "### install try$try threw: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
+              if ($try -lt 3) { Start-Sleep -Seconds 20 }
+              continue
+            }
+            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
+            if ($p.ExitCode -eq 0) { $ok = $true; break }
+            "### install try$try exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+            if ($try -lt 3) { Start-Sleep -Seconds 20 }
+          }
+          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
+          $exe = $null
+          $cand = @()
+          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
+          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
+          $regdir = $null
+          try { $regdir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/') } catch { $regdir = $null }
+          if ($regdir) { $cand += (Join-Path $regdir 'TaoDBM.exe') }
+          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
+          }
+          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
+          if (-not $exe) { Write-Host "::error::TaoDBM.exe not found"; exit 1 }
+          Write-Host "[OK] exe at $exe"
+          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
+
+      - name: Generate test data and load into server (mysql)
+        if: matrix.db == 'mysql'
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb --engine mysql --db-name taodbmui
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mysql failed"; exit 1 }
+          Get-Content testdb/taodbm-ui.mysql.sql -Raw | & mysql -uroot 2>&1 | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql load failed"; exit 1 }
+          & mysql -uroot -e "USE taodbmui; SELECT COUNT(*) AS c FROM orders;" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql sanity query failed"; exit 1 }
+          "EXPECTFILE=$(Join-Path $PWD testdb\expected.json)" | Add-Content $env:GITHUB_ENV
+
+      - name: Generate test data and load into server (mssql)
+        if: matrix.db == 'mssql'
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb --engine mssql --db-name taodbmui
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mssql failed"; exit 1 }
+          & sqlcmd -S ".\SQLEXPRESS" -U sa -P $env:SAPASS -i testdb/taodbm-ui.mssql.sql
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::sqlcmd load failed"; exit 1 }
+          & sqlcmd -S ".\SQLEXPRESS" -U sa -P $env:SAPASS -Q "USE taodbmui; SELECT COUNT(*) FROM orders"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mssql sanity query failed"; exit 1 }
+          "EXPECTFILE=$(Join-Path $PWD testdb\expected.json)" | Add-Content $env:GITHUB_ENV
+
+      - name: Launch and walk real UI (server-db, checklist-driven)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
+          $engine = "${{ matrix.db }}" -eq 'mysql' ? 'MySQL' : 'SQL Server'
+          $dbuser = "${{ matrix.db }}" -eq 'mysql' ? 'root' : 'sa'
+          $dbpass = "${{ matrix.db }}" -eq 'mysql' ? '' : $env:SAPASS
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName localhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed (${{ matrix.db }})"; exit 1 }
+
+      - name: Push evidence to public branch
+        if: always()
+        shell: pwsh
+        run: |
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          $branch = "ui-walk-${{ matrix.db }}-latest"
+          git fetch --depth 1 origin $branch 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
+          Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
+          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
+          git commit -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
+          git push origin $branch --force
+          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/$branch/ui-walk-log.txt"
+
+      - name: Upload UI smoke files (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-ui-smoke-${{ matrix.db }}
+          path: |
+            ui-coverage.txt
+            ui-walk-report.txt
+            ui-walk-log.txt
+            install-smoke.log
+
   ui-smoke-tail:
     # 走查自动重试：#79/#80 连续遭零红机器回收（步 6 被 cancel、always 收尾步全 skipped=机器进程死亡），
     # 同一修复代码需在新鲜机器上完整走查定谳；ui-smoke 失败或被取消时本作业原样重跑一遍

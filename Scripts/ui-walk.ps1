@@ -7,7 +7,11 @@ param(
   [string]$DbFile = "",
   [string]$Expected = "",
   [string]$PlanPath = "",
-  [string]$SkipIds = ""
+  [string]$SkipIds = "",
+  [string]$HostName = "localhost",
+  [string]$DbUser = "",
+  [string]$DbPass = "",
+  [string]$DbName = ""
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -350,6 +354,10 @@ $tpl = @{
   '__NULLEMAILS__'   = $nullE
   '__NAME7__'        = $name7
   '__NULLNOTES__'    = $nullN
+  '__HOST__'         = $HostName
+  '__USER__'         = $DbUser
+  '__PASS__'         = $DbPass
+  '__DBNAME__'       = $(if ([string]::IsNullOrEmpty($DbName)) { 'main' } else { $DbName })
 }
 function Tpl([string]$s) {
   $t = $s
