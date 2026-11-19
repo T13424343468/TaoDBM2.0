@@ -54,15 +54,14 @@ Start-Sleep -Seconds 8
 $proc.Refresh()
 if ($proc.HasExited) { Write-Host "::error::app exited before walk code=$($proc.ExitCode)"; exit 1 }
 
-# 定时炸弹探针（#83 死亡现场判定：六次死亡恒定落在应用启动后 45-60 秒，与步骤可能只是相关）：
-# 静置 45 秒不做任何 UIA 操作并分段留证——死在静置期＝应用/环境时间引爆，与 S08 无关；死回 S08＝动作因果
-Log "probe quiet-watch start (45s, no UIA)"
+# 云机器死亡时钟实锤（run 82/83/93/94 四轮六杀，job 起点 1.5-3.5 分钟随机回收，与步骤无关）：
+# 静置探针缩到 10 秒仅保留最小时间相关数据点，把走查窗口让给 S12-S19 定谳
+Log "probe quiet-watch start (10s, no UIA)"
 Push-Evidence "quiet-watch start"
-for ($qw = 1; $qw -le 9; $qw++) {
+for ($qw = 1; $qw -le 2; $qw++) {
   Start-Sleep -Seconds 5
   $proc.Refresh()
   if ($proc.HasExited) { Write-Host "::error::app exited during quiet-watch q$qw code=$($proc.ExitCode)"; exit 1 }
-  if ($qw % 3 -eq 0) { Push-Evidence "quiet-watch q$qw" }
 }
 Log "probe quiet-watch done"
 Push-Evidence "quiet-watch done"
@@ -556,6 +555,8 @@ foreach ($s in $plan.steps) {
         $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
         if ($null -eq $run) { throw "work-run not found" }
         Invoke-El $run
+        # 死亡时钟下的段位锚点：机器死在点击执行前后一眼可辨（run 94 死在 S12 起点 6 秒内无从定谳）
+        Push-Evidence "$id run-invoked"
         $expects = @()
         foreach ($v in $s.expectContains) { $expects += (Tpl $v) }
         $pageNeed = ""
@@ -650,6 +651,8 @@ foreach ($s in $plan.steps) {
       foreach ($d in (Get-WalkDiagnostics)) { Write-Host ("::error::" + $d) }
     }
     Close-ExtraWindows $handle
+    # 红账当场落证据分支：不等下一步 step-start 捎带（机器死在步间会丢红）
+    if ($outcome -eq 'fail') { Push-Evidence "red $id" }
   }
   Cov $id $feature $outcome
   $proc.Refresh()
