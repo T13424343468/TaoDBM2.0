@@ -1,1 +1,8 @@
 ===== MSSQL uncaught-trap =====
+----- phases journal -----
+  2026-11-19T11:36:34.1223025Z phase=step-start pwsh=7.6.10
+  2026-11-19T11:36:35.2884406Z phase=download-ok size=5841264
+UNCAUGHT: System.Management.Automation.ParameterBindingException: A positional parameter cannot be found that accepts argument '+'.
+at At D:\a\_temp\8a1f77d1-36e5-4b11-80cf-846be2999ebc.ps1:88 char:7
++ $dl = Start-Process -FilePath $boot -ArgumentList '/Quiet','/Action=D …
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
