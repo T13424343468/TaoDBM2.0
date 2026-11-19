@@ -751,8 +751,13 @@ jobs:
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $saPass = "Ta0DBM-ui!42"
-          choco install sqlserver-express -y --no-progress --params "/SAPWD:$saPass /TCPENABLED:1" | Out-Host
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::choco sqlserver-express failed"; exit 1 }
+          $chocoOk = $false
+          for ($attempt = 1; $attempt -le 2 -and -not $chocoOk; $attempt++) {
+            Write-Host "[MSSQL] choco attempt $attempt"
+            choco install sqlserver-express -y --no-progress --params "/SAPWD:$saPass /TCPENABLED:1" | Out-Host
+            if ($LASTEXITCODE -eq 0) { $chocoOk = $true } else { Start-Sleep -Seconds 30 }
+          }
+          if (-not $chocoOk) { Write-Host "::error::choco sqlserver-express failed (2 attempts)"; exit 1 }
           # 实例名 SQL EXPRESS；服务就绪探测
           $ready = $false
           for ($i = 0; $i -lt 36; $i++) {
@@ -859,8 +864,8 @@ jobs:
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
-          git commit -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
+          git add -A 2>$null
+          git commit --allow-empty -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
           git push origin $branch --force
           Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/$branch/ui-walk-log.txt"
 

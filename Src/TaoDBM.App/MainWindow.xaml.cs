@@ -783,7 +783,10 @@ public partial class MainWindow : Window
                 NodeKind.Database => (info.Name, ""),
                 NodeKind.Table => (info.Db, DefaultSnippet(info)),
                 NodeKind.ObjectDef => (info.Db, ""),
-                _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
+                _ => (info.Provider?.IsNoSql == true ? "" :
+                      info.Profile.Engine == DbEngine.SQLite
+                          ? (info.Profile.Database.Length > 0 ? "main" : "")
+                          : info.Profile.Database, ""),
             };
             if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
             if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
