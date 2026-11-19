@@ -6,7 +6,8 @@ param(
   [Parameter(Mandatory = $true)][string]$ExePath,
   [string]$DbFile = "",
   [string]$Expected = "",
-  [string]$PlanPath = ""
+  [string]$PlanPath = "",
+  [string]$SkipIds = ""
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -364,6 +365,12 @@ function Cov([string]$id, [string]$feature, [string]$outcome) {
 $failed = $false
 foreach ($s in $plan.steps) {
   $id = $s.id; $feature = Tpl ([string]$s.feature); $action = $s.action
+  # 跳段走查（2026-11-19）：已定谳段可跳过，让尾部步骤在机器死亡窗口（走查起点 ~2.2 分钟）内完赛
+  if ($SkipIds -split ',' -contains $id) {
+    Log "step $id skipped (SkipIds)"
+    Cov $id $feature 'skip'
+    continue
+  }
   # 步进进度注解：近期 #79/#80 机器回收死在走查中途且零红，公开注解只剩启动告警——每步起点留里程碑，
   # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步；
   # 同时带应用内存读数并断言存活，把 S08 一带的静默死亡变成可读账
