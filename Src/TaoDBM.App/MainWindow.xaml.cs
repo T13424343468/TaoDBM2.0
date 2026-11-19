@@ -170,6 +170,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>.sql 跨实例交接入口：前置窗口并装载（收口与托盘唤醒一致）。</summary>
+    public void ActivateFromHandoff() => ShowFromTray();
+
     private void ShowFromTray()
     {
         AppWindow.Show();

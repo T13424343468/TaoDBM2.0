@@ -3718,6 +3718,59 @@ Layer("单元");
     SqlOpenPrefs.UseFile("");
 }
 
+Console.WriteLine("\n== P-5 虚拟滚动窗口计算/.sql 跨实例交接（2026-11-20 夜批②③）==");
+Layer("单元");
+{
+    // --- VirtualWindowMath：空集 / 单行 / 超万行 / 越界 / NaN ---
+    Check("VW-空集-零行返回空窗口", VirtualWindowMath.VisibleWindow(0, 600, 0) == (0, -1), $"{VirtualWindowMath.VisibleWindow(0, 600, 0)}");
+    Check("VW-单行-窗口恰为一行", VirtualWindowMath.VisibleWindow(0, 600, 1) == (0, 0));
+    Check("VW-负视口高夹零不越界", VirtualWindowMath.VisibleWindow(0, -5, 1) == (0, 0));
+    var (vf, vl) = VirtualWindowMath.VisibleWindow(0, 600, 10000);
+    Check("VW-顶部-首行0缓冲5", vf == 0 && vl == 24, $"{vf}-{vl}");
+    var (mf, ml) = VirtualWindowMath.VisibleWindow(319200, 800, 10000);
+    Check("VW-万行-尾部窗口不越界", mf >= 0 && mf <= ml && ml == 9999, $"{mf}-{ml}");
+    Check("VW-窗口上限-物化行数有确定上界", (ml - mf + 1) <= VirtualWindowMath.MaxMaterialized(800), $"{ml - mf + 1}");
+    var (of_, ol) = VirtualWindowMath.VisibleWindow(1_000_000, 800, 10000);
+    Check("VW-偏移越界-收拢到尾部", of_ <= ol && ol == 9999, $"{of_}-{ol}");
+    var (nf, nl) = VirtualWindowMath.VisibleWindow(0, double.NaN, 100);
+    Check("VW-NaN视口-回落零高窗口", nf == 0 && nl == 5, $"{nf}-{nl}");
+    Check("VW-总高-万行乘行高", Math.Abs(VirtualWindowMath.TotalHeight(10000) - 320000) < 0.001);
+    Check("VW-总高-零行总高为零", VirtualWindowMath.TotalHeight(0) == 0);
+    Check("VW-上限-800视口36行", VirtualWindowMath.MaxMaterialized(800) == 36);
+    Check("VW-空集-总高为零后窗口零行", VirtualWindowMath.VisibleWindow(100, 600, 0).Last == -1);
+
+    // --- SqlHandoffRegistry：写读往返 / 解析容错 / 死亡进程清理 / 最近激活排序 ---
+    var regFile = Path.Combine(Path.GetTempPath(), "taodbm-sqlhandoff-test-" + Guid.NewGuid().ToString("N") + ".txt");
+    SqlHandoffRegistry.UseFile(regFile);
+    var nowUtc = DateTime.UtcNow;
+    // 存活但非本进程的 pid：MostRecentAlive 会排除自身进程（交接不能交给发起方自己）
+    var otherPid = Process.GetProcesses().First(p => p.Id != Environment.ProcessId).Id;
+    SqlHandoffRegistry.Register("pipe-A", otherPid);
+    Check("SH-登记-已登记可查", SqlHandoffRegistry.IsRegistered("pipe-A"));
+    var eA = SqlHandoffRegistry.Parse(SqlHandoffRegistry.Format(new SqlHandoffRegistry.Entry("pipe-B", otherPid, nowUtc)));
+    Check("SH-往返-格式化解析还原到毫秒", eA is not null && eA.PipeName == "pipe-B" && eA.Pid == otherPid && Math.Abs((eA.LastActiveUtc - nowUtc).TotalMilliseconds) < 1.0);
+    Check("SH-解析-空行拒收", SqlHandoffRegistry.Parse("") is null);
+    Check("SH-解析-两段残行拒收", SqlHandoffRegistry.Parse("pipe|x") is null);
+    Check("SH-解析-负pid拒收", SqlHandoffRegistry.Parse("pipe|-5|20261120010101123") is null);
+    Check("SH-解析-坏时间戳拒收", SqlHandoffRegistry.Parse("pipe|123|not-a-time") is null);
+    SqlHandoffRegistry.Register("pipe-dead", int.MaxValue);
+    SqlHandoffRegistry.Register("pipe-first", otherPid);
+    Task.Delay(20).Wait();
+    SqlHandoffRegistry.Touch("pipe-last", otherPid);
+    var recent = SqlHandoffRegistry.MostRecentAlive(selfPid: Environment.ProcessId);
+    Check("SH-排序-最近激活优先", recent is not null && recent.PipeName == "pipe-last", recent?.PipeName ?? "null");
+    Check("SH-清理-死亡进程条目被摘除", !SqlHandoffRegistry.IsRegistered("pipe-dead"));
+    SqlHandoffRegistry.Unregister("pipe-last");
+    Check("SH-摘除-退出后不再登记", !SqlHandoffRegistry.IsRegistered("pipe-last"));
+    var recent2 = SqlHandoffRegistry.MostRecentAlive(selfPid: Environment.ProcessId);
+    Check("SH-排序-次新实例可交", recent2 is not null && recent2.PipeName == "pipe-first", recent2?.PipeName ?? "null");
+    File.WriteAllText(regFile, "garbage line\npipe-ok|" + otherPid.ToString() + "|20261120010101123\n");
+    var recent3 = SqlHandoffRegistry.MostRecentAlive(selfPid: Environment.ProcessId);
+    Check("SH-容错-坏行丢弃好行保留", recent3 is not null && recent3.PipeName == "pipe-ok", recent3?.PipeName ?? "null");
+    try { File.Delete(regFile); } catch { }
+    SqlHandoffRegistry.UseFile("");
+}
+
 Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链", "制度补齐" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");
