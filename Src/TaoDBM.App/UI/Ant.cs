@@ -139,6 +139,33 @@ public static class Ant
     }
 }
 
+/// <summary>视觉尺规令牌（需求合并稿第十五章，2026-11-19 23:50 老板令）：
+/// 字号六档 / 间距五档 / 圆角三档，界面落码一律取令牌、不再手写零散值。</summary>
+public static class AntTokens
+{
+    /// <summary>字号六档（px 对应 XAML 像素）：说明文字/次要/正文/强调/标题/页面标题。</summary>
+    public const double FontCaption = 11;
+    public const double FontMinor = 12;
+    public const double FontBody = 13;
+    public const double FontEmphasis = 14;
+    public const double FontTitle = 16;
+    public const double FontPage = 20;
+
+    /// <summary>间距五档：紧凑/默认/宽松/区块/页面留白。</summary>
+    public const double SpaceXs = 4;
+    public const double SpaceSm = 8;
+    public const double SpaceMd = 12;
+    public const double SpaceLg = 16;
+    public const double SpaceXl = 24;
+
+    /// <summary>圆角三档：直角感/默认/卡片。</summary>
+    public const double RadiusSm = 2;
+    public const double RadiusMd = 4;
+    public const double RadiusLg = 6;
+
+    public static CornerRadius CornerRadius(double token) => new(token);
+}
+
 /// <summary>内容弹窗扩展：弹层挂在窗口内容之外，继承不到根元素明暗象，须在显示前显式钉定。</summary>
 public static class ContentDialogExt
 {

@@ -106,6 +106,15 @@ public static class SettingsDialog
             catch (Exception ex) { Core.AppLog.Write($"通知设置保存失败: {ex.Message}"); }
         }
 
+        // .sql 文件打开方式（需求合并稿第十六章）：仅装载脚本不执行；关闭后拖入/双击走当前窗口
+        var chkSqlLatest = new CheckBox
+        {
+            Content = "双击 / 拖入 .sql 文件时装载到最近激活窗口",
+            IsChecked = Core.SqlOpenPrefs.Load(),
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+
+        panel.Children.Add(chkSqlLatest);
         panel.Children.Add(new TextBlock
         {
             Text = "设置保存即生效。主题、连接、收藏等沿用各自入口。",
@@ -126,6 +135,7 @@ public static class SettingsDialog
         {
             vm.SaveCommand.Execute(null);
             SaveNotify();
+            Core.SqlOpenPrefs.Save(chkSqlLatest.IsChecked == true);
         }
     }
 

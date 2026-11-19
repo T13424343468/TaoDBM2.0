@@ -77,7 +77,11 @@ public partial class MainWindow : Window
         LoadConnections();
         AddWelcomeTab();
         RestoreSession();
-        Closed += (_, _) => { SaveSession(); SshTunnel.StopAll(); };
+        ApplyWindowState();
+        SizeChanged += EnforceMinimumSize;
+        EnableSqlDrop();
+        DispatcherQueue.TryEnqueue(LoadSqlFromCommandLine);
+        Closed += (_, _) => { SaveWindowState(); SaveSession(); SshTunnel.StopAll(); };
     }
 
     /// <summary>系统通知点击跳转：回主窗并打开对应功能入口（P4）。路由键见 ToastCenter.Route。</summary>

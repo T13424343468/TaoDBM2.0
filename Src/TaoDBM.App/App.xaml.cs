@@ -10,6 +10,9 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        // .sql 三件套：GBK 编码需先注册 CodePages 提供者（.NET Core 默认不带）；失败不拖垮启动（回落 UTF-8 口径）
+        try { System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance); }
+        catch (Exception ex) { Core.AppLog.Write($"编码提供者注册失败: {ex.Message}"); }
         UnhandledException += (_, e) =>
         {
             CrashLog.Write($"UnhandledException: {e.Message}\n{e.Exception}");
@@ -21,6 +24,21 @@ public partial class App : Application
     {
         try
         {
+            // .sql 双击打开：单实例重定向——已有实例时交接文件路径并退出本进程（进最近激活窗口，只装载不执行）
+            var inst = Microsoft.Windows.AppLifecycle.AppInstance.FindOrRegisterForKey("taodbm-main");
+            if (inst.IsRunning)
+            {
+                try
+                {
+                    WriteSqlHandoff();
+                    _ = inst.RedirectActivationToAsync(Microsoft.Windows.AppLifecycle.AppInstance.GetActivatedEventArgs());
+                }
+                catch (Exception ex) { Core.AppLog.Write($".sql 重定向: {ex.Message}"); }
+                Current.Exit();
+                return;
+            }
+            inst.Activated += (_, _) => (Shell as MainWindow)?.ReceiveSqlHandoff();
+
             // Tao 系列存储默认 D 盘：首次运行把旧 C 盘数据迁过去（已有同名文件不覆盖）
             Core.TaoPaths.MigrateLegacyFiles();
             // P4：系统通知注册（官方流程：先挂 NotificationInvoked 再 Register）。注册失败只进日志，不拖垮启动。
@@ -47,6 +65,19 @@ public partial class App : Application
             CrashLog.Write($"OnLaunched: {ex.Message}\n{ex}");
             throw;
         }
+    }
+    /// <summary>把命令行里的 .sql 路径写交接文件（重定向实例→主实例）。</summary>
+    private static void WriteSqlHandoff()
+    {
+        try
+        {
+            var files = Environment.GetCommandLineArgs().Skip(1)
+                .Where(a => a.Length > 0 && a[0] != '-' && System.IO.Path.GetExtension(a).Equals(".sql", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (files.Count == 0) return;
+            System.IO.File.WriteAllText(Core.TaoPaths.FilePath("sqlopen.handoff"), string.Join('\n', files));
+        }
+        catch (Exception ex) { Core.AppLog.Write($".sql 交接写入: {ex.Message}"); }
     }
 }
 

@@ -166,6 +166,7 @@ public class WorkTab : Grid
         AddAccelerator(Windows.System.VirtualKey.F5, Windows.System.VirtualKeyModifiers.None, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Enter, Windows.System.VirtualKeyModifiers.Control, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Space, Windows.System.VirtualKeyModifiers.Control, ShowComplete);
+        if (mode == WorkMode.Query) AddAccelerator(Windows.System.VirtualKey.S, Windows.System.VirtualKeyModifiers.Control, () => _ = SaveSourceFileAsync());
 
         _dbBox.ItemsSource = new List<string> { string.IsNullOrEmpty(db) ? "(默认)" : db };
         _dbBox.SelectedIndex = 0;
@@ -186,6 +187,58 @@ public class WorkTab : Grid
         var acc = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key, Modifiers = mod };
         acc.Invoked += (s, e) => { e.Handled = true; action(); };
         KeyboardAccelerators.Add(acc);
+    }
+
+    /// <summary>归属 .sql 文件路径（需求合并稿第一章之二：Ctrl+S 覆盖保存用；空=未归属，另存）。</summary>
+    public string SourceFile { get; set; } = "";
+
+    /// <summary>Ctrl+S：有归属文件直接覆盖（UTF-8）；否则另存对话框（UTF-8 默认，可 BOM / GBK）。只写文件不执行。</summary>
+    private async Task SaveSourceFileAsync()
+    {
+        if (_mode != WorkMode.Query) { _messageBox.Text = "表数据页没有可保存的 SQL。"; return; }
+        try
+        {
+            var sql = EditorText;
+            if (SourceFile.Length > 0)
+            {
+                Core.SqlFileIo.Save(SourceFile, sql);
+                _messageBox.Text = $"已保存到 {SourceFile}";
+                return;
+            }
+
+            var picker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = "未命名.sql",
+            };
+            picker.FileTypeChoices.Add("SQL 文件", new List<string> { ".sql" });
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) return;
+
+            // 编码选择：UTF-8（默认）/ UTF-8(BOM) / GBK
+            var encBox = new ComboBox { MinWidth = 200, SelectedIndex = 0 };
+            encBox.Items.Add("UTF-8");
+            encBox.Items.Add("UTF-8（带 BOM）");
+            encBox.Items.Add("GBK");
+            var dlg = new ContentDialog
+            {
+                Title = "保存编码",
+                Content = encBox,
+                PrimaryButtonText = "保存",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = _owner.Content.XamlRoot,
+            };
+            if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
+            Core.SqlFileIo.Save(file.Path, sql, gbk: encBox.SelectedIndex == 2, bom: encBox.SelectedIndex == 1);
+            SourceFile = file.Path;
+            _messageBox.Text = $"已另存到 {file.Path}";
+        }
+        catch (Exception ex)
+        {
+            _messageBox.Text = "保存失败：" + ex.Message;
+        }
     }
 
     private async void RunNow()
