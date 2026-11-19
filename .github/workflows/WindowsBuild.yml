@@ -807,7 +807,7 @@ jobs:
           Write-Host "[MSSQL] SSEI exit=$($dl.ExitCode)"
           if ($dl.ExitCode -ne 0) { Dump-SqlLogs "ssei-download-failed exit=$($dl.ExitCode)"; if (Test-Path env:GITHUB_STEP_SUMMARY) { "SSEI exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY }; Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
           $setup = Get-ChildItem $media -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $setup) { Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
+          if (-not $setup) { Dump-SqlLogs "setup-exe-not-found ssei-exit-0-no-media"; Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
           Write-Host "[MSSQL] setup at $setup"
           $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
           $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
@@ -826,10 +826,10 @@ jobs:
             $probe = Get-Service -Name 'MSSQL$SQLEXPRESS' -ErrorAction SilentlyContinue
             if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
           }
-          if (-not $ready) { Write-Host "::error::sqlexpress service not running after wait"; exit 1 }
+          if (-not $ready) { Dump-SqlLogs "sqlexpress-service-not-ready"; Write-Host "::error::sqlexpress service not running after wait"; exit 1 }
           Write-Host "[MSSQL] service running; connectivity check"
           & sqlcmd -S ".\SQLEXPRESS" -U sa -P $saPass -Q "SELECT @@VERSION" | Out-Host
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::sqlcmd connectivity failed"; exit 1 }
+          if ($LASTEXITCODE -ne 0) { Dump-SqlLogs "sqlcmd-connectivity-failed"; Write-Host "::error::sqlcmd connectivity failed"; exit 1 }
           "MSSQLOK=1" | Add-Content $env:GITHUB_ENV
           "SAPASS=$saPass" | Add-Content $env:GITHUB_ENV
 

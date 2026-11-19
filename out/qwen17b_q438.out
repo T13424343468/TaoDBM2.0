@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题：“用户都是哪一年注册的？”根据表结构，用户表是users，里面有created_at字段，存储的是注册时间。所以问题是要找出所有用户的注册年份。
+
+首先，我需要从users表中获取每个用户的created_at日期，然后提取年份。SQL Server中可以使用YEAR函数来提取年份。查询语句应该选择id、name、city、created_at，然后用YEAR(created_at)来获取年份。不过问题只是问用户都是哪一年注册的，可能需要显示年份，但用户可能希望知道所有用户的年份，所以可能需要将年份作为结果返回。
+
+但问题中的“用户都是哪一年注册的”可能是指所有用户的注册年份，所以需要查询users表中的created_at字段的年份。因此，正确的SQL应该是SELECT YEAR(created_at) FROM users; 或者可能需要显示具体的年份，比如SELECT YEAR(created_at) AS registration_year FROM users;。不过问题可能只需要年份，所以直接使用YEAR函数即可。
+
+但用户可能希望得到所有用户的年份，所以可能需要将年份作为结果返回。不过根据问题描述，可能只需要查询年份，所以正确的SQL应该是SELECT YEAR(created_at) FROM users;。不过需要确认是否需要将年份作为列返回，但问题可能只是需要年份的值，所以直接使用YEAR函数。
+[End thinking]
+
+SELECT YEAR(created_at) FROM users;
+
+[ Prompt: 19.0 t/s | Generation: 6.9 t/s ]
+
+
+Exiting...
