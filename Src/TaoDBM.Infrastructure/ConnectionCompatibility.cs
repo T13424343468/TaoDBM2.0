@@ -125,7 +125,7 @@ public sealed class AdaptiveDbConnection : DbConnection
     public override void EnlistTransaction(Transaction? transaction) => _inner.EnlistTransaction(transaction);
     public override DataTable GetSchema() => _inner.GetSchema();
     public override DataTable GetSchema(string collectionName) => _inner.GetSchema(collectionName);
-    public override DataTable GetSchema(string collectionName, string?[]? restrictionValues) => _inner.GetSchema(collectionName, restrictionValues);
+    public override DataTable GetSchema(string collectionName, string?[]? restrictionValues) => _inner.GetSchema(collectionName, restrictionValues ?? Array.Empty<string>());
     public override event StateChangeEventHandler? StateChange
     {
         add => _inner.StateChange += value;
