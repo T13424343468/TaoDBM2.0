@@ -896,7 +896,7 @@ jobs:
           if (-not $setup) { Dump-SqlLogs "unpack-no-setup-exe unpack-exit=$($up.ExitCode)"; Write-Host "::error::unpack failed or SETUP.EXE not found in $media unpack-exit=$($up.ExitCode)"; exit 1 }
           Write-Host "[MSSQL] setup at $setup"
           Journal "phase=setup-found $setup"
-          $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
+          $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/SECURITYMODE=SQL','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
           $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
           Write-Host "[MSSQL] SETUP exit=$($inst.ExitCode)"
           "PHASE setup-exit=$($inst.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
