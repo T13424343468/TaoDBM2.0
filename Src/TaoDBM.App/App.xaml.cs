@@ -24,20 +24,10 @@ public partial class App : Application
     {
         try
         {
-            // .sql 双击打开：单实例重定向——已有实例时交接文件路径并退出本进程（进最近激活窗口，只装载不执行）
-            var inst = Microsoft.Windows.AppLifecycle.AppInstance.FindOrRegisterForKey("taodbm-main");
-            if (inst.IsRunning)
-            {
-                try
-                {
-                    WriteSqlHandoff();
-                    _ = inst.RedirectActivationToAsync(Microsoft.Windows.AppLifecycle.AppInstance.GetActivatedEventArgs());
-                }
-                catch (Exception ex) { Core.AppLog.Write($".sql 重定向: {ex.Message}"); }
-                Current.Exit();
-                return;
-            }
-            inst.Activated += (_, _) => (Shell as MainWindow)?.ReceiveSqlHandoff();
+            // P-5 拍板（11-19）：多应用实例并行、不做单实例互斥锁——#136 红账移除夜间批次③的单实例重定向
+            // （其用了桌面桥版 AppInstance 实例 API，WinAppSDK 无 IsRunning 且 GetActivatedEventArgs 为静态，编译必红）。
+            // 双击 .sql 由新实例按自身命令行直接装载（MainWindow.SqlLoad 命令行装载段）；
+            // 「进最近激活窗口/实例」的跨实例交接按 P-5 另行批次落码，不在此修红轮顺手实现。
 
             // Tao 系列存储默认 D 盘：首次运行把旧 C 盘数据迁过去（已有同名文件不覆盖）
             Core.TaoPaths.MigrateLegacyFiles();
@@ -66,21 +56,7 @@ public partial class App : Application
             throw;
         }
     }
-    /// <summary>把命令行里的 .sql 路径写交接文件（重定向实例→主实例）。</summary>
-    private static void WriteSqlHandoff()
-    {
-        try
-        {
-            var files = Environment.GetCommandLineArgs().Skip(1)
-                .Where(a => a.Length > 0 && a[0] != '-' && System.IO.Path.GetExtension(a).Equals(".sql", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            if (files.Count == 0) return;
-            System.IO.File.WriteAllText(Core.TaoPaths.FilePath("sqlopen.handoff"), string.Join('\n', files));
-        }
-        catch (Exception ex) { Core.AppLog.Write($".sql 交接写入: {ex.Message}"); }
-    }
 }
-
 /// <summary>崩溃日志：未处理异常与启动失败追加写入 TaoPaths.Root\crash.log（默认 D:\TaoDBMData\TaoDBM\crash.log，D 盘不可用回退 %LOCALAPPDATA%\TaoDBM）。</summary>
 public static class CrashLog
 {
