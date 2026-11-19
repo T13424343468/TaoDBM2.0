@@ -1,3 +1,4 @@
-2026-11-19T11:36:34.1223025Z phase=step-start pwsh=7.6.10
-2026-11-19T11:36:35.2884406Z phase=download-ok size=5841264
-UNCAUGHT: System.Management.Automation.ParameterBindingException: A positional parameter cannot be found that accepts argument '+'.
+2026-11-19T12:07:27.3435795Z phase=step-start pwsh=7.6.9
+2026-11-19T12:07:28.2141445Z phase=download-ok size=5841264
+2026-11-19T12:07:39.0438876Z phase=ssei-started args=/Quiet /Action=Download /MediaType=Core /DestinationPath=C:\SQLMedia
+2026-11-19T12:07:39.0491302Z phase=ssei-exit=-1

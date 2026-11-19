@@ -1,0 +1,12 @@
+===== MSSQL POST-MORTEM run 44517681991 =====
+----- phases journal -----
+  2026-11-19T12:07:27.3435795Z phase=step-start pwsh=7.6.9
+  2026-11-19T12:07:28.2141445Z phase=download-ok size=5841264
+  2026-11-19T12:07:39.0438876Z phase=ssei-started args=/Quiet /Action=Download /MediaType=Core /DestinationPath=C:\SQLMedia
+  2026-11-19T12:07:39.0491302Z phase=ssei-exit=-1
+pwsh: C:\Program Files\PowerShell\7\pwsh.exe
+mssql-evidence.txt exists: True
+C:\SQLMedia exists: False
+SQLEXPRESS service: absent
+recent TEMP logs: NONE in last 30min
+Setup Bootstrap Log absent (SETUP.EXE never ran)
