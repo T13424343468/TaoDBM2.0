@@ -47,7 +47,7 @@ jobs:
       - name: Realistic QA fallback (per-question, parallel feeding)
         shell: bash
         run: |
-          bash Tools/ModelBench/run-cloud-parallel.sh models/Qwen3-1.7B-Q4_K_M.gguf qwen17b 512 4
+          env NOTHINK=1 bash Tools/ModelBench/run-cloud-parallel.sh models/Qwen3-1.7B-Q4_K_M.gguf qwen17b 700 4
           cat Tools/ModelBench/out/run.log
 
       - name: Summarize
