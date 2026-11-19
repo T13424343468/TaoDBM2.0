@@ -297,7 +297,7 @@ public static class RoutinesDialog
                 defBox.Text = rs.Count == 0 || rs[0].Rows.Count == 0
                     ? $"（没有在例程/触发器定义中找到引用「{sel.Name}」的对象）"
                     : string.Join("\n\n" + new string('─', 60) + "\n\n", rs[0].Rows
-                        .Select(r => $"【{r.Length > 1 ? r[1]?.ToString() ?? "" : ""}】{r.Length > 0 ? r[0]?.ToString() ?? "" : ""}\n{r.Length > 2 ? r[2]?.ToString() ?? "" : ""}"));
+                        .Select(r => $"【{(r.Length > 1 ? r[1]?.ToString() ?? "" : "")}】{(r.Length > 0 ? r[0]?.ToString() ?? "" : "")}\n{(r.Length > 2 ? r[2]?.ToString() ?? "" : "")}"));
                 status.Text = rs.Count > 0 ? $"引用查找完成：{rs[0].Rows.Count} 处" : "引用查找完成";
             }
             catch (Exception ex)
