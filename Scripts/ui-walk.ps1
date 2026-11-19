@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern IntPtr SendMessageW(IntPtr hWnd, uint msg, IntPtr wp, IntPtr lp); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -597,7 +597,10 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'export-csv' {
-        # S17 四连死拆步版：每个子动作即时落证据；总耗时守卫 100s，超守卫主动弃步走 allowMiss，不再卡死整链
+        # S17 四连死拆步版 v2（2026-11-20 夜批①）：UIA SetFocus 对该保存对话框必现 1.2s 循环失败（聚焦手段无效，11-19 定谳）。
+        # 改走 Win32 句柄直取：GetClassName 过滤 #32770/Picker 类对话框 → FindWindowExW/GetDlgItem 定位文件名编辑框
+        # → SetWindowTextW 写路径 + IDOK(=1) BM_CLICK 确认，全程零焦点依赖；句柄摸不到再回退键盘导航；
+        # 仍不行由 allowMiss 弃步记 miss 续链（100s 守卫不变）
         $sw17 = [System.Diagnostics.Stopwatch]::StartNew()
         Push-Evidence "S17a start"
         $btn = Find-ElWait @{ automationId = 'work-csv' } 6 $mainRoot
@@ -615,12 +618,40 @@ foreach ($s in $plan.steps) {
           Push-Evidence "S17c dialog-scan-count=$($wins.Count)"
           foreach ($w in $wins) {
             if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
-            if ($w.Current.NativeWindowHandle -ne $handle -and $w.Current.NativeWindowHandle -ne 0) {
+            $h = $w.Current.NativeWindowHandle
+            if ($h -eq $handle -or $h -eq 0) { continue }
+            try {
+              $cn = New-Object System.Text.StringBuilder 256
+              [WinNative]::GetClassNameW($h, $cn, 256) | Out-Null
+              $cls = $cn.ToString()
+              Push-Evidence "S17c class=$cls"
+              if ($cls -notmatch '32770|Picker') { continue }
+              # 句柄直取：经典 #32770 文件名编辑框直挂 Edit；Explorer 风格走 ComboBox 内 Edit
+              $edit = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'Edit', $null)
+              if ($edit -eq [IntPtr]::Zero) {
+                $cb = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'ComboBox', $null)
+                if ($cb -ne [IntPtr]::Zero) { $edit = [WinNative]::FindWindowExW($cb, [IntPtr]::Zero, 'Edit', $null) }
+              }
+              Push-Evidence "S17d edit-found=$($edit -ne [IntPtr]::Zero)"
+              if ($edit -ne [IntPtr]::Zero) {
+                $csvPath = Join-Path $PWD "ui-export-orders.csv"
+                if (-not [WinNative]::SetWindowTextW($edit, $csvPath)) { Push-Evidence "S17d settext-fail" }
+                else {
+                  $ok = [WinNative]::GetDlgItem($h, 1)
+                  Push-Evidence "S17d idok-found=$($ok -ne [IntPtr]::Zero)"
+                  if ($ok -ne [IntPtr]::Zero) {
+                    [WinNative]::SendMessageW($ok, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+                    Push-Evidence "S17d bmclick-sent"
+                    $picked = $true
+                    break
+                  }
+                }
+              }
+              # 键盘导航兜底（原路保留）：前置窗口后路径键入；仍失败则落 allowMiss
               try {
-                Push-Evidence "S17d focus-attempt"
-                $w.SetFocus()
-                Push-Evidence "S17d focused"
-                Start-Sleep -Milliseconds 500
+                Push-Evidence "S17d kbd-nav-attempt"
+                [WinNative]::SetForegroundWindow($h) | Out-Null
+                Start-Sleep -Milliseconds 400
                 [System.Windows.Forms.SendKeys]::SendWait("^a")
                 Push-Evidence "S17d ctrl-a-sent"
                 Start-Sleep -Milliseconds 150
@@ -631,8 +662,8 @@ foreach ($s in $plan.steps) {
                 Push-Evidence "S17d enter-sent"
                 $picked = $true
                 break
-              } catch { Push-Evidence "S17d focus-err" }
-            }
+              } catch { Push-Evidence "S17d kbd-nav-err" }
+            } catch { Push-Evidence "S17d iter-err" }
           }
         } catch { Push-Evidence "S17c scan-err" }
         if (-not $picked) { throw "save picker not handled" }
