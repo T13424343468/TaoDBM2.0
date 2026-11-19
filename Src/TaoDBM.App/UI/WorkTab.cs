@@ -261,15 +261,15 @@ public class WorkTab : Grid
                 {
                     var ledger = new System.Text.StringBuilder("[执行账] sql=");
                     ledger.Append(sql.Replace('\r', ' ').Replace('\n', ' '));
-                    foreach (var r in list)
+                    foreach (var rowItem in list)
                     {
-                        ledger.Append(" | title=").Append(r.Title)
-                              .Append(" rows=").Append(r.Rows.Count)
-                              .Append(" cols=").Append(string.Join("/", r.Columns));
-                        for (int i = 0; i < r.Rows.Count && i < 3; i++)
+                        ledger.Append(" | title=").Append(rowItem.Title)
+                              .Append(" rows=").Append(rowItem.Rows.Count)
+                              .Append(" cols=").Append(string.Join("/", rowItem.Columns));
+                        for (int i = 0; i < rowItem.Rows.Count && i < 3; i++)
                         {
-                            var cells = new string[r.Rows[i].Length];
-                            for (int c = 0; c < r.Rows[i].Length; c++) cells[c] = Convert.ToString(r.Rows[i][c]) ?? "";
+                            var cells = new string[rowItem.Rows[i].Length];
+                            for (int c = 0; c < rowItem.Rows[i].Length; c++) cells[c] = Convert.ToString(rowItem.Rows[i][c]) ?? "";
                             ledger.Append(" row").Append(i).Append('=').Append(string.Join(",", cells));
                         }
                     }
