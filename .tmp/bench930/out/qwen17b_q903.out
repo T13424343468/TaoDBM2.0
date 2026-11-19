@@ -1,0 +1,65 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句。用户的问题是关于每天23:30执行归档存储过程的代理作业安排。首先，我需要理解问题的具体要求。
+
+用户提到的“代理作业安排”可能是指创建一个SQL Server代理的作业，该作业每天在23:30执行一个归档存储过程。但问题中并没有给出具体的存储过程名称或相关细节，比如存储过程的名称、触发条件等。因此，我需要根据现有的信息来构造SQL语句。
+
+首先，我需要确定如何创建一个SQL Server代理作业。SQL Server代理作业通常使用SQL Server Management Studio (SSMS)来创建，但用户可能希望直接生成SQL语句。不过，用户要求只输出一条SQL，所以需要确保生成的SQL能够正确设置作业。
+
+接下来，考虑作业的步骤。归档存储过程可能需要执行一些操作，比如将数据归档到另一个表或文件中。假设存储过程名为ArchiveData，那么作业的步骤可能包括执行这个存储过程。
+
+然后，设置作业的触发时间：每天23:30。这需要在作业的“schedule”部分设置时间。在SQL Server中，这通常通过作业的“schedule”属性来配置，但具体的SQL语句可能需要使用系统存储过程来设置作业。
+
+不过，用户可能希望生成一个具体的SQL语句，可能涉及使用sp_add_job、sp_add_jobstep等存储过程。但需要确保生成的SQL符合语法要求，并且正确设置作业的执行时间和步骤。
+
+需要注意的是，用户可能没有提供具体的存储过程名称，所以可能需要使用占位符，比如@ArchiveProc，或者假设存储过程名称为ArchiveData。但根据问题描述，用户可能希望生成一个通用的SQL语句，或者可能需要假设存储过程名称。
+
+此外，用户提到“代理作业安排”，可能需要创建一个作业，使用SQL Server代理的作业管理界面。因此，生成的SQL需要包含创建作业的步骤，包括设置执行时间、步骤等。
+
+可能的SQL结构如下：
+
+1. 创建作业。
+2. 添加步骤，执行存储过程。
+3. 设置作业的执行时间。
+
+但需要确保生成的SQL正确，例如使用sp_add_job，sp_add_jobstep等存储过程，并正确设置参数。
+
+不过，用户可能希望生成一个具体的SQL语句，可能包括创建作业和步骤的SQL。但
+
+[ Prompt: 19.5 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+Okay, the user is asking for the current time. Let me think. The question is straightforward, but I need to make sure I get the right SQL for that.
+
+Looking at the table structures, the user might be testing if I can retrieve the current date and time. But the tables provided don't have a column that directly stores the current time. The created_at column in the users table is a DATETIME, but that's not a system function. 
+
+Wait, the problem says to write a SQL Server query. The current time in SQL Server can be obtained using the GETDATE() function. That function returns the current date and time. So the query would be SELECT GETDATE() FROM dual; but wait, the user might not need a table. Alternatively, just SELECT GETDATE(); 
+
+But the user said to output only the SQL, no explanations. So the correct SQL is SELECT GETDATE();. That should return the current date and time. I need to make sure there's no other function needed. The user might be testing if I know that GETDATE() is the right function here.
+[End thinking]
+
+SELECT GETDATE()
+
+[ Prompt: 18.5 t/s | Generation: 7.0 t/s ]
+
+
+Exiting...

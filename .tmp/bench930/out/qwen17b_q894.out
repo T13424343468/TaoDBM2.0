@@ -1,0 +1,59 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句。用户的问题是关于安排一个代理作业，每周一早上8点执行归档存储过程。首先，我需要理解问题的具体要求。
+
+首先，用户提到的“归档存储过程”可能是指某个存储过程，比如ARCHIVE_PROCEDURE，但表结构中没有直接提到这个存储过程。不过，可能用户指的是需要执行某个存储过程来归档数据，比如将订单或产品信息归档到另一个表中。但根据表结构，可能需要创建一个作业来定期执行这个存储过程。
+
+接下来，用户需要的是一个SQL Server的代理作业安排。在SQL Server中，代理作业（SQL Server Agent jobs）的安排通常通过SQL Server Management Studio（SSMS）进行配置，但用户可能需要生成一个SQL脚本来创建这个作业。不过，用户的问题可能更倾向于生成一个作业的定义，而不是实际执行的SQL。
+
+但用户要求只输出一条SQL，所以可能需要生成一个作业的定义语句。不过，SQL Server的作业定义通常是在SSMS中创建，但可能用户希望用T-SQL来创建作业。不过，SQL Server Agent的作业定义通常使用EXECUTE AS或类似命令，但更常见的是使用系统存储过程来创建作业。
+
+不过，用户的问题可能更简单，比如创建一个作业，每周一早上8点执行某个存储过程。但需要确定存储过程的名称。假设存储过程名为ARCHIVE_PROCEDURE，那么需要创建一个作业，设置执行时间，以及指定存储过程。
+
+但用户可能没有提供存储过程的名称，所以可能需要假设一个名称，或者可能问题中的“归档存储过程”是某个特定的存储过程，比如可能在表结构中没有提到，但用户希望创建一个作业来执行它。
+
+不过，根据用户的问题，可能需要生成一个SQL脚本，创建一个作业，每周一早上8点执行某个存储过程。但需要确定存储过程的名称，可能用户希望使用一个假设的存储过程，比如ARCHIVE_PROCEDURE。
+
+因此，可能的SQL语句是创建一个作业，使用系统存储过程来安排作业。例如，使用sp_add_job，sp_add_jobstep等命令。
+
+但用户可能希望生成一个具体的SQL脚本，例如：
+
+EXEC sp_add_job @job_name = 'ArchiveJob', @step_name = 'ArchiveStep', @enabled = 1, @
+
+[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...

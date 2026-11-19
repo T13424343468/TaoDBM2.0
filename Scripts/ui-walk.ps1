@@ -597,31 +597,53 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'export-csv' {
+        # S17 四连死拆步版：每个子动作即时落证据；总耗时守卫 100s，超守卫主动弃步走 allowMiss，不再卡死整链
+        $sw17 = [System.Diagnostics.Stopwatch]::StartNew()
+        Push-Evidence "S17a start"
         $btn = Find-ElWait @{ automationId = 'work-csv' } 6 $mainRoot
+        Push-Evidence "S17a btn-found=$($null -ne $btn)"
         if ($null -eq $btn) { throw "work-csv not found" }
+        if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before invoke" }
         Invoke-El $btn
-        Start-Sleep -Seconds 4
+        Push-Evidence "S17b invoked"
+        Start-Sleep -Seconds 2
+        if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before dialog scan" }
         $picked = $false
         try {
+          Push-Evidence "S17c dialog-scan-start"
           $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+          Push-Evidence "S17c dialog-scan-count=$($wins.Count)"
           foreach ($w in $wins) {
+            if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
             if ($w.Current.NativeWindowHandle -ne $handle -and $w.Current.NativeWindowHandle -ne 0) {
               try {
+                Push-Evidence "S17d focus-attempt"
                 $w.SetFocus()
+                Push-Evidence "S17d focused"
                 Start-Sleep -Milliseconds 500
                 [System.Windows.Forms.SendKeys]::SendWait("^a")
+                Push-Evidence "S17d ctrl-a-sent"
                 Start-Sleep -Milliseconds 150
                 [System.Windows.Forms.SendKeys]::SendWait((Escape-SendKeys (Join-Path $PWD "ui-export-orders.csv")))
+                Push-Evidence "S17d path-sent"
                 Start-Sleep -Milliseconds 300
                 [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Push-Evidence "S17d enter-sent"
                 $picked = $true
                 break
-              } catch { }
+              } catch { Push-Evidence "S17d focus-err" }
             }
           }
-        } catch { }
+        } catch { Push-Evidence "S17c scan-err" }
         if (-not $picked) { throw "save picker not handled" }
-        Start-Sleep -Seconds 3
+        $csvPath = Join-Path $PWD "ui-export-orders.csv"
+        $fileOk = $false
+        for ($i = 0; $i -lt 15; $i++) {
+          if (Test-Path $csvPath) { $fileOk = $true; break }
+          Start-Sleep -Seconds 1
+        }
+        Push-Evidence "S17e file=$fileOk"
+        if (-not $fileOk) { Log "S17 export file missing after 15s: $csvPath" }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {

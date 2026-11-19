@@ -752,18 +752,43 @@ jobs:
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $saPass = "Ta0DBM-ui!42"
           # choco sqlserver-express 在 #101/#103 连续两次失败，改官方介质直装：SSEI 引导器静默下载 Core 介质后 SETUP.EXE 全装
+          # 四连败后补全取证：失败点全部转储 SSEI/SETUP 日志与退出码，禁止再盲赌
+          function Dump-SqlLogs([string]$tag) {
+            Write-Host "[MSSQL-DUMP] ===== $tag ====="
+            $cutoff = (Get-Date).AddMinutes(-20)
+            Get-ChildItem $env:TEMP -Filter *.log -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $cutoff } | ForEach-Object {
+              Write-Host "[MSSQL-DUMP] ----- $($_.Name) ($($_.Length) bytes) -----"
+              Get-Content $_.FullName -TotalCount 120 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+            }
+            if (Test-Path 'C:\SQLMedia') { Get-ChildItem 'C:\SQLMedia' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 30 | ForEach-Object { Write-Host "[MSSQL-DUMP] media: $($_.FullName)" } }
+          }
           $boot = "$env:TEMP\SQL2019-SSEI-Expr.exe"
-          Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -OutFile $boot -UseBasicParsing
-          if (-not (Test-Path $boot) -or (Get-Item $boot).Length -lt 1MB) { Write-Host "::error::mssql bootstrapper download failed"; exit 1 }
+          $dlOk = $false
+          for ($tryN = 1; $tryN -le 2; $tryN++) {
+            try {
+              Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -OutFile $boot -UseBasicParsing -ErrorAction Stop
+              if ((Test-Path $boot) -and (Get-Item $boot).Length -ge 1MB) { $dlOk = $true; break }
+            } catch { Write-Host "::warning::bootstrapper download attempt $tryN failed: $($_.Exception.Message)" }
+            Start-Sleep -Seconds 5
+          }
+          if (-not $dlOk) { Dump-SqlLogs "bootstrapper-download-failed"; Write-Host "::error::mssql bootstrapper download failed"; exit 1 }
+          Write-Host "[MSSQL] bootstrapper size=$((Get-Item $boot).Length) bytes"
           $media = "C:\SQLMedia"
           $dl = Start-Process -FilePath $boot -ArgumentList '/Quiet','/Action=Download','/MediaType=Core','/DestinationPath=' + $media -Wait -PassThru
-          if ($dl.ExitCode -ne 0) { Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
+          Write-Host "[MSSQL] SSEI exit=$($dl.ExitCode)"
+          if ($dl.ExitCode -ne 0) { Dump-SqlLogs "ssei-download-failed"; Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
           $setup = Get-ChildItem $media -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
           if (-not $setup) { Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
           Write-Host "[MSSQL] setup at $setup"
           $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
           $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
-          if ($inst.ExitCode -ne 0) { Write-Host "::error::mssql install failed exit=$($inst.ExitCode)"; exit 1 }
+          Write-Host "[MSSQL] SETUP exit=$($inst.ExitCode)"
+          if ($inst.ExitCode -ne 0) {
+            $summary = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log' -Recurse -Filter Summary.txt -ErrorAction SilentlyContinue | Select-Object -Last 1
+            if ($summary) { Write-Host "[MSSQL-DUMP] Summary.txt ($($summary.FullName)):"; Get-Content $summary.FullName -TotalCount 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" } }
+            Dump-SqlLogs "setup-failed"
+            Write-Host "::error::mssql install failed exit=$($inst.ExitCode)"; exit 1
+          }
           # 实例名 SQL EXPRESS；服务就绪探测
           $ready = $false
           for ($i = 0; $i -lt 36; $i++) {
