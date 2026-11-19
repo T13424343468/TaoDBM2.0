@@ -757,6 +757,7 @@ jobs:
             # 制度四.7：定因包必须落到可读处——同时进步骤摘要（公开运行页免凭据可读），不再只进作业日志
             $lines = [System.Collections.Generic.List[string]]::new()
             $lines.Add("===== MSSQL $tag =====")
+            if (Test-Path "$env:GITHUB_WORKSPACE\mssql-phases.txt") { $lines.Add("----- phases journal -----"); Get-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" -ErrorAction SilentlyContinue | ForEach-Object { $lines.Add("  $_") } }
             $cutoff = (Get-Date).AddMinutes(-20)
             Get-ChildItem $env:TEMP -Filter *.log -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $cutoff } | ForEach-Object {
               $lines.Add("----- $($_.Name) ($($_.Length) bytes) -----")
@@ -776,7 +777,9 @@ jobs:
               git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
               git fetch --depth 1 origin ui-walk-mssql-latest 2>$null
               if ($LASTEXITCODE -eq 0) { git checkout -B ui-walk-mssql-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-walk-mssql-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-              Copy-Item "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Destination . -Force -ErrorAction Stop
+              $srcEv = "$env:GITHUB_WORKSPACE\mssql-evidence.txt"
+              $dstEv = Join-Path (Get-Location) "mssql-evidence.txt"
+              if ((Test-Path $srcEv) -and (Test-Path $dstEv) -and ((Get-Item $srcEv).FullName -eq (Get-Item $dstEv).FullName)) { Write-Host "[MSSQL-DUMP] evidence already at repo root; skip copy" } else { Copy-Item $srcEv -Destination . -Force -ErrorAction Stop }
               git add -A
               git commit --allow-empty -m "mssql-evidence inline dump run ${{ github.run_id }}" | Out-Null
               git push origin ui-walk-mssql-latest --force
@@ -786,14 +789,20 @@ jobs:
           # #119 定谳前置：十轮快败零证据，所有 dump 出口均未触发 => 脚本本体可能从未跑起来。
           # 入口标记 + 全局 trap 兜底：任何语句级终止都会落摘要并出定因包，匿名可读
           "mssql install STEP-START pwsh=$($PSVersionTable.PSVersion) $(Get-Date -Format o)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          # 阶段日志：每步落文件（#120 定谳经验：摘要匿名不可读，证据文件才是可靠通道）
+          function Journal([string]$m) { Write-Host "[MSSQL-J] $m"; Add-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" -Value "$((Get-Date).ToUniversalTime().ToString('o')) $m" -ErrorAction SilentlyContinue }
           trap {
             "mssql install UNCAUGHT: $($_.Exception.GetType().FullName): $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
             if ($_.InvocationInfo) { "at $($_.InvocationInfo.PositionMessage)" | Add-Content $env:GITHUB_STEP_SUMMARY }
             Dump-SqlLogs "uncaught-trap"
+            "UNCAUGHT: $($_.Exception.GetType().FullName): $($_.Exception.Message)" | Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -ErrorAction SilentlyContinue
+            if ($_.InvocationInfo) { "at $($_.InvocationInfo.PositionMessage)" | Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -ErrorAction SilentlyContinue }
+            "UNCAUGHT: $($_.Exception.GetType().FullName): $($_.Exception.Message)" | Add-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" -ErrorAction SilentlyContinue
             break
           }
           $ErrorActionPreference = 'Stop'
           $boot = "$env:TEMP\SQL2019-SSEI-Expr.exe"
+          Journal "phase=step-start pwsh=$($PSVersionTable.PSVersion)"
           $dlOk = $false
           for ($tryN = 1; $tryN -le 2; $tryN++) {
             try {
@@ -824,18 +833,22 @@ jobs:
           }
           Write-Host "[MSSQL] bootstrapper size=$((Get-Item $boot).Length) bytes"
           "PHASE download ok size=$((Get-Item $boot).Length)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Journal "phase=download-ok size=$((Get-Item $boot).Length)"
           $media = "C:\SQLMedia"
           $dl = Start-Process -FilePath $boot -ArgumentList '/Quiet','/Action=Download','/MediaType=Core','/DestinationPath=' + $media -Wait -PassThru
           Write-Host "[MSSQL] SSEI exit=$($dl.ExitCode)"
           "PHASE ssei-exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Journal "phase=ssei-exit=$($dl.ExitCode)"
           if ($dl.ExitCode -ne 0) { Dump-SqlLogs "ssei-download-failed exit=$($dl.ExitCode)"; if (Test-Path env:GITHUB_STEP_SUMMARY) { "SSEI exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY }; Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
           $setup = Get-ChildItem $media -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
           if (-not $setup) { Dump-SqlLogs "setup-exe-not-found ssei-exit-0-no-media"; Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
           Write-Host "[MSSQL] setup at $setup"
+          Journal "phase=setup-found $setup"
           $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
           $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
           Write-Host "[MSSQL] SETUP exit=$($inst.ExitCode)"
           "PHASE setup-exit=$($inst.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Journal "phase=setup-exit=$($inst.ExitCode)"
           if ($inst.ExitCode -ne 0) {
             $summary = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log' -Recurse -Filter Summary.txt -ErrorAction SilentlyContinue | Select-Object -Last 1
             if ($summary) { Write-Host "[MSSQL-DUMP] Summary.txt ($($summary.FullName)):"; Get-Content $summary.FullName -TotalCount 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }; Get-Content $summary.FullName -TotalCount 80 | Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" }
@@ -859,6 +872,7 @@ jobs:
 
       # #119 取证改造：post-mortem 与装库脚本完全隔离——装库脚本哪怕解析失败/进程崩溃，本步照跑，
       # 把机器现场（pwsh/介质/TEMP日志/安装Bootstrap/服务状态）落摘要并直推公开分支，匿名可读
+      # #120 修正：改用 ui-repo 独立推送通道（与收尾步同款，装库步 checkout 切支后本步不受影响）
       - name: mssql post-mortem (always, anonymous-readable)
         if: always()
         shell: pwsh
@@ -866,6 +880,7 @@ jobs:
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $lines = [System.Collections.Generic.List[string]]::new()
           $lines.Add("===== MSSQL POST-MORTEM run ${{ github.run_id }} =====")
+          if (Test-Path "$env:GITHUB_WORKSPACE\mssql-phases.txt") { $lines.Add("----- phases journal -----"); Get-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" -ErrorAction SilentlyContinue | ForEach-Object { $lines.Add("  $_") } }
           $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
           $lines.Add("pwsh: " + $(if ($pwsh) { $pwsh.Source } else { 'MISSING' }))
           $evFile = "$env:GITHUB_WORKSPACE\mssql-evidence.txt"
@@ -893,10 +908,17 @@ jobs:
             $lines | Add-Content $env:GITHUB_STEP_SUMMARY
             Add-Content $env:GITHUB_STEP_SUMMARY '```'
           }
-          git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch --depth 1 origin ui-walk-mssql-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-walk-mssql-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-walk-mssql-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          if ($LASTEXITCODE -eq 0) { git checkout -B ui-walk-mssql-latest FETCH_HEAD | Out-Null } else { git checkout --orphan ui-walk-mssql-latest | Out-Null; git rm -rf . | Out-Null }
           Set-Content -Path "postmortem-$($env:GITHUB_RUN_ID).txt" -Value $lines -Encoding utf8
+          if (Test-Path "$env:GITHUB_WORKSPACE\mssql-phases.txt") { Copy-Item "$env:GITHUB_WORKSPACE\mssql-phases.txt" -Destination . -Force -ErrorAction SilentlyContinue }
+          if (Test-Path "$env:GITHUB_WORKSPACE\mssql-evidence.txt") { Copy-Item "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Destination . -Force -ErrorAction SilentlyContinue }
           git add -A 2>$null
           git commit --allow-empty -m "mssql postmortem run ${{ github.run_id }}" | Out-Null
           git push origin ui-walk-mssql-latest --force
@@ -992,6 +1014,7 @@ jobs:
           if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
           Copy-Item mssql-evidence.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\mssql-evidence.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\mssql-phases.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
