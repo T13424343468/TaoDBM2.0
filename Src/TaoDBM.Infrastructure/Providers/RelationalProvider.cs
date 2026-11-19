@@ -228,6 +228,44 @@ public abstract class RelationalProvider : IDbProvider
 
     private static bool reader_HadRows(QueryResult qr) => qr.Columns.Count > 0;
 
+    /// <summary>单语句执行：不经 SqlSplitter 拆分，供含分号的例程体（BEGIN…END）等整段脚本使用。</summary>
+    public virtual Task<QueryResult> ExecuteSingle(string db, string sql) => Task.Run(async () =>
+    {
+        var qr = new QueryResult { Title = sql.Length > 60 ? sql[..60] + "…" : sql };
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await using var c = Open(db);
+        await c.OpenAsync();
+        await using var cmd = c.CreateCommand();
+        cmd.CommandText = sql;
+        try
+        {
+            var reader = await cmd.ExecuteReaderAsync();
+            try
+            {
+                if (reader.FieldCount > 0)
+                {
+                    for (int i = 0; i < reader.FieldCount; i++) qr.Columns.Add(reader.GetName(i));
+                    while (await reader.ReadAsync())
+                    {
+                        if (qr.Rows.Count >= 5000) { qr.Message += "（结果超过 5000 行，已截断显示）"; break; }
+                        var row = new object[reader.FieldCount];
+                        reader.GetValues(row);
+                        qr.Rows.Add(row);
+                    }
+                }
+                Safe.Run(() => qr.Affected = reader.RecordsAffected, "读取受影响行数");
+            }
+            finally { await reader.DisposeAsync(); }
+        }
+        catch (Exception ex)
+        {
+            qr.Message = "错误：" + ex.Message;
+        }
+        sw.Stop();
+        qr.Elapsed = sw.Elapsed;
+        return qr;
+    });
+
     public Task<QueryResult> Browse(string db, string table, int offset, int limit) => Task.Run(async () =>
     {
         var qr = new QueryResult { Title = table };

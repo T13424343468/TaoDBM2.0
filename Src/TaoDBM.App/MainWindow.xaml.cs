@@ -484,6 +484,7 @@ public partial class MainWindow : Window
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
                 Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
+                Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 break;
             case NodeKind.Table:
@@ -502,6 +503,13 @@ public partial class MainWindow : Window
                     Item("打开到查询窗口", (_, _) => _ = OpenObjectToQuery(info));
                 else
                     Item("详情", (_, _) => _ = InfoAsync(info.RowText.Length > 0 ? info.RowText : "（无详情）"));
+                if (info.Category == "routines")
+                    Item(RoutineManager.DebugSupported(info.Profile.Engine) ? "断点调试" : "断点调试（v2.0 暂不支持）",
+                        async (_, _) =>
+                        {
+                            if (!RoutineManager.DebugSupported(info.Profile.Engine)) { await InfoAsync(RoutineManager.DebugUnsupportedText); return; }
+                            await OpenRoutineDebug(info);
+                        });
                 break;
         }
         fly.ShowAt(e.OriginalSource as FrameworkElement ?? ConnTree);
@@ -783,10 +791,7 @@ public partial class MainWindow : Window
                 NodeKind.Database => (info.Name, ""),
                 NodeKind.Table => (info.Db, DefaultSnippet(info)),
                 NodeKind.ObjectDef => (info.Db, ""),
-                _ => (info.Provider?.IsNoSql == true ? "" :
-                      info.Profile.Engine == DbEngine.SQLite
-                          ? (info.Profile.Database.Length > 0 ? "main" : "")
-                          : info.Profile.Database, ""),
+                _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
             };
             if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
             if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
@@ -968,6 +973,16 @@ public partial class MainWindow : Window
         var ddl = await TryReadDefinition(info);
         if (ddl is null) return;
         OpenQueryTab(info, ddl);
+    }
+
+    /// <summary>例程断点调试入口：v2.0 仅 MySQL（2026-11-19 拍板），把调试脚手架打开到查询窗口，过程内中间结果用 SELECT 观测。</summary>
+    private async Task OpenRoutineDebug(NodeInfo info)
+    {
+        if (!RoutineManager.DebugSupported(info.Profile.Engine)) { await InfoAsync(RoutineManager.DebugUnsupportedText); return; }
+        var kind = info.RowText.Contains("FUNCTION", StringComparison.OrdinalIgnoreCase)
+            ? RoutineKind.Function
+            : RoutineKind.Procedure;
+        OpenQueryTab(info, RoutineManager.DebugScript(info.Profile.Engine, kind, info.Name));
     }
 
     private async Task InfoAsync(string msg)

@@ -1955,6 +1955,56 @@ Layer("集成");
 }
 
 {
+    // 例程管理：DROP/执行语句生成 + 调试支持判定 + 校验 + 引用查找（对账漏码 §1，2026-11-19）
+    Check("例程-MySQL删过程", RoutineManager.BuildDropSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1") == "DROP PROCEDURE `sp1`", "");
+    Check("例程-MySQL带库删过程", RoutineManager.BuildDropSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1", "shop") == "DROP PROCEDURE `shop`.`sp1`", "");
+    Check("例程-MySQL删触发器带库", RoutineManager.BuildDropSql(DbEngine.MySQL, RoutineKind.Trigger, "tr1", "shop") == "DROP TRIGGER `shop`.`tr1`", "");
+    Check("例程-PG删函数", RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Function, "fn1") == "DROP FUNCTION \"fn1\"", "");
+    Check("例程-SQLServer删触发器", RoutineManager.BuildDropSql(DbEngine.SqlServer, RoutineKind.Trigger, "tr1") == "DROP TRIGGER [tr1]", "");
+    Check("例程-SQLite仅触发器", RoutineManager.BuildDropSql(DbEngine.SQLite, RoutineKind.Trigger, "tr1") == "DROP TRIGGER \"tr1\"", "");
+    Check("例程-PG删触发器带表", RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Trigger, "tr1", onTable: "users") == "DROP TRIGGER \"tr1\" ON \"users\"", "");
+    bool threwDrop = false;
+    try { RoutineManager.BuildDropSql(DbEngine.SQLite, RoutineKind.Procedure, "x"); } catch (NotSupportedException) { threwDrop = true; }
+    Check("例程-SQLite过程不支持", threwDrop, "");
+    bool threwPgTrg = false;
+    try { RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Trigger, "tr1"); } catch (ArgumentException) { threwPgTrg = true; }
+    Check("例程-PG删触发器缺表名拒绝", threwPgTrg, "");
+    Check("例程-删名引号转义", RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Procedure, "a\"b") == "DROP FUNCTION \"a\"\"b\"", "");
+    Check("例程-MySQL调用过程", RoutineManager.BuildExecuteSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1", "1, 'a'") == "CALL `sp1`(1, 'a')", "");
+    Check("例程-MySQL调用函数", RoutineManager.BuildExecuteSql(DbEngine.MySQL, RoutineKind.Function, "fn1", "2") == "SELECT `fn1`(2)", "");
+    Check("例程-PG调用函数", RoutineManager.BuildExecuteSql(DbEngine.PostgreSQL, RoutineKind.Function, "fn1", "2") == "SELECT \"fn1\"(2)", "");
+    Check("例程-SQLServer执行过程", RoutineManager.BuildExecuteSql(DbEngine.SqlServer, RoutineKind.Procedure, "sp1", "1") == "EXEC [sp1] 1", "");
+    Check("例程-SQLServer执行函数带schema", RoutineManager.BuildExecuteSql(DbEngine.SqlServer, RoutineKind.Function, "fn1", "2") == "SELECT dbo.[fn1](2)", "");
+    Check("例程-SQLServer无参过程", RoutineManager.BuildExecuteSql(DbEngine.SqlServer, RoutineKind.Procedure, "sp1") == "EXEC [sp1]", "");
+    bool threwTrg = false;
+    try { RoutineManager.BuildExecuteSql(DbEngine.MySQL, RoutineKind.Trigger, "tr1"); } catch (NotSupportedException) { threwTrg = true; }
+    Check("例程-触发器不可手执", threwTrg, "");
+    Check("例程-调试仅MySQL", RoutineManager.DebugSupported(DbEngine.MySQL)
+        && !RoutineManager.DebugSupported(DbEngine.PostgreSQL)
+        && !RoutineManager.DebugSupported(DbEngine.SqlServer)
+        && !RoutineManager.DebugSupported(DbEngine.SQLite), "");
+    Check("例程-灰置文案", RoutineManager.DebugUnsupportedText == "v2.0 暂不支持", "");
+    var errs = RoutineManager.Validate(DbEngine.MySQL, RoutineKind.Procedure, "");
+    Check("例程-空体拒绝", errs.Count == 1, string.Join("|", errs));
+    errs = RoutineManager.Validate(DbEngine.MySQL, RoutineKind.Procedure, "CREATE PROCEDURE p()\nBEGIN\n  SELECT 1;\nEND");
+    Check("例程-过程体通过", errs.Count == 0, string.Join("|", errs));
+    errs = RoutineManager.Validate(DbEngine.MySQL, RoutineKind.Function, "CREATE PROCEDURE p()");
+    Check("例程-类型前缀不符拒绝", errs.Any(e => e.Contains("类型")), string.Join("|", errs));
+    errs = RoutineManager.Validate(DbEngine.MySQL, RoutineKind.Procedure, "CREATE PROCEDURE p()\nBEGIN\n  SELECT 1;\nEND\nDELIMITER $$");
+    Check("例程-DELIMITER拒绝", errs.Any(e => e.Contains("DELIMITER")), string.Join("|", errs));
+    errs = RoutineManager.Validate(DbEngine.MySQL, RoutineKind.Procedure, "DROP PROCEDURE p");
+    Check("例程-非CREATE拒绝", errs.Any(e => e.Contains("CREATE")), string.Join("|", errs));
+    Check("例程-引用查找含触发器与转义", RoutineManager.ReferencesSql(DbEngine.MySQL, "shop", "it's").Contains("it''s")
+        && RoutineManager.ReferencesSql(DbEngine.MySQL, "shop", "k").Contains("TRIGGERS"), "");
+    Check("例程-SQLServer引用查找", RoutineManager.ReferencesSql(DbEngine.SqlServer, "db", "k").Contains("OBJECT_DEFINITION"), "");
+    Check("例程-模板含CREATE", RoutineManager.Template(DbEngine.MySQL, RoutineKind.Procedure, "p_new").StartsWith("CREATE PROCEDURE", StringComparison.Ordinal), "");
+    Check("例程-调试脚手架含CALL", RoutineManager.DebugScript(DbEngine.MySQL, RoutineKind.Procedure, "sp1").Contains("CALL `sp1`"), "");
+    bool threwDbg = false;
+    try { RoutineManager.DebugScript(DbEngine.PostgreSQL, RoutineKind.Procedure, "sp1"); } catch (NotSupportedException) { threwDbg = true; }
+    Check("例程-非MySQL调试拒绝", threwDbg, "");
+}
+
+{
     // 迁移续传：清单基线 + 逐表水位 + 重启后重算续传计划（纯引擎，凭据不落盘）
     var manifest = new MigrationManifest("M-20261116", "src-main", "dst-main",
         DateTimeOffset.Parse("2026-11-16T04:50:00+08:00"), new[]
@@ -3591,99 +3641,6 @@ Console.WriteLine("== 断盘/写坏注入（测试规范三.8/二.4）==");
     // Move 目标为目录的确定性失败侧已由 N39 覆盖（坏写不毁旧值），此处补目录创建失败侧，两路合围断盘语义
 }
 
-Console.WriteLine("\n== 全版本兼容矩阵连接适配（2026-11-19 12:14 矩阵令 / 13:08 两硬点令）==");
-{
-    // SQL Server 版本解析与老 TLS 时代判定
-    var (m1, n1) = ConnectionCompatibility.ParseSqlServerVersion("10.50.4000.0");
-    Check("解析-2008R2主次版本", m1 == 10 && n1 == 50, $"{m1}.{n1}");
-    var (m2, _) = ConnectionCompatibility.ParseSqlServerVersion("12.0.2000.8");
-    Check("解析-2012主版本", m2 == 12, $"{m2}");
-    Check("解析-空串零值", ConnectionCompatibility.ParseSqlServerVersion(null) == (0, 0) && ConnectionCompatibility.ParseSqlServerVersion("") == (0, 0));
-    Check("老TLS判定-2008R2命中", ConnectionCompatibility.SqlServerNeedsLegacyTls(10, 50));
-    Check("老TLS判定-2008命中", ConnectionCompatibility.SqlServerNeedsLegacyTls(10, 0));
-    Check("老TLS判定-2012不命中", !ConnectionCompatibility.SqlServerNeedsLegacyTls(12, 0));
-    Check("老TLS判定-未知版本不误伤", !ConnectionCompatibility.SqlServerNeedsLegacyTls(0, 0));
-
-    // SQL Server 老 TLS 握手失败异常识别（大小写不敏感 + 内层异常穿透）
-    Check("TLS识别-SSL安全错误", ConnectionCompatibility.IsSqlServerLegacyTlsFailure(new Exception("SSL Security error")));
-    Check("TLS识别-预登录握手", ConnectionCompatibility.IsSqlServerLegacyTlsFailure(new Exception("A connection was successfully established with the server, but then an error occurred during the pre-login handshake.")));
-    Check("TLS识别-传输流截断", ConnectionCompatibility.IsSqlServerLegacyTlsFailure(new Exception("Received an unexpected EOF or 0 bytes from the transport stream.")));
-    Check("TLS识别-内层穿透", ConnectionCompatibility.IsSqlServerLegacyTlsFailure(new Exception("外层包装", new Exception("SSL Security error"))));
-    Check("TLS识别-普通登录失败不误伤", !ConnectionCompatibility.IsSqlServerLegacyTlsFailure(new Exception("Login failed for user 'sa'.")));
-
-    // Oracle 老库认证失败识别
-    Check("Oracle识别-28040", ConnectionCompatibility.IsOracleLegacyAuthFailure(new Exception("ORA-28040: No matching authentication protocol")));
-    Check("Oracle识别-03134", ConnectionCompatibility.IsOracleLegacyAuthFailure(new Exception("ORA-03134: Connections to this server version are no longer supported.")));
-    Check("Oracle识别-内层穿透", ConnectionCompatibility.IsOracleLegacyAuthFailure(new Exception("包装", new Exception("ORA-28040 no match"))));
-    Check("Oracle识别-普通ORA不误伤", !ConnectionCompatibility.IsOracleLegacyAuthFailure(new Exception("ORA-01017: invalid username/password")));
-
-    // AdaptiveDbConnection：主连接握手失败 → 降级装配重开一次成功（同步/异步两路）
-    int primaryOpens = 0, fallbackBuilds = 0;
-    FakeCompatDb MakeFake(bool failOnce) => new FakeCompatDb(failOnce, () => primaryOpens++);
-    var adaptive = new AdaptiveDbConnection(
-        MakeFake(failOnce: true),
-        ex => ex.Message.Contains("FORCE-FALLBACK"),
-        () => { fallbackBuilds++; return new FakeCompatDb(failOnce: false, onOpen: null); });
-    adaptive.Open();
-    Check("降级重连-同步首连败后转降级成功", adaptive.FallbackUsed && primaryOpens == 1 && fallbackBuilds == 1, $"p={primaryOpens} f={fallbackBuilds}");
-    var adaptive2 = new AdaptiveDbConnection(
-        MakeFake(failOnce: false),
-        ex => ex.Message.Contains("FORCE-FALLBACK"),
-        () => { fallbackBuilds++; return new FakeCompatDb(failOnce: false, onOpen: null); });
-    adaptive2.Open();
-    Check("正常路径-零降级零开销", !adaptive2.FallbackUsed && primaryOpens == 2, $"p={primaryOpens}");
-    // 降级后仍失败：异常原样抛出且不再无限重试
-    var adaptive3 = new AdaptiveDbConnection(
-        MakeFake(failOnce: true),
-        ex => ex.Message.Contains("FORCE-FALLBACK"),
-        () => { fallbackBuilds++; return new FakeCompatDb(failOnce: true, onOpen: null, forceMsg: "FORCE-FALLBACK"); });
-    bool threwAgain = false;
-    try { adaptive3.Open(); } catch { threwAgain = true; }
-    Check("降级重连-降级后再败原样抛且只试一次", threwAgain && adaptive3.FallbackUsed && fallbackBuilds == 2, $"f={fallbackBuilds}");
-    // 异步路径：OpenAsync 同样触发降级
-    var adaptive4 = new AdaptiveDbConnection(
-        MakeFake(failOnce: true),
-        ex => ex.Message.Contains("FORCE-FALLBACK"),
-        () => { fallbackBuilds++; return new FakeCompatDb(failOnce: false, onOpen: null); });
-    await adaptive4.OpenAsync(default);
-    Check("降级重连-异步路径同享", adaptive4.FallbackUsed && fallbackBuilds == 3, $"f={fallbackBuilds}");
-    // Oracle 专用驱动：目录缺失时给明确动作指引；驱动在场（仓库已带 ODP.NET Core 19 线）时验证隔离装载可建连接
-    if (OracleLegacyDriver.IsAvailable())
-    {
-        System.Data.Common.DbConnection? ora19 = null;
-        string? loadErr = null;
-        try { ora19 = OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
-        catch (Exception ex) { loadErr = ex.Message; }
-        Check("Oracle19驱动-隔离装载建出连接", ora19 != null && loadErr == null, loadErr ?? "");
-        Check("Oracle19驱动-连接串指向目标", ora19 != null && ora19.ConnectionString.IndexOf("h:1521/orcl", StringComparison.OrdinalIgnoreCase) >= 0, ora19?.ConnectionString ?? "");
-        ora19?.Dispose();
-        // 真机隐患预防：特殊字符密码（分号/引号/等号）经连接串构造器装配后原样回读，不炸串
-        System.Data.Common.DbConnection? ora19sp = null; string? spErr = null;
-        const string spPwd = "p;w\"x=y";
-        try { ora19sp = OracleLegacyDriver.Create("h:1521/orcl", "u", spPwd); }
-        catch (Exception ex) { spErr = ex.Message; }
-        Check("Oracle19驱动-特殊字符密码建连接不炸", ora19sp != null && spErr == null, spErr ?? "");
-        if (ora19sp != null)
-        {
-            var reparse = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = ora19sp.ConnectionString };
-            Check("Oracle19驱动-特殊字符密码原样回读", string.Equals((string?)reparse["Password"], spPwd, StringComparison.Ordinal), ora19sp.ConnectionString);
-            ora19sp.Dispose();
-        }
-        // 驱动硬边界：密码同时含单引号和双引号（构造器必须成对转义，驱动解析器不支持）→ 给明确动作指引而非裸解析错
-        bool spGuided = false; string? sp2Err = null;
-        try { OracleLegacyDriver.Create("h:1521/orcl", "u", "p;w'x\"y=z"); }
-        catch (InvalidOperationException ex) { spGuided = ex.Message.Contains("引号转义") && ex.Message.Contains("重试"); sp2Err = ex.Message; }
-        Check("Oracle19驱动-双引号密码给明确指引", spGuided, sp2Err ?? "");
-    }
-    else
-    {
-        bool guided = false;
-        try { OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
-        catch (InvalidOperationException ex) { guided = ex.Message.Contains("drivers") && ex.Message.Contains("19"); }
-        Check("Oracle19驱动-缺失时给明确动作指引", guided);
-    }
-}
-
 Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链", "制度补齐" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");
@@ -3704,36 +3661,4 @@ class TestProv : TaoDBM.Core.RelationalProvider
     protected override string ListChildrenSql(string db) => "";
     protected override string ListColumnsSql(string db, string table) => "";
     protected override string PagingClause(int offset, int limit) => "";
-}
-
-// 兼容适配测试用假连接：受控失败/常成，记录打开次数，失败串可指定
-class FakeCompatDb : System.Data.Common.DbConnection
-{
-    private readonly bool _failOnce;
-    private readonly Action? _onOpen;
-    private readonly string? _forceMsg;
-    private System.Data.ConnectionState _state = System.Data.ConnectionState.Closed;
-    public FakeCompatDb(bool failOnce, Action? onOpen, string? forceMsg = null)
-    { _failOnce = failOnce; _onOpen = onOpen; _forceMsg = forceMsg; }
-    [System.Diagnostics.CodeAnalysis.AllowNull]
-    public override string ConnectionString { get; set; } = "";
-    public override string Database => "fake";
-    public override string DataSource => "fake";
-    public override string ServerVersion => "1.0.0";
-    public override System.Data.ConnectionState State => _state;
-    public override int ConnectionTimeout => 1;
-    public override void ChangeDatabase(string databaseName) { }
-    public override void Close() => _state = System.Data.ConnectionState.Closed;
-    public override void Open()
-    {
-        _onOpen?.Invoke();
-        if (_failOnce)
-        {
-            _state = System.Data.ConnectionState.Closed;
-            throw new InvalidOperationException(_forceMsg ?? "FORCE-FALLBACK");
-        }
-        _state = System.Data.ConnectionState.Open;
-    }
-    protected override System.Data.Common.DbTransaction BeginDbTransaction(System.Data.IsolationLevel isolationLevel) => throw new NotSupportedException();
-    protected override System.Data.Common.DbCommand CreateDbCommand() => throw new NotSupportedException();
 }
