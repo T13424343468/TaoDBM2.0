@@ -3647,11 +3647,24 @@ Console.WriteLine("\n== 全版本兼容矩阵连接适配（2026-11-19 12:14 矩
         () => { fallbackBuilds++; return new FakeCompatDb(failOnce: false, onOpen: null); });
     await adaptive4.OpenAsync(default);
     Check("降级重连-异步路径同享", adaptive4.FallbackUsed && fallbackBuilds == 3, $"f={fallbackBuilds}");
-    // Oracle 专用驱动目录缺失时的动作指引
-    bool guided = false;
-    try { OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
-    catch (InvalidOperationException ex) { guided = ex.Message.Contains("drivers") && ex.Message.Contains("19"); }
-    Check("Oracle19驱动-缺失时给明确动作指引", guided);
+    // Oracle 专用驱动：目录缺失时给明确动作指引；驱动在场（仓库已带 ODP.NET Core 19 线）时验证隔离装载可建连接
+    if (OracleLegacyDriver.IsAvailable())
+    {
+        System.Data.Common.DbConnection? ora19 = null;
+        string? loadErr = null;
+        try { ora19 = OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
+        catch (Exception ex) { loadErr = ex.Message; }
+        Check("Oracle19驱动-隔离装载建出连接", ora19 != null && loadErr == null, loadErr ?? "");
+        Check("Oracle19驱动-连接串指向目标", ora19 != null && ora19.ConnectionString.Contains("Data Source=h:1521/orcl"), ora19?.ConnectionString ?? "");
+        ora19?.Dispose();
+    }
+    else
+    {
+        bool guided = false;
+        try { OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
+        catch (InvalidOperationException ex) { guided = ex.Message.Contains("drivers") && ex.Message.Contains("19"); }
+        Check("Oracle19驱动-缺失时给明确动作指引", guided);
+    }
 }
 
 Console.WriteLine("\n== 分层结果 ==");
