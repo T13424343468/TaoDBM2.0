@@ -1,4 +1,6 @@
-2026-11-19T12:07:27.3435795Z phase=step-start pwsh=7.6.9
-2026-11-19T12:07:28.2141445Z phase=download-ok size=5841264
-2026-11-19T12:07:39.0438876Z phase=ssei-started args=/Quiet /Action=Download /MediaType=Core /DestinationPath=C:\SQLMedia
-2026-11-19T12:07:39.0491302Z phase=ssei-exit=-1
+2026-11-19T12:24:35.4044221Z phase=step-start pwsh=7.6.9
+2026-11-19T12:24:42.5016603Z phase=direct-download-ok size=261082544
+2026-11-19T12:24:43.6915922Z phase=unpack-started args=/q /x=C:\SQLMedia
+2026-11-19T12:24:43.6969274Z phase=unpack-exit=0
+2026-11-19T12:24:43.7046922Z phase=setup-found C:\SQLMedia\SETUP.EXE
+2026-11-19T12:26:58.8288623Z phase=setup-exit=0
