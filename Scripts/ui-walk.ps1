@@ -556,48 +556,29 @@ foreach ($s in $plan.steps) {
         $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
         if ($null -eq $run) { throw "work-run not found" }
         Invoke-El $run
-        # 死亡时钟下的段位锚点：机器死在点击执行前后一眼可辨（run 94 死在 S12 起点 6 秒内无从定谳）
+        # 段位锚点：机器死在点击执行前后一眼可辨
         Push-Evidence "$id run-invoked"
+        # 账本对账制（run 94/95/96 八连死实锤：机器集中死于点击执行后的 UIA 读结果轮询；产品执行实测仅 1ms 且截图健在）：
+        # 彻底放弃点击后 UIA 轮询——睡 3 秒、截图、直接读应用日志 [执行账] 行对账，零 UIA
         $expects = @()
         foreach ($v in $s.expectContains) { $expects += (Tpl $v) }
-        $pageNeed = ""
-        if ($s.pageInfoContains) { $pageNeed = Tpl $s.pageInfoContains }
-        $deadline = (Get-Date).AddSeconds(25)
-        $okRun = $false
-        $pollIx = 0
-        while ((Get-Date) -lt $deadline) {
-          Start-Sleep -Milliseconds 700
-          $pollIx++
-          # 死亡时钟＋挂起判别锚点：点击执行后 0.7s/5s/各轮次留下 msg 与结果文本账，死在哪个轮次一眼可辨（run 95 死于 run-invoked 后无账可查）
-          if ($pollIx -eq 1 -or $pollIx -eq 7) {
-            Log "$id poll-$pollIx msg-peek"
-            try { Save-Shot "ev-shot-poll-$id-$pollIx.png" } catch { }
-            Push-Evidence "$id poll-$pollIx"
-          }
-          $msg = ""
-          $msgEl = Find-El $mainRoot @{ automationId = 'work-message' }
-          if ($msgEl) {
-            try { $msg = ($msgEl.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Value } catch { }
-            if ([string]::IsNullOrEmpty($msg)) { $msg = $msgEl.Current.Name }
-          }
-          if ($msg -match '错误：') { throw "execution error: $msg" }
-          $resTxt = ""
-          $resEl = Find-El $mainRoot @{ automationId = 'work-results' }
-          if ($resEl) { $resTxt = Get-ScopeText $resEl }
-          $allHit = $true
-          foreach ($want in $expects) { if (-not $resTxt.Contains($want)) { $allHit = $false } }
-          if ($allHit) {
-            if ($pageNeed.Length -gt 0) {
-              $pgEl = Find-El $mainRoot @{ automationId = 'work-pageinfo' }
-              $pgName = ""
-              if ($pgEl) { $pgName = $pgEl.Current.Name }
-              if (-not $pgName.Contains($pageNeed)) { throw "pageinfo mismatch: got '$pgName' want '$pageNeed'" }
-            }
-            $okRun = $true
+        Start-Sleep -Seconds 3
+        try { Save-Shot "ev-shot-result-$id.png" } catch { }
+        Push-Evidence "$id result-shot"
+        $ledger = $null
+        foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+          if (Test-Path $lg) {
+            $ledger = (Get-Content $lg -Tail 40 | Where-Object { $_ -match '\[执行账\]' } | Select-Object -Last 1)
             break
           }
         }
-        if (-not $okRun) { throw "query result mismatch: expected $(($expects -join ',')) not found in results" }
+        if (-not $ledger) { throw "execution ledger missing (no [执行账] line in applog)" }
+        Log "$id ledger: $ledger"
+        if ($ledger -match 'error=') { throw "execution error: $ledger" }
+        $allHit = $true
+        foreach ($want in $expects) { if (-not $ledger.Contains($want)) { $allHit = $false } }
+        if (-not $allHit) { throw "query result mismatch: expected $(($expects -join ',')) not found in ledger" }
+        Push-Evidence "$id ledger-hit"
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'export-csv' {

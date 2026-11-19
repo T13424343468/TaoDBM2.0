@@ -256,6 +256,26 @@ public class WorkTab : Grid
                 var list = await _provider.Execute(_db, sql);
                 QueryHistory.Add(_provider.EngineName, _db, sql);
                 ShowResults(list);
+                // 执行账（2026-11-19）：执行值直接落应用日志，供云端走查零 UIA 对账（run 94-96 实锤 UIA 读结果轮询带走云机器）
+                try
+                {
+                    var ledger = new System.Text.StringBuilder("[执行账] sql=");
+                    ledger.Append(sql.Replace('\r', ' ').Replace('\n', ' '));
+                    foreach (var r in list)
+                    {
+                        ledger.Append(" | title=").Append(r.Title)
+                              .Append(" rows=").Append(r.Rows.Count)
+                              .Append(" cols=").Append(string.Join("/", r.Columns));
+                        for (int i = 0; i < r.Rows.Count && i < 3; i++)
+                        {
+                            var cells = new string[r.Rows[i].Length];
+                            for (int c = 0; c < r.Rows[i].Length; c++) cells[c] = Convert.ToString(r.Rows[i][c]) ?? "";
+                            ledger.Append(" row").Append(i).Append('=').Append(string.Join(",", cells));
+                        }
+                    }
+                    AppLog.Write(ledger.ToString());
+                }
+                catch { /* 账本写失败静默：诊断绝不干扰业务 */ }
             }
             _owner.SetStatus($"{_provider.EngineName} · {_db}{(string.IsNullOrEmpty(_child) ? "" : " · " + _child)} 执行完成");
         }
@@ -263,6 +283,7 @@ public class WorkTab : Grid
         {
             _messageBox.Text = "错误：" + ex.Message;
             _owner.SetStatus("执行出错");
+            AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
         finally
         {
