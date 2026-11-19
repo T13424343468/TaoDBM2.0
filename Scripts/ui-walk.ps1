@@ -244,6 +244,7 @@ function Push-Evidence([string]$tag) {
     try { $script:proc.Refresh(); $amem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
     "tag=$tag time=$(Get-Date -Format o) appMem=$amem MB" | Add-Content ev-meta.txt
     git add ev-walklog.txt ev-applog.txt ev-meta.txt 2>$null
+    git add ev-shot-*.png 2>$null
     git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "evi $tag" 2>$null | Out-Null
     git push origin HEAD:ui-smoke-evidence --force 2>$null | Out-Null
   } catch { }
@@ -563,8 +564,16 @@ foreach ($s in $plan.steps) {
         if ($s.pageInfoContains) { $pageNeed = Tpl $s.pageInfoContains }
         $deadline = (Get-Date).AddSeconds(25)
         $okRun = $false
+        $pollIx = 0
         while ((Get-Date) -lt $deadline) {
           Start-Sleep -Milliseconds 700
+          $pollIx++
+          # 死亡时钟＋挂起判别锚点：点击执行后 0.7s/5s/各轮次留下 msg 与结果文本账，死在哪个轮次一眼可辨（run 95 死于 run-invoked 后无账可查）
+          if ($pollIx -eq 1 -or $pollIx -eq 7) {
+            Log "$id poll-$pollIx msg-peek"
+            try { Save-Shot "ev-shot-poll-$id-$pollIx.png" } catch { }
+            Push-Evidence "$id poll-$pollIx"
+          }
           $msg = ""
           $msgEl = Find-El $mainRoot @{ automationId = 'work-message' }
           if ($msgEl) {
