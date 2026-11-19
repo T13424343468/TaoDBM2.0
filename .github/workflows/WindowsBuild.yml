@@ -751,13 +751,19 @@ jobs:
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $saPass = "Ta0DBM-ui!42"
-          $chocoOk = $false
-          for ($attempt = 1; $attempt -le 2 -and -not $chocoOk; $attempt++) {
-            Write-Host "[MSSQL] choco attempt $attempt"
-            choco install sqlserver-express -y --no-progress --params "/SAPWD:$saPass /TCPENABLED:1" | Out-Host
-            if ($LASTEXITCODE -eq 0) { $chocoOk = $true } else { Start-Sleep -Seconds 30 }
-          }
-          if (-not $chocoOk) { Write-Host "::error::choco sqlserver-express failed (2 attempts)"; exit 1 }
+          # choco sqlserver-express 在 #101/#103 连续两次失败，改官方介质直装：SSEI 引导器静默下载 Core 介质后 SETUP.EXE 全装
+          $boot = "$env:TEMP\SQL2019-SSEI-Expr.exe"
+          Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -OutFile $boot -UseBasicParsing
+          if (-not (Test-Path $boot) -or (Get-Item $boot).Length -lt 1MB) { Write-Host "::error::mssql bootstrapper download failed"; exit 1 }
+          $media = "C:\SQLMedia"
+          $dl = Start-Process -FilePath $boot -ArgumentList '/Quiet','/Action=Download','/MediaType=Core','/DestinationPath=' + $media -Wait -PassThru
+          if ($dl.ExitCode -ne 0) { Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
+          $setup = Get-ChildItem $media -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $setup) { Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
+          Write-Host "[MSSQL] setup at $setup"
+          $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
+          $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
+          if ($inst.ExitCode -ne 0) { Write-Host "::error::mssql install failed exit=$($inst.ExitCode)"; exit 1 }
           # 实例名 SQL EXPRESS；服务就绪探测
           $ready = $false
           for ($i = 0; $i -lt 36; $i++) {
