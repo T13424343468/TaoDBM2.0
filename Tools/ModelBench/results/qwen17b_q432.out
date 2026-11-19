@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ MySQL中，当前日期时间可以用CURRENT_DATE或CURRENT_TIMESTAMP。但用�
 
 SELECT CURDATE()
 
-[ Prompt: 19.4 t/s | Generation: 6.9 t/s ]
+[ Prompt: 19.2 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

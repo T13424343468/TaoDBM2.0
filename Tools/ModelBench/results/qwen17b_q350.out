@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但用户的问题可能更简单，比如需要将unit_price向上取整，所以直接使用CEILING函数。因此，正确的SQL应该是SELECT CEILING(unit_price) AS rounded_price FROM order_items; 但需要确认
 
-[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.3 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

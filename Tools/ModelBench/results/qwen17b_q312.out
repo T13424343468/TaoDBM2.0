@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -50,7 +50,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 假设问题中的“码值 65”指的是products表中的category字段的值为65，但category是VARCHAR，所以可能需要将65作为字符串处理，即'65'。但用户可能希望查询某个字段的值为65，比如price为65，或者category为65。
 
 
-[ Prompt: 20.4 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

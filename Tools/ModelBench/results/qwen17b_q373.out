@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -44,7 +44,7 @@ So the correct SQL is to select the user_id from orders and then apply modulo 3.
 
 SELECT user_id % 3 FROM orders;
 
-[ Prompt: 17.9 t/s | Generation: 6.4 t/s ]
+[ Prompt: 18.3 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

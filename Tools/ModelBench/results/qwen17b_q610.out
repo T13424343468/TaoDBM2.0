@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -59,7 +59,7 @@ FROM products;
 
 SELECT id, name, category, price, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price) AS rank
 
-[ Prompt: 18.5 t/s | Generation: 6.6 t/s ]
+[ Prompt: 16.1 t/s | Generation: 5.5 t/s ]
 
 
 Exiting...

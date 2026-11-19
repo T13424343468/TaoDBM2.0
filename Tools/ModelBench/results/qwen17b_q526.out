@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ SELECT DATEADD(DAY, -1, DATEADD(MONTH, 1, GETDATE()))
 
 但需要确认这个表达式是否正确。例如，假设当前日期是2023-10-05，那么DATEADD(MONTH, 1, GETDATE())是2023-11-05，减去一天就是2023-11-04，这显然不对，因为正确的最后一天应该是2023-10-31。这说明我的方法
 
-[ Prompt: 18.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

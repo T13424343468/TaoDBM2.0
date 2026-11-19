@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -68,7 +68,7 @@ GROUP BY
 
 可能需要使用子查询，比如先计算总订单金额，然后计算每个订单的金额占比
 
-[ Prompt: 18.7 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.9 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ ORDER BY day;
 
 另外，用户可能希望得到的是上个月的每一天，而不仅仅是上个月的开始或结束。例如，如果上个月是2023-09，那么需要包括2023-09-01到
 
-[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

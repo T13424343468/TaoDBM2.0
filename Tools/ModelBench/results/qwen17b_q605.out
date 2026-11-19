@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 或者，可能问题的意思是每个用户在所有订单中的下单时间（即订单的created_at）进行排序，然后每个用户获得一个排名，比如用户A的订单
 
-[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
+[ Prompt: 13.7 t/s | Generation: 6.2 t/s ]
 
 
 Exiting...

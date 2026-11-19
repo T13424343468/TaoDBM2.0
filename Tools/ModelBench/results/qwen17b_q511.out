@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ GROUP BY quarter;
 
 另外，需要注意，SQLite的STRFTIME函数的参数是否正确。例如，%q是季度，但可能需要调整格式字符串。比如，%Y-%q可能不正确，可能需要使用%Y-%
 
-[ Prompt: 19.1 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.8 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

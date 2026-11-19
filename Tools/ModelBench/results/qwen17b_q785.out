@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -68,7 +68,7 @@ HAVING SUM(p.amount) > 10000;
 
 另外，可能需要考虑是否有多个支付，但总和超过
 
-[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.3 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

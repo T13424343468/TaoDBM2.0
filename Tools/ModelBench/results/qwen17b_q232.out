@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -43,7 +43,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，这里可能存在一个问题：如果name字段中有多个a，比如“banana”，替换后会变成“bxnxx”，但用户可能希望每个a都被替换为x，而不管其他字符。但SQL中的REPLACE函数会替换所有出现的a，所以这可能符合
 
-[ Prompt: 21.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

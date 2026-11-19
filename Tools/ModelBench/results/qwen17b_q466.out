@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -52,7 +52,7 @@ CONVERT(DATE, created_at) + 0 小时，然后转换为DATETIME。或者，使用
 不过，SQL Server中的DATEADD函数的参数是日期时间类型，所以可以使用DATEADD(HOUR, 0, created_at)来得到当前小时的日期时间值。然后，将这个值转换为小时部分。
 
 
-[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 18.5 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -54,7 +54,7 @@ SELECT YEAR(users.created_at) AS registration_year, COUNT(*) AS user_count
 FROM users
 GROUP BY YEAR(users.created_at);
 
-[ Prompt: 19.8 t/s | Generation: 6.9 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

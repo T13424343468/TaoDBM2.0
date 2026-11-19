@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 因此，可能的SQL语句是使用FLOOR函数，例如FLOOR(products.price)。但需要确认是否适用于DECIMAL类型。在MySQL中，DECIMAL类型可以使用FLOOR函数，但需要注意精度问题。例如，FLOOR(19.
 
-[ Prompt: 20.0 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.0 t/s ]
 
 
 Exiting...

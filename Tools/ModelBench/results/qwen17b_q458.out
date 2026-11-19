@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 所以，SQL查询应该是SELECT CONVERT(varchar, created_at, 112) FROM users; 这里的112是DATETIME的格式代码，表示YYYY-MM-DD。
 
 
-[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

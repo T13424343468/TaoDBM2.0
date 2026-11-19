@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 SELECT TO_DATE('2026-01-01', 'YYYY-MM-DD') AS date_value;
 
-[ Prompt: 18.9 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.7 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

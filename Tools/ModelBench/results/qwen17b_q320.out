@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但根据用户的问题描述，可能他们希望将价格字段格式化为两位小数，比如在查询结果中显示两位小数，所以可能需要使用格式化函数。例如，使用CONVERT或CAST函数将价格转换为两位小数。但原表中的price字段已经是DECIMAL(10,2)，所以直接查询时应该已经正确显示。因此，可能用户的问题实际上不需要任何SQL
 
-[ Prompt: 20.7 t/s | Generation: 6.5 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -61,7 +61,7 @@ ORDER BY
 
 但这样可能有问题，因为如果订单是按created_at排序的，那么o1和o2的created_at是递增的。但
 
-[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

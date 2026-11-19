@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -43,7 +43,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 不过，可能用户的问题更简单，比如直接使用TRIM()来处理name字段，这样可以去掉所有空格，包括右边的。但问题中明确说“右边的空格”，所以可能需要更精确的处理。例如，如果name是“John   Doe”，那么TRIM()会去掉所有空格，包括右边的。
 
-[ Prompt: 20.0 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

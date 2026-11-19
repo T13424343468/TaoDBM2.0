@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -63,7 +63,7 @@ JOIN
 
 或者，用户可能想要的是计算每个订单的创建时间到支付时间之间的小时差，然后按小时差分组
 
-[ Prompt: 16.8 t/s | Generation: 6.2 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

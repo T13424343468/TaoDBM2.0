@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 或者，用户可能希望生成一个包含多个操作的事务，比如插入订单，然后处理支付，同时更新库存。但单条SQL无法完成这些操作，除非使用BEGIN和COMMIT在同一个语句中，但可能需要使用多个语句，但用户要求只输出一条SQL，所以可能需要使用BEGIN和COMMIT在
 
-[ Prompt: 20.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

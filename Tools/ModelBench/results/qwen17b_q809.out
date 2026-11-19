@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -52,7 +52,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 SELECT products.spec FROM products WHERE products.id = 1;
 
-[ Prompt: 16.2 t/s | Generation: 4.6 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

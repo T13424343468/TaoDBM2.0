@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 不过，根据问题描述，用户可能希望的是名字的前三个字符，所以正确的SQL应该是WHERE name LIKE '%%%'。但可能需要考虑是否应该使用通配符，比如%作为前
 
-[ Prompt: 19.9 t/s | Generation: 6.8 t/s ]
+[ Prompt: 20.1 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

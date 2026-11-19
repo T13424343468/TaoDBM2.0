@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -49,7 +49,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但用户的问题可能只是要求写出一个SQL语句，所以可能需要根据问题中的表结构来构造查询。例如，如果问题中的单价是指
 
-[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -59,7 +59,7 @@ pg_cron 'SELECT ...'
 
 但用户可能希望生成一个SQL语句，比如使用pg_cron的命令，或者
 
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 18.3 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

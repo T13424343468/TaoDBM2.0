@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -66,7 +66,7 @@ ORDER BY total_sales DESC;
 
 最终，可能需要构造一个查询，结合orders和order_items，以及payments表，但根据问题，可能更倾向于订单
 
-[ Prompt: 19.2 t/s | Generation: 6.6 t/s ]
+[ Prompt: 20.3 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

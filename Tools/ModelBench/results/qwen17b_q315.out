@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 例如，如果用户的问题是查找name字段中等于'A'的记录，那么SQL语句是SELECT * FROM users WHERE name = 'A'。或者如果问题中的“码值65”指的是某个其他字段，比如city或category，
 
-[ Prompt: 20.4 t/s | Generation: 6.6 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

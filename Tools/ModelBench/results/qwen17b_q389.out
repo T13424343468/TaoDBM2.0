@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -44,7 +44,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 SELECT sqrt(unit_price) FROM order_items;
 
-[ Prompt: 18.8 t/s | Generation: 6.9 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

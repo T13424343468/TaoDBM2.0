@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ SELECT created_at + INTERVAL '1 month' FROM users;
 
 但需要确认SQLite是否支持这种语法。例如，SQLite的日期加法可能使用INTERVAL，但需要确认是否可用。或者，可能需要使用DATE_ADD函数，但
 
-[ Prompt: 16.0 t/s | Generation: 5.4 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.5 t/s ]
 
 
 Exiting...

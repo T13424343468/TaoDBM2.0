@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但用户可能希望查询某个表中的编号字段，比如在orders表中获取order_id的值，并进行右补位处理。但根据问题描述，用户可能希望生成一个SQL语句，可能涉及某个表的字段，比如orders表的order_id，
 
-[ Prompt: 19.2 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

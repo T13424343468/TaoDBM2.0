@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -43,7 +43,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题可能更复杂，比如用户可能想要的是每个名字的字节数总和，比如对于“张三”，每个字符是2字节，所以总和是4。但如何计算呢？这时候可能需要使用其他函数，比如使用BYTEA类型，或者使用字符串的长度函数，但需要考虑编码
 
-[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.2 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

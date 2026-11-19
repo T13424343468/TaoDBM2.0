@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题中的全连接可能指的是直接连接两个表，所以可能需要使用LEFT JOIN和INNER JOIN的组合。例如，使用LEFT JOIN users ON users.id = orders.user_id，然后LEFT JOIN payments ON payments.order_id = orders.id，这样可以得到所有用户和他们的支付
 
-[ Prompt: 18.8 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.8 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

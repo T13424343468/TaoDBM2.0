@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但可能需要考虑每个订单项的总金额，然后总和。例如，每个order_items的unit_price * quantity是该订单项的总金额，然后将所有订单项的总金额加起来
 
-[ Prompt: 18.4 t/s | Generation: 5.6 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.4 t/s ]
 
 
 Exiting...

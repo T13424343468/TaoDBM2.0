@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ SELECT SUBSTRING(name, 2, LENGTH(name) - 1) AS reversed_name FROM users;
 
 但这样可能无法正确反转，比如“张三”变成“三张”，但可能需要
 
-[ Prompt: 20.4 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

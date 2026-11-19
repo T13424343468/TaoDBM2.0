@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -43,7 +43,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题中提到的是“id左填充0至5位”，可能是指将id字段的值左填充0，使其总长度为5位。例如，id为1时变为00001，id为10变为00010，id为123变为00123，id为1234变为01234，id为12345变为12345（如果长度为5位的话，可能需要调整）。但需要确认是否需要填充到5位，比如id为1时填充到5位，即00001，而id为10时填充到5位为0001
 
-[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

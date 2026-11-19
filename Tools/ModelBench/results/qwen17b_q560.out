@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ SELECT TIMESTAMPDIFF(HOUR, created_at, paid_at) AS hour_diff FROM payments JOIN 
 
 但需要确认表结构中的关联是否正确。比如，payments的order_id和orders的id是否关联。假设是的，那么这样查询会得到每个支付的订单创建
 
-[ Prompt: 14.5 t/s | Generation: 5.4 t/s ]
+[ Prompt: 19.0 t/s | Generation: 6.5 t/s ]
 
 
 Exiting...

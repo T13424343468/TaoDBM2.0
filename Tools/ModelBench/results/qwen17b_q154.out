@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 不过，用户可能希望使用更直接的字符串拼接，比如使用字符串操作符，比如name + ' ' + city。但SQL Server中使用+运算符也可以，不过CONCAT函数
 
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

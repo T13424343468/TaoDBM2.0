@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ SELECT CONCAT(name, ' ', city) AS name_city FROM users;
 
 不过，用户可能希望使用CONCAT函数，而不需要手动添加分隔符。例如，如果用户希望将name和city用空格分隔，那么使用CONCAT(name, ' ', city)。或者，如果用户希望用其他分隔符，但问题中没有说明，所以可能需要假设
 
-[ Prompt: 20.2 t/s | Generation: 6.8 t/s ]
+[ Prompt: 20.4 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

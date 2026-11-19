@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但根据用户的问题，可能需要生成一个示例，比如创建一个存储过程，但需要明确说明表结构中没有相关表。不过，用户可能希望看到如何处理
 
-[ Prompt: 20.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

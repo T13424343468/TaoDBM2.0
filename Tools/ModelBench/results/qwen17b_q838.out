@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -61,7 +61,7 @@ END;
 综上，可能的SQL是创建一个存储过程，包含OUT参数，用来返回库存信息。因此，最终的SQL可能是：
 
 
-[ Prompt: 19.2 t/s | Generation: 6.8 t/s ]
+[ Prompt: 18.7 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...
