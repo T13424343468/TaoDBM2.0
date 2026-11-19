@@ -111,7 +111,8 @@ public sealed class AdaptiveDbConnection : DbConnection
         catch (Exception ex) when (ShouldFallback(ex)) { SwapToFallback(); await _inner.OpenAsync(cancellationToken).ConfigureAwait(false); }
     }
 
-    public override string ConnectionString { get => _inner.ConnectionString; set => _inner.ConnectionString = value; }
+    [System.Diagnostics.CodeAnalysis.AllowNull]
+        public override string ConnectionString { get => _inner.ConnectionString; set => _inner.ConnectionString = value; }
     public override string Database => _inner.Database;
     public override string DataSource => _inner.DataSource;
     public override string ServerVersion => _inner.ServerVersion;
@@ -124,7 +125,7 @@ public sealed class AdaptiveDbConnection : DbConnection
     public override void EnlistTransaction(Transaction? transaction) => _inner.EnlistTransaction(transaction);
     public override DataTable GetSchema() => _inner.GetSchema();
     public override DataTable GetSchema(string collectionName) => _inner.GetSchema(collectionName);
-    public override DataTable GetSchema(string collectionName, string[]? restrictionValues) => _inner.GetSchema(collectionName, restrictionValues);
+    public override DataTable GetSchema(string collectionName, string?[]? restrictionValues) => _inner.GetSchema(collectionName, restrictionValues);
     public override event StateChangeEventHandler? StateChange
     {
         add => _inner.StateChange += value;
