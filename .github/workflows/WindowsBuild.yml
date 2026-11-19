@@ -240,6 +240,23 @@ jobs:
             out/*.msi
             install.log
 
+      - name: Publish MSI to public branch (anonymous download)
+        if: always()
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem out -Filter *.msi -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $msi) { Write-Host "::warning::no msi to publish"; exit 0 }
+          git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
+          git fetch --depth 1 origin ui-release-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B ui-release-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-release-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          # 交付命名：大驼峰 ASCII 零中文，按运行号唯一（每次交付换新文件名）
+          $dest = "TaoDBM-2.0.0-x64-$env:GITHUB_RUN_NUMBER.msi"
+          Copy-Item $msi.FullName -Destination $dest -Force
+          git add -A
+          git commit --allow-empty -m "release msi run $env:GITHUB_RUN_ID" | Out-Null
+          git push origin ui-release-latest --force
+          Write-Host "[RELEASE] $dest published to ui-release-latest (anonymous download via codeload)
+
   trim-r2r:
     # 裁剪+预编译可行性验证（保全口径）：TrimMode=partial 只裁框架、应用壳不裁；R2R 预编译启动提速
     # 独立 job 不碰主交付链；启动冒烟 10 秒判存活，裁出问题立刻红灯
