@@ -109,26 +109,26 @@ public static class RoutineManager
     /// <summary>引用查找：在库内例程与触发器定义中搜关键词，返回列表查询语句（name/kind/definition 三列）。</summary>
     public static string ReferencesSql(DbEngine e, string db, string keyword)
     {
-        var kw = e == DbEngine.SqlServer ? keyword.Replace("'", "''") : keyword.Replace("'", "''");
+        var kw = keyword.Replace("'", "''"); // 单次转义：kw 已可安全内插，再走 Esc 会双重转义（#128 红账定谳）
         return e switch
         {
             DbEngine.MySQL =>
                 "SELECT ROUTINE_NAME AS name, ROUTINE_TYPE AS kind, ROUTINE_DEFINITION AS definition" +
-                $" FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = '{Esc(db)}' AND ROUTINE_DEFINITION LIKE '%{Esc(kw)}%'" +
+                $" FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = '{Esc(db)}' AND ROUTINE_DEFINITION LIKE '%{kw}%'" +
                 " UNION ALL" +
                 " SELECT TRIGGER_NAME, 'TRIGGER', ACTION_STATEMENT FROM information_schema.TRIGGERS" +
-                $" WHERE TRIGGER_SCHEMA = '{Esc(db)}' AND ACTION_STATEMENT LIKE '%{Esc(kw)}%'",
+                $" WHERE TRIGGER_SCHEMA = '{Esc(db)}' AND ACTION_STATEMENT LIKE '%{kw}%'",
             DbEngine.PostgreSQL =>
                 "SELECT proname AS name, CASE prokind WHEN 'p' THEN 'PROCEDURE' ELSE 'FUNCTION' END AS kind, pg_get_functiondef(oid) AS definition" +
                 " FROM pg_proc WHERE pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = '" + Esc(db) + "')" +
-                $" AND pg_get_functiondef(oid) LIKE '%{Esc(kw)}%'",
+                $" AND pg_get_functiondef(oid) LIKE '%{kw}%'",
             DbEngine.SqlServer =>
                 "SELECT name, CASE WHEN type = 'P' THEN 'PROCEDURE' ELSE 'FUNCTION' END AS kind, OBJECT_DEFINITION(object_id) AS definition" +
                 " FROM sys.objects WHERE type IN ('P', 'FN', 'TR')" +
-                $" AND OBJECT_DEFINITION(object_id) LIKE '%{Esc(kw)}%'",
+                $" AND OBJECT_DEFINITION(object_id) LIKE '%{kw}%'",
             DbEngine.SQLite =>
                 "SELECT name, 'TRIGGER' AS kind, sql AS definition FROM sqlite_master" +
-                $" WHERE type = 'trigger' AND sql LIKE '%{Esc(kw)}%'",
+                $" WHERE type = 'trigger' AND sql LIKE '%{kw}%'",
             _ => throw new NotSupportedException("该引擎不支持引用查找"),
         };
     }

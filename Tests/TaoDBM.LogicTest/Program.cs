@@ -1969,7 +1969,7 @@ Layer("集成");
     bool threwPgTrg = false;
     try { RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Trigger, "tr1"); } catch (ArgumentException) { threwPgTrg = true; }
     Check("例程-PG删触发器缺表名拒绝", threwPgTrg, "");
-    Check("例程-删名引号转义", RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Procedure, "a\"b") == "DROP FUNCTION \"a\"\"b\"", "");
+    Check("例程-删名引号转义", RoutineManager.BuildDropSql(DbEngine.PostgreSQL, RoutineKind.Procedure, "a\"b") == "DROP PROCEDURE \"a\"\"b\"", "");
     Check("例程-MySQL调用过程", RoutineManager.BuildExecuteSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1", "1, 'a'") == "CALL `sp1`(1, 'a')", "");
     Check("例程-MySQL调用函数", RoutineManager.BuildExecuteSql(DbEngine.MySQL, RoutineKind.Function, "fn1", "2") == "SELECT `fn1`(2)", "");
     Check("例程-PG调用函数", RoutineManager.BuildExecuteSql(DbEngine.PostgreSQL, RoutineKind.Function, "fn1", "2") == "SELECT \"fn1\"(2)", "");
