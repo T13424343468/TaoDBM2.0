@@ -921,6 +921,7 @@ jobs:
           $branch = "ui-walk-${{ matrix.db }}-latest"
           git fetch --depth 1 origin $branch 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
+          Copy-Item mssql-evidence.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\mssql-evidence.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
