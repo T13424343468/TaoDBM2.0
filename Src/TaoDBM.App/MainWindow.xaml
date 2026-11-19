@@ -76,8 +76,10 @@
             </Border>
 
             <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复） -->
-            <GridSplitter x:Name="TreeSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Left"
-                          Background="Transparent" ResizeBehavior="BasedOnAlignment" ResizeDirection="Auto"/>
+            <Border x:Name="TreeSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Left"
+                    Background="Transparent" PointerPressed="OnSplitterPointerPressed"
+                    PointerMoved="OnSplitterPointerMoved" PointerReleased="OnSplitterPointerReleased"
+                    PointerCaptureLost="OnSplitterPointerReleased"/>
 
             <!-- 右侧工作区 -->
             <TabView x:Name="WorkTabs" Grid.Column="2" Background="{ThemeResource AntBg}"
