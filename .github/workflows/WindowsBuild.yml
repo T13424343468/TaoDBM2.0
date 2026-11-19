@@ -801,22 +801,26 @@ jobs:
             break
           }
           $ErrorActionPreference = 'Stop'
-          $boot = "$env:TEMP\SQL2019-SSEI-Expr.exe"
+          # #122 定谳：SSEI 引导器是 web 下载器，强制静默 6ms 即退 exit=-1（Microsoft Q&A 同款 DetectPreviousRulesDownloadActivity
+          # fatalException，结论＝SSEI 不支持完全无人值守）。弃 SSEI 下载路线，改官方离线介质直链：
+          # 下载 SQLEXPR_x64_ENU.exe（~261MB，直链 2026-11-19 HEAD 实测 200）→ /q /x 静默解包 → 解包内真 SETUP.EXE 静默安装
+          $boot = "$env:TEMP\SQLEXPR_x64_ENU.exe"
           Journal "phase=step-start pwsh=$($PSVersionTable.PSVersion)"
+          $mediaUrl = 'https://download.microsoft.com/download/7/c/1/7c14e92e-bdcb-4f89-b7cf-93543e7112d1/SQLEXPR_x64_ENU.exe'
           $dlOk = $false
-          for ($tryN = 1; $tryN -le 2; $tryN++) {
+          for ($tryN = 1; $tryN -le 3; $tryN++) {
             try {
-              Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -OutFile $boot -UseBasicParsing -ErrorAction Stop
-              if ((Test-Path $boot) -and (Get-Item $boot).Length -ge 1MB) { $dlOk = $true; break }
-            } catch { Write-Host "::warning::bootstrapper download attempt $tryN failed: $($_.Exception.Message)" }
+              Invoke-WebRequest -Uri $mediaUrl -OutFile $boot -UseBasicParsing -ErrorAction Stop
+              if ((Test-Path $boot) -and (Get-Item $boot).Length -ge 200MB) { $dlOk = $true; break }
+            } catch { Write-Host "::warning::media download attempt $tryN failed: $($_.Exception.Message)" }
             Start-Sleep -Seconds 5
           }
           if (-not $dlOk) {
             # 制度四.7：下载失败也必须带定因包——网络路径实测（代理/连通/耗时）当场落摘要，禁止盲赌重掷
-            Dump-SqlLogs "bootstrapper-download-failed"
+            Dump-SqlLogs "media-download-failed"
             try {
               $t = [System.Diagnostics.Stopwatch]::StartNew()
-              $r = Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -Method Head -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
+              $r = Invoke-WebRequest -Uri $mediaUrl -Method Head -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
               Write-Host "[MSSQL-NET] HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)"
               Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value "HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)"
               if (Test-Path env:GITHUB_STEP_SUMMARY) { "HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)" | Add-Content $env:GITHUB_STEP_SUMMARY }
@@ -829,23 +833,20 @@ jobs:
             Write-Host "[MSSQL-NET] proxy: $px"
             Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value "proxy: $px"
             if (Test-Path env:GITHUB_STEP_SUMMARY) { "proxy: $px" | Add-Content $env:GITHUB_STEP_SUMMARY }
-            Write-Host "::error::mssql bootstrapper download failed"; exit 1
+            Write-Host "::error::mssql media download failed"; exit 1
           }
-          Write-Host "[MSSQL] bootstrapper size=$((Get-Item $boot).Length) bytes"
-          "PHASE download ok size=$((Get-Item $boot).Length)" | Add-Content $env:GITHUB_STEP_SUMMARY
-          Journal "phase=download-ok size=$((Get-Item $boot).Length)"
+          Write-Host "[MSSQL] media size=$((Get-Item $boot).Length) bytes"
+          "PHASE direct-download-ok size=$((Get-Item $boot).Length)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Journal "phase=direct-download-ok size=$((Get-Item $boot).Length)"
           $media = "C:\SQLMedia"
-          # #121 定谳修复：原写法 '...','/DestinationPath=' + $media 在命令解析模式下 + 被当作独立位置参数，
-          # ParameterBindingException 十二轮快败真因；改为先构造完整参数数组再传 -ArgumentList
-          $sseiArgs = @('/Quiet', '/Action=Download', '/MediaType=Core', "/DestinationPath=$media")
-          $dl = Start-Process -FilePath $boot -ArgumentList $sseiArgs -Wait -PassThru
-          Journal "phase=ssei-started args=$($sseiArgs -join ' ')"
-          Write-Host "[MSSQL] SSEI exit=$($dl.ExitCode)"
-          "PHASE ssei-exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
-          Journal "phase=ssei-exit=$($dl.ExitCode)"
-          if ($dl.ExitCode -ne 0) { Dump-SqlLogs "ssei-download-failed exit=$($dl.ExitCode)"; if (Test-Path env:GITHUB_STEP_SUMMARY) { "SSEI exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY }; Write-Host "::error::mssql media download failed exit=$($dl.ExitCode)"; exit 1 }
+          # 静默解包（微软官方口径：自解压包装器 /q /x:<目录>，无提示无进度条）；成功判据以 SETUP.EXE 实际落盘为准
+          $up = Start-Process -FilePath $boot -ArgumentList @('/q', '/x:C:\SQLMedia') -Wait -PassThru
+          Journal "phase=unpack-started args=/q /x=C:\SQLMedia"
+          Write-Host "[MSSQL] unpack exit=$($up.ExitCode)"
+          "PHASE unpack-exit=$($up.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Journal "phase=unpack-exit=$($up.ExitCode)"
           $setup = Get-ChildItem $media -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $setup) { Dump-SqlLogs "setup-exe-not-found ssei-exit-0-no-media"; Write-Host "::error::SETUP.EXE not found in $media"; exit 1 }
+          if (-not $setup) { Dump-SqlLogs "unpack-no-setup-exe unpack-exit=$($up.ExitCode)"; Write-Host "::error::unpack failed or SETUP.EXE not found in $media unpack-exit=$($up.ExitCode)"; exit 1 }
           Write-Host "[MSSQL] setup at $setup"
           Journal "phase=setup-found $setup"
           $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
