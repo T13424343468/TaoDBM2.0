@@ -1,10 +1,6 @@
 ===== MSSQL POST-MORTEM run 44513338633 =====
------ phases journal -----
-  2026-11-19T11:36:34.1223025Z phase=step-start pwsh=7.6.10
-  2026-11-19T11:36:35.2884406Z phase=download-ok size=5841264
-  UNCAUGHT: System.Management.Automation.ParameterBindingException: A positional parameter cannot be found that accepts argument '+'.
 pwsh: C:\Program Files\PowerShell\7\pwsh.exe
-mssql-evidence.txt exists: True
+mssql-evidence.txt exists: False
 C:\SQLMedia exists: False
 SQLEXPRESS service: absent
 recent TEMP logs: NONE in last 30min
