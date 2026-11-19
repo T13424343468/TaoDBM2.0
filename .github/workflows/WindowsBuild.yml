@@ -835,7 +835,11 @@ jobs:
           "PHASE download ok size=$((Get-Item $boot).Length)" | Add-Content $env:GITHUB_STEP_SUMMARY
           Journal "phase=download-ok size=$((Get-Item $boot).Length)"
           $media = "C:\SQLMedia"
-          $dl = Start-Process -FilePath $boot -ArgumentList '/Quiet','/Action=Download','/MediaType=Core','/DestinationPath=' + $media -Wait -PassThru
+          # #121 定谳修复：原写法 '...','/DestinationPath=' + $media 在命令解析模式下 + 被当作独立位置参数，
+          # ParameterBindingException 十二轮快败真因；改为先构造完整参数数组再传 -ArgumentList
+          $sseiArgs = @('/Quiet', '/Action=Download', '/MediaType=Core', "/DestinationPath=$media")
+          $dl = Start-Process -FilePath $boot -ArgumentList $sseiArgs -Wait -PassThru
+          Journal "phase=ssei-started args=$($sseiArgs -join ' ')"
           Write-Host "[MSSQL] SSEI exit=$($dl.ExitCode)"
           "PHASE ssei-exit=$($dl.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
           Journal "phase=ssei-exit=$($dl.ExitCode)"
