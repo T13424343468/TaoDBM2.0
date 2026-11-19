@@ -255,7 +255,7 @@ public static class RoutinesDialog
             }
         }
 
-        btnNew.Click += async (_, _) =>
+        btnNew.Click += (_, _) =>
         {
             var sel = Sel();
             var kind = sel?.KindEnum ?? RoutineKind.Procedure;
@@ -271,7 +271,7 @@ public static class RoutinesDialog
             await LoadDefAsync(sel);
         };
 
-        btnDebug.Click += async (_, _) =>
+        btnDebug.Click += (_, _) =>
         {
             var sel = Sel();
             if (sel is null) { status.Text = "先在左侧选中一个例程。"; return; }
