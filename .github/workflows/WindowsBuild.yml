@@ -764,6 +764,8 @@ jobs:
             }
             if (Test-Path 'C:\SQLMedia') { Get-ChildItem 'C:\SQLMedia' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 30 | ForEach-Object { $lines.Add("media: $($_.FullName)") } }
             $lines | ForEach-Object { Write-Host "[MSSQL-DUMP] $_" }
+            # 定因包落成文件：取证推送步骤会拷进公开分支，无凭据侧可读（步骤摘要需登录，不够公开）
+            Set-Content -Path "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value $lines -Encoding utf8
             if (Test-Path env:GITHUB_STEP_SUMMARY) {
               Add-Content $env:GITHUB_STEP_SUMMARY '```'
               $lines | Add-Content $env:GITHUB_STEP_SUMMARY
@@ -786,13 +788,16 @@ jobs:
               $t = [System.Diagnostics.Stopwatch]::StartNew()
               $r = Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=866658' -Method Head -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
               Write-Host "[MSSQL-NET] HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)"
+              Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value "HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)"
               if (Test-Path env:GITHUB_STEP_SUMMARY) { "HEAD ok status=$($r.StatusCode) ms=$($t.ElapsedMilliseconds)" | Add-Content $env:GITHUB_STEP_SUMMARY }
             } catch {
               Write-Host "[MSSQL-NET] HEAD failed: $($_.Exception.Message)"
+              Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value "HEAD failed: $($_.Exception.Message)"
               if (Test-Path env:GITHUB_STEP_SUMMARY) { "HEAD failed: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY }
             }
             $px = (netsh winhttp show proxy | Out-String).Trim()
             Write-Host "[MSSQL-NET] proxy: $px"
+            Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Value "proxy: $px"
             if (Test-Path env:GITHUB_STEP_SUMMARY) { "proxy: $px" | Add-Content $env:GITHUB_STEP_SUMMARY }
             Write-Host "::error::mssql bootstrapper download failed"; exit 1
           }
@@ -809,7 +814,7 @@ jobs:
           Write-Host "[MSSQL] SETUP exit=$($inst.ExitCode)"
           if ($inst.ExitCode -ne 0) {
             $summary = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log' -Recurse -Filter Summary.txt -ErrorAction SilentlyContinue | Select-Object -Last 1
-            if ($summary) { Write-Host "[MSSQL-DUMP] Summary.txt ($($summary.FullName)):"; Get-Content $summary.FullName -TotalCount 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" } }
+            if ($summary) { Write-Host "[MSSQL-DUMP] Summary.txt ($($summary.FullName)):"; Get-Content $summary.FullName -TotalCount 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }; Get-Content $summary.FullName -TotalCount 80 | Add-Content "$env:GITHUB_WORKSPACE\mssql-evidence.txt" }
             Dump-SqlLogs "setup-failed exit=$($inst.ExitCode)"
             if (Test-Path env:GITHUB_STEP_SUMMARY) { "SETUP exit=$($inst.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY }
             Write-Host "::error::mssql install failed exit=$($inst.ExitCode)"; exit 1
@@ -916,6 +921,7 @@ jobs:
           $branch = "ui-walk-${{ matrix.db }}-latest"
           git fetch --depth 1 origin $branch 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
+          Copy-Item ..\mssql-evidence.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
