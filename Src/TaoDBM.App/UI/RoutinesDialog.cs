@@ -47,7 +47,7 @@ public static class RoutinesDialog
         // 左树：过程 / 函数 / 触发器 三组（原稿 §1 左栏）
         var tree = new TreeView
         {
-            SelectionMode = TreeSelectionMode.Single,
+            SelectionMode = TreeViewSelectionMode.Single,
             MinWidth = 220,
             MinHeight = 300,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -142,7 +142,7 @@ public static class RoutinesDialog
         Item? Sel()
         {
             var n = tree.SelectedItem;
-            return n is null ? null : state.Map.GetValueOrDefault(n);
+            return n is TreeViewNode tvn && state.Map.TryGetValue(tvn, out var item) ? item : null;
         }
 
         async Task<string?> LoadDefAsync(Item it)
