@@ -25,6 +25,12 @@ public static class GridBuilder
             return new Border { Child = ok, Background = Ant.AltRow, CornerRadius = new CornerRadius(6), Margin = new Thickness(4, 8, 4, 8) };
         }
 
+        if (r.Rows.Count > VirtualThreshold)
+        {
+            // 虚拟滚动（2026-11-20 夜批②）：大数据量窗口化渲染，万行级不卡；列宽规则与普通渲染一致
+            return VirtualizedResultGrid.Build(r, onRowTap);
+        }
+
         var grid = new Grid { RowSpacing = 0 };
         int nCols = Math.Min(r.Columns.Count, 64);
         for (int i = 0; i < nCols; i++)
@@ -50,31 +56,11 @@ public static class GridBuilder
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(header);
 
-        // 数据行（限 1000 行渲染）
+        // 数据行（小结果集直渲染；虚拟阈值之上走 VirtualizedResultGrid）
         int shown = Math.Min(r.Rows.Count, 1000);
         for (int rowIdx = 0; rowIdx < shown; rowIdx++)
         {
-            var row = r.Rows[rowIdx];
-            var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null };
-            for (int i = 0; i < nCols; i++)
-            {
-                string text = Exporter.Format(i < row.Length ? row[i] : null);
-                var tb = new TextBlock
-                {
-                    Text = text,
-                    Margin = new Thickness(10, 6, 10, 6),
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                    Foreground = Ant.Text,
-                };
-                var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
-                Grid.SetColumn(cell, i);
-                rowGrid.Children.Add(cell);
-            }
-            if (onRowTap != null)
-            {
-                int idx = rowIdx;
-                rowGrid.Tapped += (_, _) => onRowTap(idx);
-            }
+            var rowGrid = BuildRow(r, rowIdx, nCols, onRowTap);
             Grid.SetRow(rowGrid, grid.RowDefinitions.Count);
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.Children.Add(rowGrid);
@@ -105,5 +91,38 @@ public static class GridBuilder
             outer.Children.Add(sp);
         }
         return outer;
+    }
+
+    /// <summary>虚拟渲染的行数阈值：之上走窗口化虚拟滚动（万行级不卡）。</summary>
+    public const int VirtualThreshold = 500;
+
+    /// <summary>单行物化（普通渲染与虚拟渲染共用）：nCols 列单元格 + 隔行底色 + 可选行点选。
+    /// fixedHeight 供虚拟渲染锁行高（位移映射需要统一行高）；null 保持原自适应高度。</summary>
+    public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null)
+    {
+        var row = r.Rows[rowIdx];
+        var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null };
+        if (fixedHeight is double h) rowGrid.Height = h;
+        for (int i = 0; i < nCols; i++)
+        {
+            string text = Exporter.Format(i < row.Length ? row[i] : null);
+            var tb = new TextBlock
+            {
+                Text = text,
+                Margin = new Thickness(10, 6, 10, 6),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = Ant.Text,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
+            Grid.SetColumn(cell, i);
+            rowGrid.Children.Add(cell);
+        }
+        if (onRowTap != null)
+        {
+            int idx = rowIdx;
+            rowGrid.Tapped += (_, _) => onRowTap(idx);
+        }
+        return rowGrid;
     }
 }
