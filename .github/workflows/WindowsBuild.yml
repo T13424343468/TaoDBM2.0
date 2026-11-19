@@ -771,6 +771,17 @@ jobs:
               $lines | Add-Content $env:GITHUB_STEP_SUMMARY
               Add-Content $env:GITHUB_STEP_SUMMARY '```'
             }
+            # 内联自推：不依赖后续拷贝步骤（#116/#117 证明拷贝链路不可信），当场把定因包推上公开分支
+            try {
+              git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
+              git fetch --depth 1 origin ui-walk-mssql-latest 2>$null
+              if ($LASTEXITCODE -eq 0) { git checkout -B ui-walk-mssql-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-walk-mssql-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+              Copy-Item "$env:GITHUB_WORKSPACE\mssql-evidence.txt" -Destination . -Force -ErrorAction Stop
+              git add -A
+              git commit --allow-empty -m "mssql-evidence inline dump run ${{ github.run_id }}" | Out-Null
+              git push origin ui-walk-mssql-latest --force
+              Write-Host "[MSSQL-DUMP] inline push done"
+            } catch { Write-Host "::warning::inline evidence push failed: $($_.Exception.Message)" }
           }
           $boot = "$env:TEMP\SQL2019-SSEI-Expr.exe"
           $dlOk = $false
