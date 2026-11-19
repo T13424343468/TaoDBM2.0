@@ -3655,8 +3655,25 @@ Console.WriteLine("\n== 全版本兼容矩阵连接适配（2026-11-19 12:14 矩
         try { ora19 = OracleLegacyDriver.Create("h:1521/orcl", "u", "p"); }
         catch (Exception ex) { loadErr = ex.Message; }
         Check("Oracle19驱动-隔离装载建出连接", ora19 != null && loadErr == null, loadErr ?? "");
-        Check("Oracle19驱动-连接串指向目标", ora19 != null && ora19.ConnectionString.Contains("Data Source=h:1521/orcl"), ora19?.ConnectionString ?? "");
+        Check("Oracle19驱动-连接串指向目标", ora19 != null && ora19.ConnectionString.IndexOf("h:1521/orcl", StringComparison.OrdinalIgnoreCase) >= 0, ora19?.ConnectionString ?? "");
         ora19?.Dispose();
+        // 真机隐患预防：特殊字符密码（分号/引号/等号）经连接串构造器装配后原样回读，不炸串
+        System.Data.Common.DbConnection? ora19sp = null; string? spErr = null;
+        const string spPwd = "p;w\"x=y";
+        try { ora19sp = OracleLegacyDriver.Create("h:1521/orcl", "u", spPwd); }
+        catch (Exception ex) { spErr = ex.Message; }
+        Check("Oracle19驱动-特殊字符密码建连接不炸", ora19sp != null && spErr == null, spErr ?? "");
+        if (ora19sp != null)
+        {
+            var reparse = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = ora19sp.ConnectionString };
+            Check("Oracle19驱动-特殊字符密码原样回读", string.Equals((string?)reparse["Password"], spPwd, StringComparison.Ordinal), ora19sp.ConnectionString);
+            ora19sp.Dispose();
+        }
+        // 驱动硬边界：密码同时含单引号和双引号（构造器必须成对转义，驱动解析器不支持）→ 给明确动作指引而非裸解析错
+        bool spGuided = false; string? sp2Err = null;
+        try { OracleLegacyDriver.Create("h:1521/orcl", "u", "p;w'x\"y=z"); }
+        catch (InvalidOperationException ex) { spGuided = ex.Message.Contains("引号转义") && ex.Message.Contains("重试"); sp2Err = ex.Message; }
+        Check("Oracle19驱动-双引号密码给明确指引", spGuided, sp2Err ?? "");
     }
     else
     {
@@ -3698,6 +3715,7 @@ class FakeCompatDb : System.Data.Common.DbConnection
     private System.Data.ConnectionState _state = System.Data.ConnectionState.Closed;
     public FakeCompatDb(bool failOnce, Action? onOpen, string? forceMsg = null)
     { _failOnce = failOnce; _onOpen = onOpen; _forceMsg = forceMsg; }
+    [System.Diagnostics.CodeAnalysis.AllowNull]
     public override string ConnectionString { get; set; } = "";
     public override string Database => "fake";
     public override string DataSource => "fake";

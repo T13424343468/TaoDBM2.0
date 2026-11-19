@@ -158,7 +158,24 @@ public static class OracleLegacyDriver
             ?? throw new InvalidOperationException($"19.x 专用驱动装载成功但缺少 OracleConnection 类型：{dll}");
         var conn = (DbConnection)(Activator.CreateInstance(type)
             ?? throw new InvalidOperationException($"19.x 专用驱动 OracleConnection 构造失败：{dll}"));
-        conn.ConnectionString = $"Data Source={dataSource};User Id={user};Password={password};Connection Timeout=10";
+        // 连接串经 19c 驱动自带的 OracleConnectionStringBuilder（DbConnectionStringBuilder 派生）装配：
+        // 密码含分号/引号/等号等特殊字符时由构造器自动加引号转义，避免手拼串在真机上被特殊字符炸开
+        var sbType = asm.GetType("Oracle.ManagedDataAccess.Client.OracleConnectionStringBuilder")
+            ?? throw new InvalidOperationException($"19.x 专用驱动缺少 OracleConnectionStringBuilder 类型：{dll}");
+        var sb = (DbConnectionStringBuilder)(Activator.CreateInstance(sbType)
+            ?? throw new InvalidOperationException($"19.x 专用驱动 OracleConnectionStringBuilder 构造失败：{dll}"));
+        sb["Data Source"] = dataSource;
+        sb["User Id"] = user;
+        sb["Password"] = password;
+        sb["Connection Timeout"] = 10;
+        try { conn.ConnectionString = sb.ConnectionString; }
+        catch (ArgumentException ex)
+        {
+            // 驱动解析器不支持引号转义：密码同时含单引号和双引号时构造器必须成对转义，真机必炸——此处给明确动作指引
+            throw new InvalidOperationException(
+                "19.x 专用驱动连接串装配失败（常见于密码同时含单引号和双引号，该驱动不支持引号转义）：" +
+                "请改用只含一种引号的密码后重试。", ex);
+        }
         return conn;
     }
 }
