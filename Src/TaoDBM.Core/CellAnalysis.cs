@@ -85,7 +85,7 @@ public static class CellAnalysis
         DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
         DateTimeOffset dto => dto.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
         IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
-        _ => v.ToString() ?? "",
+        _ => v?.ToString() ?? "",
     };
 
     static double? Num(object? v) => v switch
