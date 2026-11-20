@@ -1,6 +1,6 @@
-2026-11-19T18:45:47.9996176Z phase=step-start pwsh=7.6.9
-2026-11-19T18:45:51.6179584Z phase=direct-download-ok size=261082544
-2026-11-19T18:45:57.7673968Z phase=unpack-started args=/q /x=C:\SQLMedia
-2026-11-19T18:45:57.7756439Z phase=unpack-exit=0
-2026-11-19T18:45:57.7877231Z phase=setup-found C:\SQLMedia\SETUP.EXE
-2026-11-19T18:48:35.6710237Z phase=setup-exit=0
+2026-11-20T03:55:40.2764380Z phase=step-start pwsh=7.6.9
+2026-11-20T03:55:45.4723086Z phase=direct-download-ok size=261082544
+2026-11-20T03:55:47.0080708Z phase=unpack-started args=/q /x=C:\SQLMedia
+2026-11-20T03:55:47.0135264Z phase=unpack-exit=0
+2026-11-20T03:55:47.0222289Z phase=setup-found C:\SQLMedia\SETUP.EXE
+2026-11-20T03:58:36.1968654Z phase=setup-exit=0
