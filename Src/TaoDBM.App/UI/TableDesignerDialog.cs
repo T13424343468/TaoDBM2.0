@@ -199,6 +199,8 @@ public static class TableDesignerDialog
                     ? $"已执行 {stmts.Count} 条语句，成功。请在左侧树点「刷新」查看结果。"
                     : $"执行出错（{errs.Count} 条失败）：\n" + string.Join("\n", errs.Select(r => r.Message));
                 QueryHistory.Add(prov.EngineName, db, "-- 表结构设计：" + Read().TableName + "\n" + string.Join(";\n", stmts));
+                // s15 改表保存后自动弹血缘影响地图：按本库查询历史语料建图，追溯该表下游引用。
+                if (table != null) _ = ShowLineageImpactAsync(owner, db, table);
             }
             catch (Exception ex)
             {
@@ -210,6 +212,45 @@ public static class TableDesignerDialog
         genBtn.Click += (_, _) => OnGenerate();
         runBtn.Click += (_, _) => OnRun();
         _ = dlg.ShowThemedAsync();
+    }
+
+    // s15 血缘影响地图：改表保存后自动弹出，用本库查询历史里的 CREATE 段建图做影响追溯；无语料时如实说明。
+    private static async Task ShowLineageImpactAsync(MainWindow owner, string db, string tableName)
+    {
+        var corpusText = string.Join("\n\n", QueryHistory.Items
+            .Where(h => h.Database == db)
+            .Select(h => h.Sql)
+            .Reverse());
+        var map = DesignAssistDialog.ParseCorpus(corpusText);
+        string report;
+        if (map is null)
+        {
+            report = "本库的查询历史里没有可建图的 CREATE TABLE / VIEW / PROC 语料，无法追溯影响面。\n\n"
+                + "可在「设计辅助 → 血缘图」粘贴视图 / 存储过程定义后建图追溯。";
+        }
+        else
+        {
+            var impacts = LineageMapper.Impact(map, tableName);
+            var sb = new System.Text.StringBuilder();
+            if (impacts.Count == 0)
+                sb.AppendLine($"{tableName} 没有下游引用（视图 / 存储过程），改动风险低。");
+            else
+            {
+                sb.AppendLine($"改动 {tableName} 的影响（{impacts.Count} 项）：");
+                foreach (var i in impacts)
+                    sb.AppendLine($"  {i.Object}（{i.Type}）：{string.Join(" → ", i.Path)}");
+                foreach (var h in LineageMapper.Hints(impacts))
+                    sb.AppendLine("  " + h);
+            }
+            report = sb.ToString();
+        }
+        await new ContentDialog
+        {
+            Title = $"血缘影响地图 · {tableName}",
+            Content = new TextBlock { Text = report, TextWrapping = TextWrapping.Wrap, FontSize = AntTokens.FontMinor },
+            CloseButtonText = "关闭",
+            XamlRoot = owner.Content.XamlRoot,
+        }.ShowThemedAsync();
     }
 
     private static Grid ColumnRow(RowWidgets w)

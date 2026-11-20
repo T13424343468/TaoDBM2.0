@@ -264,7 +264,7 @@ public static class DesignAssistDialog
     }
 
     // ── 血缘图：语料建图 + 影响追溯 ──
-    private static Dictionary<string, List<LineageObject>>? ParseCorpus(string text)
+    internal static Dictionary<string, List<LineageObject>>? ParseCorpus(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
         var corpus = new List<(LineageObject, string)>();
