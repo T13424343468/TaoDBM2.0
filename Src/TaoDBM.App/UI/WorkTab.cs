@@ -527,7 +527,11 @@ public class WorkTab : Grid
             };
             if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
             var del = $"DELETE FROM {_provider.Quote(_child)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, inputs[_cols.IndexOf(KeyCol)].Text)}";
-            await ExecWrite(del, "已删除 1 行");
+            var beforeDel = MirrorExisting(existing!);
+            var afterDel = _cols.ToDictionary(c => c.Name, _ => (string?)null);
+            var pkDel = inputs[_cols.IndexOf(KeyCol)].Text;
+            if (await ExecWrite(del, "已删除 1 行"))
+                CaptureAudit(del, beforeDel, afterDel, pkDel);
             return;
         }
 
@@ -559,10 +563,12 @@ public class WorkTab : Grid
             if (sets.Count == 0) { _messageBox.Text = "没有可更新的列（主键列不可修改）。"; return; }
             sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, inputs[_cols.IndexOf(KeyCol)].Text)}";
         }
-        await ExecWrite(sql, existing == null ? "已新增 1 行" : "已保存修改");
+        var ok = await ExecWrite(sql, existing == null ? "已新增 1 行" : "已保存修改");
+        if (ok && existing != null)
+            CaptureAudit(sql, MirrorExisting(existing!), MirrorInputs(inputs), inputs[_cols.IndexOf(KeyCol!)].Text);
     }
 
-    private async Task ExecWrite(string sql, string okMsg)
+    private async Task<bool> ExecWrite(string sql, string okMsg)
     {
         try
         {
@@ -572,11 +578,36 @@ public class WorkTab : Grid
             _owner.SetStatus(okMsg);
             _offset = 0;
             await RunOrRefresh();
+            return true;
         }
         catch (Exception ex)
         {
             _messageBox.Text = "执行失败：" + ex.Message;
+            return false;
         }
+    }
+
+    /// <summary>改数留痕（设计稿 §8）：UPDATE/DELETE 执行成功后落账，供留痕审计查看与回滚。</summary>
+    private void CaptureAudit(string statement, Dictionary<string, string?> before, Dictionary<string, string?> after, string pkValue)
+    {
+        if (KeyCol is null) return;
+        AuditTrailDialog.Append(ChangeAudit.CaptureRow(_child, KeyCol.Name, pkValue, before, after, statement));
+    }
+
+    private Dictionary<string, string?> MirrorExisting(object?[] row)
+    {
+        var d = new Dictionary<string, string?>();
+        for (int i = 0; i < _cols.Count && i < row.Length; i++)
+            d[_cols[i].Name] = (row[i] == null || row[i] is DBNull) ? null : Exporter.Format(row[i]);
+        return d;
+    }
+
+    private Dictionary<string, string?> MirrorInputs(List<TextBox> inputs)
+    {
+        var d = new Dictionary<string, string?>();
+        for (int i = 0; i < _cols.Count && i < inputs.Count; i++)
+            d[_cols[i].Name] = inputs[i].Text.Length == 0 ? null : inputs[i].Text;
+        return d;
     }
 
     // ---------- CSV / JSON 导入 ----------

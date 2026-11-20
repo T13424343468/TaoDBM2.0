@@ -491,6 +491,7 @@ public partial class MainWindow : Window
                 Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
                 Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
+                Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
                 Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
                 Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
