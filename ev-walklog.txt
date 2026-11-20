@@ -12,3 +12,5 @@ coverage-func S05 连接-保存 => pass
 coverage-func S06 对象树-连接节点出现 => pass
 coverage-func S07 对象树-展开连接 => pass
 coverage-func S08 对象树-展开数据库 => pass
+shot shot-07-table-tree.png 68549 bytes
+coverage-func S09 对象树-真实表清单 => pass
