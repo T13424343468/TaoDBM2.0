@@ -8,6 +8,11 @@ OUT="Tools/ModelBench/out"
 BIN="llama-bench-bin/llama-cli.exe"
 mkdir -p "$OUT"
 
+# 构建指纹（2026-11-20 AI版线令）：llama-cli --version 原文逐字入账，无指纹出账视为不可比
+"$BIN" --version 2>&1 | while IFS= read -r line; do
+  echo "BUILD_FINGERPRINT $TAG $line" >> "$OUT/run.log"
+done
+
 MAPDIR=$(mktemp -d)
 ls Tools/ModelBench/questions_gen/*.txt | awk -v w="$W" '{ i = NR % w; file = "'"$MAPDIR"'/bucket" i ".txt"; print > file }'
 
