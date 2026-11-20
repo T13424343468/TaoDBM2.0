@@ -20,3 +20,4 @@ tag=expand-kb-ok 🗄️ ui-auto-mysql child=taodbmui state=Expanded time=2026-1
 tag=step-start S09 time=2026-11-20T23:07:24.1003373+00:00 appMem=175 MB
 tag=step-start S10 time=2026-11-20T23:07:31.9217930+00:00 appMem=175 MB
 tag=step-start S11 time=2026-11-20T23:07:34.5544402+00:00 appMem=175 MB
+tag=menu-find-start time=2026-11-20T23:07:36.1281027+00:00 appMem=175 MB
