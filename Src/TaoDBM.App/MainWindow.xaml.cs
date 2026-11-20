@@ -628,8 +628,8 @@ public partial class MainWindow : Window
                     }
                     if (children.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Name}：{children.Count} 个{(prov.IsNoSql ? prov.BrowseLabel : "表")}");
-                    // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载）
-                    if (!prov.IsNoSql && ObjectTreeCatalog.Supported(info.Profile.Engine))
+                    // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载；七库全覆盖——Mongo 走 TAODBMCMD，Redis 走空清单 SCAN）
+                    if (ObjectTreeCatalog.Supported(info.Profile.Engine))
                     {
                         foreach (var (cat, label) in new[] { ("views", "视图"), ("indexes", "索引"), ("fks", "外键"), ("routines", "例程"), ("triggers", "触发器") })
                         {

@@ -2115,7 +2115,9 @@ Layer("集成");
 
 {
     // 3) 对象树目录：按引擎生成元数据查询语句
-    Check("目录-支持引擎判定", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite) && !ObjectTreeCatalog.Supported(DbEngine.Redis), "");
+    Check("目录-支持引擎判定七库", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite)
+        && ObjectTreeCatalog.Supported(DbEngine.Oracle) && ObjectTreeCatalog.Supported(DbEngine.MongoDB)
+        && ObjectTreeCatalog.Supported(DbEngine.Redis), "");
     var myViews = ObjectTreeCatalog.ListViews(DbEngine.MySQL, "shop");
     Check("目录-MySQL视图语句", myViews.Contains("information_schema.VIEWS") && myViews.Contains("'shop'"), myViews);
     Check("目录-PG视图语句", ObjectTreeCatalog.ListViews(DbEngine.PostgreSQL, "shop").Contains("pg_views"), "");
@@ -2126,9 +2128,26 @@ Layer("集成");
     Check("目录-SQLite触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.SQLite, "main").Contains("sqlite_master"), "");
     Check("目录-SQLite例程空清单", ObjectTreeCatalog.ListRoutines(DbEngine.SQLite, "main").Contains("WHERE 0"), "");
     Check("目录-引号转义", ObjectTreeCatalog.ListViews(DbEngine.MySQL, "it's").Contains("it''s"), "");
-    bool threwCat = false;
-    try { ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "x"); } catch (NotSupportedException) { threwCat = true; }
-    Check("目录-不支持引擎报错", threwCat, "");
+    // 批次 N：Oracle 目录（USER_* 字典）+ Mongo TAODBMCMD 命令 + Redis 空清单 SCAN
+    Check("目录-Oracle视图语句", ObjectTreeCatalog.ListViews(DbEngine.Oracle, "shop").Contains("USER_VIEWS"), "");
+    Check("目录-Oracle索引语句", ObjectTreeCatalog.ListIndexes(DbEngine.Oracle, "shop").Contains("USER_INDEXES")
+        && ObjectTreeCatalog.ListIndexes(DbEngine.Oracle, "shop").Contains("CASE UNIQUENESS"), "");
+    Check("目录-Oracle外键语句", ObjectTreeCatalog.ListForeignKeys(DbEngine.Oracle, "shop").Contains("USER_CONSTRAINTS")
+        && ObjectTreeCatalog.ListForeignKeys(DbEngine.Oracle, "shop").Contains("CONSTRAINT_TYPE = 'R'"), "");
+    Check("目录-Oracle例程语句", ObjectTreeCatalog.ListRoutines(DbEngine.Oracle, "shop").Contains("USER_SOURCE")
+        && ObjectTreeCatalog.ListRoutines(DbEngine.Oracle, "shop").Contains("LINE = 1"), "");
+    Check("目录-Oracle触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.Oracle, "shop").Contains("USER_TRIGGERS"), "");
+    Check("目录-Oracle定义语句", ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "P_PAY").Contains("USER_SOURCE")
+        && ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "P_PAY").Contains("ORDER BY LINE"), "");
+    Check("目录-Oracle引号转义", ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "it's").Contains("it''s"), "");
+    Check("目录-Mongo视图命令", ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "shop") == "TAODBMCMD:listViews", "");
+    Check("目录-Mongo索引命令", ObjectTreeCatalog.ListIndexes(DbEngine.MongoDB, "shop") == "TAODBMCMD:listIndexes", "");
+    Check("目录-Mongo无外键命令", ObjectTreeCatalog.ListForeignKeys(DbEngine.MongoDB, "shop") == "TAODBMCMD:none", "");
+    Check("目录-Mongo例程命令", ObjectTreeCatalog.ListRoutines(DbEngine.MongoDB, "shop") == "TAODBMCMD:none", "");
+    Check("目录-Mongo定义命令", ObjectTreeCatalog.ShowDefinition(DbEngine.MongoDB, "orders").StartsWith("TAODBMCMD:collInfo:orders"), "");
+    Check("目录-Redis空清单SCAN", ObjectTreeCatalog.ListViews(DbEngine.Redis, "db0").StartsWith("SCAN 0 MATCH __taodbm_none__*")
+        && ObjectTreeCatalog.ListIndexes(DbEngine.Redis, "db0") == ObjectTreeCatalog.ListViews(DbEngine.Redis, "db0"), "");
+    Check("目录-Redis定义TYPE", ObjectTreeCatalog.ShowDefinition(DbEngine.Redis, "mykey").StartsWith("TYPE mykey"), "");
 }
 
 {
