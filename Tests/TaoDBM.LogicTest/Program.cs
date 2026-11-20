@@ -3818,6 +3818,32 @@ Console.WriteLine("== NotificationDispatcher ==");
                     if (v.Refused) { hitCount++; if (cat != "trap") nonTrapHit++; }
                 }
                 Check("RF38 题库全量回归：命中恰 17 条且全为陷阱类", hitCount == 17 && nonTrapHit == 0, $"hits={hitCount} nonTrap={nonTrapHit}");
+
+        // ---- 问库对象锚定（2026-11-20 23:29 老板令）：自动定位 + 出口校验 ----
+        static TaoDBM.Core.MultiTableSpec T(string name, params string[] cols) =>
+            new(name, cols.Select(c => new TaoDBM.Core.ColumnSpec { Name = c, DataType = "varchar" }).ToList());
+        var scTables = new[] { T("orders", "id", "user_id", "amount", "created_at"), T("users", "id", "name", "city"), T("products", "id", "title", "price") };
+        var sc1 = TaoDBM.Core.QaSchemaLocator.Locate("orders 表里有多少订单", scTables);
+        Check("SC01 表名命中排首位", sc1.Count > 0 && sc1[0].Table.Name == "orders" && sc1[0].Score >= 10, sc1.Count + "|" + (sc1.Count > 0 ? sc1[0].Table.Name : ""));
+        var sc2 = TaoDBM.Core.QaSchemaLocator.Locate("user_id 最大的那条记录", scTables);
+        Check("SC02 列名命中定位表", sc2.Count > 0 && sc2[0].Table.Name == "orders" && sc2[0].MatchedColumns.Contains("user_id"), sc2.Count + "|" + (sc2.Count > 0 ? sc2[0].Table.Name : ""));
+        var sc3 = TaoDBM.Core.QaSchemaLocator.Locate("products 表里 price 最高的前三个", scTables);
+        Check("SC03 多信号候选排序", sc3.Count > 0 && sc3[0].Table.Name == "products", sc3.Count + "|" + (sc3.Count > 0 ? sc3[0].Table.Name : ""));
+        var sc4 = TaoDBM.Core.QaSchemaLocator.Locate("今天天气怎么样", scTables);
+        Check("SC04 无命中返回空", sc4.Count == 0, sc4.Count.ToString());
+        Check("SC05 空问题返回空", TaoDBM.Core.QaSchemaLocator.Locate("", scTables).Count == 0);
+        var xv1 = TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT * FROM orders WHERE id = 1", scTables);
+        Check("XV01 合法表引用放行", xv1.Ok, xv1.Reason ?? "");
+        var xv2 = TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT * FROM `orders` o JOIN users u ON o.user_id = u.id", scTables);
+        Check("XV02 反引号引用放行", xv2.Ok, xv2.Reason ?? "");
+        var xv3 = TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT * FROM ghost_table", scTables);
+        Check("XV03 幻觉表打回", !xv3.Ok && xv3.Reason!.Contains("ghost_table"), xv3.Reason ?? "");
+        var xv4 = TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT * FROM dbo.orders", scTables);
+        Check("XV04 点号引用取末段", xv4.Ok, xv4.Reason ?? "");
+        var xv5 = TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT name FROM USERS", scTables);
+        Check("XV05 大小写不敏感", xv5.Ok, xv5.Reason ?? "");
+        Check("XV06 空SQL打回", !TaoDBM.Core.QaSchemaLocator.ValidateExit("", scTables).Ok);
+        Check("XV07 无表引用打回", !TaoDBM.Core.QaSchemaLocator.ValidateExit("SELECT 1", scTables).Ok);
             }
         }
     }
