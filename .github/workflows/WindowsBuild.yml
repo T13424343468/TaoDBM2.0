@@ -454,7 +454,9 @@ jobs:
           python Scripts/gen-testdb.py --out-dir testdb --engine mssql --db-name taodbmui
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mssql failed"; exit 1 }
           # 免 sqlcmd：.NET SqlClient 按 GO 分批执行（ui-smoke-servers 已验证口径）
-          $csLoad = "Server=localhost,1433;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
+          # run 199 fix: connect loop may fall back to dynamic port (MSSQL_PORT env); load step must not hardcode 1433
+          $loadPort = if ($env:MSSQL_PORT) { [int]$env:MSSQL_PORT } else { 1433 }
+          $csLoad = "Server=localhost,$loadPort;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
           $connL = New-Object System.Data.SqlClient.SqlConnection $csLoad
           $connL.Open()
           $cmdL = $connL.CreateCommand()
