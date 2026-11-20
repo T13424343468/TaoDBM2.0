@@ -104,6 +104,69 @@ jobs:
           }
 
       # 编译机与测试机并行（多开）：App 层零错零警闸 + 发布产物，不串行等测试
+  # 真库全功能矩阵·MySQL 独立环境（2026-11-20 12:08 老板令「分开环境 分段去落实」）：
+  # 独立 job 独立连接串，互不串账；ProviderTestHarness 段一切片（连接/对象树/查询流式），
+  # 后续波次按库型各起独立 job（PG/Mongo/Redis → MSSQL），老版本沿免费兼容路线
+  realdb-matrix-mysql:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-win-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-win-
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MySQL server
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          choco install mysql -y --no-progress | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::choco mysql failed"; exit 1 }
+          $ready = $false
+          for ($i = 0; $i -lt 24; $i++) {
+            Start-Sleep -Seconds 5
+            $probe = Get-Service -Name MySQL -ErrorAction SilentlyContinue
+            if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
+          }
+          if (-not $ready) { Write-Host "::error::mysql service not running after wait"; exit 1 }
+          & mysql -uroot -e "SELECT VERSION();" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql connectivity failed"; exit 1 }
+
+      - name: Load matrix test data
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb --engine mysql --db-name taodbmui
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mysql failed"; exit 1 }
+          Get-Content testdb/taodbm-ui.mysql.sql -Raw | & mysql -uroot 2>&1 | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql load failed"; exit 1 }
+          & mysql -uroot -e "USE taodbmui; SELECT COUNT(*) AS c FROM orders;" | Out-Host
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql sanity query failed"; exit 1 }
+
+      - name: Logic tests (realdb matrix seg1, MySQL)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          Remove-Item test-progress.txt -ErrorAction SilentlyContinue
+          $env:REALDB_PROVIDER = 'MySQL'
+          $env:REALDB_CONN = 'localhost|3306|root||taodbmui'
+          $env:REALDB_SEG = '1'
+          $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','Release' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
+          Write-Host "[T1] realdb matrix exit=$($p.ExitCode)"
+          Get-Content test-output.txt | ForEach-Object { Write-Host "$_" }
+          if ($p.ExitCode -ne 0) {
+            Get-Content test-output.txt -Encoding utf8 -ErrorAction SilentlyContinue | Select-Object -Last 60 | ForEach-Object { $t="$_"; Write-Host "::error::[realdb-mysql] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
+            exit $p.ExitCode
+          }
+
   app-build:
     runs-on: windows-latest
     timeout-minutes: 30

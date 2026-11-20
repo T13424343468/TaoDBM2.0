@@ -795,12 +795,21 @@ public partial class MainWindow : Window
         {
             if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
             Core.AppLog.Write($"[新建查询] enter kind={info.Kind} name={info.Name} provider={(info.Provider is null ? "null" : "ok")}");
+            // #153 修红：走查 seg2/seg3 跳过树展开步（S07/S08）时连接节点 Provider 尚未懒建——
+            // WorkTab 拿到 null provider 后会话保存（SessionConnectionId→Profile.Id）与执行账双 NRE，
+            // 曾判「间歇性」，实为分段确定性；此处对齐 OnNodeExpanding 同款懒建口径
+            info.Provider ??= ProviderFactory.Create(info.Profile);
             var (db, hint) = info.Kind switch
             {
                 NodeKind.Database => (info.Name, ""),
                 NodeKind.Table => (info.Db, DefaultSnippet(info)),
                 NodeKind.ObjectDef => (info.Db, ""),
-                _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
+                // 023374b 移植：服务器引擎（MySQL/MSSQL/PG/Oracle）连接节点带连接配置默认库，
+                // 否则 S12 裸表名 SQL 在无库上下文执行、计数账不符；SQLite 保持 main 口径
+                _ => (info.Provider.IsNoSql ? "" :
+                      info.Profile.Engine == DbEngine.SQLite
+                          ? (info.Profile.Database.Length > 0 ? "main" : "")
+                          : info.Profile.Database, ""),
             };
             if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
             if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;

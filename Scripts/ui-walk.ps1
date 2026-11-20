@@ -439,10 +439,18 @@ foreach ($s in $plan.steps) {
         }
         foreach ($v in $needles) {
           if (-not $txt.Contains($v)) {
-            # 真红入账：把树文本快照推上证据分支，定谳「表名缺失＝子级未渲染还是读树口径」
+            # #153 取证先行（MSSQL S09 三轮同模式失败）：树全文 dump（限 4000 字符，不再 300 截断）
+            # ＋ 应用日志装载/连接相关行入证据，定谳「装库没载入 vs 目录查询没返回 vs 读树口径」
             $snap = ($txt -replace '\r?\n', ' | ')
-            if ($snap.Length -gt 300) { $snap = $snap.Substring(0, 300) }
+            if ($snap.Length -gt 4000) { $snap = $snap.Substring(0, 4000) }
             Push-Evidence "treetxt $snap"
+            foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+              if (Test-Path $lg) {
+                $errLines = @(Get-Content $lg -Tail 200 | Where-Object { $_ -match '连接|装载|展开|错误|error|Exception|catalog|tree' })
+                if ($errLines.Count -gt 0) { Push-Evidence ("applog-conn " + (($errLines | Select-Object -Last 20) -join ' || ')) }
+                break
+              }
+            }
             throw "tree text missing: $v"
           }
         }

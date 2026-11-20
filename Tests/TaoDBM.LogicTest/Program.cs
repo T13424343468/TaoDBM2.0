@@ -3230,6 +3230,8 @@ Console.WriteLine("== AtomicWrite 原子落盘（三.6 断电模拟）==");
 
 RealDbCheck.Run(Check);
 
+ProviderTestHarness.Run(Check);
+
 Console.WriteLine("\n== P-3 多表联查问法 ==");
 Layer("单元");
 {
