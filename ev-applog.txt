@@ -3,3 +3,4 @@
 2026-11-20 23:07:24.604 托盘: 图标加载成功 C:\Program Files\TaoDBM\Assets\TaoDBM.ico
 2026-11-20 23:07:24.605 托盘: 消息托管到主窗 hwnd=0x801DC
 2026-11-20 23:07:24.615 托盘: 向系统注册成功
+2026-11-20 23:08:12.933 [对象树] 连接展开 engine=SqlServer dbs=5 [master,model,msdb,taodbmui,tempdb]

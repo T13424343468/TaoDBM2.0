@@ -10,3 +10,4 @@ tag=step-start S05 time=2026-11-20T23:08:00.0610343+00:00 appMem=148 MB
 tag=step-start S06 time=2026-11-20T23:08:03.6411573+00:00 appMem=159 MB
 tag=step-start S07 time=2026-11-20T23:08:11.2845378+00:00 appMem=157 MB
 tag=expand-ok 🗄️ ui-auto-mssql time=2026-11-20T23:08:12.7582274+00:00 appMem=159 MB
+tag=step-start S08 time=2026-11-20T23:08:20.1176982+00:00 appMem=169 MB

@@ -14,3 +14,4 @@ coverage-func S04e 连接-填写数据库 => pass
 shot shot-06-conn-saved.png 64768 bytes
 coverage-func S05 连接-保存 => pass
 coverage-func S06 对象树-连接节点出现 => pass
+coverage-func S07 对象树-展开连接 => pass
