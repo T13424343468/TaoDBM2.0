@@ -14,3 +14,4 @@ tag=kb-tree-items PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | A
 3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
 
 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | 开始 time=2026-11-20T23:59:04.2064035+00:00 appMem=164 MB
+tag=kb-state main Collapsed time=2026-11-20T23:59:05.4946505+00:00 appMem=164 MB
