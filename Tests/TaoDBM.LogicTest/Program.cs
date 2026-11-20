@@ -3634,6 +3634,28 @@ Console.WriteLine("== NotificationDispatcher ==");
         Check("N37 最多三单按TopN行", topNQ.Ok && topNQ.Sql.Contains("LIMIT 3") && topNQ.Sql.Contains("ORDER BY") && topNQ.Sql.Contains("%Y-%m-01"));
         var yearQ = AskNL("今年的支付总额是多少", "payments", payCols);
         Check("N38 今年总额带年度条件", yearQ.Ok && yearQ.Sql.Contains("SUM(") && yearQ.Sql.Contains("%Y-01-01"));
+
+        // P-3 问库 PG 方言：双引号标识符 / 标准时间函数 / LIMIT（对账表缺口：PG 自然语言查询）
+        static TaoDBM.Core.NLQueryResult AskNLPg(string q, string table, params (string Name, string Type, bool Key)[] cols)
+        {
+            var list = cols.Select(c => new TaoDBM.Core.ColumnSpec { Name = c.Name, DataType = c.Type, IsKey = c.Key }).ToList();
+            return TaoDBM.Core.NaturalLanguageQuery.Ask(q, table, list, DbEngine.PostgreSQL);
+        }
+        var pgCols = new[] { ("id", "INT", true), ("amount", "NUMERIC", false), ("created_at", "TIMESTAMP", false) };
+        var pgCnt = AskNLPg("订单有多少条", "orders", new[] { ("id", "INT", true), ("created_at", "TIMESTAMP", false) });
+        Check("N39 PG 计数双引号标识符", pgCnt.Ok && pgCnt.Sql.Contains("COUNT(*)") && pgCnt.Sql.Contains("FROM \"orders\";"), pgCnt.Sql);
+        var pgMonth = AskNLPg("上个月的订单有哪些", "orders", pgCols);
+        Check("N39 PG 上个月 DATE_TRUNC", pgMonth.Ok && pgMonth.Sql.Contains("DATE_TRUNC('month', CURRENT_DATE)")
+            && pgMonth.Sql.Contains("INTERVAL '1 MONTH'") && !pgMonth.Sql.Contains("%Y"), pgMonth.Sql);
+        var pgDays = AskNLPg("最近7天的订单有哪些", "orders", pgCols);
+        Check("N39 PG 最近N天标准区间", pgDays.Ok && pgDays.Sql.Contains("CURRENT_DATE - INTERVAL '7 DAY'"), pgDays.Sql);
+        var pgTopN = AskNLPg("上个月成交最多的三单", "orders", pgCols);
+        Check("N39 PG TopN 走 LIMIT", pgTopN.Ok && pgTopN.Sql.Contains("LIMIT 3") && pgTopN.Sql.Contains("ORDER BY")
+            && pgTopN.Sql.Contains("DATE_TRUNC('month', CURRENT_DATE)"), pgTopN.Sql);
+        var pgAvg = AskNLPg("平均每笔支付多少钱", "payments", pgCols);
+        Check("N39 PG 平均聚合", pgAvg.Ok && pgAvg.Sql.Contains("AVG(\"amount\")"), pgAvg.Sql);
+        var pgToday = AskNLPg("今天的订单有哪些", "orders", pgCols);
+        Check("N39 PG 今天 CURRENT_DATE", pgToday.Ok && pgToday.Sql.Contains(">= CURRENT_DATE") && !pgToday.Sql.Contains("CURDATE()"), pgToday.Sql);
     }
 
     Console.WriteLine("== 性能护栏（L5 流式管线/原子落盘）==");
