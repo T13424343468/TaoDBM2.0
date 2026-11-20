@@ -31,8 +31,14 @@ public static class DesignAssistDialog
         var formTableBox = new TextBox { PlaceholderText = "表名（用当前连接的表结构生成表单）", MinWidth = 220 };
         var formBtn = new Button { Content = "生成表单", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var formValidateBtn = new Button { Content = "校验填写", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var formSubmitBtn = new Button { Content = "提交写入", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         formBtn.Click += async (_, _) => await RunForm(owner, info, formTableBox.Text, report, status);
         formValidateBtn.Click += (_, _) => RunFormValidate(report, status);
+        formSubmitBtn.Click += async (_, _) =>
+        {
+            if (_lastForm is null) { status.Text = "请先生成表单。"; return; }
+            await SubmitFormWriteAsync(_lastForm, owner, report, status);
+        };
 
         // ── 血缘图：粘贴对象定义 SQL，建图并做影响追溯 ──
         var lineageBox = new TextBox
@@ -56,6 +62,7 @@ public static class DesignAssistDialog
         formRow.Children.Add(formTableBox);
         formRow.Children.Add(formBtn);
         formRow.Children.Add(formValidateBtn);
+        formRow.Children.Add(formSubmitBtn);
 
         var lineageRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         lineageRow.Children.Add(lineageTargetBox);
@@ -65,7 +72,7 @@ public static class DesignAssistDialog
         var panel = new StackPanel { Spacing = 10, MinWidth = 680 };
         panel.Children.Add(new TextBlock
         {
-            Text = "设计辅助（只读 / 纯计算）：图表只对粘贴结果聚合；表单只读表结构；血缘只对粘贴语料建图。",
+            Text = "设计辅助：图表只对粘贴结果聚合；表单可提交写入（预览确认后落库并留痕）；血缘只对粘贴语料建图。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
             FontSize = AntTokens.FontMinor,
@@ -164,6 +171,8 @@ public static class DesignAssistDialog
         public string Table = "";
         public List<FormField> Fields = new();
         public Dictionary<string, TextBox> Inputs = new();
+        public IDbProvider Prov = null!;
+        public string Db = "";
     }
     private static FormDraft? _lastForm;
 
@@ -189,7 +198,7 @@ public static class DesignAssistDialog
             }
 
             var fields = FormSchemaBuilder.Build(table, columns);
-            var draft = new FormDraft { Table = table, Fields = fields };
+            var draft = new FormDraft { Table = table, Fields = fields, Prov = prov, Db = db };
             AddSection(report, $"表单定义（{fields.Count} 字段）");
             foreach (var f in fields)
             {
@@ -264,6 +273,107 @@ public static class DesignAssistDialog
     }
 
     // ── 血缘图：语料建图 + 影响追溯 ──
+    // s18 表单化录入提交写入：校验 → 写入预览（参数化 INSERT + 实际执行语句）→ 确认后落库并写查询历史留痕。
+    private static async Task SubmitFormWriteAsync(FormDraft draft, MainWindow owner, StackPanel report, TextBlock status)
+    {
+        var values = new Dictionary<string, string?>();
+        foreach (var f in draft.Fields)
+        {
+            var has = draft.Inputs.TryGetValue(f.Column, out var box);
+            values[f.Column] = has && box is { } b && b.Text.Length > 0 ? b.Text : null;
+        }
+        var v = FormSchemaBuilder.Validate(draft.Fields, values);
+        if (!v.Ok)
+        {
+            AddSection(report, "校验未通过，未提交");
+            foreach (var kv in v.Errors)
+                AddLine(report, $"  {kv.Key}: {kv.Value}", Ant.Warn, 1);
+            status.Text = "有必填或类型问题，修正后再提交。";
+            return;
+        }
+
+        string sql, literal;
+        try
+        {
+            (sql, _) = FormSchemaBuilder.BuildInsert(draft.Table, draft.Fields, values);
+            literal = BuildLiteralInsert(draft, values);
+        }
+        catch (Exception ex)
+        {
+            status.Text = "生成写入语句失败：" + ex.Message;
+            return;
+        }
+
+        var prevBox = new TextBox
+        {
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            Text = "-- 将执行（字面值版）\n" + literal + "\n\n-- 参数化形态\n" + sql + "\n"
+                + string.Join("\n", FormSchemaBuilder.BuildInsert(draft.Table, draft.Fields, values).Params.Select(p => $"@{p.Key} = {p.Value}")),
+            FontFamily = new FontFamily("Consolas"),
+            MinWidth = 620,
+            MinHeight = 240,
+            MaxHeight = 420,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var dlg = new ContentDialog
+        {
+            Title = $"表单录入 · 写入预览（{draft.Db}.{draft.Table}）",
+            Content = prevBox,
+            PrimaryButtonText = "确认写入",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) { status.Text = "已取消，未写入。"; return; }
+
+        try
+        {
+            var list = await draft.Prov.Execute(draft.Db, literal);
+            var errs = list.Where(r => r.Message.StartsWith("错误", StringComparison.Ordinal)).ToList();
+            if (errs.Count == 0)
+            {
+                QueryHistory.Add(draft.Prov.EngineName, draft.Db, "-- 表单录入：" + draft.Table + "\n" + literal);
+                AddSection(report, "写入成功");
+                AddLine(report, literal);
+                status.Text = "已写入 1 行，语句已记入查询历史留痕。";
+            }
+            else
+            {
+                AddSection(report, "写入失败");
+                foreach (var r in errs) AddLine(report, r.Message, Ant.Warn, 1);
+                status.Text = "写入被数据库拒绝，未留痕。";
+            }
+        }
+        catch (Exception ex)
+        {
+            status.Text = "写入失败：" + ex.Message;
+        }
+    }
+
+    // 字面值版 INSERT：校验已过，文本/时间类加引号并转义单引号，数字与布尔不加引号。
+    private static string BuildLiteralInsert(FormDraft draft, Dictionary<string, string?> values)
+    {
+        var cols = new List<string>();
+        var vals = new List<string>();
+        foreach (var f in draft.Fields)
+        {
+            if (f.Hidden) continue;
+            values.TryGetValue(f.Column, out var raw);
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            var v = raw.Trim();
+            string lit = f.InputType switch
+            {
+                "number" => v,
+                "bool" => v.Equals("true", StringComparison.OrdinalIgnoreCase) || v == "1" ? "1" : "0",
+                _ => "'" + v.Replace("'", "''") + "'",
+            };
+            cols.Add(f.Column);
+            vals.Add(lit);
+        }
+        return $"INSERT INTO {draft.Table} ({string.Join(", ", cols)}) VALUES ({string.Join(", ", vals)});";
+    }
+
     internal static Dictionary<string, List<LineageObject>>? ParseCorpus(string text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
