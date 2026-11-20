@@ -3835,6 +3835,102 @@ Console.WriteLine("== NotificationDispatcher ==");
         }
     }
 }
+
+Console.WriteLine("== 批次 K2 收尾（数据字典/ER深度/内存封顶/定时SQL/导入口径）==");
+{
+    // K2-1：数据字典完整导出——字段级字典 HTML / Word 双口径
+    {
+        var ddCols = new List<ColumnSpec>
+        {
+            new ColumnSpec { Name = "id", DataType = "INT", IsKey = true },
+            new ColumnSpec { Name = "user_id", DataType = "BIGINT", IsKey = false },
+            new ColumnSpec { Name = "amount", DataType = "DECIMAL(10,2)", IsKey = false },
+        };
+        var ddTable = DataDictionary.FromSpecs("orders", ddCols, "订单表");
+        var ddHtml = DataDictionary.ToHtml(new[] { ddTable }, "数据字典 · shop");
+        Check("K2 字典HTML表头", ddHtml.Contains("数据字典 · shop") && ddHtml.Contains("orders") && ddHtml.Contains("DECIMAL(10,2)"), "");
+        Check("K2 字典HTML键标", ddHtml.Contains("主键") && ddHtml.Contains("user_id"), "");
+        Check("K2 字典HTML转义", DataDictionary.ToHtml(new[] { DataDictionary.FromSpecs("t<a", ddCols) }, "x").Contains("t&lt;a"), "");
+        var ddWord = DataDictionary.ToWord(new[] { ddTable }, "数据字典 · shop");
+        Check("K2 字典Word结构", ddWord.StartsWith("<?xml") && ddWord.Contains("urn:schemas-microsoft-com:office:word")
+            && ddWord.Contains("orders") && ddWord.Contains("主键"), "");
+        Check("K2 字典Word转义", DataDictionary.ToWord(new[] { DataDictionary.FromSpecs("t<b", ddCols) }, "x").Contains("t&lt;b"), "");
+        Check("K2 字典FromSpecs", ddTable.Columns.Count == 3 && ddTable.Columns[0].IsKey && ddTable.Comment == "订单表", "");
+    }
+
+    // K2-2：ER 图深度——真库外键优先 + 命名约定补边
+    {
+        var m = new ErdModel();
+        m.Tables.Add(new ErdTable { Name = "users", Columns = { new ErdColumn { Name = "id", Type = "INT", IsKey = true } } });
+        m.Tables.Add(new ErdTable { Name = "orders", Columns = {
+            new ErdColumn { Name = "id", Type = "INT", IsKey = true },
+            new ErdColumn { Name = "uid", Type = "INT" },          // 命名约定不命中（非 _id/Id 后缀）
+            new ErdColumn { Name = "user_id", Type = "INT" },      // 命名约定命中
+        } });
+        m.Tables.Add(new ErdTable { Name = "payments", Columns = {
+            new ErdColumn { Name = "id", Type = "INT", IsKey = true },
+            new ErdColumn { Name = "order_id", Type = "INT" },
+        } });
+        // 真库外键：orders.uid → users.id（命名约定覆盖不到的边）
+        var fkRows = new List<object?[]> { new object?[] { "orders", "uid", "users", "id" } };
+        var deep = ErdModel.InferEdgesDeep(m, fkRows);
+        Check("K2 ER真值边优先", deep.Any(e => e.FromTable == "orders" && e.FromCol == "uid" && e.ToTable == "users"), "");
+        Check("K2 ER约定补边", deep.Any(e => e.FromTable == "orders" && e.FromCol == "user_id" && e.ToTable == "users")
+            && deep.Any(e => e.FromTable == "payments" && e.FromCol == "order_id" && e.ToTable == "orders"), "");
+        Check("K2 ER真值去重", deep.Count(e => e.FromCol == "uid") == 1, "");
+        // 真值表不在模型中：跳过不炸
+        var fkGhost = new List<object?[]> { new object?[] { "ghost", "x", "users", "id" } };
+        Check("K2 ER幽灵表跳过", ErdModel.InferEdgesDeep(m, fkGhost).All(e => e.FromTable != "ghost"), "");
+        // 空真值退纯命名约定
+        var convOnly = ErdModel.InferEdgesDeep(m, null);
+        Check("K2 ER空真值退约定", !convOnly.Any(e => e.FromCol == "uid")
+            && convOnly.Any(e => e.FromCol == "user_id"), "");
+    }
+
+    // K2-3：内存封顶——查询侧阈值落账（页序列模拟，不连库）
+    {
+        var cap = TaoDBM.Core.Streaming.QueryRouter.MaxRowsPerStatement;
+        Check("K2 封顶默认20万", cap == 200_000, $"cap={cap}");
+        TaoDBM.Core.Streaming.QueryRouter.MaxRowsPerStatement = 0;   // 关闭封顶不炸
+        Check("K2 封顶可关闭", TaoDBM.Core.Streaming.QueryRouter.MaxRowsPerStatement == 0, "");
+        TaoDBM.Core.Streaming.QueryRouter.MaxRowsPerStatement = cap; // 还原
+    }
+
+    // K2-4：定时 SQL 管理面——CRUD + 到点扫描 + 结果回写（独立存储路径隔离）
+    {
+        var e = SqlScheduler.Add("K2测试任务", "shop", "SELECT 1", 30);
+        Check("K2 定时新增", e.Id.Length == 12 && e.Enabled && e.IntervalMinutes == 30, "");
+        var listed = SqlScheduler.List();
+        Check("K2 定时列表", listed.Any(x => x.Id == e.Id), "");
+        Check("K2 定时更新", SqlScheduler.Update(e.Id, "K2改名", null, null, 15, false)
+            && SqlScheduler.List().First(x => x.Id == e.Id).IntervalMinutes == 15
+            && !SqlScheduler.List().First(x => x.Id == e.Id).Enabled, "");
+        // 到点扫描：NextRunAt 已过（Add 时 +30 分，把间隔改负不行——直接造过期条目）
+        SqlScheduler.Update(e.Id, null, null, null, 1, true);
+        var due = SqlScheduler.TakeDue(DateTimeOffset.Now.AddHours(1));
+        Check("K2 定时到点扫描", due.Any(x => x.Id == e.Id), "");
+        Check("K2 定时顺延", SqlScheduler.List().First(x => x.Id == e.Id).NextRunAt > DateTimeOffset.Now, "");
+        SqlScheduler.RecordResult(e.Id, "done");
+        Check("K2 定时结果回写", SqlScheduler.List().First(x => x.Id == e.Id).LastResult == "done", "");
+        Check("K2 定时删除", SqlScheduler.Delete(e.Id) && !SqlScheduler.List().Any(x => x.Id == e.Id), "");
+        bool threw = false;
+        try { SqlScheduler.Add("", "db", "SELECT 1", 10); }
+        catch (ArgumentException) { threw = true; }
+        Check("K2 定时空名校验", threw, "");
+    }
+
+    // K2-5：导入分块口径对齐——默认上限与查询封顶同值锚定
+    {
+        Check("K2 口径同值锚定", new TaoDBM.Core.Streaming.ImportOptions().MaxRows == TaoDBM.Core.Streaming.QueryRouter.MaxRowsPerStatement, "");
+        // MaxRows 生效：3 行上限、5 行源 → 3 行 + 截断标记
+        var csv = "id\n" + string.Join("\n", Enumerable.Range(1, 5));
+        var bs = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(csv), new TaoDBM.Core.Streaming.ImportOptions { MaxRows = 3 }).ToList();
+        Check("K2 导入上限生效", bs.Sum(b => b.Rows.Count) == 3 && bs[^1].Truncated, "");
+        // 显式 0 = 不限制（兼容旧口径）
+        var bs0 = TaoDBM.Core.Streaming.ImportStreaming.CsvBatches(new StringReader(csv), new TaoDBM.Core.Streaming.ImportOptions { MaxRows = 0 }).ToList();
+        Check("K2 导入不限兼容", bs0.Sum(b => b.Rows.Count) == 5 && !bs0[^1].Truncated, "");
+    }
+}
 }
 
 Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");

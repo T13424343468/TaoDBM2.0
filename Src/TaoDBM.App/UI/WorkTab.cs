@@ -812,10 +812,12 @@ public class WorkTab : Grid
             });
         }
         var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = new CornerRadius(4) };
+        var dictBtn = new Button { Content = "导出数据字典（HTML / Word）", CornerRadius = new CornerRadius(4) };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = 12 });
         panel.Children.Add(lv);
         panel.Children.Add(exportBtn);
+        panel.Children.Add(dictBtn);
         var dlg = new ContentDialog
         {
             Title = "报表 · " + qr.Title,
@@ -837,6 +839,38 @@ public class WorkTab : Grid
                 _messageBox.Text = "报表已导出到 " + file.Path;
             }
             catch (Exception ex) { _messageBox.Text = "导出失败：" + ex.Message; }
+        };
+        // 数据字典完整导出：当前连接的库逐表取列，HTML / Word 双口径（对账表第五章收口）
+        dictBtn.Click += async (_, _) =>
+        {
+            try
+            {
+                var tables = new List<DictionaryTable>();
+                var names = await _provider.GetChildren(_db);
+                foreach (var name in names)
+                {
+                    List<ColumnSpec> cols;
+                    try { cols = await _provider.GetColumns(_db, name); }
+                    catch { continue; }
+                    if (cols.Count == 0) continue;
+                    tables.Add(DataDictionary.FromSpecs(name, cols));
+                }
+                if (tables.Count == 0) { _messageBox.Text = "该库没有可导出的表。"; return; }
+                var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+                picker.FileTypeChoices.Add("HTML 数据字典", new List<string> { ".html" });
+                picker.FileTypeChoices.Add("Word 数据字典", new List<string> { ".doc" });
+                picker.SuggestedFileName = $"TaoDBM-数据字典-{_db}-{DateTime.Now:yyyyMMdd-HHmm}";
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
+                var file = await picker.PickSaveFileAsync();
+                if (file is null) return;
+                bool isWord = file.Path.EndsWith(".doc", StringComparison.OrdinalIgnoreCase);
+                string content = isWord
+                    ? DataDictionary.ToWord(tables, $"数据字典 · {_db}")
+                    : DataDictionary.ToHtml(tables, $"数据字典 · {_db}");
+                await Windows.Storage.FileIO.WriteTextAsync(file, content);
+                _messageBox.Text = $"数据字典已导出（{tables.Count} 张表）到 " + file.Path;
+            }
+            catch (Exception ex) { _messageBox.Text = "字典导出失败：" + ex.Message; }
         };
         await dlg.ShowThemedAsync();
     }

@@ -80,6 +80,40 @@ public class ErdModel
         return edges;
     }
 
+    /// <summary>
+    /// 深度推断（对账表第七章「逆向建模升级」收口）：命名约定之外，优先采用真库外键清单
+    /// （ObjectTreeCatalog.ListForeignKeys 的查询结果行：table_name / column_name / ref_table / ref_column），
+    /// 命中即建边并去重；命名约定只补真值未覆盖的边。多表关系边全量保留，不设上限。
+    /// </summary>
+    public static List<ErdEdge> InferEdgesDeep(ErdModel m, IReadOnlyList<object?[]>? fkRows)
+    {
+        var edges = new List<ErdEdge>();
+        var byName = m.Tables.Select(t => (t.Name, t)).ToDictionary(p => p.Name, p => p.t, StringComparer.OrdinalIgnoreCase);
+        if (fkRows is not null)
+        {
+            foreach (var row in fkRows)
+            {
+                if (row.Length < 3) continue;
+                string tbl = row[0]?.ToString() ?? "";
+                string col = row[1]?.ToString() ?? "";
+                string refTbl = row[2]?.ToString() ?? "";
+                string refCol = row.Length > 3 ? row[3]?.ToString() ?? "" : "";
+                if (tbl.Length == 0 || refTbl.Length == 0) continue;
+                if (!byName.ContainsKey(tbl) || !byName.ContainsKey(refTbl)) continue;
+                if (refTbl.Equals(tbl, StringComparison.OrdinalIgnoreCase)) continue; // 自引用跳过
+                if (edges.Any(e => e.FromTable.Equals(tbl, StringComparison.OrdinalIgnoreCase)
+                    && e.FromCol.Equals(col, StringComparison.OrdinalIgnoreCase))) continue;
+                edges.Add(new ErdEdge { FromTable = byName[tbl].Name, FromCol = col, ToTable = byName[refTbl].Name });
+            }
+        }
+        // 命名约定补边：只补真值未覆盖的（按 FromTable+FromCol 去重）
+        foreach (var e in InferEdges(m))
+            if (!edges.Any(x => x.FromTable.Equals(e.FromTable, StringComparison.OrdinalIgnoreCase)
+                && x.FromCol.Equals(e.FromCol, StringComparison.OrdinalIgnoreCase)))
+                edges.Add(e);
+        return edges;
+    }
+
     public string ToJson() => JsonSerializer.Serialize(this, Opt);
 
     public static ErdModel? FromJson(string json)

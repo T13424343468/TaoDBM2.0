@@ -9,8 +9,10 @@ public sealed class ImportOptions
     public int BatchSize { get; init; } = 100;
 
     /// <summary>行数上限兜底：解析到该行数即停止并标记截断，
-    /// 防止异常超大文件拖垮内存或数据库；≤0 表示不限制。</summary>
-    public long MaxRows { get; init; } = 0;
+    /// 防止异常超大文件拖垮内存或数据库；≤0 表示不限制。
+    /// 口径对齐（对账表「导入分块口径对齐」收口）：默认与 QueryRouter.MaxRowsPerStatement
+    /// 同值——导入侧解析行数上限 = 查询侧内存封顶阈值，两侧口径统一由同一常量锚定。</summary>
+    public long MaxRows { get; init; } = 200_000;
 }
 
 /// <summary>一批待导入数据行。拉取式消费下，内存中任意时刻最多只保留一个批次。</summary>

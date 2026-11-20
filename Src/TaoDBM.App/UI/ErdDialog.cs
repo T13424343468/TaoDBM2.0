@@ -197,10 +197,20 @@ public static class ErdDialog
                 _pkOf[name] = cols.FirstOrDefault(c => c.IsKey)?.Name ?? "";
             }
             if (_model.Tables.Count == 0) { _hint.Text = "该库没有可用表。"; return; }
-            _model.Edges = ErdModel.InferEdges(_model);
+            // 深度推断：先取真库外键清单（目录引擎），失败退命名约定
+            List<object?[]>? fkRows = null;
+            try
+            {
+                var fkSql = ObjectTreeCatalog.ListForeignKeys(prov.Profile.Engine, db);
+                var fkRs = await prov.Execute(db, fkSql);
+                fkRows = fkRs.Count > 0 ? fkRs[0].Rows : null;
+            }
+            catch { /* 无外键视图或权限不足：退命名约定 */ }
+            _model.Edges = ErdModel.InferEdgesDeep(_model, fkRows);
             ErdModel.AutoLayout(_model);
             Place(_model);
-            _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（最多取前 40 张表）。";
+            int fkReal = fkRows?.Count ?? 0;
+            _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条，最多取前 40 张表）。";
         }
         catch (Exception ex) { _hint.Text = "生成失败：" + ex.Message; }
     }

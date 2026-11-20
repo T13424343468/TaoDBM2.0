@@ -5,6 +5,10 @@ namespace TaoDBM.Core.Streaming;
 /// <summary>分流入口：按 StreamingSwitch 把查询接到流式或旧整包通道（方案书并存口径）。</summary>
 public static class QueryRouter
 {
+    /// <summary>内存封顶阈值（对账表「内存封顶」收口）：单语句结果行数超过该值即截断并落账 Message；
+    /// 0 = 不封顶。默认 200_000 行，防异常大结果集拖垮内存。</summary>
+    public static long MaxRowsPerStatement { get; set; } = 200_000;
+
     /// <summary>流式执行：跑完返回整包结果（与旧 Execute 同形），内部逐页取数，无 5000 截断。</summary>
     public static async Task<List<QueryResult>> ExecuteAsync(RelationalProvider provider, string? db, string script, CancellationToken ct)
     {
@@ -20,13 +24,21 @@ public static class QueryRouter
             try
             {
                 qr.Columns.AddRange(sq.Columns);
+                long rows = 0;
+                bool capped = false;
                 while (true)
                 {
                     ct.ThrowIfCancellationRequested();
                     var page = await sq.NextPageAsync(2000, ct);
-                    foreach (var row in page.Rows) qr.Rows.Add(row);
-                    if (!page.HasMore) break;
+                    foreach (var row in page.Rows)
+                    {
+                        if (MaxRowsPerStatement > 0 && rows >= MaxRowsPerStatement) { capped = true; break; }
+                        qr.Rows.Add(row);
+                        rows++;
+                    }
+                    if (capped || !page.HasMore) break;
                 }
+                if (capped) qr.Message = $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
                 Safe.Run(() => qr.Affected = sq.Affected, "读取受影响行数");
                 if (qr.Columns.Count == 0 && qr.Affected < 0) qr.Affected = 0;
             }
