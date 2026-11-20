@@ -4256,6 +4256,24 @@ Layer("单元");
     try { Directory.Delete(drillDir, true); } catch { }
 }
 
+Console.WriteLine("\n== 操作手册（2026-11-20 老板令）==");
+Layer("单元");
+{
+    var ch = ManualContent.Chapters;
+    Check("MAN-章节数量", ch.Length == 16, ch.Length.ToString());
+    Check("MAN-章节标题唯一", ch.Select(c => c.Title).Distinct().Count() == ch.Length);
+    Check("MAN-每章有小节", ch.All(c => c.Sections.Length > 0));
+    Check("MAN-每节有标题与正文", ch.All(c => c.Sections.All(s => !string.IsNullOrWhiteSpace(s.Heading) && !string.IsNullOrWhiteSpace(s.Body))));
+    var totalChars = ch.Sum(c => c.Sections.Sum(s => s.Heading.Length + s.Body.Length));
+    Check("MAN-正文总字数达标(≥6000)", totalChars >= 6000, totalChars.ToString());
+    string[] must = { "快速上手", "连接管理", "备份与恢复", "分库分区分表", "七库方言差异速查", "快捷键一览" };
+    Check("MAN-关键章节齐全", must.All(m => ch.Any(c => c.Title.Contains(m))), string.Join("|", ch.Select(c => c.Title)));
+    var dialect = ch.First(c => c.Title.Contains("方言"));
+    Check("MAN-方言章覆盖七库", new[] { "MySQL", "PostgreSQL", "SQL Server", "SQLite", "Oracle", "MongoDB", "Redis" }
+        .All(e => dialect.Sections.Any(s => s.Heading.Contains(e) || s.Body.Contains(e))));
+    Check("MAN-快捷键章含F1与F5", ch.First(c => c.Title.Contains("快捷键")).Sections.Any(s => s.Body.Contains("F1") && s.Body.Contains("F5")));
+}
+
 Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链", "制度补齐" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");

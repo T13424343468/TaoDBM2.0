@@ -32,6 +32,7 @@
                                 <MenuFlyoutItem Text="删除连接" Click="OnDelConn"/>
                                 <MenuFlyoutSeparator/>
                                 <MenuFlyoutItem Text="设置" Click="OnSettings"/>
+                                <MenuFlyoutItem Text="操作手册" Click="OnManual"/>
                                                             </MenuFlyout>
                         </Button.Flyout>
                         <Image x:Name="LogoImg" Width="26" Height="26"/>
@@ -53,6 +54,8 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+                    <Button x:Name="BtnManual" Content="手册" Click="OnManual" AutomationProperties.AutomationId="BtnManual"
+                            Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                     <Button x:Name="BtnAbout" Content="关于" Click="OnAbout" ClickMode="Press" AutomationProperties.AutomationId="BtnAbout"
                             Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                 </StackPanel>

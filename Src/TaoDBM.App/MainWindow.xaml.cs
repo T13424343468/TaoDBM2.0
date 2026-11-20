@@ -52,6 +52,10 @@ public partial class MainWindow : Window
         BtnLogo.Flyout.PinTheme();
         BtnTheme.Flyout.PinTheme();
         UpdateThemeChecks();
+        // F1 全局唤起操作手册（2026-11-20 老板令）：挂在根 Grid 上，任何焦点下都响应
+        var f1 = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.F1 };
+        f1.Invoked += (_, args) => { args.Handled = true; UI.ManualDialog.Show(this); };
+        ((Microsoft.UI.Xaml.Controls.Grid)Content).KeyboardAccelerators.Add(f1);
         var trayIcoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "TaoDBM.ico");
         Safe.Run(() =>
         {
@@ -793,6 +797,9 @@ public partial class MainWindow : Window
             "TaoDBM v1.0",
             "WinUI3 + .NET 8 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n\n道生一，一生二，二生三，三生万物。数据即万物。");
     }
+
+    /// <summary>操作手册（2026-11-20 老板令）：顶栏「手册」/ 左上菜单「操作手册」/ 全局 F1 三入口，内容离线内置。</summary>
+    private void OnManual(object sender, RoutedEventArgs e) => UI.ManualDialog.Show(this);
 
     // ---------- 打开标签页 ----------
 
