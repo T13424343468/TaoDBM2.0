@@ -238,19 +238,49 @@ public static class BackupDialog
         foreach (var kv in spec.Env) psi.Environment[kv.Key] = kv.Value;
         if (spec.InputFile != null) psi.RedirectStandardInput = true;
 
-        using var p = new Process { StartInfo = psi };
-        p.Start();
-        var outTask = p.StandardOutput.ReadToEndAsync();
-        var errTask = p.StandardError.ReadToEndAsync();
-        if (spec.InputFile != null)
+        // 辅助文件（mongodump --config / expdp parfile）：启动前落盘，退出后删除；内容不进命令行与展示文本。
+        var tempFiles = new List<string>();
+        foreach (var kv in spec.Files)
         {
-            var content = await File.ReadAllTextAsync(spec.InputFile);
-            await p.StandardInput.WriteAsync(content);
-            p.StandardInput.Close();
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), kv.Key);
+            await File.WriteAllTextAsync(path, kv.Value);
+            tempFiles.Add(path);
+            // parfile/--config 为相对文件名时依赖工作目录；统一改写为绝对路径引用。
+            spec.Arguments = spec.Arguments.Replace(BackupTools.QuoteArg(kv.Key), BackupTools.QuoteArg(path));
         }
-        await p.WaitForExitAsync();
-        var text = await outTask;
-        var err = await errTask;
-        return (p.ExitCode, (text + "\n" + err).Trim());
+        psi = new ProcessStartInfo(spec.FileName, spec.Arguments)
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        foreach (var kv in spec.Env) psi.Environment[kv.Key] = kv.Value;
+        if (spec.InputFile != null) psi.RedirectStandardInput = true;
+
+        try
+        {
+            using var p = new Process { StartInfo = psi };
+            p.Start();
+            var outTask = p.StandardOutput.ReadToEndAsync();
+            var errTask = p.StandardError.ReadToEndAsync();
+            if (spec.InputFile != null)
+            {
+                var content = await File.ReadAllTextAsync(spec.InputFile);
+                await p.StandardInput.WriteAsync(content);
+                p.StandardInput.Close();
+            }
+            await p.WaitForExitAsync();
+            var text = await outTask;
+            var err = await errTask;
+            return (p.ExitCode, (text + "\n" + err).Trim());
+        }
+        finally
+        {
+            foreach (var f in tempFiles)
+            {
+                try { File.Delete(f); } catch { /* 清理失败不掩盖主流程结果 */ }
+            }
+        }
     }
 }

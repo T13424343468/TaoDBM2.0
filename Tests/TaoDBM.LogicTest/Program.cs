@@ -346,10 +346,10 @@ Console.WriteLine("== TableDdl ==");
 
 Console.WriteLine("== BackupTools ==");
 {
-    Check("支持矩阵", BackupTools.Supported(DbEngine.MySQL) && BackupTools.Supported(DbEngine.PostgreSQL)
+    Check("支持矩阵七库", BackupTools.Supported(DbEngine.MySQL) && BackupTools.Supported(DbEngine.PostgreSQL)
         && BackupTools.Supported(DbEngine.SqlServer) && BackupTools.Supported(DbEngine.SQLite)
-        && !BackupTools.Supported(DbEngine.Oracle) && !BackupTools.Supported(DbEngine.MongoDB)
-        && !BackupTools.Supported(DbEngine.Redis));
+        && BackupTools.Supported(DbEngine.Oracle) && BackupTools.Supported(DbEngine.MongoDB)
+        && BackupTools.Supported(DbEngine.Redis));
     var spec = BackupTools.MysqlDump("127.0.0.1", 3306, "root", "pw123", "mydb", "c:\\dir with space\\dump.sql");
     Check("mysqldump 参数", spec.Arguments.Contains("--host=127.0.0.1") && spec.Arguments.Contains("--port=3306")
         && spec.Arguments.Contains("--user=root") && spec.Arguments.Contains("--result-file=\"c:\\dir with space\\dump.sql\"")
@@ -368,6 +368,49 @@ Console.WriteLine("== BackupTools ==");
     Check("SqlServer 还原语句", BackupTools.SqlServerRestoreSql("db", "d:\\x.bak")
         == "RESTORE DATABASE [db] FROM DISK = 'd:\\x.bak' WITH REPLACE");
     Check("SqlServer 单引号转义", BackupTools.SqlServerBackupSql("db", "d:\\o'brien.bak").Contains("'d:\\o''brien.bak'"));
+    // ---- Oracle data pump：凭据进 parfile，命令行/Describe 零密码 ----
+    var exp = BackupTools.OracleBackup("h", 1521, "scott", "tiger@x", "orcl", "DATA_PUMP_DIR", "mydb.dmp");
+    Check("expdp parfile", exp.FileName == "expdp" && exp.Arguments.Contains("taodbm_expdp.par")
+        && exp.Files["taodbm_expdp.par"].Contains("USERID=scott/tiger@x@h:1521/orcl")
+        && exp.Files["taodbm_expdp.par"].Contains("DIRECTORY=DATA_PUMP_DIR")
+        && exp.Files["taodbm_expdp.par"].Contains("DUMPFILE=mydb.dmp")
+        && exp.Files["taodbm_expdp.par"].Contains("LOGFILE=mydb.log"), exp.Describe);
+    Check("expdp 凭据零明文", !exp.Describe.Contains("tiger@x") && !exp.Arguments.Contains("tiger@x"));
+    var imp = BackupTools.OracleRestore("h", 1521, "scott", "tiger@x", "orcl", "DATA_PUMP_DIR", "mydb.dmp");
+    Check("impdp parfile", imp.FileName == "impdp" && imp.Files["taodbm_impdp.par"].Contains("USERID=scott/tiger@x@h:1521/orcl")
+        && imp.Files["taodbm_impdp.par"].Contains("LOGFILE=mydb.imp.log"), imp.Describe);
+    // ---- MongoDB：密码进 --config yaml，命令行零密码；整库不带 --db；还原带 --drop ----
+    var md = BackupTools.MongoDump("h", 27017, "u", "mp\"w", "", "d:\\dump out");
+    Check("mongodump 整库", md.FileName == "mongodump" && md.Arguments.Contains("--config=taodbm_mongo.conf")
+        && !md.Arguments.Contains("--db=") && md.Arguments.Contains("--out=\"d:\\dump out\""), md.Arguments);
+    Check("mongo config 密码转义", md.Files["taodbm_mongo.conf"].Contains("hosts:\n  - h:27017")
+        && md.Files["taodbm_mongo.conf"].Contains("userName: \"u\"")
+        && md.Files["taodbm_mongo.conf"].Contains("password: \"mp\\\"w\"")
+        && !md.Arguments.Contains("mp\\\"w"), md.Files["taodbm_mongo.conf"]);
+    var mds = BackupTools.MongoDump("h", 27017, "u", "p", "mydb", "d:\\out");
+    Check("mongodump 指定库", mds.Arguments.Contains("--db=mydb"), mds.Arguments);
+    var mr = BackupTools.MongoRestore("h", 27017, "u", "p", "mydb", "d:\\dump");
+    Check("mongorestore 还原", mr.FileName == "mongorestore" && mr.Arguments.Contains("--nsFrom=mydb.*")
+        && mr.Arguments.Contains("--nsTo=mydb.*") && mr.Arguments.Contains("--drop")
+        && mr.Arguments.Contains("--dir=d:\\dump"), mr.Arguments);
+    Check("mongorestore 整库无 ns", BackupTools.MongoRestore("h", 27017, "u", "p", "", "d:\\dump").Arguments.Contains("--drop")
+        && !BackupTools.MongoRestore("h", 27017, "u", "p", "", "d:\\dump").Arguments.Contains("--nsFrom"));
+    // ---- Redis：BGSAVE + RDB 文件复制 ----
+    Check("Redis BGSAVE", BackupTools.RedisBackupCommand() == "BGSAVE");
+    string redisDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taodbm_lt_redis_" + Guid.NewGuid().ToString("N"));
+    string rdbSrc = System.IO.Path.Combine(redisDir, "src.rdb");
+    System.IO.Directory.CreateDirectory(redisDir);
+    System.IO.File.WriteAllText(rdbSrc, "REDIS-RDB-TEST");
+    try
+    {
+        BackupTools.RedisRestoreCopy(rdbSrc, redisDir, "dump.rdb");
+        Check("Redis 还原复制", System.IO.File.ReadAllText(System.IO.Path.Combine(redisDir, "dump.rdb")) == "REDIS-RDB-TEST");
+        bool redisThrew = false;
+        try { BackupTools.RedisRestoreCopy(System.IO.Path.Combine(redisDir, "nope.rdb"), redisDir); }
+        catch (FileNotFoundException) { redisThrew = true; }
+        Check("Redis 缺文件报错", redisThrew);
+    }
+    finally { System.IO.Directory.Delete(redisDir, recursive: true); }
 }
 
 Console.WriteLine("== L6 恶意与极端输入 + L7 凭据零明文 ==");
