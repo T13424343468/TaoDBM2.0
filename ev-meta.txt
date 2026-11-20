@@ -18,3 +18,4 @@ tag=kb-state-afterB taodbmui Expanded time=2026-11-20T23:08:31.3031768+00:00 app
 tag=kb-tree-items-after PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Maximize | Close | TaoDBM v2.0.0 | ＋ 新建连接 | 主题 | 手册 | 关于 | 🗄️ ui-auto-mssql（SQL Server） | 🗄️ ui-auto-mssql（SQL Server） | 📁 master | 📁 master | 📁 model | 📁 model | 📁 msdb | 📁 msdb | 📁 taodbmui | 📁 taodbmui time=2026-11-20T23:08:33.0157392+00:00 appMem=173 MB
 tag=expand-kb-ok 🗄️ ui-auto-mssql child=taodbmui state=Expanded time=2026-11-20T23:08:34.4416006+00:00 appMem=173 MB
 tag=step-start S09 time=2026-11-20T23:08:41.9921051+00:00 appMem=172 MB
+tag=step-start S10 time=2026-11-20T23:08:49.8312733+00:00 appMem=172 MB
