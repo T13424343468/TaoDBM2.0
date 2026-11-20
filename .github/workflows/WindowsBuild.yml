@@ -415,11 +415,12 @@ jobs:
             }
             Journal "service-stopped=$stopped"
             if (-not $stopped) { & sc.exe stop $svcName | Out-Host; Start-Sleep -Seconds 10; Journal "service-sc-stop-fallback" }
-            # run 193 定因：服务能启动但超过 240s 轮询上限（事后取证 service=Running）——加长到 600s 并记录 sc 输出
+            # run 193/194 定因：服务能启动但极慢（#193≤380s、#194≤620s 才 Running，事后取证均为 Running）
+            # 轮询加长到 900s；超时不再 throw——继续走连通阶段（1433 失败自动落 ERRORLOG 动态端口兜底）
             $scOut = (& sc.exe start $svcName 2>&1 | Out-String)
             Journal "sc-start-out: $($scOut.Trim())"
             $started = $false
-            for ($si = 0; $si -lt 120; $si++) {
+            for ($si = 0; $si -lt 180; $si++) {
               Start-Sleep -Seconds 5
               $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
               if ($sst) {
@@ -428,7 +429,7 @@ jobs:
               }
             }
             Journal "service-started=$started"
-            if (-not $started) { throw "sqlexpress service failed to reach Running after sc.exe start (600s)" }
+            if (-not $started) { Journal "service-start-slow-proceed: rely on connect-phase wait + dynamic-port fallback" }
             Journal "service-restarted"
           } catch {
             Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
