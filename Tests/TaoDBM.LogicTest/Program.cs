@@ -3743,8 +3743,10 @@ Layer("单元");
     var regFile = Path.Combine(Path.GetTempPath(), "taodbm-sqlhandoff-test-" + Guid.NewGuid().ToString("N") + ".txt");
     SqlHandoffRegistry.UseFile(regFile);
     var nowUtc = DateTime.UtcNow;
-    // 存活但非本进程的 pid：MostRecentAlive 会排除自身进程（交接不能交给发起方自己）
-    var otherPid = Process.GetProcesses().First(p => p.Id != Environment.ProcessId).Id;
+    // 存活但非本进程的 pid：MostRecentAlive 会排除自身进程（交接不能交给发起方自己）。
+    // 注意 Windows 枚举先见 PID 0(Idle)/4(System)，Parse 拒收 pid<=0，故取 >4 的真实存活进程
+    // （2026-11-20 #143/#145 五连败定因：First 命中 Idle，登记行全被解析丢弃，pass=6 fail=5 云本地双向实锤）
+    var otherPid = Process.GetProcesses().Where(p => p.Id > 4 && p.Id != Environment.ProcessId).Select(p => p.Id).First();
     SqlHandoffRegistry.Register("pipe-A", otherPid);
     Check("SH-登记-已登记可查", SqlHandoffRegistry.IsRegistered("pipe-A"));
     var eA = SqlHandoffRegistry.Parse(SqlHandoffRegistry.Format(new SqlHandoffRegistry.Entry("pipe-B", otherPid, nowUtc)));
