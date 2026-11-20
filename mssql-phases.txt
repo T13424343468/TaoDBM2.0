@@ -1,12 +1,58 @@
-2026-11-20T13:38:37.8075725Z step-start pwsh=7.6.10
-2026-11-20T13:38:43.3888921Z direct-download-ok size=261082544
-2026-11-20T13:38:50.8098343Z unpack-exit=0
-2026-11-20T13:38:50.8191241Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-20T13:38:50.8215595Z setup-start
-2026-11-20T13:44:11.3266019Z setup-exit=0
-2026-11-20T13:44:16.7869667Z service-running
-2026-11-20T13:44:16.7955384Z registry-key=MSSQL15.SQLEXPRESS
-2026-11-20T13:44:16.8107638Z port-config-exception: System.Management.Automation.ItemNotFoundException: Cannot find path 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocket\NetLib\Tcp\IPAll' because it does not exist.
-2026-11-20T13:44:16.8136668Z at At D:\a\_temp\e6c45491-6795-4e2b-be4f-febcb3918889.ps1:63 char:3
-+   Set-ItemProperty -Path "$tcp\IPAll" -Name TcpPort -Value 1433
-+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-11-20T14:40:46.3100259Z step-start pwsh=7.6.10
+2026-11-20T14:40:49.3325818Z direct-download-ok size=261082544
+2026-11-20T14:40:50.9017126Z unpack-exit=0
+2026-11-20T14:40:50.9131216Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-20T14:40:50.9158353Z setup-start
+2026-11-20T14:43:55.0841160Z setup-exit=0
+2026-11-20T14:44:00.6619845Z service-running
+2026-11-20T14:44:00.6713496Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-20T14:44:00.6751039Z regtree: SuperSocket absent
+2026-11-20T14:44:00.6789620Z ipall-key-ensured
+2026-11-20T14:44:00.6825031Z port-tcpport-set
+2026-11-20T14:44:00.6838726Z port-dynamic-cleared
+2026-11-20T14:44:00.6850249Z port-enabled-set
+2026-11-20T14:44:02.3195204Z service-restarted
+2026-11-20T14:44:25.3446634Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
+2026-11-20T14:46:57.7718088Z errorlog-no-port; first lines:
+2026-11-20 14:44:01.36 Server      Microsoft SQL Server 2019 (RTM) - 15.0.2000.5 (X64) 
+	Sep 24 2019 13:48:23 
+	Copyright (C) 2019 Microsoft Corporation
+	Express Edition (64-bit) on Windows Server 2025 Datacenter 10.0 <X64> (Build 26100: ) (Hypervisor)
+
+2026-11-20 14:44:01.36 Server      UTC adjustment: 0:00
+2026-11-20 14:44:01.36 Server      (c) Microsoft Corporation.
+2026-11-20 14:44:01.36 Server      All rights reserved.
+2026-11-20 14:44:01.36 Server      Server process ID is 8004.
+2026-11-20 14:44:01.36 Server      System Manufacturer: 'Microsoft Corporation', System Model: 'Virtual Machine'.
+2026-11-20 14:44:01.36 Server      Authentication mode is MIXED.
+2026-11-20 14:44:01.36 Server      Logging SQL Server messages in file 'C:\Program Files\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQL\Log\ERRORLOG'.
+2026-11-20 14:44:01.36 Server      The service account is 'NT Service\MSSQL$SQLEXPRESS'. This is an informational message; no user action is required.
+2026-11-20 14:44:01.36 Server      Registry startup parameters: 
+	 -d C:\Program Files\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQL\DATA\master.mdf
+	 -e C:\Program Files\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQL\Log\ERRORLOG
+	 -l C:\Program Files\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQL\DATA\mastlog.ldf
+2026-11-20 14:44:01.36 Server      Command Line Startup Parameters:
+	 -s "SQLEXPRESS"
+2026-11-20 14:44:01.36 Server      SQL Server detected 1 sockets with 2 cores per socket and 4 logical processors per socket, 4 total logical processors; using 4 logical processors based on SQL Server licensing. This is an informational message; no user action is required.
+2026-11-20 14:44:01.36 Server      SQL Server is starting at normal priority base (=7). This is an informational message only. No user action is required.
+2026-11-20 14:44:01.36 Server      Detected 16378 MB of RAM. This is an informational message; no user action is required.
+2026-11-20 14:44:01.36 Server      Using conventional memory in the memory manager.
+2026-11-20 14:44:01.36 Server      Page exclusion bitmap is enabled.
+2026-11-20 14:44:01.39 Server      Buffer Pool: Allocating 4194304 bytes for 2560000 hashPages.
+2026-11-20 14:44:01.39 Server      Default collation: SQL_Latin1_General_CP1_CI_AS (us_english 1033)
+2026-11-20 14:44:01.41 Server      Buffer pool extension is already disabled. No action is necessary.
+2026-11-20 14:44:01.43 Server      Query Store settings initialized with enabled = 1, 
+2026-11-20 14:44:01.43 Server      The maximum number of dedicated administrator connections for this instance is '1'
+2026-11-20 14:44:01.43 Server      This instance of SQL Server last reported using a process ID of 4180 at 11/20/2026 2:44:01 PM (local) 11/20/2026 2:44:01 PM (UTC). This is an informational message only; no user action is required.
+2026-11-20 14:44:01.43 Server      Node configuration: node 0: CPU mask: 0x000000000000000f:0 Active CPU mask: 0x000000000000000f:0. This message provides a description of the NUMA configuration for this computer. This is an informational message only. No user action is required.
+2026-11-20 14:44:01.44 Server      Using dynamic lock allocation.  Initial allocation of 2500 Lock blocks and 5000 Lock Owner blocks per node.  This is an informational message only.  No user action is required.
+2026-11-20 14:44:01.45 Server      In-Memory OLTP initialized on lowend machine.
+2026-11-20 14:44:01.55 Server      CLR version v4.0.30319 loaded.
+2026-11-20 14:44:01.57 Server      Common language runtime (CLR) functionality initialized using CLR version v4.0.30319 from C:\Windows\Microsoft.NET\Framework64\v4.0.30319\.
+2026-11-20 14:44:01.71 Server      [INFO] Created Extended Events session 'hkenginexesession'
+
+2026-11-20 14:44:01.71 Server      Database Instant File Initialization: enabled. For security and performance considerations see the topic 'Database Instant File Initialization' in SQL Server Books Online. This is an informational message only. No user action is required.
+2026-11-20 14:44:01.71 Server      Total Log Writer threads: 2. This is an informational message; no user action is required.
+2026-11-20 14:44:01.71 Server      clwb is selected for pmem flush operation.
+2026-11-20T14:46:57.7775776Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
+2026-11-20T14:49:14.0725073Z tcp-connect-failed: Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
