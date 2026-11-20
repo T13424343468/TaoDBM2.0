@@ -6,3 +6,6 @@
 2026-11-20 23:58:52.911 [对象树] 连接展开 engine=SQLite dbs=1 [main]
 2026-11-20 23:59:07.145 [对象树] 库展开 db=main children=2 [orders,products]
 2026-11-20 23:59:37.831 [Flyout] opening
+2026-11-20 23:59:40.941 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=ok
+2026-11-20 23:59:40.958 [新建查询] worktab built db=main
+2026-11-20 23:59:40.967 [新建查询] tab selected
