@@ -392,6 +392,11 @@ jobs:
           Journal "registry-key=$($instKey.PSChildName)"
           $tcp = "$($instKey.PSPath)\MSSQLServer\SuperSocket\NetLib\Tcp"
           try {
+            # run 186 定因：Tcp/IPAll 键在全新装机上可能不存在——缺就建，存在就改；键树现场全部落 journal
+            $ss = "$($instKey.PSPath)\MSSQLServer\SuperSocket"
+            if (Test-Path $ss) { Get-ChildItem $ss -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Journal "regtree: $($_.Name)" } } else { Journal "regtree: SuperSocket absent" }
+            New-Item -Path "$tcp\IPAll" -Force | Out-Null
+            Journal "ipall-key-ensured"
             Set-ItemProperty -Path "$tcp\IPAll" -Name TcpPort -Value 1433
             Journal "port-tcpport-set"
             Set-ItemProperty -Path "$tcp\IPAll" -Name TcpDynamicPorts -Value ''
@@ -407,23 +412,37 @@ jobs:
           }
           Start-Sleep -Seconds 10
           Write-Host "[MSSQL] static TCP 1433 configured; service restarted"
-          $cs = "Server=localhost,1433;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
+          # 连通自愈：先试 1433；不通则从 ERRORLOG 解析动态端口重试，最终端口落 GITHUB_ENV 供矩阵步骤用
+          $mssqlPort = 1433
           $okConn = $false
           $connErr = ''
-          for ($ci = 0; $ci -lt 36; $ci++) {
-            try {
-              $cc = New-Object System.Data.SqlClient.SqlConnection $cs
-              $cc.Open()
-              $cVer = $cc.CreateCommand()
-              $cVer.CommandText = 'SELECT @@VERSION'
-              Write-Host ("[MSSQL] connected: " + $cVer.ExecuteScalar())
-              $cc.Close()
-              $okConn = $true
-              break
-            } catch { $connErr = $_.Exception.Message; if ($ci -eq 0) { Journal "connect-first-fail: $connErr" }; Write-Host "[MSSQL] connect attempt $ci failed: $connErr"; Start-Sleep -Seconds 5 }
+          for ($round = 0; $round -lt 2 -and -not $okConn; $round++) {
+            $cs = "Server=localhost,$mssqlPort;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
+            for ($ci = 0; $ci -lt 24; $ci++) {
+              try {
+                $cc = New-Object System.Data.SqlClient.SqlConnection $cs
+                $cc.Open()
+                $cVer = $cc.CreateCommand()
+                $cVer.CommandText = 'SELECT @@VERSION'
+                Write-Host ("[MSSQL] connected on port $mssqlPort: " + $cVer.ExecuteScalar())
+                $cc.Close()
+                $okConn = $true
+                break
+              } catch { $connErr = $_.Exception.Message; if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }; Start-Sleep -Seconds 5 }
+            }
+            if (-not $okConn -and $round -eq 0) {
+              # 从 ERRORLOG 解析实际监听端口（动态端口兜底）
+              $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($logDir) {
+                $listen = Select-String -Path $logDir.FullName -Pattern "'(\d{4,5})'" -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Where-Object { $_ -ne '1433' } | Select-Object -First 1
+                if ($listen) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
+                else { Journal "errorlog-no-port; first lines:"; Get-Content $logDir.FullName -TotalCount 40 -ErrorAction SilentlyContinue | Add-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" }
+              } else { Journal "errorlog-not-found" }
+            }
           }
           if (-not $okConn) { Journal "tcp-connect-failed: $connErr"; Write-Host "::error::sqlserver tcp connectivity failed: $connErr"; exit 1 }
-          Journal "tcp-connect-ok"
+          Journal "tcp-connect-ok port=$mssqlPort"
+          "MSSQL_PORT=$mssqlPort" | Add-Content $env:GITHUB_ENV
           "SAPASS=$saPass" | Add-Content $env:GITHUB_ENV
 
       - name: Load matrix test data
@@ -452,7 +471,7 @@ jobs:
         shell: pwsh
         run: |
           $env:REALDB_PROVIDER = 'SqlServer'
-          $env:REALDB_CONN = 'localhost|1433|sa|Ta0DBM-ui!42|taodbmui'
+          $env:REALDB_CONN = "localhost|$env:MSSQL_PORT|sa|Ta0DBM-ui!42|taodbmui"
           $env:REALDB_SEG = '1,2,3,4'
           dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | Tee-Object -FilePath test-output.txt
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::realdb matrix mssql failed"; exit 1 }
