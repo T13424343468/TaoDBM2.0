@@ -1636,6 +1636,136 @@ Layer("集成");
     {
         try { System.IO.File.Delete(db2); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
     }
+
+    // 6) 优化回访闭环（2026-11-20 批次 D）：登记→到期→真库复测→对比卡→任务中心并入→快照往返
+    {
+        var fuT0 = DateTimeOffset.Parse("2026-11-20T08:00:00+08:00");
+
+        // 登记：基准取静态命中；间隔须为正
+        var reg = OptimizationFollowup.Register("orders 改写优化", "SELECT * FROM orders", "SQLite",
+            new[] { "S001", "S005" }, new List<string>(), 120.0, 1, fuT0);
+        Check("回访-登记基准与间隔", reg.Verdict == "pending" && reg.IntervalDays == 1 && reg.BaselineMs == 120.0 &&
+            reg.BaselineCodes.SequenceEqual(new[] { "S001", "S005" }), "");
+        bool threw = false;
+        try { OptimizationFollowup.Register("x", "SELECT 1", "SQLite", Array.Empty<string>(), Array.Empty<string>(), null, 0, fuT0); }
+        catch (ArgumentOutOfRangeException) { threw = true; }
+        Check("回访-间隔须为正", threw, "");
+
+        // 到期判定：未到期不算 due，到期后算；已出结论不再触发
+        var tEarly = fuT0.AddHours(23);
+        var tDue = fuT0.AddDays(1);
+        Check("回访-未到期不算due", !OptimizationFollowup.IsDue(reg, tEarly), "");
+        Check("回访-到期算due", OptimizationFollowup.IsDue(reg, tDue), "");
+        var reg2 = OptimizationFollowup.Register("另一条", "SELECT 1", "SQLite", Array.Empty<string>(), Array.Empty<string>(), null, 1, fuT0.AddHours(-2));
+        var due = OptimizationFollowup.DueOf(new[] { reg, reg2 }, tDue);
+        Check("回访-到期清单按序", due.Count == 2 && due[0].TaskId == reg2.TaskId, due.Count.ToString());
+        var doneNow = reg with { Verdict = "passed" };
+        Check("回访-已结论不再触发", !OptimizationFollowup.IsDue(doneNow, tDue), "");
+
+        // 复测通过：耗时降 + 命中不恶化（真库口径在下方真库段补）
+        var ok = OptimizationFollowup.Retest(reg, 60.0, new[] { "S001" }, now: tDue);
+        Check("回访-耗时降复测通过", ok.Verdict == "passed" && ok.RetestMs == 60.0, ok.Verdict);
+        threw = false;
+        try { OptimizationFollowup.Retest(ok, 50.0, Array.Empty<string>()); } catch (InvalidOperationException) { threw = true; }
+        Check("回访-已结论不可重复复测", threw, "");
+
+        // 复测未通过：命中新增恶化
+        var reg3 = OptimizationFollowup.Register("恶化回访", "SELECT * FROM orders", "SQLite", new[] { "S001" }, Array.Empty<string>(), 100.0, 1, fuT0);
+        var bad = OptimizationFollowup.Retest(reg3, 100.0, new[] { "S001", "S002" }, now: tDue);
+        Check("回访-命中恶化判未通过", bad.Verdict == "failed", bad.Verdict);
+
+        // 耗时噪声容差：<=1.05 倍持平通过，超过判未通过
+        var reg4 = OptimizationFollowup.Register("持平回访", "SELECT 1", "SQLite", Array.Empty<string>(), Array.Empty<string>(), 100.0, 1, fuT0);
+        Check("回访-持平在容差内通过", OptimizationFollowup.Retest(reg4, 104.9, Array.Empty<string>(), now: tDue).Verdict == "passed", "");
+        var reg5 = OptimizationFollowup.Register("超差回访", "SELECT 1", "SQLite", Array.Empty<string>(), Array.Empty<string>(), 100.0, 1, fuT0);
+        Check("回访-超容差判未通过", OptimizationFollowup.Retest(reg5, 105.1, Array.Empty<string>(), now: tDue).Verdict == "failed", "");
+
+        // 计划命中对比：基准有计划命中时，复测计划新增恶化判未通过（SCAN+TEMP B-TREE → P001+P002）
+        var reg6 = OptimizationFollowup.Register("计划回访", "SELECT * FROM t", "SQLite", Array.Empty<string>(), new[] { "P001" }, null, 1, fuT0);
+        Check("回访-计划恶化判未通过", OptimizationFollowup.Retest(reg6, null, Array.Empty<string>(), "SCAN t|USE TEMP B-TREE FOR ORDER BY", now: tDue).Verdict == "failed", "");
+        Check("回访-计划改善判通过", OptimizationFollowup.Retest(reg6 with { Verdict = "pending" }, null, Array.Empty<string>(), "SEARCH t USING INDEX idx", now: tDue).Verdict == "passed", "");
+
+        // 对比卡：pending 展示到期状态，终态展示耗时变化与结论
+        var cardPending = OptimizationFollowup.CompareCard(reg2);
+        Check("回访-对比卡待复测行", cardPending.Any(l => l.Contains("状态：")), string.Join("|", cardPending));
+        var cardDone = OptimizationFollowup.CompareCard(ok);
+        Check("回访-对比卡含耗时变化与结论", cardDone.Any(l => l.Contains("120.0 → 60.0 ms")) && cardDone.Any(l => l.Contains("复测通过")), string.Join("|", cardDone));
+
+        // 真库闭环：诊断→建索引→登记→复测通过
+        var dbPath3 = Path.Combine(Path.GetTempPath(), "taodbm-followup-" + Guid.NewGuid().ToString("N") + ".db");
+        await using (var setup = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath3}"))
+        {
+            setup.Open();
+            using (var c = setup.CreateCommand())
+            {
+                c.CommandText = "CREATE TABLE t(id INTEGER PRIMARY KEY, code TEXT);";
+                c.ExecuteNonQuery();
+            }
+            using (var tx = setup.BeginTransaction())
+            {
+                for (int i = 0; i < 20000; i++)
+                using (var one = setup.CreateCommand())
+                {
+                    one.Transaction = tx;
+                    one.CommandText = "INSERT INTO t(code) VALUES (@c)";
+                    one.Parameters.AddWithValue("@c", "X" + i);
+                    one.ExecuteNonQuery();
+                }
+                tx.Commit();
+            }
+        }
+        await using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbPath3}"))
+        {
+            conn.Open();
+            async Task RunAsync(string sql, CancellationToken ct)
+            {
+                using var c = conn.CreateCommand();
+                c.CommandText = sql;
+                using var r = await c.ExecuteReaderAsync(ct);
+                while (await r.ReadAsync(ct)) { }
+            }
+            string Explain(string sql)
+            {
+                using var c = conn.CreateCommand();
+                c.CommandText = "EXPLAIN QUERY PLAN " + sql;
+                var parts = new List<string>();
+                using var r = c.ExecuteReader();
+                while (r.Read()) parts.Add(r.GetString(3));
+                return string.Join("|", parts);
+            }
+            var probe = "SELECT * FROM t WHERE code = 'X12345'";
+            var ddl = SlowQueryDiagnoser.SuggestIndexDdl(probe, "t");
+            var baselinePlan = SlowQueryDiagnoser.AnalyzePlan(Explain(probe)).Select(x => x.Code).ToList();
+            var beforeMs = await QueryRetest.MedianMsAsync(RunAsync, probe, 3);
+            using (var c = conn.CreateCommand()) { c.CommandText = ddl[0]; c.ExecuteNonQuery(); }
+            var afterPlan = SlowQueryDiagnoser.AnalyzePlan(Explain(probe)).Select(x => x.Code).ToList();
+            var afterMs = await QueryRetest.MedianMsAsync(RunAsync, probe, 3);
+            var regDb = OptimizationFollowup.Register("真库建索引回访", probe, "SQLite",
+                SlowQueryDiagnoser.Analyze(probe).Select(x => x.Code), baselinePlan, beforeMs, 1, fuT0);
+            var retestDb = OptimizationFollowup.Retest(regDb, afterMs, SlowQueryDiagnoser.Analyze(probe).Select(x => x.Code), Explain(probe), now: tDue);
+            Check("回访-真库复测通过", retestDb.Verdict == "passed" && afterMs < beforeMs, $"before={beforeMs:F2} after={afterMs:F2} verdict={retestDb.Verdict}");
+            Check("回访-真库计划改善对比", retestDb.RetestPlanCodes.Count == 0 && regDb.BaselinePlanCodes.Count > 0, string.Join(",", retestDb.RetestPlanCodes));
+
+            // 并入任务中心（真中心实例，非 UI 共享）
+            var center = new TaoDBM.Core.Streaming.TaskCenter();
+            var centerTaskId = OptimizationFollowup.AttachToCenter(center, retestDb);
+            var listed = center.List().FirstOrDefault(s => s.TaskId == centerTaskId);
+            Check("回访-并入任务中心可查", listed != null && listed.Kind == "retest" && listed.Title.Contains("真库建索引回访"), listed?.Title ?? "null");
+            var again = OptimizationFollowup.AttachToCenter(center, retestDb with { CenterTaskId = centerTaskId });
+            Check("回访-重复并入返回原任务号", again == centerTaskId, again);
+
+            // 快照往返（落盘口径）
+            var json = OptimizationFollowup.ToJson(new[] { retestDb, reg });
+            var fuBack = OptimizationFollowup.FromJson(json);
+            Check("回访-快照往返", back != null && fuBack.Count == 2 && fuBack[0].TaskId == retestDb.TaskId && fuBack[0].Verdict == "passed", "");
+            Check("回访-坏快照不炸", OptimizationFollowup.FromJson("{坏") == null, "");
+        }
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        for (int attempt = 0; attempt < 5 && System.IO.File.Exists(dbPath3); attempt++)
+        {
+            try { System.IO.File.Delete(dbPath3); } catch (IOException) { await Task.Delay(100); } catch (UnauthorizedAccessException) { await Task.Delay(100); }
+        }
+    }
 }
 
 // 智能线 C2 第二批：数据体检报告（空值/重复/分布突变）、查询结果出图聚合、离线快照包（SQLite 真库采样→离线浏览再聚合）
@@ -3547,6 +3677,7 @@ Console.WriteLine("== NotificationDispatcher ==");
 
 Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");
 TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
+TaoDBM.LogicTest.KanbanAnalysis.RunAll(Check);   // 批次E：点选式分析 + 看板钉住/定时刷新（独立文件，ComboMatrix 家法）
 
 // 制度补齐层：tao-testing-standard 标准测试项与 v3.3 新增把尺逐项落测（2026-11-18 老板令「按制度全覆盖无死角补齐」）
 Layer("制度补齐");
@@ -3773,7 +3904,7 @@ Layer("单元");
     SqlHandoffRegistry.UseFile("");
 }
 
-﻿Console.WriteLine("\n== 备份可用性演练（批次C 2026-11-20）==");
+Console.WriteLine("\n== 备份可用性演练（批次C 2026-11-20）==");
 Layer("单元");
 {
     // --- TempDbName：前缀 / 净化 / 时间戳 / 引擎长度上限 / 不撞原名 ---

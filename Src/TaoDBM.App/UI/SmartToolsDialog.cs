@@ -64,10 +64,32 @@ public static class SmartToolsDialog
         packRow.Children.Add(packBtn);
         packRow.Children.Add(packVerifyBtn);
 
+        // ── 优化回访（闭环）：登记 → 到期复测 → 前后对比卡 ──
+        var followTitleBox = new TextBox { PlaceholderText = "回访标题，如 orders 改写优化", MinWidth = 260 };
+        var followIntervalBox = new TextBox { PlaceholderText = "间隔天（默认 1）", MinWidth = 120 };
+        var followRegisterBtn = new Button { Content = "登记回访", CornerRadius = new CornerRadius(4) };
+        var followDueBtn = new Button { Content = "查到期", CornerRadius = new CornerRadius(4) };
+        var followRetestBtn = new Button { Content = "复测并出对比卡", CornerRadius = new CornerRadius(4) };
+        var followCenterBtn = new Button { Content = "并入任务中心", CornerRadius = new CornerRadius(4) };
+        followRegisterBtn.Click += (_, _) =>
+        {
+            var sql = afterBox.Text.Length > 0 ? afterBox.Text : beforeBox.Text;
+            RegisterFollowup(followTitleBox.Text, sql, info, followIntervalBox.Text, report, status);
+        };
+        followDueBtn.Click += (_, _) => ShowDueFollowups(report, status);
+        followRetestBtn.Click += async (_, _) => await RunFollowupRetest(owner, info, followTitleBox.Text, report, status);
+        followCenterBtn.Click += (_, _) => AttachFollowupToCenter(followTitleBox.Text, report, status);
+
+        var followRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        followRow.Children.Add(followRegisterBtn);
+        followRow.Children.Add(followDueBtn);
+        followRow.Children.Add(followRetestBtn);
+        followRow.Children.Add(followCenterBtn);
+
         var panel = new StackPanel { Spacing = 10, MinWidth = 680 };
         panel.Children.Add(new TextBlock
         {
-            Text = "智能工具（只读 / 纯计算）：SQL 静态诊断不改数据；重测只执行 SELECT；容量预估只对采样回归；复现包脱敏后才展示。",
+            Text = "智能工具（只读 / 纯计算）：SQL 静态诊断不改数据；重测只执行 SELECT；容量预估只对采样回归；复现包脱敏后才展示；回访复测沿用同一口径。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
             FontSize = 12,
@@ -81,6 +103,9 @@ public static class SmartToolsDialog
         panel.Children.Add(capRow);
         panel.Children.Add(packBox);
         panel.Children.Add(packRow);
+        panel.Children.Add(followTitleBox);
+        panel.Children.Add(followIntervalBox);
+        panel.Children.Add(followRow);
 
         var dlg = new ContentDialog
         {
@@ -286,6 +311,131 @@ public static class SmartToolsDialog
         catch (Exception ex)
         {
             status.Text = "校验失败：" + ex.Message;
+        }
+    }
+
+    // ── 优化回访（闭环）：登记 / 到期 / 复测对比卡 / 并入任务中心 ──
+    // 会话内登记账（对话框为静态工具口，账随进程；引擎层支持快照落盘）。
+    private static readonly List<OptimizationFollowup.FollowupTask> Followups = new();
+
+    private static OptimizationFollowup.FollowupTask? FindFollowup(string title) =>
+        Followups.LastOrDefault(f => f.Title == title.Trim());
+
+    private static void RegisterFollowup(string title, string sql, NodeInfo info, string intervalText,
+        StackPanel report, TextBlock status)
+    {
+        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(sql))
+        {
+            status.Text = "请先填回访标题和 SQL（重测框里的改写后/改写前均可）。";
+            return;
+        }
+        int interval = 1;
+        if (!string.IsNullOrWhiteSpace(intervalText) &&
+            (!int.TryParse(intervalText.Trim(), out interval) || interval <= 0))
+        {
+            status.Text = "间隔天须为正整数。";
+            return;
+        }
+
+        // 基准 = 登记瞬间的静态诊断 +（SQLite 引擎时顺带计划体检）+ 中位耗时（真执行，走重测口径）
+        var baselineCodes = SlowQueryDiagnoser.Analyze(sql).Select(x => x.Code).ToList();
+        double? baselineMs = null;
+        try
+        {
+            var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
+            Task Exec(string s, CancellationToken ct) => prov.Execute(CurrentDb(info), s).ContinueWith(_ => Task.CompletedTask).Unwrap();
+            baselineMs = QueryRetest.MedianMsAsync(Exec, sql).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            status.Text = "登记时基准计时失败（不影响登记）：" + ex.Message;
+        }
+        var task = OptimizationFollowup.Register(title, sql, "SQLite", baselineCodes,
+            new List<string>(), baselineMs, interval);
+        Followups.Add(task);
+        AddSection(report, "回访已登记");
+        foreach (var line in OptimizationFollowup.CompareCard(task)) AddLine(report, line);
+        status.Text = $"已登记，{interval} 天后到期可复测。";
+    }
+
+    private static void ShowDueFollowups(StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        var due = OptimizationFollowup.DueOf(Followups);
+        AddSection(report, $"到期回访（{due.Count} 条）");
+        if (due.Count == 0) AddLine(report, "暂无到期待复测的回访。");
+        foreach (var t in due)
+            foreach (var line in OptimizationFollowup.CompareCard(t))
+                AddLine(report, line);
+        status.Text = due.Count > 0 ? "有到期待复测的回访，可执行复测。" : "无到期回访。";
+    }
+
+    private static async Task RunFollowupRetest(MainWindow owner, NodeInfo info, string title,
+        StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        var t = FindFollowup(title);
+        if (t is null)
+        {
+            status.Text = "没有找到该标题的回访，请先登记。";
+            return;
+        }
+        if (t.Verdict != "pending")
+        {
+            status.Text = "该回访已出结论，不可重复复测。";
+            foreach (var line in OptimizationFollowup.CompareCard(t)) AddLine(report, line);
+            return;
+        }
+        if (!OptimizationFollowup.IsDue(t))
+        {
+            status.Text = "尚未到期，请到期后再复测。";
+            foreach (var line in OptimizationFollowup.CompareCard(t)) AddLine(report, line);
+            return;
+        }
+
+        status.Text = "复测中…（重跑诊断项，5 轮取中位）";
+        try
+        {
+            var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
+            Task Exec(string sql, CancellationToken ct) => prov.Execute(CurrentDb(info), sql).ContinueWith(_ => Task.CompletedTask).Unwrap();
+            double ms = await QueryRetest.MedianMsAsync(Exec, t.Sql);
+            var codes = SlowQueryDiagnoser.Analyze(t.Sql).Select(x => x.Code).ToList();
+            var done = OptimizationFollowup.Retest(t, ms, codes);
+            Followups[Followups.FindIndex(f => f.TaskId == t.TaskId)] = done;
+            AddSection(report, "回访前后对比卡");
+            foreach (var line in OptimizationFollowup.CompareCard(done)) AddLine(report, line);
+            status.Text = done.Verdict == "passed" ? "复测通过。" : "复测未通过，建议回看优化动作。";
+        }
+        catch (Exception ex)
+        {
+            status.Text = "复测失败：" + ex.Message;
+        }
+    }
+
+    private static void AttachFollowupToCenter(string title, StackPanel report, TextBlock status)
+    {
+        var t = FindFollowup(title);
+        if (t is null)
+        {
+            status.Text = "没有找到该标题的回访，请先登记。";
+            return;
+        }
+        try
+        {
+            var taskId = TaskCenterDialog.SubmitShared(new TaoDBM.Core.Streaming.TaskSpec
+            {
+                Kind = "retest",
+                Title = $"优化回访复测：{t.Title}",
+                Db = "",
+                Sql = t.Sql,
+            });
+            AddSection(report, "并入任务中心");
+            AddLine(report, $"任务号：{taskId}");
+            status.Text = "已并入任务中心，可在任务中心查看进度。";
+        }
+        catch (Exception ex)
+        {
+            status.Text = "并入失败：" + ex.Message;
         }
     }
 

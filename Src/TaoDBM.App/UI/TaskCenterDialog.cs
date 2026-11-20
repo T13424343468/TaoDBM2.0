@@ -27,13 +27,17 @@ public static class TaskCenterDialog
         _ => state,
     };
 
+    /// <summary>共享任务中心入口：供智能线回访等模块并入长活（不暴露实例本体）。</summary>
+    public static string SubmitShared(TaoDBM.Core.Streaming.TaskSpec spec) => Shared.Submit(spec).TaskId;
+
     private static readonly TaskCenter Shared = new()
     {
-        // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交
+        // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交。
+        // 优化回访复测（retest）为轻量等待口径：结论已在登记时算定，这里只走任务流水。
         Runner = async h =>
         {
             await Task.Delay(300, h.Token);
-            if (h.Spec.Sql.Length == 0) return;
+            if (h.Spec.Sql.Length == 0 || h.Spec.Kind != "retest") return;
         },
     };
 
