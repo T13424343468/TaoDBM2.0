@@ -3,7 +3,7 @@
 /// <summary>B11 图形化分库分区分表向导：分片 DDL 方案生成 + 分区现状目录 + 行数分布倾斜判定（纯逻辑，执行由界面层预览+确认）。</summary>
 public static class ShardingWizard
 {
-    public static bool Supported(DbEngine e) => e is DbEngine.MySQL or DbEngine.PostgreSQL;
+    public static bool Supported(DbEngine e) => e is DbEngine.MySQL or DbEngine.PostgreSQL or DbEngine.SqlServer;
 
     public static string UnsupportedReason(DbEngine e) => e switch
     {
@@ -12,7 +12,8 @@ public static class ShardingWizard
         _ => "该引擎的分片向导下一批补齐。",
     };
 
-    /// <summary>按键取模 n 分片的建分区方案。MySQL 原生 HASH 分区一条 ALTER；PG 用声明式分区（需建新表迁移，注释随方案给出）。</summary>
+    /// <summary>按键取模 n 分片的建分区方案。MySQL 原生 HASH 分区一条 ALTER；PG 用声明式分区（需建新表迁移，注释随方案给出）；
+    /// SQL Server 无原生 HASH 分区，按计算列取模 + RANGE 分区函数落地。</summary>
     public static IReadOnlyList<string> HashPartitionSql(DbEngine e, string table, string keyColumn, int shardCount)
     {
         if (shardCount < 2) throw new ArgumentOutOfRangeException(nameof(shardCount), "分片数至少为 2");
@@ -25,8 +26,30 @@ public static class ShardingWizard
                 $"SELECT PARTITION_NAME, TABLE_ROWS FROM information_schema.PARTITIONS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{raw}' ORDER BY PARTITION_ORDINAL_POSITION;",
             },
             DbEngine.PostgreSQL => BuildPostgresPlan(raw, rk, t, k, shardCount),
+            DbEngine.SqlServer => BuildSqlServerHashPlan(raw, rk, t, k, shardCount),
             _ => throw new NotSupportedException(UnsupportedReason(e)),
         };
+    }
+
+    private static List<string> BuildSqlServerHashPlan(string raw, string rk, string t, string k, int n)
+    {
+        var fn = $"pf_{SanitizeIdent(raw)}_hash";
+        var ps = $"ps_{SanitizeIdent(raw)}_hash";
+        var plan = new List<string>
+        {
+            $"-- SQL Server 无原生 HASH 分区：按 {rk} 取模 {n} 生成计算列后按 RANGE 分区（计算列需 PERSISTED 才能进分区键）",
+            $"ALTER TABLE {t} ADD [taoshard] AS ({k} % {n}) PERSISTED;",
+            $"CREATE PARTITION FUNCTION {fn} AS RANGE LEFT FOR VALUES ({string.Join(", ", Enumerable.Range(1, n - 1))});",
+            $"CREATE PARTITION SCHEME {ps} AS PARTITION {fn} ALL TO ([PRIMARY]);",
+            $"CREATE CLUSTERED INDEX [CIX_{SanitizeIdent(raw)}_shard] ON {t} ([taoshard]) ON {ps} ([taoshard]);",
+        };
+        return plan;
+    }
+
+    private static string SanitizeIdent(string name)
+    {
+        var v = new string(name.Where(char.IsLetterOrDigit).ToArray());
+        return v.Length > 0 ? v : "tbl";
     }
 
     private static List<string> BuildPostgresPlan(string raw, string rk, string t, string k, int n)
@@ -59,6 +82,7 @@ public static class ShardingWizard
         {
             DbEngine.MySQL => BuildMysqlRange(t, k, raw, rk, toks),
             DbEngine.PostgreSQL => BuildPgRange(raw, rk, t, k, toks),
+            DbEngine.SqlServer => BuildSqlServerRange(raw, rk, t, k, toks),
             _ => throw new NotSupportedException(UnsupportedReason(e)),
         };
     }
@@ -88,6 +112,21 @@ public static class ShardingWizard
         return plan;
     }
 
+    private static List<string> BuildSqlServerRange(string raw, string rk, string t, string k, List<string> toks)
+    {
+        var fn = $"pf_{SanitizeIdent(raw)}_range";
+        var ps = $"ps_{SanitizeIdent(raw)}_range";
+        var plan = new List<string>
+        {
+            $"-- SQL Server 分区函数按 {rk} 范围 {toks.Count + 1} 段（RANGE LEFT：边界值归左段）",
+            $"CREATE PARTITION FUNCTION {fn} AS RANGE LEFT FOR VALUES ({string.Join(", ", toks)});",
+            $"CREATE PARTITION SCHEME {ps} AS PARTITION {fn} ALL TO ([PRIMARY]);",
+            $"CREATE CLUSTERED INDEX [CIX_{SanitizeIdent(raw)}_range] ON {t} ({k}) ON {ps} ({k});",
+            $"SELECT p.partition_number AS pname, p.rows AS rows FROM sys.partitions p JOIN sys.tables t ON t.object_id = p.object_id WHERE t.name = '{raw}' AND p.index_id IN (0, 1) ORDER BY p.partition_number;",
+        };
+        return plan;
+    }
+
     /// <summary>按类别（列表）分片方案：parts 为类别组（组名 + 取值清单，数字原样、其余按字符串字面量转义）；
     /// MySQL 一条 ALTER LIST，PG 走声明式分区建新表迁移。</summary>
     public static IReadOnlyList<string> ListPartitionSql(DbEngine e, string table, string keyColumn,
@@ -105,6 +144,7 @@ public static class ShardingWizard
         {
             DbEngine.MySQL => BuildMysqlList(t, k, raw, groups),
             DbEngine.PostgreSQL => BuildPgList(rk, t, k, groups),
+            DbEngine.SqlServer => BuildSqlServerList(raw, rk, t, k, groups),
             _ => throw new NotSupportedException(UnsupportedReason(e)),
         };
     }
@@ -130,6 +170,23 @@ public static class ShardingWizard
         foreach (var g in groups)
             plan.Add($"CREATE TABLE {raw}_{g.Name} PARTITION OF {raw}_pnew FOR VALUES IN ({string.Join(", ", g.Values)});");
         plan.Add($"-- 迁移：INSERT INTO {raw}_pnew SELECT * FROM {raw}; 校验后换名（旧表改名保留即回滚路径）");
+        return plan;
+    }
+
+    private static List<string> BuildSqlServerList(string raw, string rk, string t, string k, List<(string Name, List<string> Values)> groups)
+    {
+        // SQL Server 分区函数仅支持 RANGE：类别组映射为计算列 CASE 桶号，再按桶号 RANGE 分区
+        var fn = $"pf_{SanitizeIdent(raw)}_list";
+        var ps = $"ps_{SanitizeIdent(raw)}_list";
+        var when = string.Join(" ", groups.Select((g, i) => $"WHEN {k} IN ({string.Join(", ", g.Values)}) THEN {i}"));
+        var plan = new List<string>
+        {
+            $"-- SQL Server 无 LIST 分区：按 {rk} 类别 {groups.Count} 组映射为计算列桶号后按 RANGE 分区",
+            $"ALTER TABLE {t} ADD [taoshard] AS (CASE {when} ELSE {groups.Count} END) PERSISTED;",
+            $"CREATE PARTITION FUNCTION {fn} AS RANGE LEFT FOR VALUES ({string.Join(", ", Enumerable.Range(1, groups.Count - 1))});",
+            $"CREATE PARTITION SCHEME {ps} AS PARTITION {fn} ALL TO ([PRIMARY]);",
+            $"CREATE CLUSTERED INDEX [CIX_{SanitizeIdent(raw)}_list] ON {t} ([taoshard]) ON {ps} ([taoshard]);",
+        };
         return plan;
     }
 
@@ -162,6 +219,11 @@ public static class ShardingWizard
             "SELECT DISTINCT a.attname AS col FROM pg_index i JOIN pg_class c ON c.oid = i.indrelid " +
             "JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY (i.indkey) " +
             $"WHERE c.relname = '{table.Replace("'", "''")}' AND a.attnum > 0 ORDER BY a.attname",
+        DbEngine.SqlServer =>
+            "SELECT DISTINCT c.name AS col FROM sys.index_columns ic " +
+            "JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id " +
+            "JOIN sys.tables t ON t.object_id = ic.object_id " +
+            $"WHERE t.name = '{table.Replace("'", "''")}' AND ic.index_id >= 1 ORDER BY c.name",
         _ => throw new NotSupportedException(UnsupportedReason(e)),
     };
 
@@ -192,6 +254,10 @@ public static class ShardingWizard
             "SELECT c.relname AS pname, COALESCE(c.reltuples::bigint, 0) AS rows FROM pg_inherits i " +
             "JOIN pg_class c ON c.oid = i.inhrelid JOIN pg_class p ON p.oid = i.inhparent " +
             $"WHERE p.relname = '{table.Replace("'", "''")}' AND p.relkind = 'p' ORDER BY c.relname",
+        DbEngine.SqlServer =>
+            "SELECT p.partition_number AS pname, p.rows AS rows FROM sys.partitions p " +
+            "JOIN sys.tables t ON t.object_id = p.object_id " +
+            $"WHERE t.name = '{table.Replace("'", "''")}' AND p.index_id IN (0, 1) ORDER BY p.partition_number",
         _ => throw new NotSupportedException(UnsupportedReason(e)),
     };
 
@@ -217,6 +283,7 @@ public static class ShardingWizard
     private static string Qe(DbEngine e, string ident) => e switch
     {
         DbEngine.MySQL => "`" + ident.Replace("`", "") + "`",
+        DbEngine.SqlServer => "[" + ident.Replace("[", "").Replace("]", "") + "]",
         _ => "\"" + ident.Replace("\"", "") + "\"",
     };
 }

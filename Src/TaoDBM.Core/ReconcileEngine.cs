@@ -20,7 +20,8 @@ public static class ReconcileEngine
 
     /// <summary>
     /// 内容校验和 SQL：MySQL 用 CRC32(CONCAT_WS)；PostgreSQL 用 md5 截段求和；
-    /// 其余方言暂无稳定校验和函数，返回 null（调用方退化为仅行数对账）。
+    /// SQL Server 用 CHECKSUM 多列求和；Oracle 用 STANDARD_HASH(MD5) 截段求和；
+    /// SQLite 无内置哈希函数，返回 null（调用方退化为仅行数对账，抽样核对仍可用）。
     /// </summary>
     public static string? ChecksumSql(string table, IReadOnlyList<string> columns, string? where, DbEngine engine)
     {
@@ -32,9 +33,16 @@ public static class ReconcileEngine
                 $"SELECT COUNT(*) AS row_count, COALESCE(SUM(CRC32(CONCAT_WS('|', {cols}))), 0) AS checksum FROM {Id(table, engine)}{Where(where)}",
             DbEngine.PostgreSQL =>
                 $"SELECT COUNT(*) AS row_count, COALESCE(SUM(('x' || substr(md5(concat_ws('|', {cols})), 1, 8))::bit(32)::bigint), 0) AS checksum FROM {Id(table, engine)}{Where(where)}",
+            DbEngine.SqlServer =>
+                $"SELECT COUNT(*) AS row_count, COALESCE(SUM(CHECKSUM({cols})), 0) AS checksum FROM {Id(table, engine)}{Where(where)}",
+            DbEngine.Oracle =>
+                $"SELECT COUNT(*) AS row_count, COALESCE(SUM(TO_NUMBER(SUBSTR(STANDARD_HASH({OracleConcat(columns, engine)}, 'MD5'), 1, 8), 'XXXXXXXX')), 0) AS checksum FROM {Id(table, engine)}{Where(where)}",
             _ => null,
         };
     }
+
+    private static string OracleConcat(IReadOnlyList<string> columns, DbEngine engine) =>
+        string.Join(" || '|' || ", columns.Select(c => $"NVL({Id(c, engine)}, '~')"));
 
     /// <summary>比较两端采集结果，给出结论与建议。</summary>
     public static ReconcileVerdict Compare(long srcCount, long dstCount, long? srcChecksum, long? dstChecksum)
@@ -50,15 +58,26 @@ public static class ReconcileEngine
         return new ReconcileVerdict("match", "行数与内容校验和一致，对账通过。");
     }
 
-    /// <summary>抽样核对 SQL：按主键排序取样，供 checksum-mismatch 时人工定位。</summary>
-    public static string SampleSql(string table, string pkColumn, int limit, DbEngine engine) =>
-        $"SELECT * FROM {Id(table, engine)} ORDER BY {Id(pkColumn, engine)} LIMIT {limit.ToString(CultureInfo.InvariantCulture)}";
+    /// <summary>抽样核对 SQL：按主键排序取样，供 checksum-mismatch 时人工定位。
+    /// MySQL / PG / SQLite 用 LIMIT；SQL Server 用 TOP；Oracle 用 FETCH FIRST。</summary>
+    public static string SampleSql(string table, string pkColumn, int limit, DbEngine engine)
+    {
+        var n = limit.ToString(CultureInfo.InvariantCulture);
+        return engine switch
+        {
+            DbEngine.SqlServer => $"SELECT TOP {n} * FROM {Id(table, engine)} ORDER BY {Id(pkColumn, engine)}",
+            DbEngine.Oracle => $"SELECT * FROM {Id(table, engine)} ORDER BY {Id(pkColumn, engine)} FETCH FIRST {n} ROWS ONLY",
+            _ => $"SELECT * FROM {Id(table, engine)} ORDER BY {Id(pkColumn, engine)} LIMIT {n}",
+        };
+    }
 
     private static string Where(string? where) =>
         string.IsNullOrWhiteSpace(where) ? "" : $" WHERE {Regex.Replace(where, ";", "", RegexOptions.None, TimeSpan.FromSeconds(1)).Trim()}";
 
     private static string Id(string identifier, DbEngine engine)
     {
+        if (engine == DbEngine.SqlServer)
+            return "[" + identifier.Replace("[", "").Replace("]", "") + "]";
         var q = engine == DbEngine.MySQL ? '`' : '"';
         return q + identifier.Replace(q.ToString(), q.ToString() + q.ToString(), StringComparison.Ordinal) + q;
     }

@@ -2449,6 +2449,83 @@ Layer("集成");
     Check("分片向导-盐化摘要", salt.Contains("user_id") && salt.Contains("8"), salt);
 }
 
+{
+    // 批次 L：MSSQL 六处缺口补齐 + 对账引擎扩三库（纯引擎）
+    // 1) 诊断目录 MSSQL
+    Check("诊断-MSSQL支持面", DiagnosticsCatalog.Supported(DbEngine.SqlServer), "");
+    Check("诊断-MSSQL版本", DiagnosticsCatalog.VersionQuery(DbEngine.SqlServer).Contains("@@VERSION"), "");
+    Check("诊断-MSSQL规模", DiagnosticsCatalog.TopTablesQuery(DbEngine.SqlServer, "shop")!.Contains("sys.tables")
+        && DiagnosticsCatalog.TopTablesQuery(DbEngine.SqlServer, "shop")!.Contains("TOP 8"), "");
+    Check("诊断-MSSQL锁等待", DiagnosticsCatalog.LockWaitQuery(DbEngine.SqlServer)!.Contains("blocking_session_id > 0")
+        && DiagnosticsCatalog.LockWaitQuery(DbEngine.SqlServer)!.Contains("dm_exec_requests"), "");
+    Check("诊断-MSSQL健康命令为空", DiagnosticsCatalog.HealthCommand(DbEngine.SqlServer) is null, "");
+
+    // 2) 执行计划 MSSQL 方言
+    Check("计划-MSSQL表扫描提取", ExplainPlanEngine.ExtractFullScanTable("Table Scan(OBJECT:([shop_db].[dbo].[orders]))") == "orders", "");
+    Check("计划-MSSQL聚集索引扫描提取", ExplainPlanEngine.ExtractFullScanTable("Clustered Index Scan(OBJECT:([shop_db].[dbo].[orders]))") == "orders", "");
+    var mssqlPlan = ExplainPlanEngine.Parse("Sort(DISTINCT ORDER BY:([t].[c] ASC))\nTable Scan(OBJECT:([db].[dbo].[orders]))");
+    var mssqlFindings = ExplainPlanEngine.Annotate(mssqlPlan);
+    Check("计划-MSSQL排序标注P202", mssqlFindings.Any(f => f.Code == "P202"), string.Join(",", mssqlFindings.Select(f => f.Code)));
+    Check("计划-MSSQL全表扫描标注P201", mssqlFindings.Any(f => f.Code == "P201" && f.Message.Contains("orders")), string.Join(",", mssqlFindings.Select(f => f.Code)));
+    var spoolFindings = ExplainPlanEngine.Annotate(ExplainPlanEngine.Parse("Table Spool"));
+    Check("计划-MSSQLSpool标注P203", spoolFindings.Any(f => f.Code == "P203"), string.Join(",", spoolFindings.Select(f => f.Code)));
+    Check("计划-MSSQL包装语句", ExplainPlanEngine.PlanSql(DbEngine.SqlServer, "SELECT 1").StartsWith("SET SHOWPLAN_ALL ON;")
+        && ExplainPlanEngine.PlanSql(DbEngine.SqlServer, "SELECT 1").Contains("SELECT 1")
+        && ExplainPlanEngine.PlanSql(DbEngine.SqlServer, "SELECT 1").EndsWith("SET SHOWPLAN_ALL OFF;"), "");
+    Check("计划-MySQL包装语句", ExplainPlanEngine.PlanSql(DbEngine.MySQL, "SELECT 1;") == "EXPLAIN SELECT 1", "");
+    bool threwPlan = false;
+    try { ExplainPlanEngine.PlanSql(DbEngine.SQLite, "SELECT 1"); } catch (NotSupportedException) { threwPlan = true; }
+    Check("计划-不支持引擎拒绝", threwPlan, "");
+
+    // 3) 权限目录 MSSQL
+    Check("权限目录-MSSQL支持面", UserPermissionCatalog.Supported(DbEngine.SqlServer), "");
+    Check("权限目录-MSSQL账号清单", UserPermissionCatalog.ListAccountsSql(DbEngine.SqlServer).Contains("sys.database_principals"), "");
+    var mssqlGrantsSql = UserPermissionCatalog.GrantsSql(DbEngine.SqlServer, "app_rw", "-");
+    Check("权限目录-MSSQL合成授权", mssqlGrantsSql.Contains("sys.database_permissions")
+        && mssqlGrantsSql.Contains("WITH GRANT OPTION") && mssqlGrantsSql.Contains("'app_rw'"), "");
+    var mssqlGrantTexts = PermissionAuditor.Parse(new[] { "GRANT CONTROL ON dbo.orders TO [app_user];" });
+    Check("权限目录-MSSQL授权文本可解析", mssqlGrantTexts.Count == 1 && mssqlGrantTexts[0].Grantee == "[app_user]"
+        && mssqlGrantTexts[0].Privileges.SequenceEqual(new[] { "CONTROL" }), mssqlGrantTexts.Count.ToString());
+    var mssqlFindingsPerm = PermissionAuditor.Audit(mssqlGrantTexts);
+    Check("权限目录-MSSQL高危CONTROL报R103", mssqlFindingsPerm.Any(f => f.Code == "R103" && f.Message.Contains("CONTROL")), "");
+
+    // 4) 复制目录 MSSQL（Always On 口径）
+    Check("复制目录-MSSQL支持面", ReplicationCatalog.Supported(DbEngine.SqlServer), "");
+    Check("复制目录-MSSQL探测", ReplicationCatalog.RoleProbeSql(DbEngine.SqlServer).Contains("SECONDARY"), "");
+    Check("复制目录-MSSQL从库清单", ReplicationCatalog.ReplicasSql(DbEngine.SqlServer).Contains("sys.dm_hadr_availability_replica_states"), "");
+    var agCols = new List<string> { "role_desc", "connected_state_desc", "synchronization_health_desc" };
+    var agOk = ReplicationCatalog.BuildFromReplicaSqlServer(agCols, new List<object?[]> { new object?[] { "SECONDARY", "CONNECTED", "HEALTHY" } });
+    var agBad = ReplicationCatalog.BuildFromReplicaSqlServer(agCols, new List<object?[]> { new object?[] { "SECONDARY", "DISCONNECTED", "NOT_HEALTHY" } });
+    Check("复制目录-MSSQL从视角解析", agOk.State == "正常" && agBad.State == "已断开", agOk.State);
+    Check("复制目录-MSSQL暂停草稿", ReplicationCatalog.PauseReplicaSql(DbEngine.SqlServer, true)[0].Contains("PAUSE"), "");
+    Check("复制目录-MSSQL切换草稿", ReplicationCatalog.SwitchoverDraftSql(DbEngine.SqlServer, "old-src")[0].Contains("FORCE_FAILOVER"), "");
+
+    // 5) 分片向导 MSSQL
+    Check("分片向导-MSSQL支持面", ShardingWizard.Supported(DbEngine.SqlServer), "");
+    var msHash = ShardingWizard.HashPartitionSql(DbEngine.SqlServer, "orders", "user_id", 4);
+    Check("分片向导-MSSQL哈希方案", msHash[0].StartsWith("ALTER TABLE [orders]") && msHash.Any(s => s.Contains("% 4"))
+        && msHash.Any(s => s.Contains("CREATE PARTITION FUNCTION")) && msHash[0].Contains("PERSISTED"), msHash.FirstOrDefault() ?? "");
+    var msRange = ShardingWizard.RangePartitionSql(DbEngine.SqlServer, "orders", "order_time", new[] { "100", "200" });
+    Check("分片向导-MSSQL范围方案", msRange.Any(s => s.Contains("RANGE LEFT FOR VALUES (100, 200)"))
+        && msRange.Any(s => s.Contains("CREATE PARTITION SCHEME")), msRange.FirstOrDefault() ?? "");
+    var msList = ShardingWizard.ListPartitionSql(DbEngine.SqlServer, "orders", "region",
+        new (string, IReadOnlyList<string>)[] { ("east", new[] { "'SH'", "'JS'" }), ("west", new[] { "'SC'", "'YN'" }) });
+    Check("分片向导-MSSQL类别方案", msList[0].Contains("CASE") && msList[0].Contains("WHEN") && msList[0].Contains("PERSISTED"), msList.FirstOrDefault() ?? "");
+    Check("分片向导-MSSQL索引列口径", ShardingWizard.IndexColumnsSql(DbEngine.SqlServer, "dbo", "orders").Contains("sys.index_columns"), "");
+    Check("分片向导-MSSQL现状目录", ShardingWizard.PartitionsInfoSql(DbEngine.SqlServer, "dbo", "orders").Contains("sys.partitions"), "");
+
+    // 6) 对账引擎扩 SQLite / MSSQL / Oracle
+    Check("对账-MSSQL计数方括号", ReconcileEngine.CountSql("orders", null, DbEngine.SqlServer) == "SELECT COUNT(*) AS row_count FROM [orders]", "");
+    Check("对账-MSSQL校验和", ReconcileEngine.ChecksumSql("orders", new[] { "id", "amount" }, null, DbEngine.SqlServer)!
+        .Contains("CHECKSUM([id], [amount])"), "");
+    var oraCk = ReconcileEngine.ChecksumSql("orders", new[] { "id", "amount" }, null, DbEngine.Oracle);
+    Check("对账-Oracle校验和", oraCk!.Contains("STANDARD_HASH") && oraCk.Contains("NVL") && oraCk.Contains("MD5"), "");
+    Check("对账-SQLite无哈希退化", ReconcileEngine.ChecksumSql("t", new[] { "a" }, null, DbEngine.SQLite) is null, "");
+    Check("对账-MSSQL抽样TOP", ReconcileEngine.SampleSql("users", "id", 50, DbEngine.SqlServer) == "SELECT TOP 50 * FROM [users] ORDER BY [id]", "");
+    Check("对账-Oracle抽样FETCH", ReconcileEngine.SampleSql("users", "id", 50, DbEngine.Oracle).Contains("FETCH FIRST 50 ROWS ONLY"), "");
+    Check("对账-Oracle计数双引号", ReconcileEngine.CountSql("orders", null, DbEngine.Oracle).Contains("\"orders\""), "");
+}
+
 Layer("系统");
 {
     // 持久化完整工作流（临时目录）：收藏 + 会话 文件往返、损坏文件容错、失败路径不残留
