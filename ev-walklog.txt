@@ -32,3 +32,4 @@ shot ev-shot-result-S14.png 91427 bytes
 S14 ledger: 2026-11-20 23:08:15.008 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;ELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92 | title=ELECT SUM(amount) AS s FROM orders rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
 shot shot-10-null-emails.png 91427 bytes
 coverage-func S14 SQL真实执行-空值过滤 => pass
+shot ev-shot-result-S15.png 92693 bytes
