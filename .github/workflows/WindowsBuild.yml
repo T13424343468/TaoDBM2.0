@@ -151,14 +151,14 @@ jobs:
           & mysql -uroot -e "USE taodbmui; SELECT COUNT(*) AS c FROM orders;" | Out-Host
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::mysql sanity query failed"; exit 1 }
 
-      - name: Logic tests (realdb matrix seg1, MySQL)
+      - name: Logic tests (realdb matrix seg1+2, MySQL)
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           Remove-Item test-progress.txt -ErrorAction SilentlyContinue
           $env:REALDB_PROVIDER = 'MySQL'
           $env:REALDB_CONN = 'localhost|3306|root||taodbmui'
-          $env:REALDB_SEG = '1'
+          $env:REALDB_SEG = '1,2'
           $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','Tests/TaoDBM.LogicTest','-c','Release' -NoNewWindow -Wait -PassThru -RedirectStandardOutput test-output.txt -RedirectStandardError test-stderr.txt
           Write-Host "[T1] realdb matrix exit=$($p.ExitCode)"
           Get-Content test-output.txt | ForEach-Object { Write-Host "$_" }
@@ -211,12 +211,12 @@ jobs:
           sudo -u postgres psql -v ON_ERROR_STOP=1 -f testdb/taodbm-ui.postgres.sql
           sudo -u postgres psql -d taodbmui -t -c "SELECT COUNT(*) AS c FROM orders;"
 
-      - name: Logic tests (realdb matrix seg1, PostgreSQL)
+      - name: Logic tests (realdb matrix seg1+2, PostgreSQL)
         shell: bash
         run: |
           export REALDB_PROVIDER='PostgreSQL'
           export REALDB_CONN='localhost|5432|postgres|taodbm-ui-42|taodbmui'
-          export REALDB_SEG='1'
+          export REALDB_SEG='1,2'
           dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | tee test-output.txt
           exit ${PIPESTATUS[0]}
 

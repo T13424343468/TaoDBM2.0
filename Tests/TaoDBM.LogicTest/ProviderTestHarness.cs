@@ -42,10 +42,9 @@ public static class ProviderTestHarness
             return;
         }
         RunSegment1(check, engine.Value, spec);
-        // 段二/三/四占位：随 J1 后续切片落码（每段独立出账，不在此轮冒进）
         var segs = Environment.GetEnvironmentVariable("REALDB_SEG") ?? "1";
         if (segs.Split(',').Select(s => s.Trim()).Contains("2"))
-            check("[Harness] 段二（权限/执行计划/同步）切片未落码", true, "J1 后续切片，见交账");
+            RunSegment2(check, engine.Value, spec);
         if (segs.Split(',').Select(s => s.Trim()).Contains("3"))
             check("[Harness] 段三（备份/建模/主从）切片未落码", true, "J1 后续切片，见交账");
         if (segs.Split(',').Select(s => s.Trim()).Contains("4"))
@@ -163,6 +162,73 @@ public static class ProviderTestHarness
         {
             var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
             check($"[{tag}:S1] 段一异常收口", false, cur.Message);
+        }
+    }
+
+    // ---------- 段二：权限 / 执行计划 / 同步 ----------
+
+    static void RunSegment2(Action<string, bool, string> check, DbEngine engine, string spec)
+    {
+        string tag = engine switch { DbEngine.MySQL => "MYSQL", DbEngine.PostgreSQL => "PG", DbEngine.SqlServer => "MSSQL", _ => "RDB" };
+        var profile = ProfileOf(engine, spec);
+        string db = profile.Database;
+
+        using var prov = ProviderFactory.Create(profile);
+        try
+        {
+            WithRetry(() => prov.TestConnection().Wait());
+
+            // 权限：账号清单 → 当前账号授权文本 → 审计/回收全链（与权限中心同数据链）
+            var accounts = prov.Execute(db, UserPermissionCatalog.ListAccountsSql(engine)).Result.Last();
+            check($"[{tag}:S2] 权限-账号清单非空", accounts.HasRows, $"共 {accounts.Rows.Count} 账号");
+            var accts = UserPermissionCatalog.ExtractAccounts(accounts.Rows);
+            check($"[{tag}:S2] 权限-账号解析含当前账号", accts.Any(a => a.User == profile.User),
+                string.Join(";", accts.Take(5).Select(a => a.User)));
+            string grantHost = accts.Where(a => a.User == profile.User).Select(a => a.Host).FirstOrDefault() ?? "";
+            var grantRs = prov.Execute(db, UserPermissionCatalog.GrantsSql(engine, profile.User, grantHost)).Result.Last();
+            var grantTexts = UserPermissionCatalog.ExtractGrantTexts(grantRs.Rows);
+            check($"[{tag}:S2] 权限-当前账号授权文本可取", grantTexts.Count > 0, $"共 {grantTexts.Count} 条");
+            var records = PermissionAuditor.Parse(grantTexts);
+            check($"[{tag}:S2] 权限-授权记录解析非空", records.Count > 0, $"{records.Count} 条");
+            var findings = PermissionAuditor.Audit(records);
+            var revokes = records.Count > 0 ? PermissionAuditor.RevokeSql(records[0]) : new List<string>();
+            check($"[{tag}:S2] 权限-审计与回收语句跑通", revokes.All(r => !string.IsNullOrWhiteSpace(r)),
+                $"{findings.Count} 发现 / {revokes.Count} 回收");
+
+            // 执行计划：EXPLAIN 包装 → 真库执行 → 解析/标注全链（与执行计划面板同数据链）
+            var planRs = prov.Execute(db, ExplainPlanEngine.PlanSql(engine, $"SELECT * FROM {prov.Quote("products")}")).Result;
+            check($"[{tag}:S2] 计划-EXPLAIN 执行无错误", planRs.All(r => !r.Message.StartsWith("错误：")),
+                string.Join(";", planRs.Select(r => r.Message)));
+            var planText = string.Join("\n", planRs.Last().Rows.Select(r => string.Join(" ", r)));
+            var plan = ExplainPlanEngine.Parse(planText);
+            check($"[{tag}:S2] 计划-计划树解析非空", plan.Flat.Count > 0, $"节点 {plan.Flat.Count}");
+            var planFindings = ExplainPlanEngine.Annotate(plan);
+            check($"[{tag}:S2] 计划-瓶颈标注跑通", true, $"{planFindings.Count} 标注");
+
+            // 同步：角色探测 → 从库清单 → 自身复制状态（单机库口径：主库视角，不冒充从库账）
+            var roleRs = prov.Execute(db, ReplicationCatalog.RoleProbeSql(engine)).Result.Last();
+            string? role = roleRs.Rows.Count > 0
+                ? ReplicationCatalog.Col(roleRs.Columns, roleRs.Rows[0], "in_recovery", "role_desc")
+                : null;
+            check($"[{tag}:S2] 同步-角色探测执行", true, role ?? "无行（主库）");
+            bool isPrimary = engine switch
+            {
+                DbEngine.PostgreSQL => role == "False" || role == "false",
+                DbEngine.MySQL => roleRs.Rows.Count == 0, // SHOW REPLICA STATUS 空结果 = 未配置从库 = 主库
+                _ => role == null,
+            };
+            check($"[{tag}:S2] 同步-单机主库角色判定", isPrimary, $"role={role ?? "无"}");
+            var replicas = prov.Execute(db, ReplicationCatalog.ReplicasSql(engine)).Result.Last();
+            check($"[{tag}:S2] 同步-从库清单执行", true, $"{replicas.Rows.Count} 从库");
+            var self = prov.Execute(db, ReplicationCatalog.ReplicaSelfStatusSql(engine)).Result.Last();
+            check($"[{tag}:S2] 同步-自身复制状态执行", true, $"{self.Rows.Count} 行");
+
+            check($"[{tag}:S2] 段二小结", true, "权限5+计划3+同步4=12 例");
+        }
+        catch (Exception ex)
+        {
+            var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
+            check($"[{tag}:S2] 段二异常收口", false, cur.Message);
         }
     }
 

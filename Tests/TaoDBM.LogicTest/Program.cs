@@ -913,7 +913,7 @@ Layer("集成");
     await lq.Store.EnsureColumnsAsync(Enumerable.Range(0, 80));
     Check("懒加载全拉齐口径", lq.Store.LoadedCount == 80 && lq.Store.LoadedCells == 80L * 300, $"{lq.Store.LoadedCount}/{lq.Store.LoadedCells}");
     var full = lq.Materialize(Enumerable.Range(0, 80).ToList());
-    var plain = await prov2.Execute(null, "SELECT * FROM wide ORDER BY id");
+    var plain = await prov2.Execute(null!, "SELECT * FROM wide ORDER BY id");
     bool allEq = full.Rows.Count == plain[0].Rows.Count;
     for (int r = 0; allEq && r < full.Rows.Count; r++)
         for (int c = 0; allEq && c < 80; c++)
@@ -1842,7 +1842,7 @@ Layer("集成");
             // 快照往返（落盘口径）
             var json = OptimizationFollowup.ToJson(new[] { retestDb, reg });
             var fuBack = OptimizationFollowup.FromJson(json);
-            Check("回访-快照往返", back != null && fuBack.Count == 2 && fuBack[0].TaskId == retestDb.TaskId && fuBack[0].Verdict == "passed", "");
+            Check("回访-快照往返", back != null && fuBack != null && fuBack.Count == 2 && fuBack[0] != null && fuBack[0].TaskId == retestDb.TaskId && fuBack[0].Verdict == "passed", "");
             Check("回访-坏快照不炸", OptimizationFollowup.FromJson("{坏") == null, "");
         }
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
