@@ -417,6 +417,93 @@ public static class ShardingWizardDialog
         saltRow.Children.Add(saltCountBox);
         saltRow.Children.Add(saltBtn);
 
+        // ── 分片路由联动（P-6 联动一）：方案接入读写分离路由 —— 落片预览 + 读节点建议 + 计划落盘 ──
+        var linkCheck = new CheckBox
+        {
+            Content = "方案接入读写分离路由（保存分片计划，写入按分片键落片，读取交延迟感知读路由）",
+            FontSize = 12,
+        };
+        var routeKeyBox = new TextBox { PlaceholderText = "样例分片键值，逗号分隔，如 7,1500,9999", Width = 260 };
+        var routeLagBox = new TextBox { Text = "10", Width = 88 };
+        var routeBtn = new Button { Content = "路由预览", CornerRadius = new CornerRadius(4) };
+        var routeText = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        var routeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        routeRow.Children.Add(routeKeyBox);
+        routeRow.Children.Add(new TextBlock { Text = "延迟阈值(秒)", VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = Ant.TextSub });
+        routeRow.Children.Add(routeLagBox);
+        routeRow.Children.Add(routeBtn);
+
+        // 由向导当前选择构建 ShardPlan（与 ParseStrategyInput 同一解析口径）。
+        ShardPlan BuildPlan()
+        {
+            var table = Selected(tableBox) ?? "";
+            var key = Selected(keyBox) ?? "";
+            var strategy = (ShardingWizard.ShardStrategy)Math.Max(0, strategyBox.SelectedIndex);
+            return strategy switch
+            {
+                ShardingWizard.ShardStrategy.Hash => new ShardPlan(table, key, strategy,
+                    shardBox.SelectedIndex + 2, Array.Empty<string>(), Array.Empty<ShardCategory>()),
+                ShardingWizard.ShardStrategy.Range => new ShardPlan(table, key, strategy,
+                    boundsBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length + 1,
+                    boundsBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    Array.Empty<ShardCategory>()),
+                _ => new ShardPlan(table, key, strategy,
+                    catsBox.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length,
+                    Array.Empty<string>(),
+                    catsBox.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Select(l => l.Split('=', 2))
+                        .Where(seg => seg.Length == 2)
+                        .Select(seg => new ShardCategory(seg[0].Trim(),
+                            seg[1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
+                        .ToList()),
+            };
+        }
+
+        linkCheck.Click += (_, _) =>
+        {
+            if (linkCheck.IsChecked != true) { status.Text = "已取消联动：该表路由回归常规连接配置。"; return; }
+            if (Selected(tableBox) is not { Length: > 0 } || Selected(keyBox) is not { Length: > 0 })
+            {
+                linkCheck.IsChecked = false;
+                status.Text = "请先完成向导的选表与选分片键，再接入读写分离路由。";
+                return;
+            }
+            try
+            {
+                ShardRouting.SavePlan(BuildPlan());
+                status.Text = "分片计划已保存：写入按分片键落片，读取走延迟感知读路由；可在读路由页查看联动预览。";
+            }
+            catch (Exception ex)
+            {
+                linkCheck.IsChecked = false;
+                status.Text = "分片计划保存失败：" + ex.Message;
+            }
+        };
+
+        routeBtn.Click += (_, _) =>
+        {
+            if (Selected(tableBox) is not { Length: > 0 } || Selected(keyBox) is not { Length: > 0 })
+            { status.Text = "请先完成向导的选表与选分片键。"; return; }
+            var keys = routeKeyBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (keys.Length == 0) { status.Text = "请先填入样例分片键值。"; return; }
+            if (!long.TryParse(routeLagBox.Text.Trim(), out long lag) || lag < 0) { status.Text = "延迟阈值需为非负整数。"; return; }
+            try
+            {
+                var plan = BuildPlan();
+                // 副本画像演示口径：p0..pN 命名，p0 延迟 5s、其余 30s（真机连接后由探活填充）
+                var replicas = Enumerable.Range(0, plan.ShardCount)
+                    .Select(i => new ReplicaNode($"{plan.Table}.p{i}", i == 0 ? 5 : 30, true)).ToList();
+                var pv = ShardRouting.Preview(plan, keys, replicas, lag);
+                routeText.Text = string.Join("\n", pv.Routes.Select(r => $"{r.Key} → 分片 {r.Shard}")) + "\n" + pv.Note;
+                status.Text = ShardRouting.PlanSummary(plan);
+            }
+            catch (Exception ex)
+            {
+                routeText.Text = "";
+                status.Text = "路由预览失败：" + ex.Message;
+            }
+        };
+
         // 在线改表计划（MySQL 方言，复用 OnlineDdl.Plan；@last 占位符不可直接执行）
         var estBox = new TextBox { PlaceholderText = "预估行数", Text = "1000000", Width = 130 };
         var batchBox = new TextBox { Text = "2000", Width = 90 };
@@ -484,6 +571,10 @@ public static class ShardingWizardDialog
         panel.Children.Add(Head("热点盐化摘要"));
         panel.Children.Add(saltRow);
         panel.Children.Add(saltText);
+        panel.Children.Add(Head("分片路由联动（接入读写分离）"));
+        panel.Children.Add(linkCheck);
+        panel.Children.Add(routeRow);
+        panel.Children.Add(new ScrollViewer { Content = routeText, MaxHeight = 140, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(Head("在线改表计划（只读，@last 不可直接执行）"));
         panel.Children.Add(onlineBtn);
         if (profile.Engine == DbEngine.MySQL) panel.Children.Add(estRow);

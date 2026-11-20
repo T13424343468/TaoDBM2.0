@@ -55,6 +55,60 @@ public static class ReadRouterDialog
         });
         panel.Children.Add(status);
 
+        // ── 分片拓扑接入（P-6 联动二）：已注册分片计划并入主从/多节点视图（只读展示） ──
+        var topoPanel = new StackPanel { Spacing = 4 };
+        var topoTitle = new TextBlock
+        {
+            Text = "分片拓扑接入",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Ant.Primary,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+        topoPanel.Children.Add(topoTitle);
+        var topoLoaded = ShardRouting.AllPlans();
+        if (topoLoaded.Count == 0)
+        {
+            topoPanel.Children.Add(new TextBlock
+            {
+                Text = "暂无已注册的分片计划：在分库分区分表向导勾选「方案接入读写分离路由」后，分片节点会并入此视图。",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Ant.TextSub,
+            });
+        }
+        else
+        {
+            foreach (var plan in topoLoaded)
+            {
+                topoPanel.Children.Add(new TextBlock
+                {
+                    Text = ShardRouting.PlanSummary(plan),
+                    FontSize = 12,
+                    Foreground = Ant.TextSub,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                foreach (var n in ShardRouting.TopologyRows(plan))
+                {
+                    topoPanel.Children.Add(new TextBlock
+                    {
+                        Text = $"  [{n.Role}] {n.Name}｜{n.State}｜{n.Detail}",
+                        FontSize = 12,
+                        FontFamily = new FontFamily("Consolas"),
+                        TextWrapping = TextWrapping.Wrap,
+                    });
+                }
+            }
+            topoPanel.Children.Add(new TextBlock
+            {
+                Text = "分片节点为注册态只读展示：主从角色探测以 ReplicationCatalog 为准，分片路由决策见向导联动页。",
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Ant.TextSub,
+            });
+        }
+        panel.Children.Add(topoPanel);
+
         var dlg = new ContentDialog
         {
             Title = "读写路由预演",

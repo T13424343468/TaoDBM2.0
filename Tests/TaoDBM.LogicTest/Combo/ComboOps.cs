@@ -8,7 +8,7 @@ namespace TaoDBM.LogicTest.Combo;
 
 /// <summary>
 /// COMBO MATRIX OPERATION REGISTRY (Phase 2 full coverage batch).
-/// One ComboOp per usable operation: 17 connection-menu items (C01..C17),
+/// One ComboOp per usable operation: 18 connection-menu items (C01..C18),
 /// 12 database-menu items (D01..D12) and extended operations (X01..X11).
 /// Every op runs on the shared ComboData workspace for a given State and Dialect,
 /// and returns null when all of its postconditions hold, else a problem detail.
@@ -440,6 +440,40 @@ public static class ComboOps
                     if (!finds.Any(f => f.Code == "S002")) return "leading-wildcard not flagged";
                     var ddl = SlowQueryDiagnoser.SuggestIndexDdl(sql, d.Table);
                     if (ddl.Count == 0) return "index suggestion empty";
+                    return null;
+                },
+            },
+            new()
+            {
+                Id = "C18", Label = "SHARD-ROUTE-LINK", MenuPath = "CONN", Kind = "PLAN", Gate = GateSharding,
+                EnginePath = "Src/TaoDBM.Core/ShardRouting.cs",
+                Run = (d, eng) =>
+                {
+                    if (!ShardingWizard.Supported(eng)) return "unexpected gate pass";
+                    var hashPlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.Hash, 4,
+                        Array.Empty<string>(), Array.Empty<ShardCategory>());
+                    if (ShardRouting.RouteToShard(hashPlan, "7") != 3) return "hash numeric route wrong";
+                    if (ShardRouting.RouteToShard(hashPlan, "7") != ShardRouting.RouteToShard(hashPlan, "7")) return "hash route unstable";
+                    var rangePlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.Range, 4,
+                        new[] { "0", "1000", "2000" }, Array.Empty<ShardCategory>());
+                    if (ShardRouting.RouteToShard(rangePlan, "-5") != 0) return "range below-first wrong";
+                    if (ShardRouting.RouteToShard(rangePlan, "1500") != 2) return "range mid wrong";
+                    if (ShardRouting.RouteToShard(rangePlan, "9999") != 3) return "range maxvalue wrong";
+                    var listPlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.List, 2,
+                        Array.Empty<string>(), new ShardCategory[] { new("south", new[] { "1", "2" }), new("north", new[] { "3", "4" }) });
+                    if (ShardRouting.RouteToShard(listPlan, "2") != 0) return "list south wrong";
+                    if (ShardRouting.RouteToShard(listPlan, "4") != 1) return "list north wrong";
+                    bool rejected = false;
+                    try { ShardRouting.RouteToShard(listPlan, "99"); } catch (ArgumentException) { rejected = true; }
+                    if (!rejected) return "list unmatched must reject";
+                    var replicas = new[] { new ReplicaNode("r1", 5, true), new ReplicaNode("r2", 30, true) };
+                    var pv = ShardRouting.Preview(hashPlan, new[] { "7", "8", "9" }, replicas, 10);
+                    if (pv.Routes.Count != 3) return "preview route count wrong";
+                    if (!pv.ReadDecision.HasTarget || pv.ReadDecision.FellBackToPrimary) return "read route should hit r1";
+                    if (!pv.ReadDecision.EligibleReplicas[0].Equals("r1")) return "read route order wrong";
+                    var topo = ShardRouting.TopologyRows(hashPlan);
+                    if (topo.Count != 4 || topo.Any(t => t.Role != "分片")) return "topology rows wrong";
+                    if (ShardRouting.PlanSummary(rangePlan).Length == 0) return "summary empty";
                     return null;
                 },
             },
