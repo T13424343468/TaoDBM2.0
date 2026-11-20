@@ -19,6 +19,8 @@ public static class ProviderTestHarness
         "MySQL" or "MYSQL" => DbEngine.MySQL,
         "PostgreSQL" or "PG" => DbEngine.PostgreSQL,
         "SqlServer" or "MSSQL" => DbEngine.SqlServer,
+        "Mongo" or "MongoDB" => DbEngine.MongoDB,
+        "Redis" => DbEngine.Redis,
         _ => null,
     };
 
@@ -32,7 +34,7 @@ public static class ProviderTestHarness
         if (engine is null)
         {
             if (!string.IsNullOrEmpty(engName))
-                check("[Harness] 引擎未收录（本段支持 MySQL/PostgreSQL/SqlServer）", false, $"REALDB_PROVIDER={engName}");
+                check("[Harness] 引擎未收录（本段支持 MySQL/PostgreSQL/SqlServer/Mongo/Redis）", false, $"REALDB_PROVIDER={engName}");
             return;
         }
         var spec = Environment.GetEnvironmentVariable("REALDB_CONN");
@@ -41,16 +43,19 @@ public static class ProviderTestHarness
             check("[Harness] REALDB_CONN 缺失或格式不对（host|port|user|pass|db）", false, $"provider={engName}");
             return;
         }
+        if (engine.Value is DbEngine.MongoDB or DbEngine.Redis)
+        {
+            RunNoSqlSegment1(check, engine.Value, spec);
+            return;
+        }
         RunSegment1(check, engine.Value, spec);
         var segs = Environment.GetEnvironmentVariable("REALDB_SEG") ?? "1";
         if (segs.Split(',').Select(s => s.Trim()).Contains("2"))
             RunSegment2(check, engine.Value, spec);
         if (segs.Split(',').Select(s => s.Trim()).Contains("3"))
             RunSegment3(check, engine.Value, spec);
-        if (segs.Split(',').Select(s => s.Trim()).Contains("3"))
-            check("[Harness] 段三（备份/建模/主从）切片未落码", true, "J1 后续切片，见交账");
         if (segs.Split(',').Select(s => s.Trim()).Contains("4"))
-            check("[Harness] 段四（迁移/安全/智能线/分库分区分表）切片未落码", true, "J1 后续切片，见交账");
+            RunSegment4(check, engine.Value, spec);
     }
 
     static ConnectionProfile ProfileOf(DbEngine engine, string spec)
@@ -350,6 +355,164 @@ public static class ProviderTestHarness
         if (!p.WaitForExit(120000)) { try { p.Kill(); } catch { } return (-1, "timeout"); }
         return (p.ExitCode, outTask.Result + errTask.Result);
     }
+
+    // ---------- 段四：迁移 / 安全 / 智能线 / 分库分区分表 ----------
+
+    static void RunSegment4(Action<string, bool, string> check, DbEngine engine, string spec)
+    {
+        string tag = engine switch { DbEngine.MySQL => "MYSQL", DbEngine.PostgreSQL => "PG", DbEngine.SqlServer => "MSSQL", _ => "RDB" };
+        var profile = ProfileOf(engine, spec);
+        string db = profile.Database;
+
+        using var prov = ProviderFactory.Create(profile);
+        try
+        {
+            WithRetry(() => prov.TestConnection().Wait());
+
+            // 迁移：真行数清单 → 断点推进 → 续迁计划 → 状态快照往返
+            var cntOrders = prov.Execute(db, $"SELECT COUNT(*) AS c FROM {prov.Quote("orders")}").Result.Last();
+            long ordersRows = Convert.ToInt64(cntOrders.Rows[0][0]);
+            int batches = (int)Math.Max((ordersRows + 999) / 1000, 1);
+            var manifest = new MigrationManifest("har_" + Token, "真库-" + tag, "目标库",
+                DateTimeOffset.UtcNow, new List<MigrationTable> { new("orders", ordersRows, batches) });
+            var mstate = MigrationResume.Fresh(manifest);
+            mstate = MigrationResume.Advance(mstate, "orders", 1, "id=1000", batches);
+            var mplan = MigrationResume.Plan(manifest, mstate,
+                new Dictionary<string, long> { ["orders"] = ordersRows },
+                new Dictionary<string, long> { ["orders"] = ordersRows });
+            check($"[{tag}:S4] 迁移-断点续迁计划", mplan.Actions.Any(a => a.Action == "resume") && mplan.Drifted.Count == 0 && mplan.VerifyMismatch.Count == 0,
+                string.Join(";", mplan.Actions.Select(a => a.Table + ":" + a.Action)));
+            var mround = MigrationResume.FromJson(MigrationResume.ToJson(mstate));
+            check($"[{tag}:S4] 迁移-状态快照往返", mround != null && mround!.Tables[0].BatchDone == 1 && mround.Tables[0].LastKey == "id=1000",
+                mround?.Tables[0].LastKey ?? "");
+
+            // 安全：真实邮箱值脱敏 + 整行脱敏
+            var emailRs = prov.Execute(db, $"SELECT email FROM {prov.Quote("products")} WHERE email IS NOT NULL").Result.Last();
+            string realEmail = Convert.ToString(emailRs.Rows[0][0]) ?? "";
+            string masked = MaskEngine.Mask(realEmail, MaskEngine.InferRule("email"));
+            check($"[{tag}:S4] 安全-邮箱真值脱敏", masked != realEmail && masked.Contains('*'), $"{realEmail} → {masked}");
+            var kvRow = emailRs.Rows[0].Select((v, i) => new KeyValuePair<string, string>(emailRs.Columns[i], v?.ToString() ?? "")).ToList();
+            var maskedRow = MaskEngine.MaskRow(kvRow);
+            check($"[{tag}:S4] 安全-整行脱敏跑通", maskedRow.Count == kvRow.Count &&
+                maskedRow.First(kv => kv.Key.Equals("email", StringComparison.OrdinalIgnoreCase)).Value.Contains('*'), $"{maskedRow.Count} 列");
+
+            // 智能线：慢查询诊断 + 索引建议 + 真库复测计时
+            var slowFindings = SlowQueryDiagnoser.Analyze($"SELECT * FROM {prov.Quote("orders")} WHERE amount > 5000");
+            check($"[{tag}:S4] 智能线-慢查询诊断出账", slowFindings.Count > 0, string.Join(";", slowFindings.Select(f => f.Code)));
+            var idxDdl = SlowQueryDiagnoser.SuggestIndexDdl($"SELECT * FROM {prov.Quote("orders")} WHERE amount > 5000", "orders");
+            check($"[{tag}:S4] 智能线-索引建议可生成", idxDdl.Count > 0, $"{idxDdl.Count} 条");
+            var retest = QueryRetest.CompareAsync((sql, ct) => prov.Execute(db, sql),
+                $"SELECT COUNT(*) FROM {prov.Quote("orders")} WHERE amount > 5000",
+                $"SELECT COUNT(*) FROM {prov.Quote("orders")} WHERE amount < 5000", 3).GetAwaiter().GetResult();
+            check($"[{tag}:S4] 智能线-真库复测计时", retest.BeforeMs > 0 && retest.AfterMs > 0, $"前 {retest.BeforeMs:F1}ms / 后 {retest.AfterMs:F1}ms");
+
+            // 分库分区分表：哈希分区真执行（MySQL ALTER / PG 声明式）+ 分区信息与分布账
+            string ptTbl = "t_har_pt_" + Token;
+            prov.Execute(db, DropSql(engine, ptTbl)).Wait();
+            prov.Execute(db, engine == DbEngine.MySQL
+                ? $"CREATE TABLE {prov.Quote(ptTbl)} (id INT, k INT, PRIMARY KEY (id, k))"
+                : $"CREATE TABLE {prov.Quote(ptTbl)} (id INT PRIMARY KEY, k INT)").Wait();
+            prov.Execute(db, string.Join("\n", Enumerable.Range(1, 40).Select(i => $"INSERT INTO {prov.Quote(ptTbl)} VALUES ({i}, {i % 7})"))).Wait();
+            if (engine == DbEngine.MySQL)
+            {
+                var hashPlan = ShardingWizard.HashPartitionSql(engine, ptTbl, "k", 4);
+                var rs = prov.Execute(db, hashPlan[0]).Result;
+                check($"[{tag}:S4] 分区-哈希分区真执行", rs.All(r => !r.Message.StartsWith("错误：")), string.Join(";", rs.Select(r => r.Message)));
+                var info = prov.Execute(db, ShardingWizard.PartitionsInfoSql(engine, db, ptTbl)).Result.Last();
+                var parts = info.Rows.Select(r => (Convert.ToString(r[0]) ?? "", Convert.ToInt64(r[1]))).ToList();
+                var (_, skewed) = ShardingWizard.AnalyzeDistribution(parts);
+                check($"[{tag}:S4] 分区-分区信息与分布账", parts.Count == 4, $"{parts.Count} 分区 / 倾斜={skewed}");
+            }
+            else if (engine == DbEngine.PostgreSQL)
+            {
+                foreach (var stmt in ShardingWizard.HashPartitionSql(engine, ptTbl, "k", 4).Where(st => !st.TrimStart().StartsWith("--")))
+                    prov.Execute(db, stmt).Wait();
+                prov.Execute(db, $"INSERT INTO {prov.Quote(ptTbl + "_pnew")} SELECT id, k FROM {prov.Quote(ptTbl)}").Wait();
+                var info = prov.Execute(db, ShardingWizard.PartitionsInfoSql(engine, db, ptTbl + "_pnew")).Result.Last();
+                check($"[{tag}:S4] 分区-声明式分区真执行", info.Rows.Count == 4, $"{info.Rows.Count} 分区");
+                prov.Execute(db, $"DROP TABLE IF EXISTS {prov.Quote(ptTbl + "_pnew")}").Wait();
+            }
+            else check($"[{tag}:S4] 分区-哈希分区 skip", true, $"skip：{engine} 分区口径走向导预演，不真执行（物理口径另测）");
+            prov.Execute(db, DropSql(engine, ptTbl)).Wait();
+            check($"[{tag}:S4] 段四小结", true, "迁移2+安全2+智能线3+分区3=10 例");
+        }
+        catch (Exception ex)
+        {
+            var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
+            check($"[{tag}:S4] 段四异常收口", false, cur.Message);
+        }
+    }
+
+    // ---------- NoSQL 段一：Mongo / Redis 连接 / 对象树 / 读写回读 ----------
+
+    static void RunNoSqlSegment1(Action<string, bool, string> check, DbEngine engine, string spec)
+    {
+        string tag = engine == DbEngine.MongoDB ? "MONGO" : "REDIS";
+        var profile = ProfileOf(engine, spec);
+        try
+        {
+            using var prov = ProviderFactory.Create(profile);
+            WithRetry(() => prov.TestConnection().Wait());
+            check($"[{tag}:S1] 连接-测试连接", true, "");
+
+            var dbs = prov.GetDatabases().Result;
+            check($"[{tag}:S1] 连接-库列表非空", dbs.Count > 0, $"{dbs.Count} 项");
+
+            if (engine == DbEngine.MongoDB)
+            {
+                string db = profile.Database.Length > 0 ? profile.Database : "taodbmui";
+                string coll = "t_har_" + Token;
+                var mongo = (MongoProvider)prov;
+                mongo.InsertManyAsync(db, coll, new List<MongoDB.Bson.BsonDocument>
+                {
+                    new() { { "n", 1 }, { "note", "道生一" } },
+                    new() { { "n", 2 }, { "note", "αβγ" } },
+                    new() { { "n", 3 }, { "note", "tai" } },
+                }).Wait();
+                var children = mongo.GetChildren(db).Result;
+                check($"[{tag}:S1] 对象树-集合清单含矩阵集合", children.Contains(coll), $"共 {children.Count} 子级");
+                mongo.CurrentCollection = coll;
+                var find = mongo.Execute(db, "{}").Result.Last();
+                check($"[{tag}:S1] 查询-文档回读", find.Rows.Count == 3, $"实回 {find.Rows.Count} 文档");
+                var filtered = mongo.Execute(db, "{ n: 2 }").Result.Last();
+                check($"[{tag}:S1] 查询-过滤器命中", filtered.Rows.Count == 1, $"实回 {filtered.Rows.Count} 文档");
+                check($"[{tag}:S1] 对象树-列口径", mongo.GetColumns(db, coll).Result.Count == 2, "_id + (document)");
+                new MongoDB.Driver.MongoClient($"mongodb://{profile.Host}:{profile.Port}/?serverSelectionTimeoutMS=8000").GetDatabase(db).DropCollection(coll);
+                var after = mongo.GetChildren(db).Result;
+                check($"[{tag}:S1] 清理-矩阵集合已移出树", !after.Contains(coll), "");
+            }
+            else
+            {
+                string db = profile.Database.Length > 0 ? profile.Database : "db0";
+                string key = "t_har_" + Token;
+                var redis = (RedisProvider)prov;
+                using var direct = StackExchange.Redis.ConnectionMultiplexer.Connect(
+                    new StackExchange.Redis.ConfigurationOptions { EndPoints = { { profile.Host, profile.Port > 0 ? profile.Port : 6379 } }, AbortOnConnectFail = false });
+                var rdb = direct.GetDatabase(0);
+                rdb.StringSet(key, "道生一");
+                check($"[{tag}:S1] 写入-键落库", true, key);
+                var getRs = redis.Execute(db, $"GET {key}").Result.Last();
+                check($"[{tag}:S1] 查询-GET 回读", Convert.ToString(getRs.Rows[0][0]) == "道生一", Convert.ToString(getRs.Rows[0][0]) ?? "");
+                var typeRs = redis.Execute(db, $"TYPE {key}").Result.Last();
+                check($"[{tag}:S1] 查询-TYPE 口径", Convert.ToString(typeRs.Rows[0][0]) == "string", Convert.ToString(typeRs.Rows[0][0]) ?? "");
+                var children = redis.GetChildren(db).Result;
+                check($"[{tag}:S1] 对象树-键清单含矩阵键", children.Contains(key), $"共 {children.Count} 键");
+                var page = redis.Browse(db, key, 0, 10).Result;
+                check($"[{tag}:S1] 查询-键详情分页", page.Rows.Count >= 1, $"{page.Rows.Count} 行");
+                redis.ExecuteDelKey(db, key).Wait();
+                var after = redis.GetChildren(db).Result;
+                check($"[{tag}:S1] 清理-矩阵键已移出树", !after.Contains(key), "");
+            }
+            check($"[{tag}:S1] 段一小结", true, engine == DbEngine.MongoDB ? "连接2+对象树2+查询2+清理1=7 例" : "连接2+对象树2+查询3+清理1=8 例");
+        }
+        catch (Exception ex)
+        {
+            var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
+            check($"[{tag}:S1] 段一异常收口", false, cur.Message);
+        }
+    }
+
+    private static int RedisDatabase => 0;
 
     /// <summary>删表语句按方言（SQL Server 全版本兼容 OBJECT_ID 口径，不赌 DROP IF EXISTS 版本线）。</summary>
     static string DropSql(DbEngine engine, string table)

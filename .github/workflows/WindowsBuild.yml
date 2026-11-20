@@ -220,6 +220,204 @@ jobs:
           dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | tee test-output.txt
           exit ${PIPESTATUS[0]}
 
+  realdb-matrix-mongodb:
+    # 真库矩阵·MongoDB（2026-11-20 老板令：其它全部补上）：段一 NoSQL 7 例真连真用真对比
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-nix-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-nix-
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Wait for MongoDB ready
+        shell: bash
+        run: |
+          set -e
+          ready=0
+          for i in $(seq 1 24); do
+            if timeout 3 bash -c "</dev/tcp/localhost/27017" 2>/dev/null; then ready=1; break; fi
+            sleep 5
+          done
+          if [ "$ready" -ne 1 ]; then echo "::error::mongo not ready after wait"; exit 1; fi
+          echo "[MONGO] port 27017 accepting connections"
+
+      - name: Logic tests (realdb matrix seg1, MongoDB)
+        shell: bash
+        run: |
+          export REALDB_PROVIDER='Mongo'
+          export REALDB_CONN='localhost|27017|||taodbmui'
+          export REALDB_SEG='1'
+          dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | tee test-output.txt
+          exit ${PIPESTATUS[0]}
+
+  realdb-matrix-redis:
+    # 真库矩阵·Redis（2026-11-20 老板令：其它全部补上）：段一 NoSQL 8 例真连真用真对比
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-nix-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-nix-
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Wait for Redis ready
+        shell: bash
+        run: |
+          set -e
+          ready=0
+          for i in $(seq 1 24); do
+            if timeout 3 bash -c "</dev/tcp/localhost/6379" 2>/dev/null; then ready=1; break; fi
+            sleep 5
+          done
+          if [ "$ready" -ne 1 ]; then echo "::error::redis not ready after wait"; exit 1; fi
+          echo "[REDIS] port 6379 accepting connections"
+
+      - name: Logic tests (realdb matrix seg1, Redis)
+        shell: bash
+        run: |
+          export REALDB_PROVIDER='Redis'
+          export REALDB_CONN='localhost|6379|||db0'
+          export REALDB_SEG='1'
+          dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | tee test-output.txt
+          exit ${PIPESTATUS[0]}
+
+  realdb-matrix-mssql:
+    # 真库矩阵·SQL Server（2026-11-20 老板令：其它全部补上）：段一~四全量，装机走 ui-smoke-servers 已验证的官方介质直装流程
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-nix-${{ hashFiles('**/*.csproj') }}
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install SQL Server Express (official media, verified flow)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $saPass = "Ta0DBM-ui!42"
+          $ErrorActionPreference = 'Stop'
+          # 官方离线介质直链（ui-smoke-servers 已验证）→ /q /x 静默解包 → SETUP.EXE 静默安装
+          $boot = "$env:TEMP\SQLEXPR_x64_ENU.exe"
+          $mediaUrl = 'https://download.microsoft.com/download/7/c/1/7c14e92e-bdcb-4f89-b7cf-93543e7112d1/SQLEXPR_x64_ENU.exe'
+          $dlOk = $false
+          for ($tryN = 1; $tryN -le 3; $tryN++) {
+            try {
+              Invoke-WebRequest -Uri $mediaUrl -OutFile $boot -UseBasicParsing -ErrorAction Stop
+              if ((Test-Path $boot) -and (Get-Item $boot).Length -ge 200MB) { $dlOk = $true; break }
+            } catch { Write-Host "::warning::media download attempt $tryN failed: $($_.Exception.Message)" }
+            Start-Sleep -Seconds 5
+          }
+          if (-not $dlOk) { Write-Host "::error::mssql media download failed"; exit 1 }
+          Write-Host "[MSSQL] media size=$((Get-Item $boot).Length) bytes"
+          $up = Start-Process -FilePath $boot -ArgumentList @('/q', '/x:C:\SQLMedia') -Wait -PassThru
+          Write-Host "[MSSQL] unpack exit=$($up.ExitCode)"
+          $setup = Get-ChildItem 'C:\SQLMedia' -Recurse -Filter SETUP.EXE -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $setup) { Write-Host "::error::unpack failed or SETUP.EXE not found"; exit 1 }
+          Write-Host "[MSSQL] setup at $setup"
+          # /SECURITYMODE=SQL 必带（abcd6e6 教训：缺它 sa 登录不通）
+          $ia = @('/Q','/IAcceptSqlServerLicenseTerms','/Action=Install','/FEATURES=SQL','/INSTANCENAME=SQLEXPRESS','/SAPWD=' + $saPass,'/TCPENABLED=1','/SECURITYMODE=SQL','/ADDCURRENTUSERASSQLADMIN=1','/SQLSYSADMINACCOUNTS=BUILTIN\Administrators','/SQLSVCINSTANTFILEINIT=1','/UPDATEENABLED=0')
+          $inst = Start-Process -FilePath $setup -ArgumentList ($ia -join ' ') -Wait -PassThru
+          Write-Host "[MSSQL] SETUP exit=$($inst.ExitCode)"
+          if ($inst.ExitCode -ne 0) {
+            $summary = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log' -Recurse -Filter Summary.txt -ErrorAction SilentlyContinue | Select-Object -Last 1
+            if ($summary) { Get-Content $summary.FullName -TotalCount 80 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" } }
+            Write-Host "::error::mssql install failed exit=$($inst.ExitCode)"; exit 1
+          }
+          # 服务就绪探测 + TCP 连通验证（.NET SqlClient，1433 走 TCP 与矩阵口径一致）
+          $ready = $false
+          for ($i = 0; $i -lt 36; $i++) {
+            Start-Sleep -Seconds 5
+            $probe = Get-Service -Name 'MSSQL$SQLEXPRESS' -ErrorAction SilentlyContinue
+            if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
+          }
+          if (-not $ready) { Write-Host "::error::sqlexpress service not running after wait"; exit 1 }
+          $cs = "Server=localhost,1433;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
+          $okConn = $false
+          $connErr = ''
+          for ($ci = 0; $ci -lt 36; $ci++) {
+            try {
+              $cc = New-Object System.Data.SqlClient.SqlConnection $cs
+              $cc.Open()
+              $cVer = $cc.CreateCommand()
+              $cVer.CommandText = 'SELECT @@VERSION'
+              Write-Host ("[MSSQL] connected: " + $cVer.ExecuteScalar())
+              $cc.Close()
+              $okConn = $true
+              break
+            } catch { $connErr = $_.Exception.Message; Write-Host "[MSSQL] connect attempt $ci failed: $connErr"; Start-Sleep -Seconds 5 }
+          }
+          if (-not $okConn) { Write-Host "::error::sqlserver tcp connectivity failed: $connErr"; exit 1 }
+          "SAPASS=$saPass" | Add-Content $env:GITHUB_ENV
+
+      - name: Load matrix test data
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb --engine mssql --db-name taodbmui
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mssql failed"; exit 1 }
+          # 免 sqlcmd：.NET SqlClient 按 GO 分批执行（ui-smoke-servers 已验证口径）
+          $csLoad = "Server=localhost,1433;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
+          $connL = New-Object System.Data.SqlClient.SqlConnection $csLoad
+          $connL.Open()
+          $cmdL = $connL.CreateCommand()
+          $idx = 0
+          [regex]::Split((Get-Content testdb/taodbm-ui.mssql.sql -Raw), "(?im)^\s*GO\s*$") | Where-Object { $_.Trim().Length -gt 0 } | ForEach-Object {
+            $idx++
+            $cmdL.CommandText = $_
+            try { $cmdL.ExecuteNonQuery() | Out-Null } catch {
+              Write-Host "::error::mssql load batch $idx failed: $($_.Exception.Message)"; exit 1
+            }
+          }
+          $cmdL.CommandText = 'USE taodbmui; SELECT COUNT(*) FROM orders'
+          Write-Host ("[MSSQL] orders count: " + $cmdL.ExecuteScalar())
+          if ($connL.State -eq 'Open') { $connL.Close() }
+
+      - name: Logic tests (realdb matrix seg1-4, SQL Server)
+        shell: pwsh
+        run: |
+          $env:REALDB_PROVIDER = 'SqlServer'
+          $env:REALDB_CONN = 'localhost|1433|sa|Ta0DBM-ui!42|taodbmui'
+          $env:REALDB_SEG = '1,2,3,4'
+          dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | Tee-Object -FilePath test-output.txt
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::realdb matrix mssql failed"; exit 1 }
+
   app-build:
     runs-on: windows-latest
     timeout-minutes: 30
