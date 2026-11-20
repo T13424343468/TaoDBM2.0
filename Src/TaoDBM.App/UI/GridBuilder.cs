@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using TaoDBM.Core;
+using TaoDBM.Core.Streaming;
 
 namespace TaoDBM.UI;
 
@@ -10,6 +11,10 @@ public static class GridBuilder
 {
     public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null)
     {
+        // 批次F：宽表懒加载结果（列数超虚拟阈值）走等宽占位网格，横向滚动增量拉列
+        if (r is LazyQueryResult lz && lz.Store.TotalColumns > 64)
+            return LazyWideGrid.Build(lz, onRowTap, sourceSql, engine);
+
         if (r.Columns.Count == 0)
         {
             string msg = r.Affected >= 0
@@ -20,9 +25,9 @@ public static class GridBuilder
                 Text = msg,
                 Margin = new Thickness(16, 12, 16, 12),
                 Foreground = Ant.Success,
-                FontSize = AntTokens.FontMinor,
+                FontSize = 12,
             };
-            return new Border { Child = ok, Background = Ant.AltRow, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg), Margin = new Thickness(4, 8, 4, 8) };
+            return new Border { Child = ok, Background = Ant.AltRow, CornerRadius = new CornerRadius(6), Margin = new Thickness(4, 8, 4, 8) };
         }
 
         if (r.Rows.Count > VirtualThreshold)
@@ -83,7 +88,7 @@ public static class GridBuilder
                 Text = $"共 {r.Rows.Count} 行，界面渲染前 {shown} 行（导出不受影响）。",
                 Margin = new Thickness(12, 4, 4, 4),
                 Foreground = Ant.TextSub,
-                FontSize = AntTokens.FontMinor,
+                FontSize = 12,
             };
             var sp = new StackPanel { Orientation = Orientation.Vertical };
             sp.Children.Add(scroll);

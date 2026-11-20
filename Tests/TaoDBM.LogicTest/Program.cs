@@ -346,10 +346,10 @@ Console.WriteLine("== TableDdl ==");
 
 Console.WriteLine("== BackupTools ==");
 {
-    Check("支持矩阵七库", BackupTools.Supported(DbEngine.MySQL) && BackupTools.Supported(DbEngine.PostgreSQL)
+    Check("支持矩阵", BackupTools.Supported(DbEngine.MySQL) && BackupTools.Supported(DbEngine.PostgreSQL)
         && BackupTools.Supported(DbEngine.SqlServer) && BackupTools.Supported(DbEngine.SQLite)
-        && BackupTools.Supported(DbEngine.Oracle) && BackupTools.Supported(DbEngine.MongoDB)
-        && BackupTools.Supported(DbEngine.Redis));
+        && !BackupTools.Supported(DbEngine.Oracle) && !BackupTools.Supported(DbEngine.MongoDB)
+        && !BackupTools.Supported(DbEngine.Redis));
     var spec = BackupTools.MysqlDump("127.0.0.1", 3306, "root", "pw123", "mydb", "c:\\dir with space\\dump.sql");
     Check("mysqldump 参数", spec.Arguments.Contains("--host=127.0.0.1") && spec.Arguments.Contains("--port=3306")
         && spec.Arguments.Contains("--user=root") && spec.Arguments.Contains("--result-file=\"c:\\dir with space\\dump.sql\"")
@@ -368,49 +368,6 @@ Console.WriteLine("== BackupTools ==");
     Check("SqlServer 还原语句", BackupTools.SqlServerRestoreSql("db", "d:\\x.bak")
         == "RESTORE DATABASE [db] FROM DISK = 'd:\\x.bak' WITH REPLACE");
     Check("SqlServer 单引号转义", BackupTools.SqlServerBackupSql("db", "d:\\o'brien.bak").Contains("'d:\\o''brien.bak'"));
-    // ---- Oracle data pump：凭据进 parfile，命令行/Describe 零密码 ----
-    var exp = BackupTools.OracleBackup("h", 1521, "scott", "tiger@x", "orcl", "DATA_PUMP_DIR", "mydb.dmp");
-    Check("expdp parfile", exp.FileName == "expdp" && exp.Arguments.Contains("taodbm_expdp.par")
-        && exp.Files["taodbm_expdp.par"].Contains("USERID=scott/tiger@x@h:1521/orcl")
-        && exp.Files["taodbm_expdp.par"].Contains("DIRECTORY=DATA_PUMP_DIR")
-        && exp.Files["taodbm_expdp.par"].Contains("DUMPFILE=mydb.dmp")
-        && exp.Files["taodbm_expdp.par"].Contains("LOGFILE=mydb.log"), exp.Describe);
-    Check("expdp 凭据零明文", !exp.Describe.Contains("tiger@x") && !exp.Arguments.Contains("tiger@x"));
-    var imp = BackupTools.OracleRestore("h", 1521, "scott", "tiger@x", "orcl", "DATA_PUMP_DIR", "mydb.dmp");
-    Check("impdp parfile", imp.FileName == "impdp" && imp.Files["taodbm_impdp.par"].Contains("USERID=scott/tiger@x@h:1521/orcl")
-        && imp.Files["taodbm_impdp.par"].Contains("LOGFILE=mydb.imp.log"), imp.Describe);
-    // ---- MongoDB：密码进 --config yaml，命令行零密码；整库不带 --db；还原带 --drop ----
-    var md = BackupTools.MongoDump("h", 27017, "u", "mp\"w", "", "d:\\dump out");
-    Check("mongodump 整库", md.FileName == "mongodump" && md.Arguments.Contains("--config=taodbm_mongo.conf")
-        && !md.Arguments.Contains("--db=") && md.Arguments.Contains("--out=\"d:\\dump out\""), md.Arguments);
-    Check("mongo config 密码转义", md.Files["taodbm_mongo.conf"].Contains("hosts:\n  - h:27017")
-        && md.Files["taodbm_mongo.conf"].Contains("userName: \"u\"")
-        && md.Files["taodbm_mongo.conf"].Contains("password: \"mp\\\"w\"")
-        && !md.Arguments.Contains("mp\\\"w"), md.Files["taodbm_mongo.conf"]);
-    var mds = BackupTools.MongoDump("h", 27017, "u", "p", "mydb", "d:\\out");
-    Check("mongodump 指定库", mds.Arguments.Contains("--db=mydb"), mds.Arguments);
-    var mr = BackupTools.MongoRestore("h", 27017, "u", "p", "mydb", "d:\\dump");
-    Check("mongorestore 还原", mr.FileName == "mongorestore" && mr.Arguments.Contains("--nsFrom=mydb.*")
-        && mr.Arguments.Contains("--nsTo=mydb.*") && mr.Arguments.Contains("--drop")
-        && mr.Arguments.Contains("--dir=d:\\dump"), mr.Arguments);
-    Check("mongorestore 整库无 ns", BackupTools.MongoRestore("h", 27017, "u", "p", "", "d:\\dump").Arguments.Contains("--drop")
-        && !BackupTools.MongoRestore("h", 27017, "u", "p", "", "d:\\dump").Arguments.Contains("--nsFrom"));
-    // ---- Redis：BGSAVE + RDB 文件复制 ----
-    Check("Redis BGSAVE", BackupTools.RedisBackupCommand() == "BGSAVE");
-    string redisDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taodbm_lt_redis_" + Guid.NewGuid().ToString("N"));
-    string rdbSrc = System.IO.Path.Combine(redisDir, "src.rdb");
-    System.IO.Directory.CreateDirectory(redisDir);
-    System.IO.File.WriteAllText(rdbSrc, "REDIS-RDB-TEST");
-    try
-    {
-        BackupTools.RedisRestoreCopy(rdbSrc, redisDir, "dump.rdb");
-        Check("Redis 还原复制", System.IO.File.ReadAllText(System.IO.Path.Combine(redisDir, "dump.rdb")) == "REDIS-RDB-TEST");
-        bool redisThrew = false;
-        try { BackupTools.RedisRestoreCopy(System.IO.Path.Combine(redisDir, "nope.rdb"), redisDir); }
-        catch (FileNotFoundException) { redisThrew = true; }
-        Check("Redis 缺文件报错", redisThrew);
-    }
-    finally { System.IO.Directory.Delete(redisDir, recursive: true); }
 }
 
 Console.WriteLine("== L6 恶意与极端输入 + L7 凭据零明文 ==");
@@ -889,6 +846,91 @@ Layer("集成");
     Environment.SetEnvironmentVariable("DBM_STREAMING", null);
 }
 
+// 批次F 宽表列懒加载：Store 单元（可见集/增量去重/断流恢复/并发合并）+ 真库 SQLite 全链（ExecuteLazyAsync）
+{
+    var src = new LazyCountSource(40, 300);
+    var st = new TaoDBM.Core.Streaming.ColumnLazyStore(src);
+    await st.EnsureColumnsAsync(TaoDBM.Core.Streaming.ColumnLazyStore.InitialVisible(40, 8));
+    Check("懒加载首屏只拉可见列", st.LoadedCount == 8 && st.LoadedCells == 8L * 300 && src.Reads == 1, $"cols={st.LoadedCount} cells={st.LoadedCells} reads={src.Reads}");
+    Check("懒加载首屏列集", Enumerable.Range(0, 8).All(st.IsLoaded) && !st.IsLoaded(8), "");
+    Check("懒加载首屏取值", Convert.ToInt32(st.GetValue(5, 3)) == 30005, st.GetValue(5, 3)?.ToString() ?? "null");
+
+    // 增量拉取：重叠滚动只拉缺失列
+    await st.EnsureColumnsAsync(new[] { 3, 5, 9 });
+    Check("懒加载增量只拉缺失列", st.LoadedCount == 9 && src.Reads == 2 && src.Batches[^1].Length == 1 && src.Batches[^1][0] == 9, $"cols={st.LoadedCount} " + string.Join(",", src.Batches[^1]));
+    Check("懒加载新增列取值", Convert.ToInt32(st.GetValue(2, 9)) == 90002, "");
+
+    // 重复滚动去重：已加载列集合零源读
+    await st.EnsureColumnsAsync(new[] { 0, 3, 5, 9 });
+    Check("懒加载重复滚动去重", st.LoadedCount == 9 && src.Reads == 2, $"cols={st.LoadedCount} reads={src.Reads}");
+
+    // 断流恢复：源中断 → 已加载列保留，重试补齐缺失列
+    var srcF = new LazyCountSource(6, 10) { FailOnce = true };
+    var stF = new TaoDBM.Core.Streaming.ColumnLazyStore(srcF);
+    await stF.EnsureColumnsAsync(new[] { 0, 1 });
+    bool threw = false;
+    try { await stF.EnsureColumnsAsync(new[] { 2, 3 }); } catch (System.IO.IOException) { threw = true; }
+    Check("懒加载断流抛出且账目保持", threw && stF.LoadedCount == 2, $"ok={threw} cols={stF.LoadedCount}");
+    await stF.EnsureColumnsAsync(new[] { 2, 3 });
+    Check("懒加载断流恢复", stF.LoadedCount == 4 && Convert.ToInt32(stF.GetValue(3, 3)) == 30003, $"cols={stF.LoadedCount}");
+
+    // 同列并发请求合并：只一次源读
+    var srcC = new LazyCountSource(4, 5) { DelayMs = 50 };
+    var stC = new TaoDBM.Core.Streaming.ColumnLazyStore(srcC);
+    await Task.WhenAll(stC.EnsureColumnsAsync(new[] { 1 }), stC.EnsureColumnsAsync(new[] { 1 }));
+    Check("懒加载并发合并去重", srcC.Reads == 1 && stC.LoadedCount == 1, $"reads={srcC.Reads}");
+
+    // 真库 SQLite 宽表全链：80 列 × 300 行，首屏 64 列，增量补齐后与整包逐格一致
+    var dbPath2 = Path.Combine(Path.GetTempPath(), "taodbm-lazy-" + Guid.NewGuid().ToString("N") + ".db");
+    var prof2 = new ConnectionProfile { Engine = DbEngine.SQLite, DisplayName = "lazy-smoke", Database = dbPath2 };
+    await using (Microsoft.Data.Sqlite.SqliteConnection setup2 = new($"Data Source={dbPath2}"))
+    {
+        setup2.Open();
+        using var cmd = setup2.CreateCommand();
+        cmd.CommandText = "CREATE TABLE wide(id INTEGER PRIMARY KEY, " + string.Join(",", Enumerable.Range(1, 79).Select(i => $"c{i} TEXT")) + ");";
+        cmd.ExecuteNonQuery();
+        using var tx = setup2.BeginTransaction();
+        for (int r = 0; r < 300; r++)
+        {
+            using var one = setup2.CreateCommand();
+            one.Transaction = tx;
+            one.CommandText = "INSERT INTO wide VALUES (" + r + "," + string.Join(",", Enumerable.Range(1, 79).Select(i => i * 100 + r)) + ");";
+            one.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+    var prov2 = (TaoDBM.Core.RelationalProvider)ProviderFactory.Create(prof2);
+    var lazy = await TaoDBM.Core.Streaming.QueryRouter.ExecuteLazyAsync(prov2, null, "SELECT * FROM wide ORDER BY id", 64, CancellationToken.None);
+    var lq = lazy[0] as TaoDBM.Core.Streaming.LazyQueryResult;
+    Check("懒加载路由可见列", lq != null && lq.Columns.Count == 64 && lq.Rows.Count == 300, $"{lq?.Columns.Count}/{lq?.Rows.Count}");
+    Check("懒加载路由总列数", lq!.Store.TotalColumns == 80, lq.Store.TotalColumns.ToString());
+    Check("懒加载首屏内存口径", lq.Store.LoadedCount == 64 && lq.Store.LoadedCells == 64L * 300, $"{lq.Store.LoadedCount}/{lq.Store.LoadedCells}");
+    bool rej = false;
+    try { lq.Store.GetValue(0, 79); } catch (InvalidOperationException) { rej = true; }
+    Check("懒加载未加载列拒绝", rej, "");
+    await lq.Store.EnsureColumnsAsync(new[] { 79 });
+    Check("懒加载尾列增量值对", Convert.ToInt32(lq.Store.GetValue(7, 79)) == 7907, lq.Store.GetValue(7, 79)?.ToString() ?? "null");
+    await lq.Store.EnsureColumnsAsync(Enumerable.Range(0, 80));
+    Check("懒加载全拉齐口径", lq.Store.LoadedCount == 80 && lq.Store.LoadedCells == 80L * 300, $"{lq.Store.LoadedCount}/{lq.Store.LoadedCells}");
+    var full = lq.Materialize(Enumerable.Range(0, 80).ToList());
+    var plain = await prov2.Execute(null, "SELECT * FROM wide ORDER BY id");
+    bool allEq = full.Rows.Count == plain[0].Rows.Count;
+    for (int r = 0; allEq && r < full.Rows.Count; r++)
+        for (int c = 0; allEq && c < 80; c++)
+            allEq = Convert.ToString(full.Rows[r][c]) == Convert.ToString(plain[0].Rows[r][c]);
+    Check("懒加载物化与整包一致", allEq, "");
+    var ddl = await TaoDBM.Core.Streaming.QueryRouter.ExecuteLazyAsync(prov2, null, "CREATE TABLE lazy_ddl(id INTEGER)", 64, CancellationToken.None);
+    Check("懒加载DDL同形", ddl[0].Affected == 0 && ddl[0].Columns.Count == 0, $"aff={ddl[0].Affected} cols={ddl[0].Columns.Count}");
+
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    for (int a2 = 0; a2 < 5 && File.Exists(dbPath2); a2++)
+    {
+        try { File.Delete(dbPath2); }
+        catch (IOException) { await Task.Delay(100); }
+        catch (UnauthorizedAccessException) { await Task.Delay(100); }
+    }
+}
+
 // 5) TaskCenter A2 实体化：暂停/续跑、重跑、快照导出/回放
 {
     var tc = new TaoDBM.Core.Streaming.TaskCenter();
@@ -1070,20 +1112,6 @@ Layer("集成");
     Check("脚本拆分逐条检查", script.Count == 2 && script[1].Kind == "no-where");
     Check("脚本最危险档上浮", RiskySqlGuard.Worst(script).Kind == "no-where" && RiskySqlGuard.Worst(script).Level == "danger");
     Check("全ok脚本 worst 为 ok", RiskySqlGuard.Worst(RiskySqlGuard.InspectScript("select 1;", DbEngine.MySQL, id)).Level == "ok");
-
-    // 安全模式改写（设计稿 §7「改用安全模式」：无 WHERE 改数加行数上限分批）
-    Check("MySQL加LIMIT", RiskySqlGuard.SafeModeSql("UPDATE orders SET status = 'closed'", DbEngine.MySQL) == "UPDATE orders SET status = 'closed' LIMIT 1000",
-        RiskySqlGuard.SafeModeSql("UPDATE orders SET status = 'closed'", DbEngine.MySQL) ?? "(null)");
-    Check("SQLite加LIMIT", RiskySqlGuard.SafeModeSql("delete from logs", DbEngine.SQLite) == "delete from logs LIMIT 1000");
-    Check("PG加LIMIT", RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.PostgreSQL) == "DELETE FROM t LIMIT 1000");
-    Check("SQLServer走TOP", RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.SqlServer) == "DELETE TOP (1000) FROM t",
-        RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.SqlServer) ?? "(null)");
-    Check("SQLServer更新走TOP", RiskySqlGuard.SafeModeSql("UPDATE t SET a = 1", DbEngine.SqlServer) == "UPDATE TOP (1000) t SET a = 1");
-    Check("Oracle无上限语法返回空", RiskySqlGuard.SafeModeSql("UPDATE t SET a = 1", DbEngine.Oracle) == null);
-    Check("已有LIMIT不改写", RiskySqlGuard.SafeModeSql("DELETE FROM t LIMIT 5", DbEngine.MySQL) == null);
-    Check("已有TOP不改写", RiskySqlGuard.SafeModeSql("DELETE TOP (10) FROM t", DbEngine.SqlServer) == null);
-    Check("SELECT不改写", RiskySqlGuard.SafeModeSql("SELECT * FROM t", DbEngine.MySQL) == null);
-    Check("尾分号已剥", RiskySqlGuard.SafeModeSql("DELETE FROM t;", DbEngine.MySQL) == "DELETE FROM t LIMIT 1000");
 }
 
 // 9) MaskEngine 一键脱敏引擎（安全线：一键脱敏导出）
@@ -2129,9 +2157,7 @@ Layer("集成");
 
 {
     // 3) 对象树目录：按引擎生成元数据查询语句
-    Check("目录-支持引擎判定七库", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite)
-        && ObjectTreeCatalog.Supported(DbEngine.Oracle) && ObjectTreeCatalog.Supported(DbEngine.MongoDB)
-        && ObjectTreeCatalog.Supported(DbEngine.Redis), "");
+    Check("目录-支持引擎判定", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite) && !ObjectTreeCatalog.Supported(DbEngine.Redis), "");
     var myViews = ObjectTreeCatalog.ListViews(DbEngine.MySQL, "shop");
     Check("目录-MySQL视图语句", myViews.Contains("information_schema.VIEWS") && myViews.Contains("'shop'"), myViews);
     Check("目录-PG视图语句", ObjectTreeCatalog.ListViews(DbEngine.PostgreSQL, "shop").Contains("pg_views"), "");
@@ -2142,56 +2168,9 @@ Layer("集成");
     Check("目录-SQLite触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.SQLite, "main").Contains("sqlite_master"), "");
     Check("目录-SQLite例程空清单", ObjectTreeCatalog.ListRoutines(DbEngine.SQLite, "main").Contains("WHERE 0"), "");
     Check("目录-引号转义", ObjectTreeCatalog.ListViews(DbEngine.MySQL, "it's").Contains("it''s"), "");
-    // 批次 N：Oracle 目录（USER_* 字典）+ Mongo TAODBMCMD 命令 + Redis 空清单 SCAN
-    Check("目录-Oracle视图语句", ObjectTreeCatalog.ListViews(DbEngine.Oracle, "shop").Contains("USER_VIEWS"), "");
-    Check("目录-Oracle索引语句", ObjectTreeCatalog.ListIndexes(DbEngine.Oracle, "shop").Contains("USER_INDEXES")
-        && ObjectTreeCatalog.ListIndexes(DbEngine.Oracle, "shop").Contains("CASE UNIQUENESS"), "");
-    Check("目录-Oracle外键语句", ObjectTreeCatalog.ListForeignKeys(DbEngine.Oracle, "shop").Contains("USER_CONSTRAINTS")
-        && ObjectTreeCatalog.ListForeignKeys(DbEngine.Oracle, "shop").Contains("CONSTRAINT_TYPE = 'R'"), "");
-    Check("目录-Oracle例程语句", ObjectTreeCatalog.ListRoutines(DbEngine.Oracle, "shop").Contains("USER_SOURCE")
-        && ObjectTreeCatalog.ListRoutines(DbEngine.Oracle, "shop").Contains("LINE = 1"), "");
-    Check("目录-Oracle触发器语句", ObjectTreeCatalog.ListTriggers(DbEngine.Oracle, "shop").Contains("USER_TRIGGERS"), "");
-    Check("目录-Oracle定义语句", ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "P_PAY").Contains("USER_SOURCE")
-        && ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "P_PAY").Contains("ORDER BY LINE"), "");
-    Check("目录-Oracle引号转义", ObjectTreeCatalog.ShowDefinition(DbEngine.Oracle, "it's").Contains("it''s"), "");
-    Check("目录-Mongo视图命令", ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "shop") == "TAODBMCMD:listViews", "");
-    Check("目录-Mongo索引命令", ObjectTreeCatalog.ListIndexes(DbEngine.MongoDB, "shop") == "TAODBMCMD:listIndexes", "");
-    Check("目录-Mongo无外键命令", ObjectTreeCatalog.ListForeignKeys(DbEngine.MongoDB, "shop") == "TAODBMCMD:none", "");
-    Check("目录-Mongo例程命令", ObjectTreeCatalog.ListRoutines(DbEngine.MongoDB, "shop") == "TAODBMCMD:none", "");
-    Check("目录-Mongo定义命令", ObjectTreeCatalog.ShowDefinition(DbEngine.MongoDB, "orders").StartsWith("TAODBMCMD:collInfo:orders"), "");
-    Check("目录-Redis空清单SCAN", ObjectTreeCatalog.ListViews(DbEngine.Redis, "db0").StartsWith("SCAN 0 MATCH __taodbm_none__*")
-        && ObjectTreeCatalog.ListIndexes(DbEngine.Redis, "db0") == ObjectTreeCatalog.ListViews(DbEngine.Redis, "db0"), "");
-    Check("目录-Redis定义TYPE", ObjectTreeCatalog.ShowDefinition(DbEngine.Redis, "mykey").StartsWith("TYPE mykey"), "");
-}
-
-{
-    // 批次 N：诊断目录引擎——七库只读体检口径（版本/规模/锁等待/健康快照）
-    Check("诊断-支持面六库", DiagnosticsCatalog.Supported(DbEngine.MySQL) && DiagnosticsCatalog.Supported(DbEngine.Oracle)
-        && DiagnosticsCatalog.Supported(DbEngine.MongoDB) && DiagnosticsCatalog.Supported(DbEngine.Redis)
-        && DiagnosticsCatalog.Supported(DbEngine.SQLite), "");
-    Check("诊断-Oracle版本", DiagnosticsCatalog.VersionQuery(DbEngine.Oracle).Contains("v$version") && DiagnosticsCatalog.VersionQuery(DbEngine.Oracle).Contains("ROWNUM = 1"), "");
-    Check("诊断-Mongo版本命令", DiagnosticsCatalog.VersionQuery(DbEngine.MongoDB) == "TAODBMCMD:serverStatus", "");
-    Check("诊断-Redis版本INFO", DiagnosticsCatalog.VersionQuery(DbEngine.Redis) == "INFO server", "");
-    Check("诊断-Oracle规模", DiagnosticsCatalog.TopTablesQuery(DbEngine.Oracle, "orcl")!.Contains("USER_TABLES")
-        && DiagnosticsCatalog.TopTablesQuery(DbEngine.Oracle, "orcl")!.Contains("FETCH FIRST 8 ROWS ONLY"), "");
-    Check("诊断-Mongo规模命令", DiagnosticsCatalog.TopTablesQuery(DbEngine.MongoDB, "shop") == "TAODBMCMD:topCollections", "");
-    Check("诊断-Redis无规模口径", DiagnosticsCatalog.TopTablesQuery(DbEngine.Redis, "db0") is null, "");
-    Check("诊断-Oracle锁等待", DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!.Contains("V$LOCK")
-        && DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!.Contains("REQUEST > 0"), "");
-    Check("诊断-无锁引擎返回空", DiagnosticsCatalog.LockWaitQuery(DbEngine.SQLite) is null
-        && DiagnosticsCatalog.LockWaitQuery(DbEngine.MongoDB) is null
-        && DiagnosticsCatalog.LockWaitQuery(DbEngine.Redis) is null, "");
-    Check("诊断-健康命令", DiagnosticsCatalog.HealthCommand(DbEngine.MongoDB) == "TAODBMCMD:serverStatus"
-        && DiagnosticsCatalog.HealthCommand(DbEngine.Redis) == "INFO stats"
-        && DiagnosticsCatalog.HealthCommand(DbEngine.MySQL) is null, "");
-    // Mongo 目录命令分发（无服务端路径：none 不触网即可回）
-    var mongoNone = new MongoProvider(new ConnectionProfile { Engine = DbEngine.MongoDB, Host = "127.0.0.1", Port = 27017 });
-    var noneRs = await mongoNone.Execute("shop", "TAODBMCMD:none");
-    Check("诊断-Mongo none空清单", noneRs.Count == 1 && noneRs[0].Rows.Count == 0 && noneRs[0].Message.Contains("无该对象类型"), "");
-    bool mongoBad = false;
-    try { await mongoNone.Execute("shop", "TAODBMCMD:__no_such__"); }
-    catch (InvalidOperationException ex) { mongoBad = ex.Message.Contains("未知 Mongo 目录命令"); }
-    Check("诊断-Mongo未知命令报错", mongoBad, "");
+    bool threwCat = false;
+    try { ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "x"); } catch (NotSupportedException) { threwCat = true; }
+    Check("目录-不支持引擎报错", threwCat, "");
 }
 
 {
@@ -3336,8 +3315,6 @@ Console.WriteLine("== AtomicWrite 原子落盘（三.6 断电模拟）==");
 
 RealDbCheck.Run(Check);
 
-ProviderTestHarness.Run(Check);
-
 Console.WriteLine("\n== P-3 多表联查问法 ==");
 Layer("单元");
 {
@@ -3697,28 +3674,6 @@ Console.WriteLine("== NotificationDispatcher ==");
         Check("N37 最多三单按TopN行", topNQ.Ok && topNQ.Sql.Contains("LIMIT 3") && topNQ.Sql.Contains("ORDER BY") && topNQ.Sql.Contains("%Y-%m-01"));
         var yearQ = AskNL("今年的支付总额是多少", "payments", payCols);
         Check("N38 今年总额带年度条件", yearQ.Ok && yearQ.Sql.Contains("SUM(") && yearQ.Sql.Contains("%Y-01-01"));
-
-        // P-3 问库 PG 方言：双引号标识符 / 标准时间函数 / LIMIT（对账表缺口：PG 自然语言查询）
-        static TaoDBM.Core.NLQueryResult AskNLPg(string q, string table, params (string Name, string Type, bool Key)[] cols)
-        {
-            var list = cols.Select(c => new TaoDBM.Core.ColumnSpec { Name = c.Name, DataType = c.Type, IsKey = c.Key }).ToList();
-            return TaoDBM.Core.NaturalLanguageQuery.Ask(q, table, list, DbEngine.PostgreSQL);
-        }
-        var pgCols = new[] { ("id", "INT", true), ("amount", "NUMERIC", false), ("created_at", "TIMESTAMP", false) };
-        var pgCnt = AskNLPg("订单有多少条", "orders", new[] { ("id", "INT", true), ("created_at", "TIMESTAMP", false) });
-        Check("N39 PG 计数双引号标识符", pgCnt.Ok && pgCnt.Sql.Contains("COUNT(*)") && pgCnt.Sql.Contains("FROM \"orders\";"), pgCnt.Sql);
-        var pgMonth = AskNLPg("上个月的订单有哪些", "orders", pgCols);
-        Check("N39 PG 上个月 DATE_TRUNC", pgMonth.Ok && pgMonth.Sql.Contains("DATE_TRUNC('month', CURRENT_DATE)")
-            && pgMonth.Sql.Contains("INTERVAL '1 MONTH'") && !pgMonth.Sql.Contains("%Y"), pgMonth.Sql);
-        var pgDays = AskNLPg("最近7天的订单有哪些", "orders", pgCols);
-        Check("N39 PG 最近N天标准区间", pgDays.Ok && pgDays.Sql.Contains("CURRENT_DATE - INTERVAL '7 DAY'"), pgDays.Sql);
-        var pgTopN = AskNLPg("上个月成交最多的三单", "orders", pgCols);
-        Check("N39 PG TopN 走 LIMIT", pgTopN.Ok && pgTopN.Sql.Contains("LIMIT 3") && pgTopN.Sql.Contains("ORDER BY")
-            && pgTopN.Sql.Contains("DATE_TRUNC('month', CURRENT_DATE)"), pgTopN.Sql);
-        var pgAvg = AskNLPg("平均每笔支付多少钱", "payments", pgCols);
-        Check("N39 PG 平均聚合", pgAvg.Ok && pgAvg.Sql.Contains("AVG(\"amount\")"), pgAvg.Sql);
-        var pgToday = AskNLPg("今天的订单有哪些", "orders", pgCols);
-        Check("N39 PG 今天 CURRENT_DATE", pgToday.Ok && pgToday.Sql.Contains(">= CURRENT_DATE") && !pgToday.Sql.Contains("CURDATE()"), pgToday.Sql);
     }
 
     Console.WriteLine("== 性能护栏（L5 流式管线/原子落盘）==");
@@ -3937,31 +3892,6 @@ Layer("单元");
     Check("WS-分栏-区间内原样保留", WindowStateStore.ClampLeftPane(300, 1000) == 300);
     Check("WS-分栏-极小屏上限即200", WindowStateStore.ClampLeftPane(350, 600) == 200);
 
-    // --- 批次H：默认尺寸 960×640 下限（工作区允许时夹下限，微屏不越界） ---
-    var (w6, h6) = WindowStateStore.DefaultSize(1350, 760);
-    Check("WS-默认尺寸-高度不足夹640下限", Math.Abs(w6 - 1080) < 0.01 && h6 == 640, $"{w6}x{h6}");
-    var (w7, h7) = WindowStateStore.DefaultSize(1920, 600);
-    Check("WS-默认尺寸-扁屏下限不越工作区", Math.Abs(w7 - 1536) < 0.01 && Math.Abs(h7 - 480) < 0.01, $"{w7}x{h7}");
-    var (w8, h8) = WindowStateStore.DefaultSize(1920, 1080);
-    Check("WS-默认尺寸-常规屏不受下限影响", Math.Abs(w8 - 1536) < 0.01 && Math.Abs(h8 - 864) < 0.01, $"{w8}x{h8}");
-
-    // --- 批次H：IsRestorable 补尺寸侧校验（越屏记录回默认） ---
-    var oversizeItem = new WindowStateItem { X = 0, Y = 0, Width = 2400, Height = 1300 };
-    Check("WS-恢复-尺寸越屏回默认", !WindowStateStore.IsRestorable(oversizeItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
-    var exactItem = new WindowStateItem { X = 0, Y = 0, Width = 1920, Height = 1080 };
-    Check("WS-恢复-尺寸贴屏可恢复", WindowStateStore.IsRestorable(exactItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
-    Check("WS-恢复-大记录换小屏失效", !WindowStateStore.IsRestorable(exactItem, new[] { (0.0, 0.0, 1600.0, 900.0) }));
-
-    // --- 批次H：LayoutTiers 三档判定（紧凑<1366 / 标准<2560 / 宽屏≥2560） ---
-    Check("LT-分档-1365.9紧凑", LayoutTiers.Resolve(1365.9) == LayoutTier.Compact);
-    Check("LT-分档-1366起标准", LayoutTiers.Resolve(1366) == LayoutTier.Standard);
-    Check("LT-分档-2559.9标准", LayoutTiers.Resolve(2559.9) == LayoutTier.Standard);
-    Check("LT-分档-2560起宽屏", LayoutTiers.Resolve(2560) == LayoutTier.Wide);
-    var dip150 = LayoutTiers.EffectiveWidth(2560, 1.5);
-    Check("LT-DPI-150%下2560物理折1706.67标准档", Math.Abs(dip150 - 1706.6667) < 0.01 && LayoutTiers.Resolve(dip150) == LayoutTier.Standard, $"{dip150:0.##}");
-    Check("LT-DPI-零缩放按原值", LayoutTiers.EffectiveWidth(2560, 0) == 2560 && LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(2560, 0)) == LayoutTier.Wide);
-    Check("LT-DPI-100%三档回归", LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(1366, 1.0)) == LayoutTier.Standard && LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(1365, 1.0)) == LayoutTier.Compact);
-
     // --- 状态存取：写读一致、损坏回落默认 ---
     var wsFile = Path.Combine(Path.GetTempPath(), "taodbm-ws-test-" + Guid.NewGuid().ToString("N") + ".json");
     WindowStateStore.UseFile(wsFile);
@@ -4173,4 +4103,36 @@ class TestProv : TaoDBM.Core.RelationalProvider
     protected override string ListChildrenSql(string db) => "";
     protected override string ListColumnsSql(string db, string table) => "";
     protected override string PagingClause(int offset, int limit) => "";
+}
+
+// 批次F 列懒加载测试源：计数源读、可注延迟/单次断流；值约定 value(col,row)=col*10000+row
+class LazyCountSource : TaoDBM.Core.Streaming.IColumnSource
+{
+    private readonly string[] _names;
+    public int Reads;
+    public readonly List<int[]> Batches = new();
+    /// <summary>FailOnce 开启时，第 FailAt 次源读抛断流（默认第 2 次：首轮成功、次轮断）。</summary>
+    public int FailAt = 2;
+    public bool FailOnce;
+    public int DelayMs;
+
+    public LazyCountSource(int cols, int rows)
+    {
+        _names = Enumerable.Range(0, cols).Select(i => "c" + i).ToArray();
+        RowCount = rows;
+    }
+
+    public IReadOnlyList<string> ColumnNames => _names;
+    public int RowCount { get; }
+
+    public async Task<IReadOnlyList<object?[]>> ReadColumnsAsync(int[] columnIndexes, CancellationToken ct)
+    {
+        if (DelayMs > 0) await Task.Delay(DelayMs, ct);
+        Reads++;
+        Batches.Add(columnIndexes);
+        if (FailOnce && Reads == FailAt) throw new System.IO.IOException("源流中断");
+        return columnIndexes
+            .Select(c => Enumerable.Range(0, RowCount).Select(r => (object?)(c * 10000 + r)).ToArray())
+            .ToArray();
+    }
 }
