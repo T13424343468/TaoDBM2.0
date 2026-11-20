@@ -403,34 +403,10 @@ jobs:
             Journal "port-dynamic-cleared"
             Set-ItemProperty -Path $tcp -Name Enabled -Value 1
             Journal "port-enabled-set"
-            # run 191/192 定因：Restart-Service 对 SQL 服务启停超时容忍差，直接抛 ServiceCommandException
-            # 改为显式 Stop -> 轮询停止 -> sc.exe start（不依赖 PS 服务 cmdlet 短超时）-> 长轮询就绪
-            $svcName = 'MSSQL$SQLEXPRESS'
-            try { Stop-Service -Name $svcName -Force -ErrorAction Stop } catch { Journal "service-stop-exception: $($_.Exception.Message)" }
-            $stopped = $false
-            for ($si = 0; $si -lt 24; $si++) {
-              Start-Sleep -Seconds 5
-              $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
-              if ($sst -and $sst.Status -eq 'Stopped') { $stopped = $true; break }
-            }
-            Journal "service-stopped=$stopped"
-            if (-not $stopped) { & sc.exe stop $svcName | Out-Host; Start-Sleep -Seconds 10; Journal "service-sc-stop-fallback" }
-            # run 193/194 定因：服务能启动但极慢（#193≤380s、#194≤620s 才 Running，事后取证均为 Running）
-            # 轮询加长到 900s；超时不再 throw——继续走连通阶段（1433 失败自动落 ERRORLOG 动态端口兜底）
-            $scOut = (& sc.exe start $svcName 2>&1 | Out-String)
-            Journal "sc-start-out: $($scOut.Trim())"
-            $started = $false
-            for ($si = 0; $si -lt 180; $si++) {
-              Start-Sleep -Seconds 5
-              $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
-              if ($sst) {
-                if ($sst.Status -eq 'Running') { $started = $true; break }
-                if ($si % 12 -eq 0) { Journal "service-poll: $($sst.Status)" }
-              }
-            }
-            Journal "service-started=$started"
-            if (-not $started) { Journal "service-start-slow-proceed: rely on connect-phase wait + dynamic-port fallback" }
-            Journal "service-restarted"
+            # run 193/194/196 定因链：云机上 SQL 服务重启极慢（380s-20min+ 不等），停起循环三次全败；
+            # 而装完的实例本就 Running 且 /TCPENABLED=1 已生效——决定性旁路：完全不停服务，
+            # 保留静态 1433 注册表配置（下次重启才生效，不影响本次），连通直接走 ERRORLOG 动态端口兜底
+            Journal "skip-restart: use running instance + dynamic-port fallback"
           } catch {
             Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
             if ($_.InvocationInfo) { Journal "at $($_.InvocationInfo.PositionMessage)" }
