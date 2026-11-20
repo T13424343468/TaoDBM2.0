@@ -348,8 +348,8 @@ Console.WriteLine("== BackupTools ==");
 {
     Check("支持矩阵", BackupTools.Supported(DbEngine.MySQL) && BackupTools.Supported(DbEngine.PostgreSQL)
         && BackupTools.Supported(DbEngine.SqlServer) && BackupTools.Supported(DbEngine.SQLite)
-        && !BackupTools.Supported(DbEngine.Oracle) && !BackupTools.Supported(DbEngine.MongoDB)
-        && !BackupTools.Supported(DbEngine.Redis));
+        && BackupTools.Supported(DbEngine.Oracle) && BackupTools.Supported(DbEngine.MongoDB)
+        && BackupTools.Supported(DbEngine.Redis));
     var spec = BackupTools.MysqlDump("127.0.0.1", 3306, "root", "pw123", "mydb", "c:\\dir with space\\dump.sql");
     Check("mysqldump 参数", spec.Arguments.Contains("--host=127.0.0.1") && spec.Arguments.Contains("--port=3306")
         && spec.Arguments.Contains("--user=root") && spec.Arguments.Contains("--result-file=\"c:\\dir with space\\dump.sql\"")
@@ -2157,7 +2157,7 @@ Layer("集成");
 
 {
     // 3) 对象树目录：按引擎生成元数据查询语句
-    Check("目录-支持引擎判定", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite) && !ObjectTreeCatalog.Supported(DbEngine.Redis), "");
+    Check("目录-支持引擎判定", ObjectTreeCatalog.Supported(DbEngine.MySQL) && ObjectTreeCatalog.Supported(DbEngine.SQLite) && ObjectTreeCatalog.Supported(DbEngine.Redis), "");
     var myViews = ObjectTreeCatalog.ListViews(DbEngine.MySQL, "shop");
     Check("目录-MySQL视图语句", myViews.Contains("information_schema.VIEWS") && myViews.Contains("'shop'"), myViews);
     Check("目录-PG视图语句", ObjectTreeCatalog.ListViews(DbEngine.PostgreSQL, "shop").Contains("pg_views"), "");
@@ -2169,7 +2169,7 @@ Layer("集成");
     Check("目录-SQLite例程空清单", ObjectTreeCatalog.ListRoutines(DbEngine.SQLite, "main").Contains("WHERE 0"), "");
     Check("目录-引号转义", ObjectTreeCatalog.ListViews(DbEngine.MySQL, "it's").Contains("it''s"), "");
     bool threwCat = false;
-    try { ObjectTreeCatalog.ListViews(DbEngine.MongoDB, "x"); } catch (NotSupportedException) { threwCat = true; }
+    try { ObjectTreeCatalog.ListViews((DbEngine)999, "x"); } catch (NotSupportedException) { threwCat = true; }
     Check("目录-不支持引擎报错", threwCat, "");
 }
 
