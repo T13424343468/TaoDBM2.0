@@ -9,3 +9,4 @@
 2026-11-20 23:08:59.211 [新建查询] enter kind=Connection name=ui-auto-mssql provider=ok
 2026-11-20 23:08:59.228 [新建查询] worktab built db=taodbmui
 2026-11-20 23:08:59.237 [新建查询] tab selected
+2026-11-20 23:09:07.646 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
