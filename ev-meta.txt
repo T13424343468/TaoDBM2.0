@@ -20,3 +20,4 @@ tag=expand-kb-ok 🗄️ ui-auto-mssql child=taodbmui state=Expanded time=2026-1
 tag=step-start S09 time=2026-11-20T23:08:41.9921051+00:00 appMem=172 MB
 tag=step-start S10 time=2026-11-20T23:08:49.8312733+00:00 appMem=172 MB
 tag=step-start S11 time=2026-11-20T23:08:52.2887477+00:00 appMem=172 MB
+tag=menu-find-start time=2026-11-20T23:08:53.6664313+00:00 appMem=172 MB
