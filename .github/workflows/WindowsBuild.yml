@@ -436,7 +436,8 @@ jobs:
               if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }
               Start-Sleep -Seconds 10
               if ($logDir) {
-                $listen = Select-String -Path $logDir.FullName -Pattern "'(\d{4,5})'" -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Where-Object { $_ -ne '1433' } | Select-Object -First 1
+                # run 198 fix: old regex required quoted digits, but ERRORLOG format is [ 'any' <ipv4> port ] - quoted group is 'any', fallback never matched
+                $listen = Select-String -Path $logDir.FullName -Pattern 'Server is listening on.*?(\d{4,5})' -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -Last 1
                 if ($listen -and [int]$listen -ne $mssqlPort) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
               }
               if ($ci % 12 -eq 0) { Journal "connect-poll: attempt=$ci port=$mssqlPort" }
