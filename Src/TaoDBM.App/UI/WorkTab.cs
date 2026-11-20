@@ -306,6 +306,10 @@ public class WorkTab : Grid
             {
                 var sql = EditorText;
                 if (string.IsNullOrWhiteSpace(sql)) { _messageBox.Text = "请输入要执行的语句。"; return; }
+                // 执行链拦截（设计稿 §7）：语句执行前过 RiskySqlGuard，danger 级弹拦截窗
+                var gate = await UI.RiskySqlInterceptDialog.GateAsync(_owner, _provider, _db, sql);
+                if (!gate.Proceed) { _messageBox.Text = "已取消执行（危险操作拦截）。"; _owner.SetStatus("危险操作拦截：已取消"); return; }
+                sql = gate.SqlToRun;
                 var list = await _provider.Execute(_db, sql);
                 QueryHistory.Add(_provider.EngineName, _db, sql);
                 ShowResults(list);

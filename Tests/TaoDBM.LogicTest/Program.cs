@@ -1070,6 +1070,20 @@ Layer("集成");
     Check("脚本拆分逐条检查", script.Count == 2 && script[1].Kind == "no-where");
     Check("脚本最危险档上浮", RiskySqlGuard.Worst(script).Kind == "no-where" && RiskySqlGuard.Worst(script).Level == "danger");
     Check("全ok脚本 worst 为 ok", RiskySqlGuard.Worst(RiskySqlGuard.InspectScript("select 1;", DbEngine.MySQL, id)).Level == "ok");
+
+    // 安全模式改写（设计稿 §7「改用安全模式」：无 WHERE 改数加行数上限分批）
+    Check("MySQL加LIMIT", RiskySqlGuard.SafeModeSql("UPDATE orders SET status = 'closed'", DbEngine.MySQL) == "UPDATE orders SET status = 'closed' LIMIT 1000",
+        RiskySqlGuard.SafeModeSql("UPDATE orders SET status = 'closed'", DbEngine.MySQL) ?? "(null)");
+    Check("SQLite加LIMIT", RiskySqlGuard.SafeModeSql("delete from logs", DbEngine.SQLite) == "delete from logs LIMIT 1000");
+    Check("PG加LIMIT", RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.PostgreSQL) == "DELETE FROM t LIMIT 1000");
+    Check("SQLServer走TOP", RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.SqlServer) == "DELETE TOP (1000) FROM t",
+        RiskySqlGuard.SafeModeSql("DELETE FROM t", DbEngine.SqlServer) ?? "(null)");
+    Check("SQLServer更新走TOP", RiskySqlGuard.SafeModeSql("UPDATE t SET a = 1", DbEngine.SqlServer) == "UPDATE TOP (1000) t SET a = 1");
+    Check("Oracle无上限语法返回空", RiskySqlGuard.SafeModeSql("UPDATE t SET a = 1", DbEngine.Oracle) == null);
+    Check("已有LIMIT不改写", RiskySqlGuard.SafeModeSql("DELETE FROM t LIMIT 5", DbEngine.MySQL) == null);
+    Check("已有TOP不改写", RiskySqlGuard.SafeModeSql("DELETE TOP (10) FROM t", DbEngine.SqlServer) == null);
+    Check("SELECT不改写", RiskySqlGuard.SafeModeSql("SELECT * FROM t", DbEngine.MySQL) == null);
+    Check("尾分号已剥", RiskySqlGuard.SafeModeSql("DELETE FROM t;", DbEngine.MySQL) == "DELETE FROM t LIMIT 1000");
 }
 
 // 9) MaskEngine 一键脱敏引擎（安全线：一键脱敏导出）

@@ -104,6 +104,26 @@ public static partial class RiskySqlGuard
             : $"SELECT COUNT(*) FROM {quote(table)}";
     }
 
+    /// <summary>安全模式改写：给无 WHERE 的 UPDATE/DELETE 加行数上限分批（设计稿 §7「改用安全模式」）。
+    /// MySQL/SQLite/PostgreSQL 走 LIMIT；SQL Server 走 UPDATE TOP(N)/DELETE TOP(N)；
+    /// Oracle 无行数上限语法返回 null（界面侧禁用该选项，不假承诺）。</summary>
+    public static string? SafeModeSql(string sql, DbEngine engine, int batch = 1000)
+    {
+        var skeleton = StripLiteralsAndComments(sql);
+        var head = Regex.Match(skeleton, @"^\s*(\w+)", RegexOptions.IgnoreCase).Groups[1].Value.ToUpperInvariant();
+        if (head is not ("UPDATE" or "DELETE")) return null;
+        if (Regex.IsMatch(skeleton, @"\bLIMIT\b|\bTOP\s*\(\s*\d+\s*\)|\bFETCH\s+FIRST\b|\bROWNUM\b", RegexOptions.IgnoreCase))
+            return null; // 已有行数上限，无需改写
+        return engine switch
+        {
+            DbEngine.MySQL or DbEngine.SQLite or DbEngine.PostgreSQL => $"{sql.TrimEnd().TrimEnd(';')} LIMIT {batch}",
+            DbEngine.SqlServer => head == "UPDATE"
+                ? Regex.Replace(sql.TrimEnd().TrimEnd(';'), @"^(\s*)UPDATE(\s+)", $"$1UPDATE TOP ({batch})$2", RegexOptions.IgnoreCase)
+                : Regex.Replace(sql.TrimEnd().TrimEnd(';'), @"^(\s*)DELETE(\s+)", $"$1DELETE TOP ({batch})$2", RegexOptions.IgnoreCase),
+            _ => null,
+        };
+    }
+
     /// <summary>去掉字符串/引号字面量与 -- 及块注释，只留结构骨架。</summary>
     internal static string StripLiteralsAndComments(string sql)
     {
