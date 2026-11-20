@@ -590,6 +590,8 @@ public partial class MainWindow : Window
                     SetStatus($"正在连接 {info.Profile.DisplayName}…");
                     info.Provider ??= ProviderFactory.Create(info.Profile);
                     var dbs = await info.Provider.GetDatabases();
+                    // #154 S09 取证先行：连接装载零打点致 MSSQL 红账无法定谳，装载链路入应用日志
+                    Core.AppLog.Write($"[对象树] 连接展开 engine={info.Profile.Engine} dbs={dbs.Count} [{string.Join(",", dbs.Take(8))}]");
                     foreach (var db in dbs)
                     {
                         var childInfo = new NodeInfo
@@ -609,6 +611,8 @@ public partial class MainWindow : Window
                 case NodeKind.Database:
                     var prov = info.Provider!;
                     var children = await prov.GetChildren(info.Db);
+                    // #154 S09 取证先行：库级装载打点（children 数与前三项），红账直接分辨「查询没返回 vs 读树口径」
+                    Core.AppLog.Write($"[对象树] 库展开 db={info.Db} children={children.Count} [{string.Join(",", children.Take(3))}]");
                     foreach (var c in children)
                     {
                         var cInfo = new NodeInfo
@@ -675,6 +679,8 @@ public partial class MainWindow : Window
             info.Loaded = false;
             node.Children.Clear();
             node.Children.Add(new TreeViewNode { Content = "⚠ " + ex.Message + "（点击刷新重试）" });
+            // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
+            Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
             SetStatus("加载失败：" + ex.Message);
         }
     }

@@ -486,6 +486,9 @@ jobs:
 
       - name: Launch and walk real UI (v3.13 real-db, checklist-driven)
         shell: pwsh
+        env:
+          # #154 定谳：矩阵作业共用取证分支 --force 互相覆盖，按段独立分支（先取证后定谳的通道前提）
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.seg.name }}
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
@@ -627,6 +630,8 @@ jobs:
 
       - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (retry)
         shell: pwsh
+        env:
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-retry
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
@@ -768,6 +773,8 @@ jobs:
 
       - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (retry2)
         shell: pwsh
+        env:
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-retry2
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
@@ -1155,6 +1162,9 @@ jobs:
 
       - name: Launch and walk real UI (server-db, checklist-driven)
         shell: pwsh
+        env:
+          # #154 定谳：mysql/mssql 并行走查共用取证分支会互相覆盖 MSSQL 现场，按库独立分支
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.db }}
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
@@ -1286,6 +1296,8 @@ jobs:
 
       - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (tail, skip verdicted S12-S16)
         shell: pwsh
+        env:
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-tail
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''

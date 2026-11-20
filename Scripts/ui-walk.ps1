@@ -251,7 +251,11 @@ function Push-Evidence([string]$tag) {
     git add ev-walklog.txt ev-applog.txt ev-meta.txt 2>$null
     git add ev-shot-*.png 2>$null
     git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "evi $tag" 2>$null | Out-Null
-    git push origin HEAD:ui-smoke-evidence --force 2>$null | Out-Null
+    # #154 定谁：矩阵作业共用 ui-smoke-evidence 时 --force 互相覆盖，MSSQL 现场被并跑作业顶掉（取证通道相撞）
+    # 修法：WALK_EVIDENCE_BRANCH 按作业注入独立分支；未注入时保留旧通道兜底
+    $evBranch = if ($env:WALK_EVIDENCE_BRANCH) { $env:WALK_EVIDENCE_BRANCH } else { 'ui-smoke-evidence' }
+    git push origin HEAD:$evBranch --force 2>$null | Out-Null
+    Write-Host ("[EV] push -> {0}" -f $evBranch)
   } catch { }
 }
 function Assert-AppAlive([string]$where) {
