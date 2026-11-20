@@ -939,6 +939,42 @@ public static class ComboOps
                     return null;
                 },
             },
+            new()
+            {
+                Id = "X12", Label = "ALERT-RULE", MenuPath = "EXT", Kind = "PLAN",
+                EnginePath = "Src/TaoDBM.Core/AlertRule.cs",
+                Run = (d, eng) =>
+                {
+                    var now = DateTime.Parse("2026-11-20T08:00:00Z", null, System.Globalization.DateTimeStyles.RoundtripKind);
+                    var conn = AlertEngine.FromTemplate(AlertEngine.Templates[0]);   // 连接数过高 >80
+                    var repl = AlertEngine.FromTemplate(AlertEngine.Templates[1]);   // 复制中断 ==1
+                    var metrics = new Dictionary<string, double> { ["connections"] = 90, ["replication_break"] = 1 };
+                    var fired = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now);
+                    if (fired.Count != 2) return $"expected 2 fired, got {fired.Count}";
+                    if (fired.Any(f => f.RuleName == "复制中断" && f.Severity != "error")) return "replication break must be red";
+                    if (fired.Any(f => f.RuleName == "连接数过高" && f.Severity != "warn")) return "threshold alert must be warn";
+                    if (conn.TriggerCount != 1 || repl.TriggerCount != 1) return "trigger count not updated";
+                    // 防轰炸：冷却窗内重复触发合并（复制中断冷却 0 分仍立即再报；连接数冷却 5 分被合并）
+                    var again = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now.AddMinutes(1));
+                    if (again.Count != 1 || again[0].RuleName != "复制中断") return $"cooldown merge wrong ({again.Count})";
+                    // 冷却窗过后再报
+                    var later = AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(6));
+                    if (later.Count != 1) return "cooldown expiry must re-fire";
+                    // 未启用规则不触发
+                    conn.Enabled = false;
+                    if (AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(20)).Count != 0) return "disabled rule fired";
+                    // 规则落盘回读
+                    var f = Path.Combine(Path.GetTempPath(), "combo-alert-" + Guid.NewGuid().ToString("N") + ".json");
+                    try
+                    {
+                        AlertEngine.SaveRules(f, new List<AlertRule> { conn, repl });
+                        var loaded = AlertEngine.LoadRules(f);
+                        if (loaded.Count != 2 || loaded[0].Metric != "connections") return "rules roundtrip failed";
+                    }
+                    finally { if (File.Exists(f)) File.Delete(f); }
+                    return null;
+                },
+            },
         };
         return list;
     }

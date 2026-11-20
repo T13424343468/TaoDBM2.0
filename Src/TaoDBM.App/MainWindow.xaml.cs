@@ -499,6 +499,7 @@ public partial class MainWindow : Window
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
                 Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
                 break;
             case NodeKind.Table:
                 Item("刷新", (_, _) => RefreshNode(node));
