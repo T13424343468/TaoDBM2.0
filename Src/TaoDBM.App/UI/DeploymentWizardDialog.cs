@@ -177,7 +177,6 @@ public static class DeploymentWizardDialog
 
         var panels = new[] { step1, step2, step3, step4, step5 };
         var nextBtn = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        int cur = 0;
         void ShowStep(int i)
         {
             body.Children.Clear();
