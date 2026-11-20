@@ -79,6 +79,8 @@ public partial class MainWindow : Window
         RestoreSession();
         ApplyWindowState();
         SizeChanged += EnforceMinimumSize;
+        SizeChanged += OnSizeTierChanged;   // 批次H：弹性布局三档（第十五章）
+        ApplyLayoutTier();
         EnableSqlDrop();
         DispatcherQueue.TryEnqueue(LoadSqlFromCommandLine);
         Closed += (_, _) => { SaveWindowState(); SaveSession(); SshTunnel.StopAll(); };

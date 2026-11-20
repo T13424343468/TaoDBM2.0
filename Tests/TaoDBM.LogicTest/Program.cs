@@ -3809,6 +3809,31 @@ Layer("单元");
     Check("WS-分栏-区间内原样保留", WindowStateStore.ClampLeftPane(300, 1000) == 300);
     Check("WS-分栏-极小屏上限即200", WindowStateStore.ClampLeftPane(350, 600) == 200);
 
+    // --- 批次H：默认尺寸 960×640 下限（工作区允许时夹下限，微屏不越界） ---
+    var (w6, h6) = WindowStateStore.DefaultSize(1350, 760);
+    Check("WS-默认尺寸-高度不足夹640下限", Math.Abs(w6 - 1080) < 0.01 && h6 == 640, $"{w6}x{h6}");
+    var (w7, h7) = WindowStateStore.DefaultSize(1920, 600);
+    Check("WS-默认尺寸-扁屏下限不越工作区", Math.Abs(w7 - 1536) < 0.01 && Math.Abs(h7 - 480) < 0.01, $"{w7}x{h7}");
+    var (w8, h8) = WindowStateStore.DefaultSize(1920, 1080);
+    Check("WS-默认尺寸-常规屏不受下限影响", Math.Abs(w8 - 1536) < 0.01 && Math.Abs(h8 - 864) < 0.01, $"{w8}x{h8}");
+
+    // --- 批次H：IsRestorable 补尺寸侧校验（越屏记录回默认） ---
+    var oversizeItem = new WindowStateItem { X = 0, Y = 0, Width = 2400, Height = 1300 };
+    Check("WS-恢复-尺寸越屏回默认", !WindowStateStore.IsRestorable(oversizeItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+    var exactItem = new WindowStateItem { X = 0, Y = 0, Width = 1920, Height = 1080 };
+    Check("WS-恢复-尺寸贴屏可恢复", WindowStateStore.IsRestorable(exactItem, new[] { (0.0, 0.0, 1920.0, 1080.0) }));
+    Check("WS-恢复-大记录换小屏失效", !WindowStateStore.IsRestorable(exactItem, new[] { (0.0, 0.0, 1600.0, 900.0) }));
+
+    // --- 批次H：LayoutTiers 三档判定（紧凑<1366 / 标准<2560 / 宽屏≥2560） ---
+    Check("LT-分档-1365.9紧凑", LayoutTiers.Resolve(1365.9) == LayoutTier.Compact);
+    Check("LT-分档-1366起标准", LayoutTiers.Resolve(1366) == LayoutTier.Standard);
+    Check("LT-分档-2559.9标准", LayoutTiers.Resolve(2559.9) == LayoutTier.Standard);
+    Check("LT-分档-2560起宽屏", LayoutTiers.Resolve(2560) == LayoutTier.Wide);
+    var dip150 = LayoutTiers.EffectiveWidth(2560, 1.5);
+    Check("LT-DPI-150%下2560物理折1706.67标准档", Math.Abs(dip150 - 1706.6667) < 0.01 && LayoutTiers.Resolve(dip150) == LayoutTier.Standard, $"{dip150:0.##}");
+    Check("LT-DPI-零缩放按原值", LayoutTiers.EffectiveWidth(2560, 0) == 2560 && LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(2560, 0)) == LayoutTier.Wide);
+    Check("LT-DPI-100%三档回归", LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(1366, 1.0)) == LayoutTier.Standard && LayoutTiers.Resolve(LayoutTiers.EffectiveWidth(1365, 1.0)) == LayoutTier.Compact);
+
     // --- 状态存取：写读一致、损坏回落默认 ---
     var wsFile = Path.Combine(Path.GetTempPath(), "taodbm-ws-test-" + Guid.NewGuid().ToString("N") + ".json");
     WindowStateStore.UseFile(wsFile);
