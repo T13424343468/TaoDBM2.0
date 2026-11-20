@@ -165,6 +165,29 @@ public static class DiagnosticsDialog
                 AddLine(report, "SQLite 版本：" + ver);
                 AddLine(report, "SQLite 为单文件库，锁与体检深度检查不适用。");
             }
+            else if (DiagnosticsCatalog.Supported(profile.Engine))
+            {
+                // 批次 N：Oracle / MongoDB / Redis 深度体检口径（目录引擎生成只读命令）
+                var ver = await Scalar(prov, dbName, DiagnosticsCatalog.VersionQuery(profile.Engine));
+                if (ver.Length > 80) ver = ver.Substring(0, 80) + "…";
+                AddLine(report, $"数据库版本：{ver}");
+                var topQ = DiagnosticsCatalog.TopTablesQuery(profile.Engine, dbName);
+                if (topQ is not null)
+                {
+                    var top = await Rows(prov, dbName, topQ);
+                    AddSection(report, "规模最大的表（前 8）");
+                    foreach (var row in top) AddLine(report, $"  {S(row[0])}  约 {ToLong(row[1])} 行");
+                }
+                var health = DiagnosticsCatalog.HealthCommand(profile.Engine);
+                if (health is not null)
+                {
+                    var hs = await prov.Execute(dbName, health);
+                    AddSection(report, "健康快照");
+                    if (hs.Count > 0)
+                        foreach (var row in hs[0].Rows)
+                            AddLine(report, $"  {S(row[0])}  {S(row.Length > 1 ? row[1] : null)}");
+                }
+            }
             else
             {
                 AddLine(report, "该引擎暂无深度体检口径，仅做连通性检查。");
@@ -175,8 +198,8 @@ public static class DiagnosticsDialog
             AddLine(report, "规模 / 版本信息采集受限：" + ex.Message, Ant.Primary);
         }
 
-        // 3. 锁等待与死锁检出（LockAnalyzer）
-        if (profile.Engine is DbEngine.MySQL or DbEngine.PostgreSQL)
+        // 3. 锁等待与死锁检出（LockAnalyzer；口径来自诊断目录引擎）
+        if (DiagnosticsCatalog.LockWaitQuery(profile.Engine) is not null)
         {
             await CheckLocks(owner, info, prov, dbName, report, status);
         }
@@ -207,6 +230,14 @@ public static class DiagnosticsDialog
                 if (rs.Count > 0)
                     foreach (var row in rs[0].Rows)
                         waits.Add(new LockWait(S(row[0]), S(row[1]), S(row[2])));
+            }
+            else if (info.Profile.Engine == DbEngine.Oracle)
+            {
+                // 批次 N：Oracle v$ 锁等待口径（会话级等待边）
+                var rs = await prov.Execute(dbName, DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!);
+                if (rs.Count > 0)
+                    foreach (var row in rs[0].Rows)
+                        waits.Add(new LockWait(S(row[0]), S(row[1]), "等 " + ToLong(row.Length > 2 ? row[2] : null) + " 秒"));
             }
             else
             {

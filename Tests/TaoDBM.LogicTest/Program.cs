@@ -2151,6 +2151,36 @@ Layer("集成");
 }
 
 {
+    // 批次 N：诊断目录引擎——七库只读体检口径（版本/规模/锁等待/健康快照）
+    Check("诊断-支持面六库", DiagnosticsCatalog.Supported(DbEngine.MySQL) && DiagnosticsCatalog.Supported(DbEngine.Oracle)
+        && DiagnosticsCatalog.Supported(DbEngine.MongoDB) && DiagnosticsCatalog.Supported(DbEngine.Redis)
+        && DiagnosticsCatalog.Supported(DbEngine.SQLite), "");
+    Check("诊断-Oracle版本", DiagnosticsCatalog.VersionQuery(DbEngine.Oracle).Contains("v$version") && DiagnosticsCatalog.VersionQuery(DbEngine.Oracle).Contains("ROWNUM = 1"), "");
+    Check("诊断-Mongo版本命令", DiagnosticsCatalog.VersionQuery(DbEngine.MongoDB) == "TAODBMCMD:serverStatus", "");
+    Check("诊断-Redis版本INFO", DiagnosticsCatalog.VersionQuery(DbEngine.Redis) == "INFO server", "");
+    Check("诊断-Oracle规模", DiagnosticsCatalog.TopTablesQuery(DbEngine.Oracle, "orcl")!.Contains("USER_TABLES")
+        && DiagnosticsCatalog.TopTablesQuery(DbEngine.Oracle, "orcl")!.Contains("FETCH FIRST 8 ROWS ONLY"), "");
+    Check("诊断-Mongo规模命令", DiagnosticsCatalog.TopTablesQuery(DbEngine.MongoDB, "shop") == "TAODBMCMD:topCollections", "");
+    Check("诊断-Redis无规模口径", DiagnosticsCatalog.TopTablesQuery(DbEngine.Redis, "db0") is null, "");
+    Check("诊断-Oracle锁等待", DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!.Contains("V$LOCK")
+        && DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!.Contains("REQUEST > 0"), "");
+    Check("诊断-无锁引擎返回空", DiagnosticsCatalog.LockWaitQuery(DbEngine.SQLite) is null
+        && DiagnosticsCatalog.LockWaitQuery(DbEngine.MongoDB) is null
+        && DiagnosticsCatalog.LockWaitQuery(DbEngine.Redis) is null, "");
+    Check("诊断-健康命令", DiagnosticsCatalog.HealthCommand(DbEngine.MongoDB) == "TAODBMCMD:serverStatus"
+        && DiagnosticsCatalog.HealthCommand(DbEngine.Redis) == "INFO stats"
+        && DiagnosticsCatalog.HealthCommand(DbEngine.MySQL) is null, "");
+    // Mongo 目录命令分发（无服务端路径：none 不触网即可回）
+    var mongoNone = new MongoProvider(new ConnectionProfile { Engine = DbEngine.MongoDB, Host = "127.0.0.1", Port = 27017 });
+    var noneRs = await mongoNone.Execute("shop", "TAODBMCMD:none");
+    Check("诊断-Mongo none空清单", noneRs.Count == 1 && noneRs[0].Rows.Count == 0 && noneRs[0].Message.Contains("无该对象类型"), "");
+    bool mongoBad = false;
+    try { await mongoNone.Execute("shop", "TAODBMCMD:__no_such__"); }
+    catch (InvalidOperationException ex) { mongoBad = ex.Message.Contains("未知 Mongo 目录命令"); }
+    Check("诊断-Mongo未知命令报错", mongoBad, "");
+}
+
+{
     // 例程管理：DROP/执行语句生成 + 调试支持判定 + 校验 + 引用查找（对账漏码 §1，2026-11-19）
     Check("例程-MySQL删过程", RoutineManager.BuildDropSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1") == "DROP PROCEDURE `sp1`", "");
     Check("例程-MySQL带库删过程", RoutineManager.BuildDropSql(DbEngine.MySQL, RoutineKind.Procedure, "sp1", "shop") == "DROP PROCEDURE `shop`.`sp1`", "");

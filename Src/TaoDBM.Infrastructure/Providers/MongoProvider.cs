@@ -126,6 +126,43 @@ public class MongoProvider : IDbProvider
                 qr.Columns.Add("name");
                 qr.Message = "MongoDB 无该对象类型";
                 break;
+            case "serverStatus":
+            {
+                var status = await database.RunCommandAsync<BsonDocument>(new BsonDocument("serverStatus", 1));
+                qr.Columns.Add("指标");
+                qr.Columns.Add("值");
+                qr.Rows.Add(new object?[] { "host", status.TryGetValue("host", out var h) ? h.AsString : "" });
+                if (status.TryGetValue("version", out var v)) qr.Rows.Add(new object?[] { "version", v.AsString });
+                if (status.TryGetValue("uptime", out var up)) qr.Rows.Add(new object?[] { "uptime(秒)", up.ToString() });
+                if (status.TryGetValue("connections", out var conn) && conn is BsonDocument connDoc)
+                {
+                    qr.Rows.Add(new object?[] { "connections.current", connDoc.TryGetValue("current", out var c) ? c.ToString() : "" });
+                    qr.Rows.Add(new object?[] { "connections.available", connDoc.TryGetValue("available", out var a) ? a.ToString() : "" });
+                }
+                if (status.TryGetValue("opcounters", out var ops) && ops is BsonDocument opsDoc)
+                    foreach (var name in new[] { "insert", "query", "update", "delete", "command" })
+                        if (opsDoc.TryGetValue(name, out var val))
+                            qr.Rows.Add(new object?[] { "opcounters." + name, val.ToString() });
+                if (status.TryGetValue("mem", out var mem) && mem is BsonDocument memDoc)
+                {
+                    qr.Rows.Add(new object?[] { "mem.resident(MB)", memDoc.TryGetValue("resident", out var r) ? r.ToString() : "" });
+                    qr.Rows.Add(new object?[] { "mem.virtual(MB)", memDoc.TryGetValue("virtual", out var vi) ? vi.ToString() : "" });
+                }
+                break;
+            }
+            case "topCollections":
+            {
+                qr.Columns.Add("collection");
+                qr.Columns.Add("count");
+                var collNames2 = await (await database.ListCollectionNamesAsync()).ToListAsync();
+                foreach (var name in collNames2)
+                {
+                    var est = await database.GetCollection<BsonDocument>(name).EstimatedDocumentCountAsync();
+                    qr.Rows.Add(new object?[] { name, est.ToString() });
+                }
+                qr.Message = "（按集合估算文档数，最多展示 8 项）";
+                break;
+            }
             default:
                 if (command.StartsWith("collInfo:", StringComparison.Ordinal))
                 {
