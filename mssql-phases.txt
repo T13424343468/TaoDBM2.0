@@ -1,8 +1,12 @@
-2026-11-20T13:23:26.2511824Z step-start pwsh=7.6.10
-2026-11-20T13:23:29.3416453Z direct-download-ok size=261082544
-2026-11-20T13:23:31.1867808Z unpack-exit=0
-2026-11-20T13:23:31.1981091Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-20T13:23:31.2007849Z setup-start
-2026-11-20T13:26:39.5004746Z setup-exit=0
-2026-11-20T13:26:44.7339115Z service-running
-2026-11-20T13:26:44.7435578Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-20T13:32:41.8875455Z step-start pwsh=7.6.10
+2026-11-20T13:32:49.7845562Z direct-download-ok size=261082544
+2026-11-20T13:32:52.1990821Z unpack-exit=0
+2026-11-20T13:32:52.2108410Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-20T13:32:52.2142096Z setup-start
+2026-11-20T13:35:46.3672331Z setup-exit=0
+2026-11-20T13:35:51.4573928Z service-running
+2026-11-20T13:35:51.4680689Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-20T13:35:51.4877122Z port-config-exception: System.Management.Automation.ItemNotFoundException: Cannot find path 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\\MSSQLServer\\SuperSocket\\NetLib\\Tcp\\IPAll' because it does not exist.
+2026-11-20T13:35:51.4916042Z at At D:\a\_temp\4d05b3cf-a545-45c3-927f-ef6d4a907952.ps1:63 char:3
++   Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
