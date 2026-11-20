@@ -474,7 +474,7 @@ public partial class MainWindow : Window
                 Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
                 Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
                 Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
-                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, Provider));
+                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
