@@ -11,3 +11,5 @@ coverage-func S04b 连接-填写端口 => pass
 coverage-func S04c 连接-填写账号 => pass
 coverage-func S04d 连接-填写密码 => pass
 coverage-func S04e 连接-填写数据库 => pass
+shot shot-06-conn-saved.png 64706 bytes
+coverage-func S05 连接-保存 => pass
