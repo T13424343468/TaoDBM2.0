@@ -390,10 +390,10 @@ jobs:
           $instKey = Get-ChildItem 'HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server' -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like 'MSSQL*.SQLEXPRESS' } | Select-Object -First 1
           if (-not $instKey) { Journal "registry-key-not-found"; Write-Host "::error::sqlexpress instance registry key not found"; exit 1 }
           Journal "registry-key=$($instKey.PSChildName)"
-          $tcp = "$($instKey.PSPath)\MSSQLServer\SuperSocket\NetLib\Tcp"
+          $tcp = "$($instKey.PSPath)\MSSQLServer\SuperSocketNetLib\Tcp"
           try {
             # run 186 定因：Tcp/IPAll 键在全新装机上可能不存在——缺就建，存在就改；键树现场全部落 journal
-            $ss = "$($instKey.PSPath)\MSSQLServer\SuperSocket"
+            $ss = "$($instKey.PSPath)\MSSQLServer\SuperSocketNetLib"
             if (Test-Path $ss) { Get-ChildItem $ss -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Journal "regtree: $($_.Name)" } } else { Journal "regtree: SuperSocket absent" }
             New-Item -Path "$tcp\IPAll" -Force | Out-Null
             Journal "ipall-key-ensured"
