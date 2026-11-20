@@ -1534,7 +1534,11 @@ jobs:
           $engine = "${{ matrix.db }}" -eq 'mysql' ? 'MySQL' : 'SQL Server'
           $dbuser = "${{ matrix.db }}" -eq 'mysql' ? 'root' : 'sa'
           $dbpass = "${{ matrix.db }}" -eq 'mysql' ? '' : $env:SAPASS
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName localhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui
+          # run 201 定因：SQLEXPRESS 无静态 1433，App 用裸 localhost 拨 1433 超时；实例实际监听动态端口（MSSQL_PORT）
+          # host 字段自由文本直进连接串，"localhost,<port>" 由 SqlClient 原生解析，免服务重启
+          $dbhost = "${{ matrix.db }}" -eq 'mysql' ? 'localhost' : "localhost,$($env:MSSQL_PORT)"
+          Write-Host "[WALK] dbhost=$dbhost"
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName $dbhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed (${{ matrix.db }})"; exit 1 }
 
       - name: Push evidence to public branch
