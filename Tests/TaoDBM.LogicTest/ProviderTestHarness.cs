@@ -46,6 +46,8 @@ public static class ProviderTestHarness
         if (segs.Split(',').Select(s => s.Trim()).Contains("2"))
             RunSegment2(check, engine.Value, spec);
         if (segs.Split(',').Select(s => s.Trim()).Contains("3"))
+            RunSegment3(check, engine.Value, spec);
+        if (segs.Split(',').Select(s => s.Trim()).Contains("3"))
             check("[Harness] 段三（备份/建模/主从）切片未落码", true, "J1 后续切片，见交账");
         if (segs.Split(',').Select(s => s.Trim()).Contains("4"))
             check("[Harness] 段四（迁移/安全/智能线/分库分区分表）切片未落码", true, "J1 后续切片，见交账");
@@ -230,6 +232,123 @@ public static class ProviderTestHarness
             var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
             check($"[{tag}:S2] 段二异常收口", false, cur.Message);
         }
+    }
+
+    // ---------- 段三：备份 / 建模 / 主从 ----------
+
+    static void RunSegment3(Action<string, bool, string> check, DbEngine engine, string spec)
+    {
+        string tag = engine switch { DbEngine.MySQL => "MYSQL", DbEngine.PostgreSQL => "PG", DbEngine.SqlServer => "MSSQL", _ => "RDB" };
+        if (!BackupTools.Supported(engine))
+        {
+            check($"[{tag}:S3] 备份-引擎不支持 skip", true, $"skip：{BackupTools.UnsupportedReason(engine)}");
+            return;
+        }
+        var profile = ProfileOf(engine, spec);
+        string db = profile.Database;
+        string scratch = db + "_har_bak";
+        string dumpFile = Path.Combine(Path.GetTempPath(), "t_har_dump_" + Token + ".sql");
+
+        using var prov = ProviderFactory.Create(profile);
+        try
+        {
+            WithRetry(() => prov.TestConnection().Wait());
+
+            // 备份：工具规格 → 真实导出 → 文件落盘含建表语句
+            ToolSpec dumpSpec = engine switch
+            {
+                DbEngine.MySQL => BackupTools.MysqlDump(profile.Host, profile.Port, profile.User, profile.Password, db, dumpFile),
+                DbEngine.PostgreSQL => BackupTools.PgDump(profile.Host, profile.Port, profile.User, profile.Password, db, dumpFile),
+                _ => throw new NotSupportedException(),
+            };
+            var (code, output) = RunTool(dumpSpec, null);
+            bool dumped = code == 0 && File.Exists(dumpFile) && new FileInfo(dumpFile).Length > 0;
+            check($"[{tag}:S3] 备份-导出工具真跑通", dumped, $"exit={code} {output}".Trim());
+
+            // 还原：导入临时库 → 行数对账 → 清库
+            prov.Execute(db, engine == DbEngine.MySQL
+                ? $"DROP DATABASE IF EXISTS `{scratch}`; CREATE DATABASE `{scratch}`"
+                : $"DROP DATABASE IF EXISTS {scratch}; CREATE DATABASE {scratch}").Wait();
+            ToolSpec restoreSpec = engine switch
+            {
+                DbEngine.MySQL => BackupTools.MysqlRestore(profile.Host, profile.Port, profile.User, profile.Password, scratch, dumpFile),
+                DbEngine.PostgreSQL => BackupTools.PgRestore(profile.Host, profile.Port, profile.User, profile.Password, scratch, dumpFile),
+                _ => throw new NotSupportedException(),
+            };
+            var (rcode, routput) = RunTool(restoreSpec, engine == DbEngine.MySQL ? dumpFile : null);
+            check($"[{tag}:S3] 备份-还原工具真跑通", rcode == 0, $"exit={rcode} {routput}".Trim());
+            var cnt = prov.Execute(scratch, $"SELECT COUNT(*) AS c FROM {prov.Quote("orders")}").Result.Last();
+            check($"[{tag}:S3] 备份-还原行数对账", Convert.ToInt32(cnt.Rows[0][0]) == 5000, $"计 {cnt.Rows[0][0]}");
+            prov.Execute(db, engine == DbEngine.MySQL ? $"DROP DATABASE IF EXISTS `{scratch}`" : $"DROP DATABASE IF EXISTS {scratch}").Wait();
+            File.Delete(dumpFile);
+
+            // 建模：真目录 → ER 框 → 外键深推断（真 FK 行 + 命名补边）→ 正向工程
+            var erd = new ErdModel
+            {
+                Tables = new List<ErdTable>
+                {
+                    ErdModel.FromSpecs("orders", prov.GetColumns(db, "orders").Result),
+                    ErdModel.FromSpecs("products", prov.GetColumns(db, "products").Result),
+                }
+            };
+            ErdModel.AutoLayout(erd);
+            check($"[{tag}:S3] 建模-表框含列与主键", erd.Tables.All(t => t.Columns.Count == 4 && t.Columns.Any(c => c.IsKey)),
+                string.Join(";", erd.Tables.Select(t => t.Name + ":" + t.Columns.Count)));
+            var fkRows = prov.Execute(db, FkRowsSql(engine, db)).Result.Last().Rows;
+            var edges = ErdModel.InferEdgesDeep(erd, fkRows);
+            check($"[{tag}:S3] 建模-关系边推断含产品外键", edges.Any(e => e.FromTable == "orders" && e.ToTable == "products"),
+                $"{edges.Count} 边（FK 行 {fkRows.Count}）");
+            var fwd = ErdForward.Generate(erd);
+            check($"[{tag}:S3] 建模-正向工程跑通", fwd.Ok, fwd.Errors.Count > 0 ? string.Join(";", fwd.Errors) : $"DDL {fwd.Ddl.Count} 段");
+
+            // 主从：从库清单 → 拓扑图构建（单机口径：主库节点恒在）
+            var replicas = prov.Execute(db, ReplicationCatalog.ReplicasSql(engine)).Result.Last();
+            var nodes = ReplicationCatalog.BuildFromPrimary(engine, replicas.Columns, replicas.Rows);
+            check($"[{tag}:S3] 主从-拓扑图含主库节点", nodes.Any(n => n.Role == "主库"), $"{nodes.Count} 节点");
+
+            check($"[{tag}:S3] 段三小结", true, "备份4+建模3+主从1=8 例");
+        }
+        catch (Exception ex)
+        {
+            var cur = ex; while (cur.InnerException != null) cur = cur.InnerException;
+            check($"[{tag}:S3] 段三异常收口", false, cur.Message);
+        }
+    }
+
+    static string FkRowsSql(DbEngine engine, string db) => engine switch
+    {
+        DbEngine.MySQL => "SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE" +
+            $" WHERE TABLE_SCHEMA = '{db.Replace("'", "''")}' AND REFERENCED_TABLE_NAME IS NOT NULL",
+        DbEngine.PostgreSQL => "SELECT tc.table_name, kcu.column_name, ccu.table_name, ccu.column_name FROM information_schema.table_constraints tc" +
+            " JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema" +
+            " JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name AND tc.table_schema = ccu.table_schema" +
+            " WHERE tc.constraint_type = 'FOREIGN KEY'",
+        _ => "SELECT NULL, NULL, NULL, NULL WHERE 1 = 0",
+    };
+
+    static (int Code, string Output) RunTool(ToolSpec toolSpec, string? stdinFile)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = toolSpec.FileName,
+            Arguments = toolSpec.Arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = stdinFile != null,
+            UseShellExecute = false,
+        };
+        foreach (var kv in toolSpec.Env) psi.Environment[kv.Key] = kv.Value;
+        using var p = System.Diagnostics.Process.Start(psi)!;
+        var outTask = p.StandardOutput.ReadToEndAsync();
+        var errTask = p.StandardError.ReadToEndAsync();
+        if (stdinFile != null)
+        {
+            using var fs = File.OpenRead(stdinFile);
+            fs.CopyTo(p.StandardInput.BaseStream);
+            p.StandardInput.Close();
+        }
+        if (!p.WaitForExit(120000)) { try { p.Kill(); } catch { } return (-1, "timeout"); }
+        return (p.ExitCode, outTask.Result + errTask.Result);
     }
 
     /// <summary>删表语句按方言（SQL Server 全版本兼容 OBJECT_ID 口径，不赌 DROP IF EXISTS 版本线）。</summary>
