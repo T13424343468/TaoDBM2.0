@@ -369,6 +369,16 @@ jobs:
             if ($probe -and $probe.Status -eq 'Running') { $ready = $true; break }
           }
           if (-not $ready) { Write-Host "::error::sqlexpress service not running after wait"; exit 1 }
+          # 静态端口 1433：SQLEXPRESS 默认动态端口，矩阵口径 host|port 需固定 1433（首跑 181 定因：TCP 拒连）
+          $instKey = Get-ChildItem 'HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server' -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like 'MSSQL*.SQLEXPRESS' } | Select-Object -First 1
+          if (-not $instKey) { Write-Host "::error::sqlexpress instance registry key not found"; exit 1 }
+          $tcp = "$($instKey.PSPath)\\MSSQLServer\\SuperSocket\\NetLib\\Tcp"
+          Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
+          Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpDynamicPorts -Value ''
+          Set-ItemProperty -Path $tcp -Name Enabled -Value 1
+          Restart-Service -Name 'MSSQL$SQLEXPRESS' -Force
+          Start-Sleep -Seconds 10
+          Write-Host "[MSSQL] static TCP 1433 configured; service restarted"
           $cs = "Server=localhost,1433;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
           $okConn = $false
           $connErr = ''
