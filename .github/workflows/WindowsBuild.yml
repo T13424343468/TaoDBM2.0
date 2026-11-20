@@ -167,6 +167,59 @@ jobs:
             exit $p.ExitCode
           }
 
+  # 真库全功能矩阵·PostgreSQL 独立环境（2026-11-20 老板令「加速加速 全面铺开 分段分批去跑」第二库）：
+  # ubuntu-latest 预装 PG 免装机，LogicTest 仅引用 Core/Infrastructure 跨平台可跑；
+  # 独立 job 独立连接串，与 MySQL 互不串账；谁红修谁的，不连坐其他库型
+  realdb-matrix-postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-nix-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-nix-
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Prepare PostgreSQL server
+        shell: bash
+        run: |
+          set -e
+          sudo systemctl start postgresql
+          ready=0
+          for i in $(seq 1 24); do
+            if sudo -u postgres pg_isready; then ready=1; break; fi
+            sleep 5
+          done
+          if [ "$ready" -ne 1 ]; then echo "::error::postgres not ready after wait"; exit 1; fi
+          sudo -u postgres psql -c "SELECT VERSION();"
+          # runner 上 postgres 用户默认无口令（peer 认证），设口令供 5432 TCP 连接串使用
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'taodbm-ui-42';"
+
+      - name: Load matrix test data
+        shell: bash
+        run: |
+          set -e
+          python3 Scripts/gen-testdb.py --out-dir testdb --engine postgres --db-name taodbmui
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -f testdb/taodbm-ui.postgres.sql
+          sudo -u postgres psql -d taodbmui -t -c "SELECT COUNT(*) AS c FROM orders;"
+
+      - name: Logic tests (realdb matrix seg1, PostgreSQL)
+        shell: bash
+        run: |
+          export REALDB_PROVIDER='PostgreSQL'
+          export REALDB_CONN='localhost|5432|postgres|taodbm-ui-42|taodbmui'
+          export REALDB_SEG='1'
+          dotnet run --project Tests/TaoDBM.LogicTest -c Release 2>&1 | tee test-output.txt
+          exit ${PIPESTATUS[0]}
+
   app-build:
     runs-on: windows-latest
     timeout-minutes: 30
