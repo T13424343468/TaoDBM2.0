@@ -391,10 +391,20 @@ jobs:
           if (-not $instKey) { Journal "registry-key-not-found"; Write-Host "::error::sqlexpress instance registry key not found"; exit 1 }
           Journal "registry-key=$($instKey.PSChildName)"
           $tcp = "$($instKey.PSPath)\\MSSQLServer\\SuperSocket\\NetLib\\Tcp"
-          Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
-          Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpDynamicPorts -Value ''
-          Set-ItemProperty -Path $tcp -Name Enabled -Value 1
-          Restart-Service -Name 'MSSQL$SQLEXPRESS' -Force
+          try {
+            Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
+            Journal "port-tcpport-set"
+            Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpDynamicPorts -Value ''
+            Journal "port-dynamic-cleared"
+            Set-ItemProperty -Path $tcp -Name Enabled -Value 1
+            Journal "port-enabled-set"
+            Restart-Service -Name 'MSSQL$SQLEXPRESS' -Force
+            Journal "service-restarted"
+          } catch {
+            Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
+            if ($_.InvocationInfo) { Journal "at $($_.InvocationInfo.PositionMessage)" }
+            throw
+          }
           Start-Sleep -Seconds 10
           Write-Host "[MSSQL] static TCP 1433 configured; service restarted"
           $cs = "Server=localhost,1433;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
@@ -410,7 +420,7 @@ jobs:
               $cc.Close()
               $okConn = $true
               break
-            } catch { $connErr = $_.Exception.Message; Write-Host "[MSSQL] connect attempt $ci failed: $connErr"; Start-Sleep -Seconds 5 }
+            } catch { $connErr = $_.Exception.Message; if ($ci -eq 0) { Journal "connect-first-fail: $connErr" }; Write-Host "[MSSQL] connect attempt $ci failed: $connErr"; Start-Sleep -Seconds 5 }
           }
           if (-not $okConn) { Journal "tcp-connect-failed: $connErr"; Write-Host "::error::sqlserver tcp connectivity failed: $connErr"; exit 1 }
           Journal "tcp-connect-ok"
