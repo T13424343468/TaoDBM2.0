@@ -390,11 +390,11 @@ jobs:
           $instKey = Get-ChildItem 'HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server' -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like 'MSSQL*.SQLEXPRESS' } | Select-Object -First 1
           if (-not $instKey) { Journal "registry-key-not-found"; Write-Host "::error::sqlexpress instance registry key not found"; exit 1 }
           Journal "registry-key=$($instKey.PSChildName)"
-          $tcp = "$($instKey.PSPath)\\MSSQLServer\\SuperSocket\\NetLib\\Tcp"
+          $tcp = "$($instKey.PSPath)\MSSQLServer\SuperSocket\NetLib\Tcp"
           try {
-            Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
+            Set-ItemProperty -Path "$tcp\IPAll" -Name TcpPort -Value 1433
             Journal "port-tcpport-set"
-            Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpDynamicPorts -Value ''
+            Set-ItemProperty -Path "$tcp\IPAll" -Name TcpDynamicPorts -Value ''
             Journal "port-dynamic-cleared"
             Set-ItemProperty -Path $tcp -Name Enabled -Value 1
             Journal "port-enabled-set"
