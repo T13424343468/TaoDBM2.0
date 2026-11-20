@@ -1,12 +1,12 @@
-2026-11-20T13:32:41.8875455Z step-start pwsh=7.6.10
-2026-11-20T13:32:49.7845562Z direct-download-ok size=261082544
-2026-11-20T13:32:52.1990821Z unpack-exit=0
-2026-11-20T13:32:52.2108410Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-20T13:32:52.2142096Z setup-start
-2026-11-20T13:35:46.3672331Z setup-exit=0
-2026-11-20T13:35:51.4573928Z service-running
-2026-11-20T13:35:51.4680689Z registry-key=MSSQL15.SQLEXPRESS
-2026-11-20T13:35:51.4877122Z port-config-exception: System.Management.Automation.ItemNotFoundException: Cannot find path 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\\MSSQLServer\\SuperSocket\\NetLib\\Tcp\\IPAll' because it does not exist.
-2026-11-20T13:35:51.4916042Z at At D:\a\_temp\4d05b3cf-a545-45c3-927f-ef6d4a907952.ps1:63 char:3
-+   Set-ItemProperty -Path "$tcp\\IPAll" -Name TcpPort -Value 1433
-+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-11-20T13:38:37.8075725Z step-start pwsh=7.6.10
+2026-11-20T13:38:43.3888921Z direct-download-ok size=261082544
+2026-11-20T13:38:50.8098343Z unpack-exit=0
+2026-11-20T13:38:50.8191241Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-20T13:38:50.8215595Z setup-start
+2026-11-20T13:44:11.3266019Z setup-exit=0
+2026-11-20T13:44:16.7869667Z service-running
+2026-11-20T13:44:16.7955384Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-20T13:44:16.8107638Z port-config-exception: System.Management.Automation.ItemNotFoundException: Cannot find path 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocket\NetLib\Tcp\IPAll' because it does not exist.
+2026-11-20T13:44:16.8136668Z at At D:\a\_temp\e6c45491-6795-4e2b-be4f-febcb3918889.ps1:63 char:3
++   Set-ItemProperty -Path "$tcp\IPAll" -Name TcpPort -Value 1433
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
