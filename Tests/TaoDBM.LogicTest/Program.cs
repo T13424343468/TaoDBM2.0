@@ -3773,6 +3773,100 @@ Layer("单元");
     SqlHandoffRegistry.UseFile("");
 }
 
+﻿Console.WriteLine("\n== 备份可用性演练（批次C 2026-11-20）==");
+Layer("单元");
+{
+    // --- TempDbName：前缀 / 净化 / 时间戳 / 引擎长度上限 / 不撞原名 ---
+    var at = new DateTimeOffset(2026, 11, 20, 10, 30, 0, TimeSpan.FromHours(8));
+    var n1 = BackupDrill.TempDbName(DbEngine.MySQL, "taodbmui", at);
+    Check("BD-库名-前缀与时间戳", n1.StartsWith("taodrill_taodbmui_") && n1.EndsWith("20261120103000"), n1);
+    var n2 = BackupDrill.TempDbName(DbEngine.MySQL, "My DB$太长", at);
+    Check("BD-库名-非法字符净化成下划线", n2.StartsWith("taodrill_my_db_"), n2);
+    Check("BD-库名-空名回落main", BackupDrill.TempDbName(DbEngine.MySQL, "", at).StartsWith("taodrill_main_"));
+    Check("BD-库名-纯非法字符回落main", BackupDrill.TempDbName(DbEngine.MySQL, "###", at).StartsWith("taodrill_main_"));
+    var longName = new string('a', 80);
+    Check("BD-库名-超限截断", BackupDrill.TempDbName(DbEngine.MySQL, longName, at).Length <= BackupDrill.NameLimit(DbEngine.MySQL));
+    Check("BD-库名-引擎上限-PG更短", BackupDrill.NameLimit(DbEngine.PostgreSQL) == 56 && BackupDrill.NameLimit(DbEngine.SqlServer) == 120);
+    Check("BD-库名-与原库不撞", BackupDrill.TempDbName(DbEngine.MySQL, "taodbmui", at) != "taodbmui");
+
+    // --- SQLite 文件头完整性：真头 / 空文件 / 假头 / 缺文件 ---
+    var drillDir = Path.Combine(Path.GetTempPath(), "taodbm-drill-test-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(drillDir);
+    var okFile = Path.Combine(drillDir, "ok.db");
+    File.WriteAllBytes(okFile, "SQLite format 3\0后面的真库内容".Select(c => (byte)c).ToArray());
+    Check("BD-头校验-真SQLite头通过", BackupDrill.SqliteHeaderOk(okFile));
+    var emptyFile = Path.Combine(drillDir, "empty.db");
+    File.WriteAllBytes(emptyFile, Array.Empty<byte>());
+    Check("BD-头校验-空文件拒绝", !BackupDrill.SqliteHeaderOk(emptyFile));
+    var badFile = Path.Combine(drillDir, "bad.db");
+    File.WriteAllText(badFile, "不是数据库的文本备份");
+    Check("BD-头校验-假头拒绝", !BackupDrill.SqliteHeaderOk(badFile));
+    Check("BD-头校验-缺文件拒绝", !BackupDrill.SqliteHeaderOk(Path.Combine(drillDir, "nope.db")));
+
+    // --- SqliteDrillCopy：拷贝 + 自校验；坏头抛异常；目标目录自动建 ---
+    var tempCopy = Path.Combine(drillDir, "sub", "dir", "copy.db");
+    BackupDrill.SqliteDrillCopy(okFile, tempCopy);
+    Check("BD-副本-拷贝成功且头一致", File.Exists(tempCopy) && BackupDrill.SqliteHeaderOk(tempCopy));
+    bool badThrow = false;
+    try { BackupDrill.SqliteDrillCopy(badFile, Path.Combine(drillDir, "badcopy.db")); }
+    catch (InvalidDataException) { badThrow = true; }
+    Check("BD-副本-坏头抛InvalidData", badThrow);
+    bool missThrow = false;
+    try { BackupDrill.SqliteDrillCopy(Path.Combine(drillDir, "nope.db"), Path.Combine(drillDir, "m.db")); }
+    catch (FileNotFoundException) { missThrow = true; }
+    Check("BD-副本-缺备份文件抛FileNotFound", missThrow);
+
+    // --- 还原规格路由：MySQL/PG 命令行、SQL Server T-SQL、SQLite 不走命令行 ---
+    var mys = BackupDrill.RestoreSpec(DbEngine.MySQL, "h", 3306, "u", "drill-secret", "taodrill_x", "f.sql");
+    Check("BD-路由-MySQL走mysql且带临时库", mys?.FileName == "mysql" && mys.Arguments.Contains("taodrill_x"));
+    Check("BD-路由-MySQL密码走环境变量", mys is not null && !mys.Arguments.Contains("drill-secret") && mys.Env["MYSQL_PWD"] == "drill-secret");
+    var pgs = BackupDrill.RestoreSpec(DbEngine.PostgreSQL, "h", 5432, "u", "drill-secret", "taodrill_x", "f.sql");
+    Check("BD-路由-PG走psql且带临时库", pgs?.FileName == "psql" && pgs.Arguments.Contains("taodrill_x"));
+    Check("BD-路由-SQLite无命令行规格", BackupDrill.RestoreSpec(DbEngine.SQLite, "", 0, "", "", "x", "f") is null);
+    Check("BD-路由-SQLServer走TSQL", BackupDrill.SqlServerRestoreSql("taodrill_x", "C:\\b.bak").Contains("RESTORE DATABASE") && BackupDrill.SqlServerRestoreSql("taodrill_x", "C:\\b.bak").Contains("taodrill_x"));
+
+    // --- 建/删临时库 SQL：MySQL 显式字符集 / PG 引号 / SQL Server 判存 ---
+    Check("BD-建库-MySQL带utf8mb4", BackupDrill.CreateTempDbSql(DbEngine.MySQL, "taodrill_x")?.Contains("utf8mb4") == true);
+    Check("BD-建库-PG带引号", BackupDrill.CreateTempDbSql(DbEngine.PostgreSQL, "taodrill_x")?.Contains("\"taodrill_x\"") == true);
+    Check("BD-建库-SQLServer判存", BackupDrill.CreateTempDbSql(DbEngine.SqlServer, "taodrill_x")?.Contains("DB_ID") == true);
+    Check("BD-建库-SQLite不适配返回null", BackupDrill.CreateTempDbSql(DbEngine.SQLite, "x") is null);
+    Check("BD-删库-MySQL带IF EXISTS", BackupDrill.DropTempDbSql(DbEngine.MySQL, "taodrill_x")?.Contains("IF EXISTS") == true);
+    Check("BD-删库-PG带IF EXISTS", BackupDrill.DropTempDbSql(DbEngine.PostgreSQL, "taodrill_x")?.Contains("IF EXISTS") == true);
+    Check("BD-删库-SQLite返回null", BackupDrill.DropTempDbSql(DbEngine.SQLite, "x") is null);
+
+    // --- CountSql：逐引擎引号与转义 ---
+    Check("BD-计数-MySQL反引号转义", BackupDrill.CountSql(DbEngine.MySQL, "or`der") == "SELECT COUNT(*) AS c FROM `or``der`;");
+    Check("BD-计数-SQLServer方括号", BackupDrill.CountSql(DbEngine.SqlServer, "orders").StartsWith("SELECT COUNT(*) AS c FROM [orders]"));
+    Check("BD-计数-PG双引号", BackupDrill.CountSql(DbEngine.PostgreSQL, "orders").Contains("\"orders\""));
+    Check("BD-计数-SQLite双引号", BackupDrill.CountSql(DbEngine.SQLite, "orders").Contains("\"orders\""));
+
+    // --- ParseExpectedCounts：正常 / 注释 / 空行 / 中文等号 / 非法行 / 重复表 ---
+    var (ok, okIssues) = BackupDrill.ParseExpectedCounts("orders=5000\n# 注释\n\ntbl_2=1200\n");
+    Check("BD-清单-正常解析", ok.Count == 2 && ok[0].Table == "orders" && ok[0].Count == 5000 && ok[1].Table == "tbl_2" && ok[1].Count == 1200);
+    Check("BD-清单-正常解析零异常", okIssues.Count == 0);
+    var (cjk, _) = BackupDrill.ParseExpectedCounts("订单表＝42");
+    Check("BD-清单-中文等号可解析", cjk.Count == 1 && cjk[0].Table == "订单表" && cjk[0].Count == 42);
+    var (bad, badIssues) = BackupDrill.ParseExpectedCounts("没有等号的行\n=99\norders=abc\norders=-1\n");
+    Check("BD-清单-非法行全拦且留痕", bad.Count == 0 && badIssues.Count == 4, string.Join("|", badIssues));
+    var (dup, dupIssues) = BackupDrill.ParseExpectedCounts("orders=1\norders=2");
+    Check("BD-清单-重复表拦截", dup.Count == 1 && dupIssues.Count == 1);
+
+    // --- VerifyCounts：全对 / 缺表 / 计数不符 / 异常透传 / 报告渲染 ---
+    var exp = new List<(string, long)> { ("orders", 5000), ("products", 1200) };
+    var r1 = BackupDrill.VerifyCounts(exp, new Dictionary<string, long> { ["orders"] = 5000, ["products"] = 1200 });
+    Check("BD-对账-全对通过", r1.Pass && r1.Entries.All(e => e.Pass));
+    var r2 = BackupDrill.VerifyCounts(exp, new Dictionary<string, long> { ["orders"] = 5000 });
+    Check("BD-对账-缺表不过且记异常", !r2.Pass && r2.Issues.Any(i => i.Contains("products")));
+    var r3 = BackupDrill.VerifyCounts(exp, new Dictionary<string, long> { ["orders"] = 4999, ["products"] = 1200 });
+    Check("BD-对账-计数不符不过", !r3.Pass && r3.Entries.First(e => e.Table == "orders").Actual == 4999);
+    var r4 = BackupDrill.VerifyCounts(Array.Empty<(string, long)>(), new Dictionary<string, long>(), new[] { "解析失败" });
+    Check("BD-对账-空清单+异常不过", !r4.Pass && r4.Issues.Contains("解析失败"));
+    Check("BD-对账-零对账项即失败", !BackupDrill.VerifyCounts(Array.Empty<(string, long)>(), new Dictionary<string, long>()).Pass);
+    Check("BD-报告-渲染含结论行", r1.Render("头").Contains("演练结论：通过") && r3.Render("头").Contains("演练结论：未通过"));
+    Check("BD-报告-渲染含逐表明细", r3.Render("头").Contains("备份时点 5000 行，临时库 4999 行"));
+    try { Directory.Delete(drillDir, true); } catch { }
+}
+
 Console.WriteLine("\n== 分层结果 ==");
 foreach (var name in new[] { "单元", "集成", "系统", "暴力", "万链", "制度补齐" })
     Console.WriteLine($"{name}: {layerPass.GetValueOrDefault(name)} / {layerPass.GetValueOrDefault(name) + layerFail.GetValueOrDefault(name)}");

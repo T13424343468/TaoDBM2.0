@@ -484,6 +484,7 @@ public partial class MainWindow : Window
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
                 Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
+                Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
                 Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
                 Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
