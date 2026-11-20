@@ -15,3 +15,4 @@ coverage-func S08 对象树-展开数据库 => pass
 shot shot-07-table-tree.png 68549 bytes
 coverage-func S09 对象树-真实表清单 => pass
 coverage-func S10 查询-选中连接 => pass
+coverage-func S11 查询-新建查询入口 => pass
