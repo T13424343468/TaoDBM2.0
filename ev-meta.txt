@@ -30,3 +30,4 @@ tag=menu-item-invoked time=2026-11-20T23:59:40.9759624+00:00 appMem=168 MB
 tag=step-start S12 time=2026-11-20T23:59:45.6812027+00:00 appMem=172 MB
 tag=S12 run-invoked time=2026-11-20T23:59:49.7926226+00:00 appMem=179 MB
 tag=S12 result-shot time=2026-11-20T23:59:54.4927957+00:00 appMem=177 MB
+tag=S12 ledger-hit time=2026-11-20T23:59:56.2798480+00:00 appMem=177 MB
