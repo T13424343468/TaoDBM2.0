@@ -12,6 +12,18 @@ to support the 10s acceptance decision. Requires cloud real machine, idle window
   2. raise n_predict so answers complete (468/930 = 50.3% of A run truncated mid-thinking).
   Everything else identical (model, temp, corpus rev, runner).
 
+## Build fingerprint (mandatory, 2026-11-20 AI-version line directive)
+- Every rethrow request and every score sheet MUST carry the build fingerprint:
+  the verbatim output of `llama-cli --version` for the exact binary used.
+- Runners record it automatically as `BUILD_FINGERPRINT <tag> <verbatim>` in run.log
+  before the first question of the round.
+- A B1 round on a different llama.cpp build than B0 is NOT comparable (cross-build
+  kernel float jitter, 362/930 answer-level delta, verdict 2026-11-20): the score sheet
+  must flag the build change explicitly, and the round is void for A/B delta and 99%
+  acceptance purposes.
+- Accounts without a fingerprint are treated as non-comparable; they are not valid
+  evidence for any acceptance decision.
+
 ## Manifest
 ab_manifest.json: selection_45 (model-selection set) + trap_30 (all TRAP) + trunc_stratified_25.
 
