@@ -67,12 +67,21 @@
                 <ColumnDefinition x:Name="MainCol" Width="*" MinWidth="480"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 左侧连接树：仅显示连接 / 库 / 表 -->
+            <!-- 左侧连接树：仅显示连接 / 库 / 表；顶部挂元数据失败重试条（s2） -->
             <Border x:Name="TreeBorder" Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
-                <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
-                          Expanding="OnNodeExpanding"
-                          SelectionChanged="OnTreeSelection"
-                          RightTapped="OnTreeRightTapped"/>
+                <StackPanel>
+                    <InfoBar x:Name="MetaRetryBar" IsOpen="False" Severity="Warning"
+                             Title="元数据加载失败" Message=""
+                             IsClosable="True" Margin="4,4,4,0">
+                        <InfoBar.ActionButton>
+                            <Button Content="重试" Click="OnMetaRetry"/>
+                        </InfoBar.ActionButton>
+                    </InfoBar>
+                    <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
+                              Expanding="OnNodeExpanding"
+                              SelectionChanged="OnTreeSelection"
+                              RightTapped="OnTreeRightTapped"/>
+                </StackPanel>
             </Border>
 
             <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复） -->

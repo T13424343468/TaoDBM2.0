@@ -680,6 +680,7 @@ public partial class MainWindow : Window
                     SetStatus($"{info.Db} · {info.Name}：{objCount} 项");
                     break;
             }
+            MetaRetryBar.IsOpen = false;   // s2：装载成功收重试条
         }
         catch (Exception ex)
         {
@@ -689,7 +690,20 @@ public partial class MainWindow : Window
             // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
             Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
             SetStatus("加载失败：" + ex.Message);
+            // s2 失败重试条：元数据加载失败时顶部亮重试条，点重试即重载该节点
+            _metaRetryNode = node;
+            MetaRetryBar.Message = $"{info.Name}：{ex.Message}";
+            MetaRetryBar.IsOpen = true;
         }
+    }
+
+    private TreeViewNode? _metaRetryNode;
+
+    /// <summary>s2 重试条动作：重载最近一次装载失败的节点，成功后收条。</summary>
+    private void OnMetaRetry(object sender, RoutedEventArgs e)
+    {
+        MetaRetryBar.IsOpen = false;
+        if (_metaRetryNode is not null) RefreshNode(_metaRetryNode);
     }
 
     private void OnTreeSelection(TreeView sender, TreeViewSelectionChangedEventArgs args)

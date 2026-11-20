@@ -269,6 +269,26 @@ public static class DiagnosticsDialog
         AddLine(report, $"共有 {waits.Count} 条等待边：");
         foreach (var w in waits) AddLine(report, $"  {w.Waiter} 等 {w.Holder}（{w.Resource}）");
 
+        // s16：冻结快照 + 终止会话（危险确认+留痕）+ 复制诊断包
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
+        var freezeBtn = new Button { Content = "冻结快照", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        freezeBtn.Click += (_, _) => _ = FreezeSnapshotAsync(info, prov, dbName, waits, status);
+        actions.Children.Add(freezeBtn);
+        foreach (var id in waits.Select(w => w.Holder).Distinct().Take(5))
+        {
+            var killBtn = new Button { Content = $"终止会话 {id}", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+            var sid = id;
+            killBtn.Click += (_, _) => _ = KillSessionAsync(owner, info, prov, dbName, sid, status);
+            actions.Children.Add(killBtn);
+        }
+        if (ReplicationCatalog.Supported(info.Profile.Engine))
+        {
+            var packBtn = new Button { Content = "复制诊断包", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+            packBtn.Click += (_, _) => _ = ReplicationPackAsync(info, prov, dbName, waits, status);
+            actions.Children.Add(packBtn);
+        }
+        report.Children.Add(actions);
+
         var cycles = LockAnalyzer.FindDeadlocks(waits);
         if (cycles.Count == 0)
         {
@@ -290,6 +310,90 @@ public static class DiagnosticsDialog
         AddLine(report, "建议终止回滚代价最小的会话解开环。以下草稿已放进查询窗口，确认后再执行：", Ant.Primary);
         foreach (var d in drafts) AddLine(report, "  " + d, Ant.Primary);
         if (drafts.Count > 0) owner.OpenQueryTab(info, string.Join(";\n", drafts));
+    }
+
+    /// <summary>s16 冻结快照：把当前锁等待现场原样落盘（含时间戳），供事后回溯比对。</summary>
+    private static async Task FreezeSnapshotAsync(NodeInfo info, IDbProvider prov, string dbName,
+        List<LockWait> waits, TextBlock status)
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"# TaoDBM 锁等待冻结快照 {DateTime.Now:yyyy-MM-dd HH:mm:ss} engine={info.Profile.Engine} db={dbName}");
+            foreach (var w in waits) sb.AppendLine($"{w.Waiter}\t等\t{w.Holder}\t{w.Resource}");
+            var file = TaoPaths.FilePath($"lock-snapshot-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            await File.WriteAllTextAsync(file, sb.ToString());
+            AppLog.Write($"[锁冻结快照] waits={waits.Count} file={Path.GetFileName(file)}");
+            status.Text = "冻结快照已落盘：" + file;
+        }
+        catch (Exception ex) { status.Text = "冻结快照失败：" + ex.Message; }
+    }
+
+    /// <summary>s16 终止会话：高风险操作，显式输入会话 ID 解除（分级确认），执行后留痕。</summary>
+    private static async Task KillSessionAsync(MainWindow owner, NodeInfo info, IDbProvider prov, string dbName,
+        string sessionId, TextBlock status)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = "终止会话（危险操作）",
+            Content = new StackPanel { Spacing = 8, MinWidth = 380 },
+            PrimaryButtonText = "终止",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        var box = new TextBox { PlaceholderText = $"输入会话 ID {sessionId} 以确认" };
+        ((StackPanel)confirm.Content).Children.Add(new TextBlock
+        {
+            Text = $"将执行 {LockAnalyzer.KillSql(sessionId, info.Profile.Engine)}，回滚可能需要时间，且该会话未提交事务会丢失。",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.Error,
+        });
+        ((StackPanel)confirm.Content).Children.Add(box);
+        if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+        if (box.Text.Trim() != sessionId) { status.Text = "会话 ID 不符，未执行。"; return; }
+        try
+        {
+            var kill = LockAnalyzer.KillSql(sessionId, info.Profile.Engine);
+            if (string.IsNullOrEmpty(kill)) { status.Text = "该引擎没有可用的终止会话语句。"; return; }
+            await prov.Execute(dbName, kill);
+            AppLog.Write($"[终止会话] engine={info.Profile.Engine} session={sessionId}");
+            status.Text = $"会话 {sessionId} 已终止（回滚由数据库自行进行）。";
+        }
+        catch (Exception ex) { status.Text = "终止会话失败：" + ex.Message; }
+    }
+
+    /// <summary>s16 复制诊断包：复制状态 + 锁等待现场打包落盘，供贴给 DBA 排查。</summary>
+    private static async Task ReplicationPackAsync(NodeInfo info, IDbProvider prov, string dbName,
+        List<LockWait> waits, TextBlock status)
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"# TaoDBM 复制诊断包 {DateTime.Now:yyyy-MM-dd HH:mm:ss} engine={info.Profile.Engine} db={dbName}");
+            foreach (var sql in new[] { ReplicationCatalog.ReplicasSql(info.Profile.Engine), ReplicationCatalog.ReplicaSelfStatusSql(info.Profile.Engine) })
+            {
+                if (sql is null) continue;
+                sb.AppendLine($"## {sql}");
+                try
+                {
+                    var rs = await prov.Execute(dbName, sql);
+                    var r = rs.LastOrDefault();
+                    if (r is null) { sb.AppendLine("（无结果）"); continue; }
+                    sb.AppendLine(string.Join("\t", r.Columns));
+                    foreach (var row in r.Rows) sb.AppendLine(string.Join("\t", row.Select(S)));
+                }
+                catch (Exception ex) { sb.AppendLine("（查询失败：" + ex.Message + "）"); }
+            }
+            sb.AppendLine("## 锁等待现场");
+            foreach (var w in waits) sb.AppendLine($"{w.Waiter}\t等\t{w.Holder}\t{w.Resource}");
+            var file = TaoPaths.FilePath($"repl-pack-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            await File.WriteAllTextAsync(file, sb.ToString());
+            AppLog.Write($"[复制诊断包] file={Path.GetFileName(file)}");
+            status.Text = "复制诊断包已落盘：" + file;
+        }
+        catch (Exception ex) { status.Text = "复制诊断包失败：" + ex.Message; }
     }
 
     private static async Task SampleHealth(IDbProvider prov, DbEngine engine, string dbName,

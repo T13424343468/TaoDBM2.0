@@ -32,6 +32,7 @@ namespace TaoDBM
         internal Microsoft.UI.Xaml.Controls.ColumnDefinition MainCol = null!;
         internal Microsoft.UI.Xaml.Controls.Border TreeBorder = null!;
         internal Microsoft.UI.Xaml.Controls.GridSplitter TreeSplitter = null!;
+        internal Microsoft.UI.Xaml.Controls.InfoBar MetaRetryBar = null!;
     }
 
     public partial class App

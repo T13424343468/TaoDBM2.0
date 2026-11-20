@@ -19,7 +19,7 @@ public static class SmartToolsDialog
         // ── 慢查询诊断 ──
         var sqlBox = new TextBox { PlaceholderText = "粘贴一条 SELECT，做慢查询静态诊断与索引建议", MinWidth = 560 };
         var diagBtn = new Button { Content = "诊断 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        diagBtn.Click += (_, _) => RunDiag(sqlBox.Text, report, status);
+        diagBtn.Click += (_, _) => RunDiag(owner, info, sqlBox.Text, report, status);
 
         // ── 查询重测 ──
         var beforeBox = new TextBox { PlaceholderText = "改写前 SQL（SELECT）", MinWidth = 420 };
@@ -118,7 +118,7 @@ public static class SmartToolsDialog
     }
 
     // ── 慢查询诊断：静态规则 + 索引建议，全部基于用户粘贴文本 ──
-    private static void RunDiag(string sql, StackPanel report, TextBlock status)
+    private static void RunDiag(MainWindow owner, NodeInfo info, string sql, StackPanel report, TextBlock status)
     {
         report.Children.Clear();
         if (string.IsNullOrWhiteSpace(sql))
@@ -142,7 +142,7 @@ public static class SmartToolsDialog
                     AddLine(report, "  建议：" + f.Suggestion, indent: 1);
             }
 
-            // 索引建议（静态规则推断）
+            // 索引建议（静态规则推断）+ 一键生成索引 DDL（设计稿 §4 侧栏）
             var table = GuessTable(sql);
             if (table.Length > 0)
             {
@@ -151,6 +151,19 @@ public static class SmartToolsDialog
                 {
                     AddSection(report, "索引建议（仅供参考，请结合执行计划评估）");
                     foreach (var ddl in ddls) AddLine(report, ddl);
+                    var ddlBtn = new Button
+                    {
+                        Content = "一键生成索引 DDL → 编辑器",
+                        CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                        FontSize = AntTokens.FontMinor,
+                    };
+                    var ddlText = string.Join(";\n", ddls) + ";";
+                    ddlBtn.Click += (_, _) =>
+                    {
+                        owner.OpenQueryTab(info, "-- 一键索引 DDL（来自慢查询诊断建议，执行前请核对）\n" + ddlText);
+                        status.Text = "索引 DDL 已打开到查询编辑器，确认后再执行。";
+                    };
+                    report.Children.Add(ddlBtn);
                 }
             }
 

@@ -128,11 +128,75 @@ public static class UserPermissionDialog
             await NewUserDraftAsync(owner, profile.Engine, prov, status);
         };
 
+        // s3：改密 + 保存后新会话真实验证（不假承诺：验证失败如实报）
+        var passwdBtn = new Button { Content = "改密（真实验证）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        passwdBtn.Click += async (_, _) =>
+        {
+            var userBox = new TextBox { PlaceholderText = "用户名", Text = accountBox.SelectedIndex >= 0 && accountBox.SelectedIndex < accounts.Count ? accounts[accountBox.SelectedIndex].User : "" };
+            var hostBox = new TextBox { PlaceholderText = "来源主机（MySQL，如 %）", Text = accountBox.SelectedIndex >= 0 && accountBox.SelectedIndex < accounts.Count ? accounts[accountBox.SelectedIndex].Host : "%" };
+            var pwdBox = new PasswordBox { PlaceholderText = "新口令（仅本会话使用，不落盘）" };
+            var box = new StackPanel { Spacing = 10, MinWidth = 480 };
+            box.Children.Add(userBox);
+            if (profile.Engine == DbEngine.MySQL) box.Children.Add(hostBox);
+            box.Children.Add(pwdBox);
+            box.Children.Add(new TextBlock
+            {
+                Text = "改密后立即用新口令开一条新会话做真实验证；验证失败会如实报出，不会假称成功。",
+                FontSize = AntTokens.FontMinor,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Ant.TextSub,
+            });
+            var dlg = new ContentDialog
+            {
+                Title = "改密（真实验证）",
+                Content = box,
+                PrimaryButtonText = "执行改密",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
+            var u = userBox.Text.Trim();
+            var pwd = pwdBox.Password;
+            if (u.Length == 0 || pwd.Length == 0) { status.Text = "用户名与新口令均必填。"; return; }
+            string sql = profile.Engine switch
+            {
+                DbEngine.MySQL => $"ALTER USER '{u.Replace("'", "''")}'@'{hostBox.Text.Trim().Replace("'", "''")}' IDENTIFIED BY '{pwd.Replace("'", "''")}'",
+                DbEngine.PostgreSQL => $"ALTER USER \"{u.Replace("\"", "\"\"")}\" WITH PASSWORD '{pwd.Replace("'", "''")}'",
+                _ => "",
+            };
+            if (sql.Length == 0) { status.Text = "改密当前支持 MySQL / PostgreSQL；其他引擎请用数据库自带流程。"; return; }
+            try
+            {
+                await prov.Execute("", sql);
+                AppLog.Write($"[改密] engine={profile.Engine} user={u}（口令不落盘）");
+                // 新会话真实验证：用新口令另开连接测试
+                var verify = new ConnectionProfile
+                {
+                    Engine = profile.Engine,
+                    Host = profile.Host,
+                    Port = profile.Port,
+                    User = u,
+                    Password = pwd,
+                    Database = profile.Database,
+                };
+                bool ok;
+                string err = "";
+                try { await ProviderFactory.Create(verify).TestConnection(); ok = true; }
+                catch (Exception ex) { ok = false; err = ex.Message; }
+                status.Text = ok
+                    ? $"改密已执行，新会话用新口令连接验证通过（{u}）。"
+                    : $"改密语句已执行，但新会话验证失败：{err}。请核对口令策略/来源主机限制。";
+            }
+            catch (Exception ex) { status.Text = "改密失败：" + ex.Message; }
+        };
+
         var panel = new StackPanel { Spacing = 12, MinWidth = 460 };
         var topRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         topRow.Children.Add(accountBox);
         topRow.Children.Add(revokeBtn);
         topRow.Children.Add(createUserBtn);
+        topRow.Children.Add(passwdBtn);
         panel.Children.Add(topRow);
         panel.Children.Add(new TextBlock { Text = "权限矩阵", FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         panel.Children.Add(new ScrollViewer { Content = matrix, MaxHeight = 190, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
