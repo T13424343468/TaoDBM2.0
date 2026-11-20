@@ -403,7 +403,27 @@ jobs:
             Journal "port-dynamic-cleared"
             Set-ItemProperty -Path $tcp -Name Enabled -Value 1
             Journal "port-enabled-set"
-            Restart-Service -Name 'MSSQL$SQLEXPRESS' -Force
+            # run 191/192 定因：Restart-Service 对 SQL 服务启停超时容忍差，直接抛 ServiceCommandException
+            # 改为显式 Stop -> 轮询停止 -> sc.exe start（不依赖 PS 服务 cmdlet 短超时）-> 长轮询就绪
+            $svcName = 'MSSQL$SQLEXPRESS'
+            try { Stop-Service -Name $svcName -Force -ErrorAction Stop } catch { Journal "service-stop-exception: $($_.Exception.Message)" }
+            $stopped = $false
+            for ($si = 0; $si -lt 24; $si++) {
+              Start-Sleep -Seconds 5
+              $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+              if ($sst -and $sst.Status -eq 'Stopped') { $stopped = $true; break }
+            }
+            Journal "service-stopped=$stopped"
+            if (-not $stopped) { & sc.exe stop $svcName | Out-Host; Start-Sleep -Seconds 10; Journal "service-sc-stop-fallback" }
+            & sc.exe start $svcName | Out-Host
+            $started = $false
+            for ($si = 0; $si -lt 48; $si++) {
+              Start-Sleep -Seconds 5
+              $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+              if ($sst -and $sst.Status -eq 'Running') { $started = $true; break }
+            }
+            Journal "service-started=$started"
+            if (-not $started) { throw "sqlexpress service failed to reach Running after sc.exe start (240s)" }
             Journal "service-restarted"
           } catch {
             Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
