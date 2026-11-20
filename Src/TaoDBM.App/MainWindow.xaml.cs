@@ -462,6 +462,7 @@ public partial class MainWindow : Window
                 Item("编辑连接", async (_, _) => await EditConnection(info));
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
+                Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
