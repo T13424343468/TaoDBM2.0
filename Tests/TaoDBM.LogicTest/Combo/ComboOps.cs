@@ -611,8 +611,8 @@ public static class ComboOps
                     var count = ReconcileEngine.CountSql(d.Table, null, eng);
                     if (!count.Contains("COUNT(*)")) return "count sql malformed";
                     var chk = ReconcileEngine.ChecksumSql(d.Table, new[] { "id" }, null, eng);
-                    if (eng is DbEngine.MySQL or DbEngine.PostgreSQL && chk == null) return "checksum sql missing for engine with support";
-                    if (eng is DbEngine.SqlServer or DbEngine.SQLite && chk != null) return "checksum must fall back to null (ReconcileEngine.cs:34)";
+                    if (eng is DbEngine.MySQL or DbEngine.PostgreSQL or DbEngine.SqlServer or DbEngine.Oracle && chk == null) return "checksum sql missing for engine with support";
+                    if (eng is DbEngine.SQLite && chk != null) return "checksum must fall back to null (ReconcileEngine.cs:34)";
                     long n = d.DeclaredRows;
                     var v1 = ReconcileEngine.Compare(n, n, null, null);
                     if (v1.Level != "match") return $"equal counts verdict {v1.Level}";

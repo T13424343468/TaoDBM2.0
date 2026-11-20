@@ -37,11 +37,11 @@ public static class ShardingWizard
         var ps = $"ps_{SanitizeIdent(raw)}_hash";
         var plan = new List<string>
         {
-            $"-- SQL Server 无原生 HASH 分区：按 {rk} 取模 {n} 生成计算列后按 RANGE 分区（计算列需 PERSISTED 才能进分区键）",
             $"ALTER TABLE {t} ADD [taoshard] AS ({k} % {n}) PERSISTED;",
             $"CREATE PARTITION FUNCTION {fn} AS RANGE LEFT FOR VALUES ({string.Join(", ", Enumerable.Range(1, n - 1))});",
             $"CREATE PARTITION SCHEME {ps} AS PARTITION {fn} ALL TO ([PRIMARY]);",
             $"CREATE CLUSTERED INDEX [CIX_{SanitizeIdent(raw)}_shard] ON {t} ([taoshard]) ON {ps} ([taoshard]);",
+            $"-- SQL Server 无原生 HASH 分区：按 {rk} 取模 {n} 生成计算列后按 RANGE 分区（计算列需 PERSISTED 才能进分区键）",
         };
         return plan;
     }
@@ -181,11 +181,11 @@ public static class ShardingWizard
         var when = string.Join(" ", groups.Select((g, i) => $"WHEN {k} IN ({string.Join(", ", g.Values)}) THEN {i}"));
         var plan = new List<string>
         {
-            $"-- SQL Server 无 LIST 分区：按 {rk} 类别 {groups.Count} 组映射为计算列桶号后按 RANGE 分区",
             $"ALTER TABLE {t} ADD [taoshard] AS (CASE {when} ELSE {groups.Count} END) PERSISTED;",
             $"CREATE PARTITION FUNCTION {fn} AS RANGE LEFT FOR VALUES ({string.Join(", ", Enumerable.Range(1, groups.Count - 1))});",
             $"CREATE PARTITION SCHEME {ps} AS PARTITION {fn} ALL TO ([PRIMARY]);",
             $"CREATE CLUSTERED INDEX [CIX_{SanitizeIdent(raw)}_list] ON {t} ([taoshard]) ON {ps} ([taoshard]);",
+            $"-- SQL Server 无 LIST 分区：按 {rk} 类别 {groups.Count} 组映射为计算列桶号后按 RANGE 分区",
         };
         return plan;
     }
