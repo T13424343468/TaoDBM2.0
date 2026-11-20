@@ -333,9 +333,18 @@ jobs:
 
   ui-smoke:
     # 真机实况截图：装 MSI -> 真启动 TaoDBM -> 截真实窗口 -> 推公开分支供查看
+    # 三段并行拆段走查（2026-11-20 老板令：每次一小段，每段压进免费 runner 随机回收窗口内完赛；
+    # 三段互不依赖同时开跑，谁红修谁的；各段取证分支独立避免互相覆盖）
     runs-on: windows-latest
     timeout-minutes: 20
     needs: msi
+    strategy:
+      fail-fast: false
+      matrix:
+        seg:
+          - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
+          - { name: seg2, skip: "S06,S07,S08,S09,S17,S18,S19" }              # S01-S05 前缀 + S10-S16 SQL真执行
+          - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }          # S01-S05+S10-S12 前缀 + S17-S19 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -417,7 +426,7 @@ jobs:
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json -SkipIds "${{ matrix.seg.skip }}"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
 
       - name: Uninstall (restore clean state)
@@ -441,23 +450,23 @@ jobs:
           Set-Location ui-repo
           git init | Out-Null
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git fetch --depth 1 origin ui-smoke-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          git fetch --depth 1 origin ui-smoke-${{ matrix.seg.name }}-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-${{ matrix.seg.name }}-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-${{ matrix.seg.name }}-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
           git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
           if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
-          git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
-          git push origin ui-smoke-latest --force
-          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
+          git commit -m "ui-smoke walk shots run ${{ github.run_id }} ${{ matrix.seg.name }}" | Out-Null
+          git push origin ui-smoke-${{ matrix.seg.name }}-latest --force
+          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-${{ matrix.seg.name }}-latest/ui-smoke.png"
 
       - name: Upload UI smoke files (always, 供无凭据侧读取现场)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: taodbm-ui-smoke
+          name: taodbm-ui-smoke-${{ matrix.seg.name }}
           path: |
             shot-01-start.png
             shot-02-connect.png
