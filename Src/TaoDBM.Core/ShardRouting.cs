@@ -125,7 +125,7 @@ public static class ShardRouting
     private static string PlanFile(string table) => TaoPaths.FilePath($"shard-route-{Sanitize(table)}.json");
 
     private static string Sanitize(string s)
-        => new(s.Where(char.IsLetterOrDigit).ToArray()) is { Length: > 0 } v ? v : "plan";
+        => (new string(s.Where(char.IsLetterOrDigit).ToArray())) is { Length: > 0 } v ? v : "plan";
 
     /// <summary>把分片计划持久化到用户配置目录（按表名一文件），覆盖旧计划。</summary>
     public static void SavePlan(ShardPlan plan)

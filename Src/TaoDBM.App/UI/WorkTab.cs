@@ -352,7 +352,7 @@ public class WorkTab : Grid
         var msgs = new System.Text.StringBuilder();
         foreach (var r in list)
         {
-            panel.Children.Add(GridBuilder.Build(r));
+            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName));   // 批次E：结果网格右键分析/钉住
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
         }
         _resultsHost.Content = panel;
@@ -363,9 +363,9 @@ public class WorkTab : Grid
     {
         _last = new List<QueryResult> { r };
         FrameworkElement el;
-        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap);
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx));
-        else el = GridBuilder.Build(r);
+        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName);
+        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName);
+        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName);
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null

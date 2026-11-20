@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 行视觉与 GridBuilder.BuildRow 完全一致；窗口计算走 VirtualWindowMath（LogicTest 已覆盖边界）。</summary>
 public static class VirtualizedResultGrid
 {
-    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null)
+    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null)
     {
         int nCols = Math.Min(r.Columns.Count, 64);
         int total = r.Rows.Count;
@@ -30,6 +30,7 @@ public static class VirtualizedResultGrid
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 批次E：列头右键 → 分析/钉住
             Grid.SetColumn(cell, i);
             header.Children.Add(cell);
         }
@@ -72,7 +73,7 @@ public static class VirtualizedResultGrid
             rowsHost.Children.Clear();
             for (int rowIdx = first; rowIdx <= last; rowIdx++)
             {
-                var el = GridBuilder.BuildRow(r, rowIdx, nCols, onRowTap, rowH);
+                var el = GridBuilder.BuildRow(r, rowIdx, nCols, onRowTap, rowH, sourceSql, engine);
                 el.VerticalAlignment = VerticalAlignment.Top;
                 el.Margin = new Thickness(0, rowIdx * rowH, 0, 0);
                 rowsHost.Children.Add(el);

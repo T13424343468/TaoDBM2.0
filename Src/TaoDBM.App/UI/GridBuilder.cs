@@ -8,7 +8,7 @@ namespace TaoDBM.UI;
 /// <summary>把 QueryResult 渲染成表格（纯代码构建，Ant 风格表头）。</summary>
 public static class GridBuilder
 {
-    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null)
+    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null)
     {
         if (r.Columns.Count == 0)
         {
@@ -28,7 +28,7 @@ public static class GridBuilder
         if (r.Rows.Count > VirtualThreshold)
         {
             // 虚拟滚动（2026-11-20 夜批②）：大数据量窗口化渲染，万行级不卡；列宽规则与普通渲染一致
-            return VirtualizedResultGrid.Build(r, onRowTap);
+            return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine);
         }
 
         var grid = new Grid { RowSpacing = 0 };
@@ -49,6 +49,7 @@ public static class GridBuilder
                 TextTrimming = TextTrimming.CharacterEllipsis,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 批次E：列头右键 → 分析/钉住
             Grid.SetColumn(cell, i);
             header.Children.Add(cell);
         }
@@ -97,8 +98,10 @@ public static class GridBuilder
     public const int VirtualThreshold = 500;
 
     /// <summary>单行物化（普通渲染与虚拟渲染共用）：nCols 列单元格 + 隔行底色 + 可选行点选。
-    /// fixedHeight 供虚拟渲染锁行高（位移映射需要统一行高）；null 保持原自适应高度。</summary>
-    public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null)
+    /// fixedHeight 供虚拟渲染锁行高（位移映射需要统一行高）；null 保持原自适应高度。
+    /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。</summary>
+    public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null,
+        string? sourceSql = null, string? engine = null)
     {
         var row = r.Rows[rowIdx];
         var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null };
@@ -115,6 +118,7 @@ public static class GridBuilder
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
+            if (sourceSql != null) ResultGridMenu.Attach(cell, r, i, sourceSql, engine);
             Grid.SetColumn(cell, i);
             rowGrid.Children.Add(cell);
         }
