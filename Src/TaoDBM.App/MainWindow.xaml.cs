@@ -492,6 +492,7 @@ public partial class MainWindow : Window
                 Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
                 Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
                 Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
                 Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
@@ -504,6 +505,7 @@ public partial class MainWindow : Window
                 Item("新建查询", (_, _) => OpenQueryTab(info));
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
                 Item("拟真数据", (_, _) => OpenFaker(info));
                 break;
             case NodeKind.Category:
