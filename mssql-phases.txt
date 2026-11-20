@@ -1,29 +1,51 @@
-2026-11-20T16:06:37.2645813Z step-start pwsh=7.6.10
-2026-11-20T16:06:38.9308362Z direct-download-ok size=261082544
-2026-11-20T16:06:44.0335291Z unpack-exit=0
-2026-11-20T16:06:44.0455589Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-20T16:06:44.0483872Z setup-start
-2026-11-20T16:09:09.7514005Z setup-exit=0
-2026-11-20T16:09:14.7971540Z service-running
-2026-11-20T16:09:14.8065095Z registry-key=MSSQL15.SQLEXPRESS
-2026-11-20T16:09:14.8109000Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
-2026-11-20T16:09:14.8119847Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
-2026-11-20T16:09:14.8131559Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
-2026-11-20T16:09:14.8141600Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
-2026-11-20T16:09:14.8151434Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
-2026-11-20T16:09:14.8160880Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
-2026-11-20T16:09:14.8170821Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
-2026-11-20T16:09:14.8180464Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
-2026-11-20T16:09:14.8190960Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
-2026-11-20T16:09:14.8200699Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
-2026-11-20T16:09:14.8210500Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
-2026-11-20T16:09:14.8242580Z ipall-key-ensured
-2026-11-20T16:09:14.8276904Z port-tcpport-set
-2026-11-20T16:09:14.8289887Z port-dynamic-cleared
-2026-11-20T16:09:14.8300445Z port-enabled-set
-2026-11-20T16:09:21.1087959Z service-stopped=True
-2026-11-20T16:13:21.4533476Z service-started=False
-2026-11-20T16:13:21.8628910Z port-config-exception: System.Management.Automation.RuntimeException: sqlexpress service failed to reach Running after sc.exe start (240s)
-2026-11-20T16:13:21.8663127Z at At D:\a\_temp\a0ef0c69-f129-424a-b2b3-3f4a6183dd00.ps1:94 char:24
+2026-11-20T16:36:29.8609143Z step-start pwsh=7.6.10
+2026-11-20T16:36:31.8211792Z direct-download-ok size=261082544
+2026-11-20T16:36:38.3619362Z unpack-exit=0
+2026-11-20T16:36:38.3772314Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-20T16:36:38.3814481Z setup-start
+2026-11-20T16:39:58.0253340Z setup-exit=0
+2026-11-20T16:40:03.2145151Z service-running
+2026-11-20T16:40:03.2274801Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-20T16:40:03.2352695Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
+2026-11-20T16:40:03.2372770Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
+2026-11-20T16:40:03.2393498Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
+2026-11-20T16:40:03.2412399Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
+2026-11-20T16:40:03.2429778Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
+2026-11-20T16:40:03.2446708Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
+2026-11-20T16:40:03.2466191Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
+2026-11-20T16:40:03.2482355Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
+2026-11-20T16:40:03.2499620Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
+2026-11-20T16:40:03.2518453Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP5
+2026-11-20T16:40:03.2535887Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP6
+2026-11-20T16:40:03.2554481Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
+2026-11-20T16:40:03.2570377Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
+2026-11-20T16:40:03.2624936Z ipall-key-ensured
+2026-11-20T16:40:03.2687985Z port-tcpport-set
+2026-11-20T16:40:03.2712919Z port-dynamic-cleared
+2026-11-20T16:40:03.2731639Z port-enabled-set
+2026-11-20T16:40:09.2948275Z service-stopped=True
+2026-11-20T16:40:09.4508883Z sc-start-out: SERVICE_NAME: MSSQL$SQLEXPRESS 
+        TYPE               : 10  WIN32_OWN_PROCESS  
+        STATE              : 2  START_PENDING 
+                                (NOT_STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN)
+        WIN32_EXIT_CODE    : 0  (0x0)
+        SERVICE_EXIT_CODE  : 0  (0x0)
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x7d0
+        PID                : 2880
+        FLAGS              :
+2026-11-20T16:40:14.4566487Z service-poll: Stopped
+2026-11-20T16:41:14.5438297Z service-poll: Stopped
+2026-11-20T16:42:14.6013291Z service-poll: Stopped
+2026-11-20T16:43:14.6513648Z service-poll: Stopped
+2026-11-20T16:44:14.7004738Z service-poll: Stopped
+2026-11-20T16:45:14.7527240Z service-poll: Stopped
+2026-11-20T16:46:14.8311824Z service-poll: Stopped
+2026-11-20T16:47:14.8842894Z service-poll: Stopped
+2026-11-20T16:48:14.9289781Z service-poll: Stopped
+2026-11-20T16:49:15.0006533Z service-poll: Stopped
+2026-11-20T16:50:10.0938559Z service-started=False
+2026-11-20T16:50:10.1365646Z port-config-exception: System.Management.Automation.RuntimeException: sqlexpress service failed to reach Running after sc.exe start (600s)
+2026-11-20T16:50:10.1407355Z at At D:\a\_temp\3f4079cd-6d37-4447-a0c5-336a44a1df9b.ps1:99 char:24
 + … $started) { throw "sqlexpress service failed to reach Running after s …
 +               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
