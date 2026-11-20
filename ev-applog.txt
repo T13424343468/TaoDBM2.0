@@ -5,3 +5,4 @@
 2026-11-20 23:06:04.540 托盘: 向系统注册成功
 2026-11-20 23:06:54.408 [对象树] 连接展开 engine=MySQL dbs=5 [information_schema,mysql,performance_schema,sys,taodbmui]
 2026-11-20 23:07:08.505 [对象树] 库展开 db=taodbmui children=2 [orders,products]
+2026-11-20 23:07:39.157 [Flyout] opening
