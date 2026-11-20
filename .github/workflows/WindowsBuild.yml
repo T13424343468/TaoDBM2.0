@@ -414,32 +414,32 @@ jobs:
           }
           Start-Sleep -Seconds 10
           Write-Host "[MSSQL] static TCP 1433 configured; service restarted"
-          # 连通自愈：先试 1433；不通则从 ERRORLOG 解析动态端口重试，最终端口落 GITHUB_ENV 供矩阵步骤用
+          # run 197 定因：SQL 服务状态 Running 后仍需 10-20min 才真正监听（master 恢复极慢）
+          # 连通环改为长等待：每 10s 试连一次，失败即重解析 ERRORLOG 动态端口，总预算约 22min
           $mssqlPort = 1433
           $okConn = $false
           $connErr = ''
-          for ($round = 0; $round -lt 2 -and -not $okConn; $round++) {
+          $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+          for ($ci = 0; $ci -lt 132 -and -not $okConn; $ci++) {
             $cs = "Server=localhost,$mssqlPort;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
-            for ($ci = 0; $ci -lt 24; $ci++) {
-              try {
-                $cc = New-Object System.Data.SqlClient.SqlConnection $cs
-                $cc.Open()
-                $cVer = $cc.CreateCommand()
-                $cVer.CommandText = 'SELECT @@VERSION'
-                Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
-                $cc.Close()
-                $okConn = $true
-                break
-              } catch { $connErr = $_.Exception.Message; if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }; Start-Sleep -Seconds 5 }
-            }
-            if (-not $okConn -and $round -eq 0) {
-              # 从 ERRORLOG 解析实际监听端口（动态端口兜底）
-              $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+            try {
+              $cc = New-Object System.Data.SqlClient.SqlConnection $cs
+              $cc.Open()
+              $cVer = $cc.CreateCommand()
+              $cVer.CommandText = 'SELECT @@VERSION'
+              Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
+              $cc.Close()
+              $okConn = $true
+              break
+            } catch {
+              $connErr = $_.Exception.Message
+              if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }
+              Start-Sleep -Seconds 10
               if ($logDir) {
                 $listen = Select-String -Path $logDir.FullName -Pattern "'(\d{4,5})'" -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Where-Object { $_ -ne '1433' } | Select-Object -First 1
-                if ($listen) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
-                else { Journal "errorlog-no-port; first lines:"; Get-Content $logDir.FullName -TotalCount 40 -ErrorAction SilentlyContinue | Add-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" }
-              } else { Journal "errorlog-not-found" }
+                if ($listen -and [int]$listen -ne $mssqlPort) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
+              }
+              if ($ci % 12 -eq 0) { Journal "connect-poll: attempt=$ci port=$mssqlPort" }
             }
           }
           if (-not $okConn) { Journal "tcp-connect-failed: $connErr"; Write-Host "::error::sqlserver tcp connectivity failed: $connErr"; exit 1 }
