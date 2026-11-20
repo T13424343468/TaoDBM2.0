@@ -1177,6 +1177,9 @@ jobs:
       fail-fast: false
       matrix:
         db: [mysql, mssql]
+        seg:
+          - { name: a, skip: "S13,S14,S15,S16,S17,S18,S19" }
+          - { name: b, skip: "S06,S07,S08,S09,S10,S11,S12" }
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1527,7 +1530,7 @@ jobs:
         shell: pwsh
         env:
           # #154 定谳：mysql/mssql 并行走查共用取证分支会互相覆盖 MSSQL 现场，按库独立分支
-          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.db }}
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.db }}-${{ matrix.seg.name }}
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
@@ -1538,7 +1541,7 @@ jobs:
           # host 字段自由文本直进连接串，"localhost,<port>" 由 SqlClient 原生解析，免服务重启
           $dbhost = "${{ matrix.db }}" -eq 'mysql' ? 'localhost' : "localhost,$($env:MSSQL_PORT)"
           Write-Host "[WALK] dbhost=$dbhost"
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName $dbhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName $dbhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui -SkipIds "${{ matrix.seg.skip }}"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed (${{ matrix.db }})"; exit 1 }
 
       - name: Push evidence to public branch
@@ -1551,7 +1554,7 @@ jobs:
           Set-Location ui-repo
           git init | Out-Null
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          $branch = "ui-walk-${{ matrix.db }}-latest"
+          $branch = "ui-walk-${{ matrix.db }}-${{ matrix.seg.name }}-latest"
           git fetch --depth 1 origin $branch 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
           Copy-Item mssql-evidence.txt -Force -ErrorAction SilentlyContinue
@@ -1570,7 +1573,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: taodbm-ui-smoke-${{ matrix.db }}
+          name: taodbm-ui-smoke-${{ matrix.db }}-${{ matrix.seg.name }}
           path: |
             ui-coverage.txt
             ui-walk-report.txt

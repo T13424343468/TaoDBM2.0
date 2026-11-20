@@ -629,14 +629,16 @@ foreach ($s in $plan.steps) {
           Push-Evidence "S17c dialog-scan-start"
           # run 202 定谳：UIA 桌面 FindAll 扫描是多轮走查暴毙统一死亡点（COM 崩溃无红账）；
           # 改纯 user32 EnumWindows 枚举顶层可见窗口，热点路径零 UIA
-          $script:s17dlg = New-Object System.Collections.Generic.List[IntPtr]
-          $enumCb = [WinNative+EnumProc]{ param($hEnum, $lEnum)
-            if ([WinNative]::IsWindowVisible($hEnum)) { $script:s17dlg.Add($hEnum) | Out-Null }
-            return $true
-          }
-          [WinNative]::EnumWindows($enumCb, [IntPtr]::Zero) | Out-Null
-          Push-Evidence "S17c enum-count=$($script:s17dlg.Count)"
-          foreach ($h in $script:s17dlg) {
+          # run 204: EnumWindows scriptblock delegate threw inside callback (S17c scan-err);
+          # iterate top-level dialogs via FindWindowExW class walk instead - zero callback, zero UIA
+          $dlgHwnds = New-Object System.Collections.Generic.List[IntPtr]
+          $hScan = [IntPtr]::Zero
+          do {
+            $hScan = [WinNative]::FindWindowExW([IntPtr]::Zero, $hScan, '#32770', $null)
+            if ($hScan -ne [IntPtr]::Zero -and [WinNative]::IsWindowVisible($hScan)) { $dlgHwnds.Add($hScan) | Out-Null }
+          } while ($hScan -ne [IntPtr]::Zero)
+          Push-Evidence "S17c dlg-count=$($dlgHwnds.Count)"
+          foreach ($h in $dlgHwnds) {
             if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
             if ($h -eq $handle -or $h -eq [IntPtr]::Zero) { continue }
             try {
