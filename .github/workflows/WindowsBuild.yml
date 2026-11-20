@@ -452,7 +452,8 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          git config user.email "ci@taodbm.local"; git config user.name "TaoDBM CI"
+          # --global：ev-repo 是新建仓库，本地 config 不生效（#183 定因：commit 无身份 → post-mortem 自身 exit 1）
+          git config --global user.email "ci@taodbm.local"; git config --global user.name "TaoDBM CI"
           New-Item -ItemType Directory -Force ev-repo | Out-Null
           Set-Location ev-repo
           git init | Out-Null
@@ -464,8 +465,9 @@ jobs:
           Copy-Item ..\test-output.txt -Force -ErrorAction SilentlyContinue
           git add -A 2>$null
           git commit --allow-empty -m "realdb-mssql evidence run ${{ github.run_id }}" | Out-Null
-          git push origin $branch --force
+          git push origin $branch --force 2>&1 | Out-Host
           Write-Host "[PUSHED] https://raw.githubusercontent.com/${{ github.repository }}/$branch/mssql-phases.txt"
+          exit 0
 
   app-build:
     runs-on: windows-latest
