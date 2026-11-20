@@ -424,7 +424,7 @@ jobs:
                 $cc.Open()
                 $cVer = $cc.CreateCommand()
                 $cVer.CommandText = 'SELECT @@VERSION'
-                Write-Host ("[MSSQL] connected on port $mssqlPort: " + $cVer.ExecuteScalar())
+                Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
                 $cc.Close()
                 $okConn = $true
                 break
