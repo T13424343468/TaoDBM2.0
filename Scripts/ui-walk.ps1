@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern IntPtr SendMessageW(IntPtr hWnd, uint msg, IntPtr wp, IntPtr lp); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); public delegate bool EnumProc(IntPtr hWnd, IntPtr lParam); [DllImport(\"user32.dll\")] public static extern bool EnumWindows(EnumProc cb, IntPtr lParam); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -624,19 +624,26 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds 2
         if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before dialog scan" }
         $picked = $false
+        $script:s17logged = @()
         try {
           Push-Evidence "S17c dialog-scan-start"
-          $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-          Push-Evidence "S17c dialog-scan-count=$($wins.Count)"
-          foreach ($w in $wins) {
+          # run 202 定谳：UIA 桌面 FindAll 扫描是多轮走查暴毙统一死亡点（COM 崩溃无红账）；
+          # 改纯 user32 EnumWindows 枚举顶层可见窗口，热点路径零 UIA
+          $script:s17dlg = New-Object System.Collections.Generic.List[IntPtr]
+          $enumCb = [WinNative+EnumProc]{ param($hEnum, $lEnum)
+            if ([WinNative]::IsWindowVisible($hEnum)) { $script:s17dlg.Add($hEnum) | Out-Null }
+            return $true
+          }
+          [WinNative]::EnumWindows($enumCb, [IntPtr]::Zero) | Out-Null
+          Push-Evidence "S17c enum-count=$($script:s17dlg.Count)"
+          foreach ($h in $script:s17dlg) {
             if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
-            $h = $w.Current.NativeWindowHandle
-            if ($h -eq $handle -or $h -eq 0) { continue }
+            if ($h -eq $handle -or $h -eq [IntPtr]::Zero) { continue }
             try {
               $cn = New-Object System.Text.StringBuilder 256
               [WinNative]::GetClassNameW($h, $cn, 256) | Out-Null
               $cls = $cn.ToString()
-              Push-Evidence "S17c class=$cls"
+              if ($script:s17logged -notcontains $cls) { $script:s17logged += $cls; Push-Evidence "S17c class=$cls" }
               if ($cls -notmatch '32770|Picker') { continue }
               # 句柄直取：经典 #32770 文件名编辑框直挂 Edit；Explorer 风格走 ComboBox 内 Edit
               $edit = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'Edit', $null)
