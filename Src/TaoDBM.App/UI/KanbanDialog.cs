@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 钉住入口在结果网格右键（ResultGridMenu），本弹窗是看板的统一管理面。</summary>
 public static class KanbanDialog
 {
-    public static void Show(FrameworkElement owner, IDbProvider? provider)
+    public static void Show(MainWindow owner, IDbProvider? provider)
     {
         var pinsHost = new StackPanel { Spacing = 10, MinWidth = 640 };
         var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
@@ -18,7 +18,7 @@ public static class KanbanDialog
             Title = "看板（钉住与定时刷新）",
             Content = new ScrollViewer { Content = pinsHost, MaxHeight = 520 },
             CloseButtonText = "关闭",
-            XamlRoot = owner.XamlRoot,
+            XamlRoot = owner.Content.XamlRoot,
         };
 
         // 对话框打开期间才挂刷新表：关窗即停，不后台空转（家法：不激活不空转）
