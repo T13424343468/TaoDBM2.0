@@ -26,9 +26,9 @@ public static class MigrationResumeDialog
             TextWrapping = TextWrapping.Wrap, FontFamily = new FontFamily("Consolas"),
         };
         var report = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var planBtn = new Button { Content = "重算续传计划", CornerRadius = new CornerRadius(4) };
-        var saveBtn = new Button { Content = "另存状态 JSON", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var planBtn = new Button { Content = "重算续传计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saveBtn = new Button { Content = "另存状态 JSON", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
 
         planBtn.Click += async (_, _) =>
         {
@@ -109,7 +109,7 @@ public static class MigrationResumeDialog
         panel.Children.Add(new TextBlock
         {
             Text = $"断点续传预演（{source}）：清单记基线，状态记水位，重启后重算——完成的表只校验、半途的表从水位续、未动的表整表拷。只预演不执行。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(manifestBox);
         panel.Children.Add(stateBox);
@@ -132,7 +132,7 @@ public static class MigrationResumeDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });
@@ -142,7 +142,7 @@ public static class MigrationResumeDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

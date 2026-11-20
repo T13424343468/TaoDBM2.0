@@ -37,7 +37,7 @@ public static class ResultGridMenu
         sp.Children.Add(new TextBlock { Text = s.Headline, TextWrapping = TextWrapping.Wrap, Foreground = Ant.Text });
         if (s.Top.Count > 0)
         {
-            sp.Children.Add(new TextBlock { Text = "TopN（计数降序）", Foreground = Ant.TextSub, FontSize = 12 });
+            sp.Children.Add(new TextBlock { Text = "TopN（计数降序）", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor });
             foreach (var (val, cnt) in s.Top)
                 sp.Children.Add(new TextBlock
                 {

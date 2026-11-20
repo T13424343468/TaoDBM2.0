@@ -14,12 +14,12 @@ public static class MaskPreviewDialog
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         var tableBox = new TextBox { PlaceholderText = "表名", MinWidth = 220, Text = info.Kind == NodeKind.Table ? info.Name : "" };
         var limitBox = new TextBox { PlaceholderText = "行数", Text = "20", MinWidth = 80 };
 
-        var runBtn = new Button { Content = "预览脱敏效果", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "预览脱敏效果", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var output = new TextBox
         {
             IsReadOnly = true,
@@ -27,7 +27,7 @@ public static class MaskPreviewDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 300,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "填好表名后点「预览脱敏效果」。",
         };
 
@@ -39,7 +39,7 @@ public static class MaskPreviewDialog
             Text = "按列名推断敏感档位（手机 / 邮箱 / 证件号 / 姓名 / 银行卡 / 密码类）并打码预览，只读少量行，不改库中数据；正式导出走同一套规则。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row1.Children.Add(tableBox);

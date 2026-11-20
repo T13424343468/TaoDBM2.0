@@ -13,7 +13,7 @@ public static class ReadRouterDialog
 {
     public static Task Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         var nodesBox = new TextBox
@@ -22,12 +22,12 @@ public static class ReadRouterDialog
             Height = 132,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "副本A,3,1\n副本B,12,1\n副本C,2,0",
         };
         var lagBox = new TextBox { Header = "最大可接受延迟（秒）", Text = "10", Width = 160 };
-        var routeBtn = new Button { Content = "路由一次读请求", CornerRadius = new CornerRadius(4) };
-        var toggleBtn = new Button { Content = "摘除 / 加回建议", CornerRadius = new CornerRadius(4) };
+        var routeBtn = new Button { Content = "路由一次读请求", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var toggleBtn = new Button { Content = "摘除 / 加回建议", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         routeBtn.Click += async (_, _) => await RunRouteAsync(nodesBox.Text, lagBox.Text, report, status);
         toggleBtn.Click += async (_, _) => await RunToggleAsync(nodesBox.Text, lagBox.Text, report, status);
@@ -42,7 +42,7 @@ public static class ReadRouterDialog
             Text = "每行一个副本：名称,延迟秒,健康(1/0)。引擎按健康且延迟达标的副本排序选读节点，全部不达标回落主库；纯计算，不触库。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(nodesBox);
         panel.Children.Add(lagBox);
@@ -60,7 +60,7 @@ public static class ReadRouterDialog
         var topoTitle = new TextBlock
         {
             Text = "分片拓扑接入",
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),
@@ -72,7 +72,7 @@ public static class ReadRouterDialog
             topoPanel.Children.Add(new TextBlock
             {
                 Text = "暂无已注册的分片计划：在分库分区分表向导勾选「方案接入读写分离路由」后，分片节点会并入此视图。",
-                FontSize = 12,
+                FontSize = AntTokens.FontMinor,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = Ant.TextSub,
             });
@@ -84,7 +84,7 @@ public static class ReadRouterDialog
                 topoPanel.Children.Add(new TextBlock
                 {
                     Text = ShardRouting.PlanSummary(plan),
-                    FontSize = 12,
+                    FontSize = AntTokens.FontMinor,
                     Foreground = Ant.TextSub,
                     TextWrapping = TextWrapping.Wrap,
                 });
@@ -93,7 +93,7 @@ public static class ReadRouterDialog
                     topoPanel.Children.Add(new TextBlock
                     {
                         Text = $"  [{n.Role}] {n.Name}｜{n.State}｜{n.Detail}",
-                        FontSize = 12,
+                        FontSize = AntTokens.FontMinor,
                         FontFamily = new FontFamily("Consolas"),
                         TextWrapping = TextWrapping.Wrap,
                     });
@@ -102,7 +102,7 @@ public static class ReadRouterDialog
             topoPanel.Children.Add(new TextBlock
             {
                 Text = "分片节点为注册态只读展示：主从角色探测以 ReplicationCatalog 为准，分片路由决策见向导联动页。",
-                FontSize = 12,
+                FontSize = AntTokens.FontMinor,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = Ant.TextSub,
             });
@@ -219,7 +219,7 @@ public static class ReadRouterDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
@@ -231,7 +231,7 @@ public static class ReadRouterDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

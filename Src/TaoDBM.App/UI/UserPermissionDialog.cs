@@ -26,19 +26,19 @@ public static class UserPermissionDialog
         var matrix = new TextBlock
         {
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             IsTextSelectionEnabled = true,
             TextWrapping = TextWrapping.Wrap,
         };
-        var riskBox = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = Ant.Error };
+        var riskBox = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.Error };
         var revokeBtn = new Button
         {
             Content = "生成回收草稿",
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
             IsEnabled = false,
         };
-        var createUserBtn = new Button { Content = "新建用户（草稿）", CornerRadius = new CornerRadius(4) };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var createUserBtn = new Button { Content = "新建用户（草稿）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         List<(string User, string Host)> accounts = new();
         AccountGrants? current = null;
@@ -134,7 +134,7 @@ public static class UserPermissionDialog
         topRow.Children.Add(revokeBtn);
         topRow.Children.Add(createUserBtn);
         panel.Children.Add(topRow);
-        panel.Children.Add(new TextBlock { Text = "权限矩阵", FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        panel.Children.Add(new TextBlock { Text = "权限矩阵", FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         panel.Children.Add(new ScrollViewer { Content = matrix, MaxHeight = 190, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(riskBox);
         panel.Children.Add(status);
@@ -171,7 +171,7 @@ public static class UserPermissionDialog
         box.Children.Add(new TextBlock
         {
             Text = "只生成 CREATE USER 草稿；口令不由本界面设置，创建后请在数据库侧用 ALTER USER 设口令。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
         });

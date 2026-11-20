@@ -15,16 +15,16 @@ public static class DiagnosticsDialog
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
-        var runBtn = new Button { Content = "开始诊断", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "开始诊断", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var sqlBox = new TextBox
         {
             PlaceholderText = "粘贴一条 SELECT / UPDATE 等 SQL，跑执行计划并标注瓶颈",
             MinWidth = 520,
         };
-        var planBtn = new Button { Content = "诊断这条 SQL", CornerRadius = new CornerRadius(4) };
+        var planBtn = new Button { Content = "诊断这条 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         runBtn.Click += async (_, _) => await RunDiagAsync(owner, info, prov, report, status);
         planBtn.Click += async (_, _) => await RunPlanAsync(prov, CurrentDb(info), sqlBox.Text, report, status);
@@ -42,7 +42,7 @@ public static class DiagnosticsDialog
             Text = "只读体检：连通性 / 版本 / 规模 / 锁等待与死锁 / 数据抽样体检；SQL 计划诊断只跑 EXPLAIN，不改数据。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(topBar);
         panel.Children.Add(new ScrollViewer
@@ -83,7 +83,7 @@ public static class DiagnosticsDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
@@ -96,7 +96,7 @@ public static class DiagnosticsDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

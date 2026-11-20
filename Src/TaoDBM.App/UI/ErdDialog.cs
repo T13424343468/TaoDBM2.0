@@ -37,7 +37,7 @@ public static class ErdDialog
         _hint = new TextBlock
         {
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(12, 10, 0, 0),
             Text = "选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。",
@@ -70,12 +70,12 @@ public static class ErdDialog
             }, "ER图默认库列表");
         }
 
-        var genBtn = new Button { Content = "生成 ER 图", CornerRadius = new CornerRadius(4) };
-        var layoutBtn = new Button { Content = "重新布局", CornerRadius = new CornerRadius(4) };
-        var pngBtn = new Button { Content = "导出 PNG", CornerRadius = new CornerRadius(4) };
-        var saveBtn = new Button { Content = "保存布局", CornerRadius = new CornerRadius(4) };
-        var openBtn = new Button { Content = "打开布局", CornerRadius = new CornerRadius(4) };
-        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = new CornerRadius(4) };
+        var genBtn = new Button { Content = "生成 ER 图", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var layoutBtn = new Button { Content = "重新布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var pngBtn = new Button { Content = "导出 PNG", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saveBtn = new Button { Content = "保存布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var openBtn = new Button { Content = "打开布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         ddlBtn.Click += async (_, _) =>
         {
             if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型，再正向生成 DDL。"; return; }
@@ -151,7 +151,7 @@ public static class ErdDialog
             },
             BorderBrush = Ant.Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
             Height = 560,
         };
         panel.Children.Add(border);
@@ -216,7 +216,7 @@ public static class ErdDialog
             Background = Ant.Card,
             BorderBrush = Ant.Primary,
             BorderThickness = new Thickness(1.5),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
             Padding = new Thickness(10, 6, 10, 6),
             MinWidth = 180,
             MaxWidth = 260,
@@ -229,7 +229,7 @@ public static class ErdDialog
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 0, 0, 4),
         });
-        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = 12, LineHeight = 16, Foreground = Ant.TextSub });
+        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = AntTokens.FontMinor, LineHeight = 16, Foreground = Ant.TextSub });
         box.Child = stack;
 
         double startX = 0, startY = 0, baseX = t.X, baseY = t.Y;

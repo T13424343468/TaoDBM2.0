@@ -19,11 +19,11 @@ public class ConnectionDialog
     private readonly TextBox _database = new() { Header = "默认数据库" };
     private readonly TextBox _file = new() { Header = "数据库文件路径（SQLite）" };
     private readonly TextBox _params = new() { Header = "附加参数（k=v;k2=v2）" };
-    private readonly Button _tnsBtn = new() { Content = "从 tnsnames.ora 解析服务名", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4), Visibility = Visibility.Collapsed };
+    private readonly Button _tnsBtn = new() { Content = "从 tnsnames.ora 解析服务名", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4), Visibility = Visibility.Collapsed };
     private readonly ComboBox _tnsList = new() { Header = "TNS 网络服务名（选中后自动填主机/端口/服务名）", HorizontalAlignment = HorizontalAlignment.Stretch, Visibility = Visibility.Collapsed };
     private List<TnsNames.Entry> _tnsEntries = new();
     private readonly CheckBox _savePwd = new() { Content = "记住密码（本机加密保存）", IsChecked = true };
-    private readonly TextBlock _hint = new() { Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _hint = new() { Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
     // SSH 隧道（可选）
     private readonly CheckBox _ssh = new() { Content = "通过 SSH 跳板机连接（隧道）" };
     private readonly TextBox _sshHost = new() { Header = "SSH 主机", PlaceholderText = "跳板机地址" };

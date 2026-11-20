@@ -13,18 +13,18 @@ public static class SmartToolsDialog
 {
     public static void Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         // ── 慢查询诊断 ──
         var sqlBox = new TextBox { PlaceholderText = "粘贴一条 SELECT，做慢查询静态诊断与索引建议", MinWidth = 560 };
-        var diagBtn = new Button { Content = "诊断 SQL", CornerRadius = new CornerRadius(4) };
+        var diagBtn = new Button { Content = "诊断 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         diagBtn.Click += (_, _) => RunDiag(sqlBox.Text, report, status);
 
         // ── 查询重测 ──
         var beforeBox = new TextBox { PlaceholderText = "改写前 SQL（SELECT）", MinWidth = 420 };
         var afterBox = new TextBox { PlaceholderText = "改写后 SQL（SELECT，留空则只测改写前）", MinWidth = 420 };
-        var retestBtn = new Button { Content = "重测对比", CornerRadius = new CornerRadius(4) };
+        var retestBtn = new Button { Content = "重测对比", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         retestBtn.Click += async (_, _) => await RunRetest(owner, info, beforeBox.Text, afterBox.Text, report, status);
 
         // ── 容量预估 ──
@@ -35,7 +35,7 @@ public static class SmartToolsDialog
             AcceptsReturn = true,
             Height = 72,
         };
-        var capBtn = new Button { Content = "容量预估", CornerRadius = new CornerRadius(4) };
+        var capBtn = new Button { Content = "容量预估", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         capBtn.Click += (_, _) => RunCapacity(sampleBox.Text, report, status);
 
         // ── 复现包 ──
@@ -46,8 +46,8 @@ public static class SmartToolsDialog
             AcceptsReturn = true,
             Height = 72,
         };
-        var packBtn = new Button { Content = "打包（脱敏）", CornerRadius = new CornerRadius(4) };
-        var packVerifyBtn = new Button { Content = "校验已粘包", CornerRadius = new CornerRadius(4) };
+        var packBtn = new Button { Content = "打包（脱敏）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var packVerifyBtn = new Button { Content = "校验已粘包", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         packBtn.Click += (_, _) => RunPack(packBox.Text, report, status);
         packVerifyBtn.Click += (_, _) => RunPackVerify(packBox.Text, report, status);
 
@@ -67,10 +67,10 @@ public static class SmartToolsDialog
         // ── 优化回访（闭环）：登记 → 到期复测 → 前后对比卡 ──
         var followTitleBox = new TextBox { PlaceholderText = "回访标题，如 orders 改写优化", MinWidth = 260 };
         var followIntervalBox = new TextBox { PlaceholderText = "间隔天（默认 1）", MinWidth = 120 };
-        var followRegisterBtn = new Button { Content = "登记回访", CornerRadius = new CornerRadius(4) };
-        var followDueBtn = new Button { Content = "查到期", CornerRadius = new CornerRadius(4) };
-        var followRetestBtn = new Button { Content = "复测并出对比卡", CornerRadius = new CornerRadius(4) };
-        var followCenterBtn = new Button { Content = "并入任务中心", CornerRadius = new CornerRadius(4) };
+        var followRegisterBtn = new Button { Content = "登记回访", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var followDueBtn = new Button { Content = "查到期", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var followRetestBtn = new Button { Content = "复测并出对比卡", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var followCenterBtn = new Button { Content = "并入任务中心", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         followRegisterBtn.Click += (_, _) =>
         {
             var sql = afterBox.Text.Length > 0 ? afterBox.Text : beforeBox.Text;
@@ -92,7 +92,7 @@ public static class SmartToolsDialog
             Text = "智能工具（只读 / 纯计算）：SQL 静态诊断不改数据；重测只执行 SELECT；容量预估只对采样回归；复现包脱敏后才展示；回访复测沿用同一口径。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(sqlBox);
         panel.Children.Add(diagRow);
@@ -451,7 +451,7 @@ public static class SmartToolsDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
@@ -464,7 +464,7 @@ public static class SmartToolsDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

@@ -20,15 +20,15 @@ public static class RecoveryDialog
             return;
         }
 
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         var tableBox = new TextBox { PlaceholderText = "表名", MinWidth = 200, Text = info.Kind == NodeKind.Table ? info.Name : "" };
         var pkBox = new TextBox { PlaceholderText = "主键列（留空自动识别）", MinWidth = 200 };
         var limitBox = new TextBox { PlaceholderText = "最多捕获行数", Text = "1000", MinWidth = 90 };
 
-        var captureBtn = new Button { Content = "捕获快照", CornerRadius = new CornerRadius(4) };
+        var captureBtn = new Button { Content = "捕获快照", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var pathBox = new TextBox { PlaceholderText = "快照文件路径（捕获后自动填充或手动粘贴）", MinWidth = 480 };
-        var restoreBtn = new Button { Content = "生成拼回草稿", CornerRadius = new CornerRadius(4) };
+        var restoreBtn = new Button { Content = "生成拼回草稿", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         restoreBtn.Foreground = Ant.Error;
 
         var output = new TextBox
@@ -38,7 +38,7 @@ public static class RecoveryDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 200,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "捕获快照后，误删数据可用「生成拼回草稿」恢复。",
         };
 
@@ -61,7 +61,7 @@ public static class RecoveryDialog
             Text = "第一步：捕获快照（只读，把当前表数据存到本机文件，危险操作前建议先留底）；第二步：误删后从快照生成拼回 INSERT 草稿，逐条勾选确认后才执行。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(row1);
         panel.Children.Add(row2);

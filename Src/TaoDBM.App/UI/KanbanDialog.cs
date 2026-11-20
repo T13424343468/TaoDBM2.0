@@ -12,7 +12,7 @@ public static class KanbanDialog
     public static void Show(MainWindow owner, IDbProvider? provider)
     {
         var pinsHost = new StackPanel { Spacing = 10, MinWidth = 640 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var dlg = new ContentDialog
         {
             Title = "看板（钉住与定时刷新）",
@@ -57,13 +57,13 @@ public static class KanbanDialog
                 Text = $"{pin.Title}\n{pin.Sql}\n{pin.Engine}{(string.IsNullOrEmpty(pin.Db) ? "" : " · " + pin.Db)}"
                     + (pin.AutoRefresh ? $" · 每 {pin.IntervalSeconds}s 刷新" : " · 不自动刷新")
                     + (isDue ? " · 已到期待刷新" : ""),
-                FontSize = 12,
+                FontSize = AntTokens.FontMinor,
                 Foreground = Ant.Text,
                 TextWrapping = TextWrapping.Wrap,
             };
-            var refreshBtn = new Button { Content = "立即刷新", CornerRadius = new CornerRadius(4), IsEnabled = provider != null };
+            var refreshBtn = new Button { Content = "立即刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = provider != null };
             refreshBtn.Click += async (_, _) => await RunPinAsync(provider, pin, status);
-            var unpinBtn = new Button { Content = "摘除", CornerRadius = new CornerRadius(4) };
+            var unpinBtn = new Button { Content = "摘除", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
             unpinBtn.Click += (_, _) => { KanbanPinStore.Unpin(pin.PinId); Rebuild(pinsHost, provider, status); };
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             row.Children.Add(refreshBtn);
@@ -76,7 +76,7 @@ public static class KanbanDialog
                 Child = card,
                 BorderBrush = Ant.Border,
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
                 Padding = new Thickness(12, 10, 12, 10),
             };
             pinsHost.Children.Add(box);

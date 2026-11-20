@@ -12,7 +12,7 @@ public static class DesignAssistDialog
 {
     public static void Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         // ── 图表规范：粘贴查询结果 JSON，推荐图型并聚合 ──
@@ -24,13 +24,13 @@ public static class DesignAssistDialog
             Height = 64,
         };
         var chartColBox = new TextBox { PlaceholderText = "聚合列名（如 amount）", MinWidth = 180 };
-        var chartBtn = new Button { Content = "推荐图型", CornerRadius = new CornerRadius(4) };
+        var chartBtn = new Button { Content = "推荐图型", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         chartBtn.Click += (_, _) => RunChart(chartBox.Text, chartColBox.Text, report, status);
 
         // ── 表单构建：按表结构生成录入表单 ──
         var formTableBox = new TextBox { PlaceholderText = "表名（用当前连接的表结构生成表单）", MinWidth = 220 };
-        var formBtn = new Button { Content = "生成表单", CornerRadius = new CornerRadius(4) };
-        var formValidateBtn = new Button { Content = "校验填写", CornerRadius = new CornerRadius(4) };
+        var formBtn = new Button { Content = "生成表单", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var formValidateBtn = new Button { Content = "校验填写", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         formBtn.Click += async (_, _) => await RunForm(owner, info, formTableBox.Text, report, status);
         formValidateBtn.Click += (_, _) => RunFormValidate(report, status);
 
@@ -43,8 +43,8 @@ public static class DesignAssistDialog
             Height = 72,
         };
         var lineageTargetBox = new TextBox { PlaceholderText = "要评估影响的对象名（如表名）", MinWidth = 200 };
-        var lineageBuildBtn = new Button { Content = "建血缘图", CornerRadius = new CornerRadius(4) };
-        var lineageImpactBtn = new Button { Content = "追溯影响", CornerRadius = new CornerRadius(4) };
+        var lineageBuildBtn = new Button { Content = "建血缘图", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var lineageImpactBtn = new Button { Content = "追溯影响", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         lineageBuildBtn.Click += (_, _) => RunLineageBuild(lineageBox.Text, report, status);
         lineageImpactBtn.Click += (_, _) => RunLineageImpact(lineageBox.Text, lineageTargetBox.Text, report, status);
 
@@ -68,7 +68,7 @@ public static class DesignAssistDialog
             Text = "设计辅助（只读 / 纯计算）：图表只对粘贴结果聚合；表单只读表结构；血缘只对粘贴语料建图。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(chartBox);
         panel.Children.Add(chartRow);
@@ -204,7 +204,7 @@ public static class DesignAssistDialog
                 {
                     Text = f.Label + (f.Required ? " *" : "") + (f.Hidden ? "（隐藏）" : ""),
                     VerticalAlignment = VerticalAlignment.Center,
-                    FontSize = 12,
+                    FontSize = AntTokens.FontMinor,
                     MinWidth = 160,
                     Foreground = Ant.Text,
                 });
@@ -355,7 +355,7 @@ public static class DesignAssistDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }
@@ -364,7 +364,7 @@ public static class DesignAssistDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });

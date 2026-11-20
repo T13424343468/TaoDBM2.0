@@ -27,9 +27,9 @@ public static class TeamShareMergeDialog
             TextWrapping = TextWrapping.Wrap, FontFamily = new FontFamily("Consolas"),
         };
         var report = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var mergeBtn = new Button { Content = "预览合并", CornerRadius = new CornerRadius(4) };
-        var saveBtn = new Button { Content = "另存合并结果", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var mergeBtn = new Button { Content = "预览合并", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saveBtn = new Button { Content = "另存合并结果", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
 
         mergeBtn.Click += async (_, _) =>
         {
@@ -83,7 +83,7 @@ public static class TeamShareMergeDialog
         panel.Children.Add(new TextBlock
         {
             Text = "团队合并预演：同一 ItemId 后写胜出，本地没有的远端条目（含墓碑）收入；凭据键（password/token 等）入包前自动剔除并留痕。只预演，不落库。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(localBox);
         panel.Children.Add(remoteBox);
@@ -106,7 +106,7 @@ public static class TeamShareMergeDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });
@@ -116,7 +116,7 @@ public static class TeamShareMergeDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

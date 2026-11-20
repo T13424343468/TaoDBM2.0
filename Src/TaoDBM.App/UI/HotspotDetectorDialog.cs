@@ -12,7 +12,7 @@ public static class HotspotDetectorDialog
 {
     public static Task Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         var loadsBox = new TextBox
@@ -21,10 +21,10 @@ public static class HotspotDetectorDialog
             Height = 132,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "shard_0,1200\nshard_1,300\nshard_2,350\nshard_3,320",
         };
-        var analyzeBtn = new Button { Content = "检测倾斜", CornerRadius = new CornerRadius(4) };
+        var analyzeBtn = new Button { Content = "检测倾斜", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         analyzeBtn.Click += async (_, _) => await RunAnalyzeAsync(loadsBox.Text, report, status);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 620 };
@@ -33,7 +33,7 @@ public static class HotspotDetectorDialog
             Text = "每行一个分片：名称,负载（行数或请求数，口径统一即可）。热点 = 负载不低于均值 3 倍，冷清 = 不足均值一半。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(loadsBox);
         panel.Children.Add(analyzeBtn);
@@ -107,7 +107,7 @@ public static class HotspotDetectorDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
@@ -119,7 +119,7 @@ public static class HotspotDetectorDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

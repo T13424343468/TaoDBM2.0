@@ -15,7 +15,7 @@ public static class TableDesignerDialog
         public CheckBox Pk = new() { Content = "主键", MinWidth = 56, VerticalAlignment = VerticalAlignment.Center };
         public CheckBox Null = new() { Content = "可空", MinWidth = 56, IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
         public CheckBox Inc = new() { Content = "自增", MinWidth = 56, VerticalAlignment = VerticalAlignment.Center };
-        public Button Del = new() { Content = "✕", Padding = new Thickness(6, 2, 6, 2), CornerRadius = new CornerRadius(4) };
+        public Button Del = new() { Content = "✕", Padding = new Thickness(6, 2, 6, 2), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
     }
 
     /// <summary>table 为 null 表示新建表；existing 传入旧列定义（改表用）。</summary>
@@ -72,12 +72,12 @@ public static class TableDesignerDialog
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Height = 170,
             Text = "点「生成 SQL」预览将执行的语句。",
         };
 
-        var addBtn = new Button { Content = "＋ 加一列", CornerRadius = new CornerRadius(4) };
+        var addBtn = new Button { Content = "＋ 加一列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         addBtn.Click += (_, _) => AddRow(null);
 
         var genBtn = new Button
@@ -86,9 +86,9 @@ public static class TableDesignerDialog
             Background = Ant.Primary,
             Foreground = Ant.OnPrimary,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
-        var runBtn = new Button { Content = "执行", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "执行", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         actions.Children.Add(addBtn);
@@ -98,7 +98,7 @@ public static class TableDesignerDialog
         var head = new TextBlock
         {
             Text = $"列定义（引擎：{prov.EngineName}{(table != null ? " · 改表模式" : " · 新建表")}）",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
         };
 

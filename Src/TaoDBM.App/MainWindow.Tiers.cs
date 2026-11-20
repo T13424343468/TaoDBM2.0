@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using TaoDBM.Core;
+using TaoDBM.UI;
 
 namespace TaoDBM;
 
@@ -31,11 +32,11 @@ public partial class MainWindow
                 break;
             case LayoutTier.Standard:
                 AppTitleText.Visibility = Visibility.Visible;
-                AppTitleText.FontSize = 16;
+                AppTitleText.FontSize = AntTokens.FontTitle;
                 break;
             case LayoutTier.Wide:
                 AppTitleText.Visibility = Visibility.Visible;
-                AppTitleText.FontSize = 18;                       // 宽屏放宽标题
+                AppTitleText.FontSize = AntTokens.FontPage;                       // 宽屏放宽标题
                 break;
         }
         Core.AppLog.Write($"布局分档切换: {tier} @ {w:0} DIP");

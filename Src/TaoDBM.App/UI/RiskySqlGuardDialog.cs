@@ -21,9 +21,9 @@ public static class RiskySqlGuardDialog
             FontFamily = new FontFamily("Consolas"),
         };
         var report = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var checkBtn = new Button { Content = "开始检查", CornerRadius = new CornerRadius(4) };
+        var checkBtn = new Button { Content = "开始检查", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         checkBtn.Click += async (_, _) =>
         {
             var script = input.Text ?? "";
@@ -62,7 +62,7 @@ public static class RiskySqlGuardDialog
         panel.Children.Add(new TextBlock
         {
             Text = "只检查不执行：逐条标注风险档位与原因；行数预估语句请自行复制到查询窗口查看。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(input);
         panel.Children.Add(checkBtn);
@@ -93,7 +93,7 @@ public static class RiskySqlGuardDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });
@@ -103,7 +103,7 @@ public static class RiskySqlGuardDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

@@ -24,7 +24,7 @@ public static class ShardingWizardDialog
             return;
         }
 
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         string db = profile.Database;
 
         // ── 向导状态 ──
@@ -46,7 +46,7 @@ public static class ShardingWizardDialog
         var shardBox = new ComboBox { Width = 88, SelectedIndex = 2 };
         for (int i = 2; i <= 16; i++) shardBox.Items.Add(new ComboBoxItem { Content = i.ToString() });
         shardBox.SelectedIndex = 2; // 4 片
-        hashRow.Children.Add(new TextBlock { Text = "分片数", VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = Ant.TextSub });
+        hashRow.Children.Add(new TextBlock { Text = "分片数", VerticalAlignment = VerticalAlignment.Center, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         hashRow.Children.Add(shardBox);
         var rangeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var boundsBox = new TextBox { PlaceholderText = "升序上界，如 100,200,300", Width = 260 };
@@ -57,10 +57,10 @@ public static class ShardingWizardDialog
             AcceptsReturn = true,
             Height = 90,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             PlaceholderText = "每行一组：组名=取值，如 south=1,2",
         };
-        listRow.Children.Add(new TextBlock { Text = "类别组（每行 组名=取值，逗号分隔）：", FontSize = 12, Foreground = Ant.TextSub });
+        listRow.Children.Add(new TextBlock { Text = "类别组（每行 组名=取值，逗号分隔）：", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         listRow.Children.Add(catsBox);
         var strategyPanel = new StackPanel { Spacing = 10 };
         strategyPanel.Children.Add(strategyBox);
@@ -75,9 +75,9 @@ public static class ShardingWizardDialog
         var expertCheck = new CheckBox
         {
             Content = "解锁全部字段（熟手；无索引依据字段需黄牌二次确认）",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         };
-        var keyHint = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
+        var keyHint = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
         var keyPanel = new StackPanel { Spacing = 10 };
         keyPanel.Children.Add(keyBox);
         keyPanel.Children.Add(keyHint);
@@ -85,9 +85,9 @@ public static class ShardingWizardDialog
         stepPanels.Children.Add(Wrap(keyPanel, StepKey));
 
         // ── 第 4 步：确认方案 ──
-        var summaryText = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        var summaryText = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
         var planPanel = new StackPanel { Spacing = 4 };
-        var execBtn = new Button { Content = "预览并执行方案", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var execBtn = new Button { Content = "预览并执行方案", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
         var confirmPanel = new StackPanel { Spacing = 10 };
         confirmPanel.Children.Add(summaryText);
         confirmPanel.Children.Add(new ScrollViewer { Content = planPanel, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
@@ -95,8 +95,8 @@ public static class ShardingWizardDialog
         stepPanels.Children.Add(Wrap(confirmPanel, StepConfirm));
 
         // ── 导航与步骤指示 ──
-        var prevBtn = new Button { Content = "上一步", CornerRadius = new CornerRadius(4) };
-        var nextBtn = new Button { Content = "下一步", CornerRadius = new CornerRadius(4) };
+        var prevBtn = new Button { Content = "上一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var nextBtn = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var navRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
         navRow.Children.Add(prevBtn);
         navRow.Children.Add(nextBtn);
@@ -105,9 +105,9 @@ public static class ShardingWizardDialog
         var chips = chipNames.Select(n => new Border
         {
             Padding = new Thickness(10, 4, 10, 4),
-            CornerRadius = new CornerRadius(999),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusPill),
             Background = Ant.Bg,
-            Child = new TextBlock { Text = n, FontSize = 12, Foreground = Ant.TextSub },
+            Child = new TextBlock { Text = n, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub },
         }).ToList();
         foreach (var c in chips) stepChips.Children.Add(c);
 
@@ -327,7 +327,7 @@ public static class ShardingWizardDialog
                 {
                     Text = d,
                     FontFamily = new FontFamily("Consolas"),
-                    FontSize = 12,
+                    FontSize = AntTokens.FontMinor,
                     TextWrapping = TextWrapping.Wrap,
                 });
             var table = Selected(tableBox) ?? "";
@@ -358,12 +358,12 @@ public static class ShardingWizardDialog
         TextBlock Head(string s) => new()
         {
             Text = s,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
         };
 
         // 分区现状分布（行数降序 + 倾斜标红）
-        var distBtn = new Button { Content = "查询分区现状", CornerRadius = new CornerRadius(4) };
+        var distBtn = new Button { Content = "查询分区现状", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var distPanel = new StackPanel { Spacing = 4 };
         distBtn.Click += async (_, _) =>
         {
@@ -385,7 +385,7 @@ public static class ShardingWizardDialog
                     {
                         Text = $"{p.Name}｜{p.Rows} 行",
                         FontFamily = new FontFamily("Consolas"),
-                        FontSize = 12,
+                        FontSize = AntTokens.FontMinor,
                     };
                     if (skewed && p.Rows == maxRows) line.Foreground = Ant.Error; // 跟主题走的警示红
                     distPanel.Children.Add(line);
@@ -403,8 +403,8 @@ public static class ShardingWizardDialog
         // 热点盐化摘要（展示用）
         var saltKeyBox = new TextBox { PlaceholderText = "热点键，如 user_id", Width = 180 };
         var saltCountBox = new TextBox { Text = "8", Width = 88 };
-        var saltBtn = new Button { Content = "生成盐化摘要", CornerRadius = new CornerRadius(4) };
-        var saltText = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        var saltBtn = new Button { Content = "生成盐化摘要", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saltText = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
         saltBtn.Click += (_, _) =>
         {
             var k = saltKeyBox.Text.Trim();
@@ -421,15 +421,15 @@ public static class ShardingWizardDialog
         var linkCheck = new CheckBox
         {
             Content = "方案接入读写分离路由（保存分片计划，写入按分片键落片，读取交延迟感知读路由）",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         };
         var routeKeyBox = new TextBox { PlaceholderText = "样例分片键值，逗号分隔，如 7,1500,9999", Width = 260 };
         var routeLagBox = new TextBox { Text = "10", Width = 88 };
-        var routeBtn = new Button { Content = "路由预览", CornerRadius = new CornerRadius(4) };
-        var routeText = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        var routeBtn = new Button { Content = "路由预览", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var routeText = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
         var routeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         routeRow.Children.Add(routeKeyBox);
-        routeRow.Children.Add(new TextBlock { Text = "延迟阈值(秒)", VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Foreground = Ant.TextSub });
+        routeRow.Children.Add(new TextBlock { Text = "延迟阈值(秒)", VerticalAlignment = VerticalAlignment.Center, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         routeRow.Children.Add(routeLagBox);
         routeRow.Children.Add(routeBtn);
 
@@ -508,9 +508,9 @@ public static class ShardingWizardDialog
         var estBox = new TextBox { PlaceholderText = "预估行数", Text = "1000000", Width = 130 };
         var batchBox = new TextBox { Text = "2000", Width = 90 };
         var pkBox = new TextBox { PlaceholderText = "回填主键列", Width = 130 };
-        var onlineBtn = new Button { Content = "生成在线改表计划", CornerRadius = new CornerRadius(4) };
-        var onlineText = new TextBlock { FontFamily = new FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
-        var openQryBtn = new Button { Content = "作为查询窗口打开", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var onlineBtn = new Button { Content = "生成在线改表计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var onlineText = new TextBlock { FontFamily = new FontFamily("Consolas"), FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        var openQryBtn = new Button { Content = "作为查询窗口打开", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
         string onlinePlanText = "";
         if (profile.Engine == DbEngine.MySQL)
         {

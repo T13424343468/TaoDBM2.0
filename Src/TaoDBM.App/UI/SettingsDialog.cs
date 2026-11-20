@@ -20,7 +20,7 @@ public static class SettingsDialog
         var panel = new StackPanel { Spacing = 8, MinWidth = 400 };
         panel.Children.Add(new TextBlock { Text = "关闭主窗口时", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
 
-        var desc = new TextBlock { Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
+        var desc = new TextBlock { Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
         void Bind(RadioButton rb, string title, Core.CloseBehavior kind)
         {
             rb.GroupName = "CloseBehavior";
@@ -32,7 +32,7 @@ public static class SettingsDialog
                 Children =
                 {
                     new TextBlock { Text = title },
-                    new TextBlock { Text = SettingsViewModel.DescriptionFor(kind), Foreground = Ant.TextSub, FontSize = 12 },
+                    new TextBlock { Text = SettingsViewModel.DescriptionFor(kind), Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor },
                 }
             };
             rb.Checked += (_, _) => vm.CloseBehavior = kind;
@@ -83,7 +83,7 @@ public static class SettingsDialog
         panel.Children.Add(chkNotify);
         panel.Children.Add(dndRow);
         panel.Children.Add(throttleBox);
-        panel.Children.Add(new TextBlock { Text = "推送哪些事件：", Foreground = Ant.TextSub, FontSize = 12 });
+        panel.Children.Add(new TextBlock { Text = "推送哪些事件：", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor });
         panel.Children.Add(kindPanel);
 
         void SaveNotify()
@@ -118,7 +118,7 @@ public static class SettingsDialog
         panel.Children.Add(new TextBlock
         {
             Text = "设置保存即生效。主题、连接、收藏等沿用各自入口。",
-            Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
         });
 
         var dlg = new ContentDialog

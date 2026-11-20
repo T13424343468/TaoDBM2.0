@@ -35,7 +35,7 @@ public static class BackupDrillDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 90,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         };
         var output = new TextBox
         {
@@ -44,20 +44,20 @@ public static class BackupDrillDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 260,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = engine == DbEngine.SQLite
                 ? "填备份文件路径与对账清单后点「开始演练」。演练只在临时副本上操作。"
                 : "填备份文件路径与对账清单后点「开始演练」。演练只建/删临时库，不动原库。",
         };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var runBtn = new Button { Content = "开始演练", CornerRadius = new CornerRadius(4) };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var runBtn = new Button { Content = "开始演练", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         runBtn.Click += async (_, _) => await Run(owner, info, db, fileBox.Text.Trim(), countsBox.Text, output, status, runBtn);
 
         var panel = new StackPanel { Spacing = 10, MinWidth = 640 };
         panel.Children.Add(new TextBlock
         {
             Text = "恢复到临时库并逐表对账，验证备份真的可用；过程不触碰原库。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         });

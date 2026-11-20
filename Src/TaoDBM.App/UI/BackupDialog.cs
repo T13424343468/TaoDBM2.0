@@ -37,7 +37,7 @@ public static class BackupDialog
         modePanel.Children.Add(isRestore);
 
         var fileBox = new TextBox { MinWidth = 360, PlaceholderText = "选择或输入文件路径" };
-        var pickBtn = new Button { Content = "选择文件…", CornerRadius = new CornerRadius(4) };
+        var pickBtn = new Button { Content = "选择文件…", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         pickBtn.Click += async (_, _) =>
         {
             try
@@ -71,7 +71,7 @@ public static class BackupDialog
             Background = Ant.Primary,
             Foreground = Ant.OnPrimary,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
         var output = new TextBox
         {
@@ -80,7 +80,7 @@ public static class BackupDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 150,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "选好数据库和文件后点「执行」。",
         };
 
@@ -92,7 +92,7 @@ public static class BackupDialog
         };
 
         var content = new StackPanel { Spacing = 10, MinWidth = 560 };
-        content.Children.Add(new TextBlock { Text = $"引擎：{EngineInfo.Name(profile.Engine)} · {profile.DisplayName}", FontSize = 12, Foreground = Ant.TextSub });
+        content.Children.Add(new TextBlock { Text = $"引擎：{EngineInfo.Name(profile.Engine)} · {profile.DisplayName}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row1.Children.Add(new TextBlock { Text = "数据库", VerticalAlignment = VerticalAlignment.Center });
         row1.Children.Add(dbBox);
@@ -102,7 +102,7 @@ public static class BackupDialog
         row2.Children.Add(fileBox);
         row2.Children.Add(pickBtn);
         content.Children.Add(row2);
-        content.Children.Add(new TextBlock { Text = note, FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        content.Children.Add(new TextBlock { Text = note, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
         content.Children.Add(runBtn);
         content.Children.Add(output);
 

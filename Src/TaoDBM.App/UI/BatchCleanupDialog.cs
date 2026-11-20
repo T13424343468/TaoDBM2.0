@@ -18,10 +18,10 @@ public static class BatchCleanupDialog
         var pkBox = new TextBox { PlaceholderText = "主键列（如 id）", MinWidth = 140 };
         var batchBox = new TextBox { PlaceholderText = "每批行数（默认 1000）", MinWidth = 160 };
         var report = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap };
 
-        var planBtn = new Button { Content = "生成分批计划", CornerRadius = new CornerRadius(4) };
-        var execBtn = new Button { Content = "按批执行（草稿确认）", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var planBtn = new Button { Content = "生成分批计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var execBtn = new Button { Content = "按批执行（草稿确认）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
         BatchCleanupPlan? plan = null;
 
         planBtn.Click += async (_, _) =>
@@ -68,7 +68,7 @@ public static class BatchCleanupDialog
         panel.Children.Add(new TextBlock
         {
             Text = "危险操作：删除类语句全部走草稿逐条确认；分批执行降低长事务与锁表风险，默认首批一小步。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.Error, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.Error, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(row1);
         panel.Children.Add(row2);
@@ -105,7 +105,7 @@ public static class BatchCleanupDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });
@@ -115,7 +115,7 @@ public static class BatchCleanupDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

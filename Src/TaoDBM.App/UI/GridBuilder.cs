@@ -20,9 +20,9 @@ public static class GridBuilder
                 Text = msg,
                 Margin = new Thickness(16, 12, 16, 12),
                 Foreground = Ant.Success,
-                FontSize = 12,
+                FontSize = AntTokens.FontMinor,
             };
-            return new Border { Child = ok, Background = Ant.AltRow, CornerRadius = new CornerRadius(6), Margin = new Thickness(4, 8, 4, 8) };
+            return new Border { Child = ok, Background = Ant.AltRow, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg), Margin = new Thickness(4, 8, 4, 8) };
         }
 
         if (r.Rows.Count > VirtualThreshold)
@@ -83,7 +83,7 @@ public static class GridBuilder
                 Text = $"共 {r.Rows.Count} 行，界面渲染前 {shown} 行（导出不受影响）。",
                 Margin = new Thickness(12, 4, 4, 4),
                 Foreground = Ant.TextSub,
-                FontSize = 12,
+                FontSize = AntTokens.FontMinor,
             };
             var sp = new StackPanel { Orientation = Orientation.Vertical };
             sp.Children.Add(scroll);

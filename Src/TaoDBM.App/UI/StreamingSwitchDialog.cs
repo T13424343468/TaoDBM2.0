@@ -31,7 +31,7 @@ public static class StreamingSwitchDialog
         panel.Children.Add(new TextBlock
         {
             Text = "只读展示：流式开关由环境变量 DBM_STREAMING 决定，本页说明当前状态与切换方法。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(report);
 
@@ -50,7 +50,7 @@ public static class StreamingSwitchDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, TextWrapping = TextWrapping.Wrap,
+            Text = text, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub, FontFamily = new FontFamily("Consolas"),
         });
     }
@@ -59,7 +59,7 @@ public static class StreamingSwitchDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

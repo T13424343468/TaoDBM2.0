@@ -783,7 +783,7 @@ public partial class MainWindow : Window
         {
             Margin = new Thickness(24),
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 14,
+            FontSize = AntTokens.FontEmphasis,
             Foreground = UI.Ant.TextSub,
             Text = "欢迎使用 TaoDBM。\n\n1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。\n2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。\n3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。\n\n支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis",
         };

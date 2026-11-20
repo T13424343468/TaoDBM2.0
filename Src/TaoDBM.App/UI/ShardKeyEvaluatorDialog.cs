@@ -12,7 +12,7 @@ public static class ShardKeyEvaluatorDialog
 {
     public static Task Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         var candBox = new TextBox
@@ -21,18 +21,18 @@ public static class ShardKeyEvaluatorDialog
             Height = 120,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "user_id,1000000,1.2,5000,0\norder_time,50000,2.0,3000,1\ncity,300,1.1,0,0",
         };
-        var evalBtn = new Button { Content = "评估分片键", CornerRadius = new CornerRadius(4) };
+        var evalBtn = new Button { Content = "评估分片键", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         var hashKeyBox = new TextBox { PlaceholderText = "路由键值，如 user_123", MinWidth = 180 };
         var shardCountBox = new TextBox { PlaceholderText = "分片数", MinWidth = 80, Text = "8" };
-        var hashBtn = new Button { Content = "哈希落点", CornerRadius = new CornerRadius(4) };
+        var hashBtn = new Button { Content = "哈希落点", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         var rangeValueBox = new TextBox { PlaceholderText = "路由数值", MinWidth = 100 };
         var rangeBoundBox = new TextBox { PlaceholderText = "上界,如 100,200,300", MinWidth = 180 };
-        var rangeBtn = new Button { Content = "范围落点", CornerRadius = new CornerRadius(4) };
+        var rangeBtn = new Button { Content = "范围落点", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         evalBtn.Click += async (_, _) => await RunEvaluateAsync(candBox.Text, report, status);
         hashBtn.Click += async (_, _) => await RunHashAsync(hashKeyBox.Text, shardCountBox.Text, report, status);
@@ -54,7 +54,7 @@ public static class ShardKeyEvaluatorDialog
             Text = "候选键每行一条：列名,基数,倾斜比,谓词命中,单调(1/0)。评估只依据所填画像，不做实时采样；路由预演不触库。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(candBox);
         panel.Children.Add(evalBtn);
@@ -182,7 +182,7 @@ public static class ShardKeyEvaluatorDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
@@ -194,7 +194,7 @@ public static class ShardKeyEvaluatorDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

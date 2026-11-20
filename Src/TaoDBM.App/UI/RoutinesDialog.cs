@@ -71,7 +71,7 @@ public static class RoutinesDialog
         {
             Text = "还没有例程，右键新建一个",
             Foreground = Ant.TextSub,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 80, 0, 0),
@@ -81,31 +81,31 @@ public static class RoutinesDialog
         rightHost.Children.Add(emptyCard);
 
         // 工具条：查看定义 / 断点调试 / 引用查找 / 删除（原稿 §1 按钮组）＋ 新建
-        var btnNew = new Button { Content = "新建", CornerRadius = new CornerRadius(4) };
-        var btnDef = new Button { Content = "查看定义", CornerRadius = new CornerRadius(4) };
+        var btnNew = new Button { Content = "新建", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var btnDef = new Button { Content = "查看定义", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         bool dbg = RoutineManager.DebugSupported(info.Profile.Engine);
         var btnDebug = new Button
         {
             Content = "断点调试",
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
             IsEnabled = dbg,
         };
-        var btnRef = new Button { Content = "引用查找", CornerRadius = new CornerRadius(4) };
+        var btnRef = new Button { Content = "引用查找", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var btnDel = new Button
         {
             Content = "删除",
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
             Foreground = Ant.Error,
         };
         var debugNote = dbg
-            ? new TextBlock { Text = "", Foreground = Ant.TextSub, FontSize = 11, VerticalAlignment = VerticalAlignment.Center }
-            : new TextBlock { Text = RoutineManager.DebugUnsupportedText, Foreground = Ant.TextSub, FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
+            ? new TextBlock { Text = "", Foreground = Ant.TextSub, FontSize = AntTokens.FontCaption, VerticalAlignment = VerticalAlignment.Center }
+            : new TextBlock { Text = RoutineManager.DebugUnsupportedText, Foreground = Ant.TextSub, FontSize = AntTokens.FontCaption, VerticalAlignment = VerticalAlignment.Center };
 
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         foreach (var b in new[] { btnNew, btnDef, btnDebug, btnRef, btnDel }) bar.Children.Add(b);
         bar.Children.Add(debugNote);
 
-        var status = new TextBlock { Text = "", Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { Text = "", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
 
         var grid = new Grid
         {
@@ -120,7 +120,7 @@ public static class RoutinesDialog
         var leftHost = new Grid { MinHeight = 300 };
         var leftSkel = new StackPanel { Spacing = 8 };
         for (int i = 0; i < 3; i++)
-            leftSkel.Children.Add(new Border { Height = 14, CornerRadius = new CornerRadius(4), Background = Ant.AltRow, Margin = new Thickness(0, 0, 30, 0) });
+            leftSkel.Children.Add(new Border { Height = 14, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Background = Ant.AltRow, Margin = new Thickness(0, 0, 30, 0) });
         leftHost.Children.Add(leftSkel);
         Grid.SetRow(leftHost, 1);
         Grid.SetColumn(leftHost, 0);
@@ -151,7 +151,7 @@ public static class RoutinesDialog
             var host = new Grid { MinHeight = 300 };
             var s = new StackPanel { Spacing = 8, Margin = new Thickness(0, 40, 0, 0) };
             for (int i = 0; i < 4; i++)
-                s.Children.Add(new Border { Height = 14, CornerRadius = new CornerRadius(4), Background = Ant.AltRow, Margin = new Thickness(0, 0, 40 * (i % 2), 0) });
+                s.Children.Add(new Border { Height = 14, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Background = Ant.AltRow, Margin = new Thickness(0, 0, 40 * (i % 2), 0) });
             host.Children.Add(s);
             rightHost.Children.Add(host);
             try

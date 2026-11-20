@@ -48,13 +48,13 @@ public static class TaskCenterDialog
         var titleBox = new TextBox { PlaceholderText = "任务标题", MinWidth = 200 };
         var sqlBox = new TextBox { PlaceholderText = "SQL（长查询/导出语句）", MinWidth = 360 };
         var list = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var submitBtn = new Button { Content = "提交任务", CornerRadius = new CornerRadius(4) };
-        var refreshBtn = new Button { Content = "刷新列表", CornerRadius = new CornerRadius(4) };
-        var pauseBtn = new Button { Content = "暂停队列", CornerRadius = new CornerRadius(4) };
-        var resumeBtn = new Button { Content = "续跑队列", CornerRadius = new CornerRadius(4) };
-        var exportBtn = new Button { Content = "导出快照", CornerRadius = new CornerRadius(4) };
+        var submitBtn = new Button { Content = "提交任务", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var refreshBtn = new Button { Content = "刷新列表", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var pauseBtn = new Button { Content = "暂停队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var resumeBtn = new Button { Content = "续跑队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var exportBtn = new Button { Content = "导出快照", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         submitBtn.Click += async (_, _) =>
         {
@@ -100,7 +100,7 @@ public static class TaskCenterDialog
         panel.Children.Add(new TextBlock
         {
             Text = "长活统一队列：查询/导出进任务中心按序执行，可暂停/续跑/取消/重跑；快照可落盘留档。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(row1);
         panel.Children.Add(row2);
@@ -148,7 +148,7 @@ public static class TaskCenterDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, TextWrapping = TextWrapping.Wrap,
+            Text = text, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub, FontFamily = new FontFamily("Consolas"),
         });
     }

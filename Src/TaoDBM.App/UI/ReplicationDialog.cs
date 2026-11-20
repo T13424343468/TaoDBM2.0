@@ -20,9 +20,9 @@ public static class ReplicationDialog
             return;
         }
 
-        var roleText = new TextBlock { FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+        var roleText = new TextBlock { FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
         var nodeList = new StackPanel { Spacing = 4 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         async Task RefreshAsync()
         {
@@ -85,7 +85,7 @@ public static class ReplicationDialog
                     {
                         Text = $"{mark} {n.Name}｜{n.Role}｜{n.State}｜延迟 {lagText}｜{n.Detail}",
                         FontFamily = new FontFamily("Consolas"),
-                        FontSize = 12,
+                        FontSize = AntTokens.FontMinor,
                         TextWrapping = TextWrapping.Wrap,
                     });
                 }
@@ -99,7 +99,7 @@ public static class ReplicationDialog
 
         Button OpButton(string text, bool danger = false)
         {
-            var b = new Button { Content = text, CornerRadius = new CornerRadius(4) };
+            var b = new Button { Content = text, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
             if (danger) b.Foreground = Ant.Error;
             return b;
         }
@@ -145,7 +145,7 @@ public static class ReplicationDialog
             await DraftOps.ConfirmExecuteAsync(owner, prov, "切换主库（高危草稿）", drafts, status);
         };
 
-        var refreshBtn = new Button { Content = "刷新", CornerRadius = new CornerRadius(4) };
+        var refreshBtn = new Button { Content = "刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         refreshBtn.Click += async (_, _) => await RefreshAsync();
 
         var opRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };

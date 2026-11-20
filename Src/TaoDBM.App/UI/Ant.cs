@@ -40,6 +40,11 @@ public static class Ant
     public static readonly SolidColorBrush Error = Brush("#FF4D4F");
     public static readonly SolidColorBrush HeadBg = Brush("#F0F5FF");
     public static readonly SolidColorBrush AltRow = Brush("#FAFBFC");
+    /// <summary>语义浅底色（设计稿分级确认浅底）：错误浅底/主色浅底/警示浅底/成功浅底。</summary>
+    public static readonly SolidColorBrush ErrorBg = Brush("#FFF1F0");
+    public static readonly SolidColorBrush PrimaryBg = Brush("#E6F4FF");
+    public static readonly SolidColorBrush WarnBg = Brush("#FFF7E8");
+    public static readonly SolidColorBrush SuccessBg = Brush("#F6FFED");
     /// <summary>主色底上的文字（按钮字）：水墨/天青白字、墨夜近黑字（WCAG 按钮字 4.0 口径）。</summary>
     public static readonly SolidColorBrush OnPrimary = Brush("#FFFFFF");
 
@@ -162,6 +167,9 @@ public static class AntTokens
     public const double RadiusSm = 2;
     public const double RadiusMd = 4;
     public const double RadiusLg = 6;
+
+    /// <summary>胶囊圆角（徽标/状态点）：设计稿 99px 胶囊口径。</summary>
+    public const double RadiusPill = 99;
 
     public static CornerRadius CornerRadius(double token) => new(token);
 }
