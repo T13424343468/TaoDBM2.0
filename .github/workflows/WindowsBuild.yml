@@ -415,15 +415,20 @@ jobs:
             }
             Journal "service-stopped=$stopped"
             if (-not $stopped) { & sc.exe stop $svcName | Out-Host; Start-Sleep -Seconds 10; Journal "service-sc-stop-fallback" }
-            & sc.exe start $svcName | Out-Host
+            # run 193 定因：服务能启动但超过 240s 轮询上限（事后取证 service=Running）——加长到 600s 并记录 sc 输出
+            $scOut = (& sc.exe start $svcName 2>&1 | Out-String)
+            Journal "sc-start-out: $($scOut.Trim())"
             $started = $false
-            for ($si = 0; $si -lt 48; $si++) {
+            for ($si = 0; $si -lt 120; $si++) {
               Start-Sleep -Seconds 5
               $sst = Get-Service -Name $svcName -ErrorAction SilentlyContinue
-              if ($sst -and $sst.Status -eq 'Running') { $started = $true; break }
+              if ($sst) {
+                if ($sst.Status -eq 'Running') { $started = $true; break }
+                if ($si % 12 -eq 0) { Journal "service-poll: $($sst.Status)" }
+              }
             }
             Journal "service-started=$started"
-            if (-not $started) { throw "sqlexpress service failed to reach Running after sc.exe start (240s)" }
+            if (-not $started) { throw "sqlexpress service failed to reach Running after sc.exe start (600s)" }
             Journal "service-restarted"
           } catch {
             Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
