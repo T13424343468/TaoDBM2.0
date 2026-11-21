@@ -10,3 +10,4 @@
 2026-11-21 11:39:42.484 [新建查询] tab selected
 2026-11-21 11:39:51.223 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
 2026-11-21 11:40:02.544 [执行账] sql=SELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
+2026-11-21 11:40:14.260 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;ELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | title=ELECT name FROM products WHERE id = 7 rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
