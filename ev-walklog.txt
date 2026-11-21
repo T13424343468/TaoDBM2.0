@@ -7,3 +7,13 @@ coverage-func S01 新建连接-打开对话框 => pass
 coverage-func S02 连接-选择SQLite引擎 => pass
 coverage-func S03 连接-填写名称 => pass
 coverage-func S04 连接-填写数据库文件 => pass
+shot shot-06-conn-saved.png 40324 bytes
+coverage-func S05 连接-保存 => pass
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
