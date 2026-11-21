@@ -26,3 +26,4 @@ tag=step-start S16 time=2026-11-21T03:40:29.1607080+00:00 appMem=191 MB
 tag=S16 run-invoked time=2026-11-21T03:40:33.6698188+00:00 appMem=190 MB
 tag=S16 result-shot time=2026-11-21T03:40:38.1008600+00:00 appMem=188 MB
 tag=S16 ledger-hit time=2026-11-21T03:40:39.5485744+00:00 appMem=188 MB
+tag=step-start S17 time=2026-11-21T03:40:41.0212314+00:00 appMem=188 MB
