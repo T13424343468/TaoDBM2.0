@@ -175,14 +175,9 @@ function Get-WalkDiagnostics {
   return $out
 }
 function Close-ExtraWindows($mainHwnd) {
-  try {
-    $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))
-    foreach ($w in $wins) {
-      if ($w.Current.NativeWindowHandle -ne 0 -and $w.Current.NativeWindowHandle -ne $mainHwnd -and $w.Current.Name -notmatch 'Program Manager|Windows') {
-        try { ($w.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)).Close() } catch { }
-      }
-    }
-  } catch { }
+  # #226 定谿: 桌面级 UIA 窗口扫描+WindowPattern.Close 杀 runner 显示会话 - S18 六探针证明主题应用/截图全过,
+  # 会话死在 SP shot-done 与 SP closed 之间(即本函数的全桌面 FindAll 扫描), 与 Expand-TreeItem 注释的
+  # 「全桌面 UIA 扫描是机器死亡头号嫌疑」同源。改为纯 ESC 收场: 弹层由焦点 ESC 关闭, 不再全桌面扫描。
   Start-Sleep -Milliseconds 800
   [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
   Start-Sleep -Milliseconds 500
