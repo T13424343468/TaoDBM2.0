@@ -23,3 +23,4 @@ tag=S17a start time=2026-11-21T21:08:08.7967495+00:00 appMem=194 MB
 tag=S17a btn-found=True time=2026-11-21T21:08:10.1801761+00:00 appMem=194 MB
 tag=S17b invoked time=2026-11-21T21:08:11.7131699+00:00 appMem=199 MB
 tag=S17c dialog-scan-start time=2026-11-21T21:08:15.0605750+00:00 appMem=199 MB
+tag=S17c dlg-count=0 time=2026-11-21T21:08:16.3400582+00:00 appMem=199 MB
