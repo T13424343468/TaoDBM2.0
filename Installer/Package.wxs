@@ -28,8 +28,14 @@
          ProgramFilesFolder=C:\Program Files (x86)\), 32 位 PowerShell 起动即 1722;
          改 System64Folder 恒指 64 位 System32, 与包位数无关 -->
     <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" />
+    <!-- #225 verdict: preflight ran the script fine (runtime-present zero-download) + rt-ca-out.txt absent
+         + CA died in 1s with -196608 (0xFFFD0000 = powershell -File path error) => script never started in the
+         CA session; root cause = InstallFiles copied zero files (reproduced #221/#224, ~90ms, no per-file lines).
+         CA switched to -Command inline fallback: script on disk -> full original logic; script missing (packaging
+         layer unresolved) -> registry-based .NET desktop runtime check, present -> let install continue (verify
+         step will adjudicate payload-on-disk), absent -> exit 3 readable red. Restore -File form once packaging is settled. -->
     <CustomAction Id="EnsureDotNetRuntime" Property="RTENSURECMD"
-                  ExeCommand="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;"
+                  ExeCommand="-NoProfile -ExecutionPolicy Bypass -Command &quot;&amp; { $s='[INSTALLFOLDER]EnsureRuntime.ps1'; if (Test-Path $s) { &amp; $s } elseif (Test-Path 'HKLM:\SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx') { exit 0 } else { exit 3 } }&quot;"
                   Execute="immediate" Return="check" />
     <Property Id="DESKTOP_SHORTCUT" Value="1" />
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
