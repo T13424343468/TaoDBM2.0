@@ -34,3 +34,5 @@ shot shot-11-cell-value.png 66957 bytes
 coverage-func S15 SQL真实执行-取值比对 => pass
 shot ev-shot-result-S16.png 67251 bytes
 S16 ledger: 2026-11-21 00:03:50.197 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
+shot shot-12-dirty-rows.png 67251 bytes
+coverage-func S16 SQL真实执行-脏数据行 => pass
