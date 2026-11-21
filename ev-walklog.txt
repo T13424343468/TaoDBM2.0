@@ -2,3 +2,5 @@ probe quiet-watch start (10s, no UIA)
 probe quiet-watch done
 shot shot-01-start.png 37455 bytes
 coverage: 15 named elements in main window
+shot shot-05-newconn-dialog.png 50897 bytes
+coverage-func S01 新建连接-打开对话框 => pass
