@@ -5,3 +5,6 @@
 2026-11-21 11:42:15.445 托盘: 向系统注册成功
 2026-11-21 11:42:16.322 布局分档切换: Compact @ 1008 DIP
 2026-11-21 11:43:12.328 [Flyout] opening
+2026-11-21 11:43:15.373 [新建查询] enter kind=Connection name=ui-auto-mysql provider=null
+2026-11-21 11:43:15.388 [新建查询] worktab built db=taodbmui
+2026-11-21 11:43:15.397 [新建查询] tab selected
