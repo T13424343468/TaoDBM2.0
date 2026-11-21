@@ -657,6 +657,23 @@ jobs:
           $arp3 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
           if ($arp3) { $p4 = Start-Process msiexec -ArgumentList "/x",$($arp3.PSChildName),"/qn","/norestart","/l*v","uninstall2.log" -Wait -PassThru; Write-Host "[CLEANUP-UNINSTALL] exit=$($p4.ExitCode)" }
 
+      - name: Push installer evidence (always, 供无凭据侧读取现场)
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+          foreach ($f in @('install.log','uninstall.log','forced-runtime.log','uninstall2.log')) {
+            if (Test-Path $f) { Copy-Item $f ("ev-" + $f) -Force }
+          }
+          $rt = Join-Path $env:TEMP 'taodbm-runtime.log'
+          if (Test-Path $rt) { Copy-Item $rt 'ev-taodbm-runtime.log' -Force }
+          Get-ChildItem ev-*.log -ErrorAction SilentlyContinue | ForEach-Object {
+            if ((Get-Item $_).Length -gt 2MB) { Get-Content $_ -Tail 800 | Set-Content $_ -Encoding utf8 }
+          }
+          git add ev-*.log 2>$null
+          git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "installer evidence run $env:GITHUB_RUN_NUMBER" 2>$null | Out-Null
+          git push origin HEAD:installer-evidence --force 2>$null | Out-Null
+          Write-Host '[EV] installer evidence pushed (if any)'
       - name: Upload MSI
         if: always()
         uses: actions/upload-artifact@v4

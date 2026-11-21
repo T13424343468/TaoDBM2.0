@@ -41,10 +41,23 @@ try {
     } catch { }
     exit 1602
 }
-Write-RtLog 'download-ok, installing to system dotnet dir (passive 进度条)'
-$p = Start-Process -FilePath $exe -ArgumentList '/install', '/passive', '/norestart' -Wait -PassThru
-Write-RtLog ("installer-exit " + $p.ExitCode)
-if ($p.ExitCode -notin 0, 3010) { exit $p.ExitCode }
+Write-RtLog 'download-ok, installing to system dotnet dir'
+# #212 定谳前根因判断: 桌面运行时 exe 是 burn 包(内含 MSI), 在安装中的 MSI 自定义动作里
+# 再起 MSI 会撞 _MSIExecute 互斥(嵌套安装), 静默链上表现为装机即回滚 1603。
+# 改用微软官方 dotnet-install.ps1(zip 解包, 无 MSI 事务), 装进系统统一目录 C:\Program Files\dotnet,
+# 与「装进系统统一 .NET 目录」的令一致; Test-DesktopRuntime10 的 shared 目录检查可验。
+$installDir = Join-Path $env:ProgramFiles 'dotnet'
+$dlScript = Join-Path $env:TEMP 'dotnet-install.ps1'
+try {
+    Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile $dlScript -UseBasicParsing
+} catch {
+    Write-RtLog ("dotnet-install-script-download-failed " + $_.Exception.Message)
+    exit 1602
+}
+& $dlScript -Runtime windowsdesktop -Channel 10.0 -InstallDir $installDir -NoPath 2>&1 |
+    ForEach-Object { Write-RtLog ("dotnet-install: " + $_) }
+Write-RtLog ("dotnet-install-exit " + $LASTEXITCODE)
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if (-not (Test-DesktopRuntime10)) { Write-RtLog 'verify-failed'; exit 31337 }
 Write-RtLog 'runtime-download-install ok'
 exit 0
