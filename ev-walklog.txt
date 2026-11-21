@@ -23,3 +23,4 @@ step S09 skipped (SkipIds)
 coverage-func S09 对象树-真实表清单 => skip
 coverage-func S10 查询-选中连接 => pass
 coverage-func S11 查询-新建查询入口 => pass
+shot ev-shot-result-S12.png 39217 bytes
