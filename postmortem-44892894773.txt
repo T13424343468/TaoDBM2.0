@@ -1,0 +1,7 @@
+===== MSSQL POST-MORTEM run 44892894773 =====
+pwsh: C:\Program Files\PowerShell\7\pwsh.exe
+mssql-evidence.txt exists: False
+C:\SQLMedia exists: False
+SQLEXPRESS service: absent
+recent TEMP logs: NONE in last 30min
+Setup Bootstrap Log absent (SETUP.EXE never ran)
