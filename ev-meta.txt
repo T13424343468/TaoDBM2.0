@@ -30,3 +30,4 @@ tag=step-start S17 time=2026-11-21T03:40:01.4420361+00:00 appMem=188 MB
 tag=S17a start time=2026-11-21T03:40:02.9156459+00:00 appMem=188 MB
 tag=S17a btn-found=True time=2026-11-21T03:40:04.4315919+00:00 appMem=188 MB
 tag=S17b invoked time=2026-11-21T03:40:05.8719634+00:00 appMem=193 MB
+tag=S17c dialog-scan-start time=2026-11-21T03:40:09.2965802+00:00 appMem=193 MB
