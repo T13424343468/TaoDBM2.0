@@ -33,3 +33,5 @@ step S14 skipped (SkipIds)
 coverage-func S14 SQL真实执行-空值过滤 => skip
 shot ev-shot-result-S15.png 39925 bytes
 S15 ledger: 2026-11-21 11:43:15.961 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
+shot shot-11-cell-value.png 39925 bytes
+coverage-func S15 SQL真实执行-取值比对 => pass
