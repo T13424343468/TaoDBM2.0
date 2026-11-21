@@ -9,3 +9,4 @@
 2026-11-21 11:39:43.571 [新建查询] worktab built db=main
 2026-11-21 11:39:43.581 [新建查询] tab selected
 2026-11-21 11:39:52.356 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+2026-11-21 11:40:03.852 [执行账] sql=SELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
