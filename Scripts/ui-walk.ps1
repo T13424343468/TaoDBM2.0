@@ -686,7 +686,7 @@ foreach ($s in $plan.steps) {
               } catch { Push-Evidence "S17d kbd-nav-err" }
             } catch { Push-Evidence "S17d iter-err" }
           }
-        } catch { Push-Evidence "S17c scan-err" }
+        } catch { Push-Evidence ("S17c scan-err " + $_.Exception.GetType().Name + ": " + (($_.Exception.Message -replace '\s+','_')) + "@" + $_.InvocationInfo.ScriptLineNumber) }
         if (-not $picked) { throw "save picker not handled" }
         $csvPath = Join-Path $PWD "ui-export-orders.csv"
         $fileOk = $false
