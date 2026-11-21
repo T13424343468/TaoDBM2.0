@@ -7,3 +7,22 @@ tag=step-start S06 time=2026-11-21T05:54:33.8348109+00:00 appMem=159 MB
 tag=step-start S07 time=2026-11-21T05:54:41.6374577+00:00 appMem=153 MB
 tag=expand-ok 🗄️ ui-auto-sqlite time=2026-11-21T05:54:43.0337105+00:00 appMem=154 MB
 tag=step-start S08 time=2026-11-21T05:54:50.6344749+00:00 appMem=161 MB
+tag=kb-tree-items Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | TaoDBM v2.0.0 | ＋ 新建连接 | 主题 | 关于 | 🗄️ ui-auto-sqlite（SQLite） | 🗄️ ui-auto-sqlite（SQLite） | 📁 main | 📁 main | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | 开始 | Add New Tab | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | ui-auto-sqlite：1 个库 time=2026-11-21T05:54:53.9966046+00:00 appMem=160 MB
