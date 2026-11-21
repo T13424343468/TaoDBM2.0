@@ -29,3 +29,4 @@ S14 ledger: 2026-11-21 00:03:27.866 [执行账] sql=SELECT COUNT(*) AS c FROM pr
 shot shot-10-null-emails.png 75521 bytes
 coverage-func S14 SQL真实执行-空值过滤 => pass
 shot ev-shot-result-S15.png 66957 bytes
+S15 ledger: 2026-11-21 00:03:39.028 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
