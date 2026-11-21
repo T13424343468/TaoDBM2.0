@@ -9,3 +9,4 @@ coverage-func N03 新用户-填写连接名称 => pass
 coverage-func N04 新用户-选择库文件 => pass
 shot shot-n05-saved.png 40324 bytes
 coverage-func N05 新用户-保存连接 => pass
+coverage-func N06 新用户-连接出现在对象树 => pass
