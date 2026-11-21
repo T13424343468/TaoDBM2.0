@@ -825,6 +825,34 @@ jobs:
           "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
           "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
 
+      - name: Push pre-walk evidence (always, #222 取证前移)
+        if: always()
+        shell: pwsh
+        run: |
+          # #222 定谳: seg4b/c2b ~1m10s 即 canceled, 公开分支零现场; 取证前移:
+          # 走查前先把装机日志尾 + DB 生成结果 + 阶段标记推公开分支, 死在装机/DB 段也留现场
+          "stage=pre-walk run=${{ github.run_id }} seg=${{ matrix.seg.name }} time=$(Get-Date -Format o)" | Add-Content stage-marker.txt
+          if (Test-Path install-smoke.log) { Get-Content install-smoke.log -Tail 80 | Add-Content install-smoke-tail.txt } else { "install-smoke.log absent" | Add-Content install-smoke-tail.txt }
+          if (Test-Path testdb/taodbm-ui.db) { "db ok: $((Get-Item testdb/taodbm-ui.db).Length) bytes" | Add-Content db-gen-result.txt } else { "db missing" | Add-Content db-gen-result.txt }
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          $branch = "ui-smoke-${{ matrix.seg.name }}-latest"
+          git checkout --orphan $branch 2>$null | Out-Null
+          git rm -rf . 2>$null | Out-Null
+          Copy-Item ..\stage-marker.txt -Force
+          Copy-Item ..\install-smoke-tail.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\db-gen-result.txt -Force -ErrorAction SilentlyContinue
+          git add -A 2>$null
+          git commit --allow-empty -m "pre-walk evidence run ${{ github.run_id }} ${{ matrix.seg.name }}" | Out-Null
+          git push origin $branch --force 2>&1 | Out-Host
+          Write-Host "[PRE-WALK EVIDENCE] pushed to $branch"
+          # 取证推送失败不回传红（走查步才是硬闸）
+          exit 0
+
       - name: Launch and walk real UI (v3.13 real-db, checklist-driven)
         shell: pwsh
         env:
@@ -863,10 +891,12 @@ jobs:
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
+          Copy-Item ..\stage-marker.txt -Force -ErrorAction SilentlyContinue
+          git add -A 2>$null
           if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
-          git commit -m "ui-smoke walk shots run ${{ github.run_id }} ${{ matrix.seg.name }}" | Out-Null
-          git push origin ui-smoke-${{ matrix.seg.name }}-latest --force
+          # #222: canceled 时无文件可提交曾静默失败, --allow-empty 保证分支必更新
+          git commit --allow-empty -m "ui-smoke walk shots run ${{ github.run_id }} ${{ matrix.seg.name }}" | Out-Null
+          git push origin ui-smoke-${{ matrix.seg.name }}-latest --force 2>&1 | Out-Host
           Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-${{ matrix.seg.name }}-latest/ui-smoke.png"
 
       - name: Upload UI smoke files (always, 供无凭据侧读取现场)
@@ -1251,6 +1281,34 @@ jobs:
           if ($connL.State -eq 'Open') { $connL.Close() }
           "EXPECTFILE=$(Join-Path $PWD testdb\expected.json)" | Add-Content $env:GITHUB_ENV
 
+      - name: Push pre-walk evidence (always, #222 取证前移)
+        if: always()
+        shell: pwsh
+        run: |
+          # #222 定谳: c2b ~1m10s 即 canceled, 公开分支零现场; 取证前移:
+          # 走查前先把装机日志尾 + 装库结果 + 阶段标记推公开分支, 死在装机/装库段也留现场
+          "stage=pre-walk run=${{ github.run_id }} db=${{ matrix.db }} seg=${{ matrix.seg.name }} time=$(Get-Date -Format o)" | Add-Content stage-marker.txt
+          if (Test-Path install-smoke.log) { Get-Content install-smoke.log -Tail 80 | Add-Content install-smoke-tail.txt } else { "install-smoke.log absent" | Add-Content install-smoke-tail.txt }
+          if (Test-Path testdb/expected.json) { "testdb ok: $((Get-Item testdb/expected.json).Length) bytes" | Add-Content db-gen-result.txt } else { "testdb missing" | Add-Content db-gen-result.txt }
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          $branch = "ui-walk-${{ matrix.db }}-${{ matrix.seg.name }}-latest"
+          git checkout --orphan $branch 2>$null | Out-Null
+          git rm -rf . 2>$null | Out-Null
+          Copy-Item ..\stage-marker.txt -Force
+          Copy-Item ..\install-smoke-tail.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\db-gen-result.txt -Force -ErrorAction SilentlyContinue
+          git add -A 2>$null
+          git commit --allow-empty -m "pre-walk evidence run ${{ github.run_id }} ${{ matrix.db }} ${{ matrix.seg.name }}" | Out-Null
+          git push origin $branch --force 2>&1 | Out-Host
+          Write-Host "[PRE-WALK EVIDENCE] pushed to $branch"
+          # 取证推送失败不回传红（走查步才是硬闸）
+          exit 0
+
       - name: Launch and walk real UI (server-db, checklist-driven)
         shell: pwsh
         env:
@@ -1289,6 +1347,7 @@ jobs:
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\stage-marker.txt -Force -ErrorAction SilentlyContinue
           git add -A 2>$null
           git commit --allow-empty -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
           git push origin $branch --force 2>&1 | Out-Host
