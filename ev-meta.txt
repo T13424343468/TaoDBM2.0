@@ -21,3 +21,4 @@ tag=S12 ledger-hit time=2026-11-21T11:43:30.0852835+00:00 appMem=183 MB
 tag=step-start S17 time=2026-11-21T11:43:31.6046043+00:00 appMem=183 MB
 tag=S17a start time=2026-11-21T11:43:33.1206980+00:00 appMem=189 MB
 tag=S17a btn-found=True time=2026-11-21T11:43:34.5745766+00:00 appMem=189 MB
+tag=S17b invoked time=2026-11-21T11:46:46.3886257+00:00 appMem=95 MB
