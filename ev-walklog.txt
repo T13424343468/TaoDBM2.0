@@ -11,3 +11,4 @@ shot shot-n05-saved.png 40324 bytes
 coverage-func N05 新用户-保存连接 => pass
 coverage-func N06 新用户-连接出现在对象树 => pass
 coverage-func N07 新用户-展开连接 => pass
+coverage-func N08 新用户-展开数据库 => pass

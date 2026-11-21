@@ -19,3 +19,4 @@ tag=kb-state-afterA main Collapsed time=2026-11-21T11:39:43.2195648+00:00 appMem
 tag=kb-state-afterB main Expanded time=2026-11-21T11:39:46.4877518+00:00 appMem=166 MB
 tag=kb-tree-items-after PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | ＋ 新建连接 | 主题 | 手册 | 关于 | 🗄️ ui-auto-sqlite（SQLite） | 🗄️ ui-auto-sqlite（SQLite） | 📁 main | 📁 main | 📋 orders | 📋 orders | 📋 products | 📋 products | ▸ 视图 | ▸ 视图 | ▸ 索引 time=2026-11-21T11:39:47.7158932+00:00 appMem=166 MB
 tag=expand-kb-ok 🗄️ ui-auto-sqlite child=main state=Expanded time=2026-11-21T11:39:49.0226290+00:00 appMem=166 MB
+tag=step-start N09 time=2026-11-21T11:39:56.2418233+00:00 appMem=165 MB
