@@ -633,6 +633,20 @@ jobs:
           }
           Write-Host "[HASH] SHA256: $((Get-FileHash $msis[0].FullName -Algorithm SHA256).Hash)"
 
+      - name: Preflight EnsureRuntime.ps1 (pwsh direct, #221 取证)
+        shell: pwsh
+        run: |
+          # #221 定谳: CA 秒败(-196608)三路运行时日志全空; 先在构建会话直接跑脚本,
+          # 验证可解析可起动、检测路 exit 0; 输出与运行时日志全落构建日志, 与 CA 侧 rt-ca-out 标记互为对照
+          $rtlog = Join-Path $env:TEMP 'taodbm-runtime.log'
+          Remove-Item $rtlog -Force -ErrorAction SilentlyContinue
+          pwsh -NoProfile -File Installer/EnsureRuntime.ps1
+          $code = $LASTEXITCODE
+          Write-Host "[PREFLIGHT] EnsureRuntime.ps1 exit=$code"
+          if (Test-Path $rtlog) { Get-Content $rtlog | ForEach-Object { Write-Host "[RT-LOG] $_" } }
+          if ($code -ne 0) { Write-Host "::error::preflight EnsureRuntime.ps1 exit=$code (script-level failure, CA side is not the cause)"; exit 1 }
+          Write-Host "[OK] preflight zero-download path clean"
+
       - name: Silent install -> verify -> uninstall -> verify clean
         shell: pwsh
         run: |

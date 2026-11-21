@@ -6,6 +6,16 @@
 # 云测钩子: TAODBM_FORCE_RUNTIME_DOWNLOAD=1 强制走下载路 (断言二用), 日常安装不设即走检测路。
 # 写法与 TaoZip 首发实现同口径 (TaoZip.PC/tools/msi/EnsureRuntime.ps1, 提交 1032c44), 不另起炉灶。
 $ErrorActionPreference = 'Stop'
+# #221 取证: CA 秒败(-196608)且 TEMP/Windows/ProgramData 三路日志全空, 疑脚本未起或秒崩;
+# 顶部硬写启动标记(独立于 Write-RtLog, 就算日志函数本身炸也留痕), trap 兜底落异常
+$rtCaOut = 'C:\ProgramData\TaoDBM\rt-ca-out.txt'
+try {
+    New-Item -ItemType Directory -Path (Split-Path $rtCaOut) -Force | Out-Null
+    Add-Content -Path $rtCaOut -Value ("{0} rt-script-start pid=$PID ps=$($PSVersionTable.PSVersion) eap=$ErrorActionPreference" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+} catch { }
+trap {
+    try { Add-Content -Path $rtCaOut -Value ("{0} rt-script-trap: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $_.Exception.ToString()) } catch { }
+}
 $log = Join-Path $env:TEMP 'taodbm-runtime.log'
 $logMirror = Join-Path $env:ProgramData 'TaoDBM\taodbm-runtime.log'
 try { New-Item -ItemType Directory -Path (Split-Path $logMirror) -Force | Out-Null } catch { }
