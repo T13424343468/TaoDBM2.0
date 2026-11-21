@@ -17,3 +17,4 @@ step S08 skipped (SkipIds)
 coverage-func S08 对象树-展开数据库 => skip
 step S09 skipped (SkipIds)
 coverage-func S09 对象树-真实表清单 => skip
+coverage-func S10 查询-选中连接 => pass
