@@ -1335,8 +1335,11 @@ jobs:
       matrix:
         seg:
           - { name: seg1, skip: "N09,N10,N11,N12,N13,N14,N15" }   # N01-N08 全新安装+建连接+对象树
-          - { name: seg2, skip: "N07,N08,N13,N14,N15" }           # N01-N06 前缀 + N09-N12 查询
-          - { name: seg3, skip: "N07,N08,N09,N12" }               # N01-N06 前缀 + N10-N11 + N13-N15 导出与尾页
+          # #213 定谳：seg2 跳过 N07/N08（展开连接/库）却跑 N09 查表——依赖链断，表永不渲染（treetxt 证据：树里只有连接节点）。
+          # 重拆为四段，每段自含前置（N01-N06 建连接必跑），段内步数≤10 与已绿段同量级：
+          - { name: seg2, skip: "N10,N11,N12,N13,N14,N15" }       # N01-N09 建连接+展开+真实表清单
+          - { name: seg3, skip: "N07,N08,N09,N14,N15" }           # N01-N06 前缀 + N10-N13 查询链
+          - { name: seg4, skip: "N07,N08,N09,N12,N13" }           # N01-N06 前缀 + N10,N11 + N14-N15 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
