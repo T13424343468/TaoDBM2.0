@@ -18,3 +18,4 @@ tag=kb-state main Collapsed time=2026-11-21T00:02:23.7616234+00:00 appMem=164 MB
 tag=kb-state-afterA main Collapsed time=2026-11-21T00:02:26.8739677+00:00 appMem=162 MB
 tag=kb-state-afterB main Expanded time=2026-11-21T00:02:30.1747454+00:00 appMem=167 MB
 tag=kb-tree-items-after PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Maximize | Close | TaoDBM v2.0.0 | ＋ 新建连接 | 主题 | 手册 | 关于 | 🗄️ ui-auto-sqlite（SQLite） | 🗄️ ui-auto-sqlite（SQLite） | 📁 main | 📁 main | 📋 orders | 📋 orders | 📋 products | 📋 products | ▸ 视图 | ▸ 视图 time=2026-11-21T00:02:31.5020421+00:00 appMem=165 MB
+tag=expand-kb-ok 🗄️ ui-auto-sqlite child=main state=Expanded time=2026-11-21T00:02:32.7525504+00:00 appMem=165 MB
