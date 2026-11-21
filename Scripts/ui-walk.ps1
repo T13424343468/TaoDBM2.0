@@ -704,12 +704,16 @@ foreach ($s in $plan.steps) {
         if ($s.page -eq 'theme') {
           $btn = Find-ElWait @{ automationId = 'BtnTheme' } 6 $mainRoot
           if ($null -eq $btn) { throw "theme button not reachable" }
+          Push-Evidence "S18a btn-found"
           Invoke-El $btn
           Start-Sleep -Seconds 2
+          Push-Evidence "S18b btn-clicked"
           $item = Find-ElWait @{ name = '天青' } 6 $null
           if ($null -eq $item) { throw "theme item not reachable" }
+          Push-Evidence "S18c item-found"
           Invoke-El $item
           Start-Sleep -Seconds 2
+          Push-Evidence "S18d item-clicked"
         } elseif ($s.page -eq 'about') {
           $btn = Find-ElWait @{ automationId = 'BtnAbout' } 6 $mainRoot
           if ($null -eq $btn) { throw "about button not reachable" }
@@ -717,7 +721,9 @@ foreach ($s in $plan.steps) {
           Start-Sleep -Seconds 2
         }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
+        Push-Evidence "SP shot-done"
         Close-ExtraWindows $handle
+        Push-Evidence "SP closed"
       }
       default { throw "unknown action: $action" }
     }
