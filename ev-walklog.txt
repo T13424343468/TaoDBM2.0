@@ -6,3 +6,4 @@ shot shot-n01-newconn.png 50935 bytes
 coverage-func N01 新用户-打开新建连接对话框 => pass
 coverage-func N02 新用户-选择SQLite引擎 => pass
 coverage-func N03 新用户-填写连接名称 => pass
+coverage-func N04 新用户-选择库文件 => pass
