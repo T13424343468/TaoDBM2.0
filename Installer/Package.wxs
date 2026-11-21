@@ -37,7 +37,7 @@
          listing proves otherwise. -->
     <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[System64Folder]cmd.exe" />
     <CustomAction Id="EnsureDotNetRuntime" Property="RTENSURECMD"
-                  ExeCommand="/c dir &quot;[INSTALLFOLDER]&quot; &gt; C:\ProgramData\rt-ca-dir.log 2&gt;&amp;1 &amp; if exist &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot; (powershell -NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;)"
+                  ExeCommand="/c dir &quot;[INSTALLFOLDER].&quot; &gt; C:\ProgramData\rt-ca-dir.log 2&gt;&amp;1 &amp; if exist &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot; (powershell -NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;)"
                   Execute="immediate" Return="check" />
     <Property Id="DESKTOP_SHORTCUT" Value="1" />
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
@@ -177,7 +177,7 @@
     <InstallExecuteSequence>
       <Custom Action="KillRunningApp" After="InstallValidate" />
       <Custom Action="SetInstallFolderExec" Sequence="940" />
-      <Custom Action="SetRtEnsureCmd" After="InstallFiles" />
+      <Custom Action="SetRtEnsureCmd" After="InstallFinalize" />
       <Custom Action="EnsureDotNetRuntime" After="SetRtEnsureCmd" Condition="NOT REMOVE" />
     </InstallExecuteSequence>
 
