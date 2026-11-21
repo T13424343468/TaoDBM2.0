@@ -21,3 +21,4 @@ S12 ledger: 2026-11-20 23:59:49.788 [执行账] sql=SELECT COUNT(*) AS c FROM or
 shot shot-08-count-5000.png 66884 bytes
 coverage-func S12 SQL真实执行-计数 => pass
 shot ev-shot-result-S13.png 67515 bytes
+S13 ledger: 2026-11-21 00:00:01.797 [执行账] sql=SELECT SUM(amount) AS s FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500
