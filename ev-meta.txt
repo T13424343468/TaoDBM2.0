@@ -16,3 +16,4 @@ tag=kb-tree-items PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | A
 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | 开始 | Add New Tab time=2026-11-21T11:39:50.6203609+00:00 appMem=163 MB
 tag=kb-state main Collapsed time=2026-11-21T11:39:51.9672426+00:00 appMem=163 MB
 tag=kb-state-afterA main Collapsed time=2026-11-21T11:39:54.7936790+00:00 appMem=163 MB
+tag=kb-state-afterB main Expanded time=2026-11-21T11:39:58.0947492+00:00 appMem=166 MB
