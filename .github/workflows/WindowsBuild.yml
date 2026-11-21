@@ -742,7 +742,8 @@ jobs:
       matrix:
         seg:
           - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
-          - { name: seg2, skip: "S06,S07,S08,S09" }                            # S01-S05 前缀 + S10-S19 SQL真执行+导出与尾页
+          - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
+          - { name: seg3, skip: "S06,S07,S08,S09,S13,S14" }                    # S01-S05+S10-S12 前缀 + S15-S19 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -891,8 +892,9 @@ jobs:
       matrix:
         db: [mysql, mssql]
         seg:
-          - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }
-          - { name: b, skip: "S06,S07,S08,S09" }                      # S01-S05 前缀 + S10-S19
+          - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
+          - { name: b, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }      # S01-S05 前缀 + S10-S14 SQL真执行
+          - { name: c, skip: "S06,S07,S08,S09,S13,S14" }                  # S01-S05+S10-S12 前缀 + S15-S19
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1158,6 +1160,8 @@ jobs:
           git commit --allow-empty -m "mssql postmortem run ${{ github.run_id }}" | Out-Null
           git push origin ui-walk-mssql-latest --force
           Write-Host "[POST-MORTEM] pushed to ui-walk-mssql-latest"
+          # 取证步无闸门权（#206 定因：push 竞争失败把后续走查步全带 skip）
+          exit 0
 
       - name: Silent install
         shell: pwsh
@@ -1279,8 +1283,10 @@ jobs:
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
           git add -A 2>$null
           git commit --allow-empty -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
-          git push origin $branch --force
+          git push origin $branch --force 2>&1 | Out-Host
           Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/$branch/ui-walk-log.txt"
+          # 取证推送失败不回传红（走查步才是硬闸）
+          exit 0
 
       - name: Upload UI smoke files (always)
         if: always()
