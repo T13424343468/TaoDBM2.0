@@ -22,3 +22,4 @@ shot ev-shot-result-N12.png 38516 bytes
 N12 ledger: 2026-11-21 11:39:53.386 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
 shot shot-n12-count.png 38516 bytes
 coverage-func N12 新用户-首条查询出数 => pass
+shot ev-shot-result-N13.png 43842 bytes
