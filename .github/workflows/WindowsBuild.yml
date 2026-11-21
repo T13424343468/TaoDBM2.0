@@ -744,7 +744,8 @@ jobs:
           - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
           - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }        # S01-S05+S10-S12 前缀 + S15-S16
-          - { name: seg4, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16" }  # S01-S05 前缀 + S17-S19 导出与尾页
+          # #213 定谳: 导出步依赖查询后的编辑器状态, 独立段必须带 S10-S12 前置, 否则 work-csv 按钮不存在
+          - { name: seg4, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05 前缀 + S10-S12 编辑器 + S17-S19 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -896,7 +897,7 @@ jobs:
           - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
           - { name: b, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }      # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: c1, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }     # S01-S05+S10-S12 前缀 + S15-S16
-          - { name: c2, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16" }  # S01-S05 前缀 + S17-S19 导出与尾页
+          - { name: c2, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05 前缀 + S10-S12 编辑器 + S17-S19 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1339,7 +1340,7 @@ jobs:
           # 重拆为四段，每段自含前置（N01-N06 建连接必跑），段内步数≤10 与已绿段同量级：
           - { name: seg2, skip: "N10,N11,N12,N13,N14,N15" }       # N01-N09 建连接+展开+真实表清单
           - { name: seg3, skip: "N07,N08,N09,N14,N15" }           # N01-N06 前缀 + N10-N13 查询链
-          - { name: seg4, skip: "N07,N08,N09,N12,N13" }           # N01-N06 前缀 + N10,N11 + N14-N15 导出与尾页
+          - { name: seg4, skip: "N07,N08,N09,N13,N15" }           # N01-N06 前缀 + N10-N12 编辑器 + N14-N15 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
