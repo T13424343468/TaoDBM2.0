@@ -25,3 +25,4 @@ S13 ledger: 2026-11-21 00:03:16.105 [执行账] sql=SELECT SUM(amount) AS s FROM
 shot shot-09-sum.png 71402 bytes
 coverage-func S13 SQL真实执行-聚合 => pass
 shot ev-shot-result-S14.png 75521 bytes
+S14 ledger: 2026-11-21 00:03:27.866 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;ELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92 | title=ELECT SUM(amount) AS s FROM orders rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
