@@ -19,3 +19,4 @@ tag=S12 run-invoked time=2026-11-21T11:42:41.0809488+00:00 appMem=178 MB
 tag=S12 result-shot time=2026-11-21T11:42:45.5543257+00:00 appMem=185 MB
 tag=S12 ledger-hit time=2026-11-21T11:42:46.9413806+00:00 appMem=185 MB
 tag=step-start S13 time=2026-11-21T11:42:48.3926824+00:00 appMem=185 MB
+tag=S13 run-invoked time=2026-11-21T11:42:52.3346629+00:00 appMem=194 MB
