@@ -4,3 +4,4 @@
 2026-11-21 11:41:03.581 托盘: 消息托管到主窗 hwnd=0x3017E
 2026-11-21 11:41:03.590 托盘: 向系统注册成功
 2026-11-21 11:41:04.046 布局分档切换: Compact @ 1008 DIP
+2026-11-21 11:41:50.967 [对象树] 连接展开 engine=MySQL dbs=5 [information_schema,mysql,performance_schema,sys,taodbmui]
