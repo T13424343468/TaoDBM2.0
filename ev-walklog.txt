@@ -7,3 +7,5 @@ coverage-func S01 新建连接-打开对话框 => pass
 coverage-func S02 连接-选择SQLite引擎 => pass
 coverage-func S03 连接-填写名称 => pass
 coverage-func S04 连接-填写数据库文件 => pass
+shot shot-06-conn-saved.png 40015 bytes
+coverage-func S05 连接-保存 => pass
