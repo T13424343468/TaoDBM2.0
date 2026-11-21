@@ -7,3 +7,10 @@ tag=step-start S06 time=2026-11-21T00:02:03.4246265+00:00 appMem=159 MB
 tag=step-start S07 time=2026-11-21T00:02:10.9229947+00:00 appMem=157 MB
 tag=expand-ok 🗄️ ui-auto-sqlite time=2026-11-21T00:02:12.2467072+00:00 appMem=159 MB
 tag=step-start S08 time=2026-11-21T00:02:19.5153466+00:00 appMem=162 MB
+tag=kb-tree-items PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Maximize | Close | TaoDBM v2.0.0 | ＋ 新建连接 | 主题 | 手册 | 关于 | 🗄️ ui-auto-sqlite（SQLite） | 🗄️ ui-auto-sqlite（SQLite） | 📁 main | 📁 main | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | 开始 time=2026-11-21T00:02:22.5449469+00:00 appMem=164 MB
