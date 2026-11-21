@@ -5,3 +5,4 @@
 2026-11-21 11:42:35.607 托盘: 向系统注册成功
 2026-11-21 11:42:36.045 布局分档切换: Compact @ 1008 DIP
 2026-11-21 11:43:26.586 [对象树] 连接展开 engine=SqlServer dbs=5 [master,model,msdb,taodbmui,tempdb]
+2026-11-21 11:43:43.625 [对象树] 库展开 db=taodbmui children=2 [dbo.orders,dbo.products]
