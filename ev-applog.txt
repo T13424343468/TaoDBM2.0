@@ -4,3 +4,6 @@
 2026-11-21 11:41:43.135 托盘: 消息托管到主窗 hwnd=0x30068
 2026-11-21 11:41:43.147 托盘: 向系统注册成功
 2026-11-21 11:42:29.084 [Flyout] opening
+2026-11-21 11:42:32.068 [新建查询] enter kind=Connection name=ui-auto-mysql provider=null
+2026-11-21 11:42:32.086 [新建查询] worktab built db=taodbmui
+2026-11-21 11:42:32.095 [新建查询] tab selected
