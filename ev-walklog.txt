@@ -20,3 +20,4 @@ shot ev-shot-result-S12.png 66884 bytes
 S12 ledger: 2026-11-20 23:59:49.788 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
 shot shot-08-count-5000.png 66884 bytes
 coverage-func S12 SQL真实执行-计数 => pass
+shot ev-shot-result-S13.png 67515 bytes
