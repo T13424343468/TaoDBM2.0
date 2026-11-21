@@ -24,7 +24,10 @@
     <!-- 运行时保障 (2026-11-21 全系安装器新标准): 装完文件后以系统实际注册为准检测/补装
          .NET 桌面运行时 (卸载 REMOVE 时跳过); 失败即回滚, 无网时脚本弹通俗重试指引。
          写法与 TaoZip 首发实现同口径 (属性转发定位 powershell, 避免 Value 内嵌 [SystemFolder] 的 WIX1077) -->
-    <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[SystemFolder]WindowsPowerShell\v1.0\powershell.exe" />
+    <!-- #218 定谳: 实测包按 x86 会话解析 SystemFolder→SysWOW64 (run 218 install.log: SystemFolder=C:\Windows\SysWOW64\,
+         ProgramFilesFolder=C:\Program Files (x86)\), 32 位 PowerShell 起动即 1722;
+         改 System64Folder 恒指 64 位 System32, 与包位数无关 -->
+    <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" />
     <CustomAction Id="EnsureDotNetRuntime" Property="RTENSURECMD"
                   ExeCommand="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;"
                   Execute="immediate" Return="check" />

@@ -616,6 +616,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { $out2 | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
           $msis = Get-ChildItem out -Filter *.msi
           if ($msis.Count -ne 1) { Write-Host "::error::msi count wrong: $($msis.Count)"; exit 1 }
+          # #218 定谳: 包实际按 x86 会话解析 (SystemFolder=SysWOW64), -arch x64 疑似未生效;
+          # 读 SummaryInformation Template 断言包位数, x86 包立即红并给出可读原因
+          $installer = New-Object -ComObject WindowsInstaller.Installer
+          $db = $installer.GetType().InvokeMember('OpenDatabase','InvokeMethod',$null,$installer,@("$($msis[0].FullName)",0))
+          $view = $db.GetType().InvokeMember('OpenView','InvokeMethod',$null,$db,@("SELECT Value FROM _SummaryInformation WHERE Property=7"))
+          $view.GetType().InvokeMember('Execute','InvokeMethod',$null,$view,$null)
+          $rec = $view.GetType().InvokeMember('Fetch','InvokeMethod',$null,$view,$null)
+          $template = $rec.GetType().InvokeMember('StringData','GetProperty',$null,$rec,@(1))
+          Write-Host "[MSI-TEMPLATE] $template"
+          if ($template -notmatch '^x64') { Write-Host "::error::MSI package is not x64 (Template=$template) - -arch x64 did not take effect"; exit 1 }
           Write-Host "[HASH] SHA256: $((Get-FileHash $msis[0].FullName -Algorithm SHA256).Hash)"
 
       - name: Silent install -> verify -> uninstall -> verify clean
