@@ -1300,3 +1300,109 @@ jobs:
             ui-walk-report.txt
             ui-walk-log.txt
             install-smoke.log
+
+  kill-restart-drill:
+    # R2 进程级 kill/重启演练（2026-11-21 盲区补齐令）：seed 进程落状态后强杀，verify 新进程回读对账。
+    # 独立短作业（Linux 便宜快），不占 Windows 真机额度；全量 LogicTest 里同批新增 INJ-* 引擎侧半场。
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build LogicTest
+        run: dotnet build Tests/TaoDBM.LogicTest -c Release -warnaserror --no-incremental
+
+      - name: Run kill/restart drill
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          pwsh -NoProfile -File Scripts/kill-restart-drill.ps1
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::kill/restart drill failed"; exit $LASTEXITCODE }
+
+  ui-smoke-newuser:
+    # R10 新用户全流程走查（2026-11-21 盲区补齐令）：清空用户配置模拟全新安装，
+    # 走 ui-walk-plan-newuser.json（首次启动→建连接→浏览→查询→导出），三段拆分压进免费 runner 回收窗口。
+    runs-on: windows-latest
+    timeout-minutes: 20
+    needs: msi
+    strategy:
+      fail-fast: false
+      matrix:
+        seg:
+          - { name: seg1, skip: "N09,N10,N11,N12,N13,N14,N15" }   # N01-N08 全新安装+建连接+对象树
+          - { name: seg2, skip: "N07,N08,N13,N14,N15" }           # N01-N06 前缀 + N09-N12 查询
+          - { name: seg3, skip: "N07,N08,N09,N12" }               # N01-N06 前缀 + N10-N11 + N13-N15 导出与尾页
+    steps:
+      - name: Checkout (walk script from source)
+        uses: actions/checkout@v4
+
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: taodbm-phase2-msi
+
+      - name: Silent install
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
+          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
+          $p = Start-Process msiexec -ArgumentList "/i","`"$($found.FullName)`"","/qn","/norestart" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::silent install failed exit=$($p.ExitCode)"; exit 1 }
+
+      - name: Wipe user profile (simulate brand-new install)
+        shell: pwsh
+        run: |
+          # R10 前提：新用户视角。两处 Tao 数据目录全清（D 盘探测位 + LOCALAPPDATA 回退位），
+          # 连接/收藏/标签页/主题/历史/窗口状态全部从零开始。
+          foreach ($root in @('D:\TaoDBMData\TaoDBM', (Join-Path $env:LOCALAPPDATA 'TaoDBM'))) {
+            if (Test-Path $root) { Remove-Item -Recurse -Force $root; Write-Host "[WIPE] $root" }
+          }
+          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
+
+      - name: Generate real SQLite test DB (dirty data + expected values)
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb failed"; exit 1 }
+          "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
+          "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
+
+      - name: Launch and walk as first-time user
+        shell: pwsh
+        env:
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-newuser-${{ matrix.seg.name }}
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $exe = $null
+          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+            if (Test-Path $root) { $exe = Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1; break }
+          }
+          if (-not $exe) { Write-Host "::error::TaoDBM.exe not found after install"; exit 1 }
+          Write-Host "[OK] exe at $exe"
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-newuser.json -SkipIds "${{ matrix.seg.skip }}"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::newuser walk hard gate failed"; exit 1 }
+
+      - name: Uninstall (restore clean state)
+        if: always()
+        shell: pwsh
+        run: |
+          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if ($arp) { $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru; Write-Host "[UNINSTALL] exit=$($p.ExitCode)" }
+
+      - name: Upload newuser walk files (always, 供无凭据侧读取现场)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-newuser-walk-${{ matrix.seg.name }}
+          path: |
+            shot-n*.png
+            ui-coverage.txt
+            ui-walk-report.txt
+            ui-walk-log.txt

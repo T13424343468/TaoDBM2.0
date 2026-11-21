@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Text;
 using TaoDBM.Core;
+using TaoDBM.Core.Streaming;
+using TaoDBM.Infrastructure;
 using TaoDBM.UI;
 
 // .sql 三件套（2026-11-19 23:52 老板令）：GBK 编码口径依赖 CodePages 提供者（App 启动已注册，测试进程自行补注册）
@@ -20,6 +22,15 @@ AppDomain.CurrentDomain.UnhandledException += (s, e) =>
     Ck($"UNHANDLED-EXCEPTION terminating={e.IsTerminating} {e.ExceptionObject}");
     try { Console.Error.WriteLine($"UNHANDLED-EXCEPTION terminating={e.IsTerminating} {e.ExceptionObject}"); Console.Error.Flush(); } catch { }
 };
+
+// R2 进程级 kill/重启演练（盲区补齐 2026-11-21）：Scripts/kill-restart-drill.ps1 两阶段调用——
+// seed 阶段落状态后驻留，被外部强杀模拟崩溃；verify 阶段以新进程回读对账恢复。
+// 常规全量跑（无环境变量）不进此分支，行为与既有完全一致。
+var drillPhase = Environment.GetEnvironmentVariable("TAODBM_DRILL");
+if (drillPhase is "seed" or "verify")
+{
+    return KillRestartDrill.Run(drillPhase, args);
+}
 
 int pass = 0, fail = 0;
 var layerPass = new Dictionary<string, int>();
@@ -4254,6 +4265,304 @@ Layer("单元");
     Check("BD-报告-渲染含结论行", r1.Render("头").Contains("演练结论：通过") && r3.Render("头").Contains("演练结论：未通过"));
     Check("BD-报告-渲染含逐表明细", r3.Render("头").Contains("备份时点 5000 行，临时库 4999 行"));
     try { Directory.Delete(drillDir, true); } catch { }
+}
+
+Console.WriteLine("\n== 注入与竞态（R2 盲区补齐 2026-11-21）==");
+Layer("集成");
+{
+    // --- 满盘/断盘：溢出暂存文件路径被目录占位（磁盘满/路径被占的确定性模拟），写失败必须抛出、绝不静默丢数据 ---
+    var spillBlocked = new TempFileSpillStore();
+    bool dirPlaced = false;
+    try
+    {
+        Directory.CreateDirectory(spillBlocked.FilePath);
+        dirPlaced = true;
+        spillBlocked.WriteBatch(new[] { "a" }, new List<string?[]> { new string?[] { "1" } });
+        Check("INJ-满盘-占位写失败必抛", false, "未抛异常");
+    }
+    catch (Exception ex)
+    {
+        Check("INJ-满盘-占位写失败必抛", dirPlaced, ex.GetType().Name);
+    }
+    finally
+    {
+        try { Directory.Delete(spillBlocked.FilePath, true); } catch { }
+        spillBlocked.Dispose();
+    }
+
+    // --- 断盘：AtomicWrite 目标为目录属确定性失败，必须立刻原样抛出、不进退避重试死等 ---
+    var dirTarget = Path.Combine(Path.GetTempPath(), "taodbm-inj-dir-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(dirTarget);
+    var swAtomic = Stopwatch.StartNew();
+    Exception? atomicEx = null;
+    try { AtomicWrite.Text(dirTarget, "x"); }
+    catch (Exception ex) { atomicEx = ex; }
+    Check("INJ-断盘-目标为目录必抛不挂起", atomicEx is not null && swAtomic.Elapsed.TotalSeconds < 5,
+        $"{atomicEx?.GetType().Name} {swAtomic.Elapsed.TotalSeconds:0.0}s");
+    try { Directory.Delete(dirTarget, true); } catch { }
+
+    // --- 断盘后重启：溢出暂存坏行容错，好行完整回放 ---
+    var spillReplay = new TempFileSpillStore();
+    try
+    {
+        spillReplay.WriteBatch(new[] { "id", "name" }, new List<string?[]> { new string?[] { "1", "甲" }, new string?[] { "2", null } });
+        spillReplay.WriteBatch(new[] { "id", "name" }, new List<string?[]> { new string?[] { "3", "乙" } });
+        File.AppendAllText(spillReplay.FilePath, "这行不是JSON\n\n{\"H\": \"坏行\"\n", Encoding.UTF8);
+        var replay = spillReplay.ReadBatches().ToList();
+        Check("INJ-断盘-坏行跳过好行回放", replay.Count == 2 && replay[0].Rows.Count == 2 && replay[1].Rows.Count == 1,
+            $"回放{replay.Count}批");
+    }
+    finally { spillReplay.Dispose(); }
+
+    // --- 并发同发：任务中心多任务并发提交 + 取消/暂停/续跑竞态，终态必须一一对应、事件恰好一次 ---
+    var tc = new TaskCenter();
+    var doneEvents = new List<string>();
+    tc.TaskCompleted += s => { lock (doneEvents) doneEvents.Add(s.TaskId + ":" + s.State); };
+    tc.Runner = h => { Thread.Sleep(30); return Task.CompletedTask; };
+    var handles = Enumerable.Range(0, 12)
+        .Select(i => tc.Submit(new TaskSpec { Kind = "query", Title = "并发" + i, Sql = "SELECT 1" }))
+        .ToList();
+    var cancelResults = new List<(string Id, bool Ok)>();
+    foreach (var h in handles.Take(4)) cancelResults.Add((h.TaskId, tc.Cancel(h.TaskId)));
+    tc.Pause();
+    tc.Resume();
+    var deadline = DateTime.UtcNow.AddSeconds(15);
+    while (DateTime.UtcNow < deadline && tc.List().Any(s => s.State == "running")) Thread.Sleep(50);
+    var states = tc.List().GroupBy(s => s.TaskId).ToDictionary(g => g.Key, g => g.First().State);
+    Check("INJ-并发-全部到达终态", states.Count == 12 && states.Values.All(s => s is "done" or "canceled" or "failed"),
+        string.Join(",", states.Values.Distinct()));
+    Check("INJ-并发-取消与完成不冲突",
+        cancelResults.All(cr => cr.Ok ? states[cr.Id] == "canceled" : states[cr.Id] != "canceled"));
+    Check("INJ-并发-未取消任务完成", handles.Skip(4).All(h => states[h.TaskId] == "done"));
+    Check("INJ-并发-终态事件每任务恰一次", doneEvents.Count == 12 && doneEvents.Distinct().Count() == 12,
+        $"事件{doneEvents.Count}条");
+    var retry = tc.Retry(handles[0].TaskId);
+    Check("INJ-并发-终态可重跑", retry is not null);
+    if (retry is not null)
+    {
+        var dl2 = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < dl2 && tc.List().First(s => s.TaskId == retry.TaskId).State == "running") Thread.Sleep(50);
+        Check("INJ-并发-重跑到完成", tc.List().First(s => s.TaskId == retry.TaskId).State == "done");
+    }
+
+    // --- kill 后重启（引擎侧半场）：损坏快照/水位/时间线/迁移状态/备份策略一律容错，绝不闪退 ---
+    var tc2 = new TaskCenter();
+    tc2.ImportStates("这不是JSON{{{");
+    tc2.ImportStates("");
+    tc2.ImportStates("null");
+    Check("INJ-重启-损坏快照静默忽略", tc2.List().Count == 0);
+    tc2.ImportStates(tc.ExportStates());
+    Check("INJ-重启-完好快照照常并入", tc2.List().Count >= 12, $"并入{tc2.List().Count}条");
+    var wz = SyncCheckpoint.FailSafeParse("t", "{broken");
+    Check("INJ-重启-水位损坏回零", wz.BatchDone == 0 && wz.LastKey == "");
+    Check("INJ-重启-回零后从头续传", SyncCheckpoint.Resume(new[] { "a", "b" }, wz).Count == 2);
+    Check("INJ-重启-时间线损坏不抛", SchemaTimeline.Parse("{oops").Count == 0);
+    Check("INJ-重启-迁移状态损坏返回空", MigrationResume.FromJson("{oops") is null);
+    Check("INJ-重启-备份策略损坏返回空", BackupPlanner.FromJson("{oops") is null);
+}
+
+Console.WriteLine("\n== 畸形灌数与机械遍历（R3 盲区补齐 2026-11-21）==");
+Layer("暴力");
+{
+    // --- 畸形 SQL 灌切分器与守卫：只许容错，不许崩 ---
+    string[] nastySql =
+    {
+        "", "   ", ";", ";;;", "'", "\"", "`", "''''", "--", "/*", "*/", "/*未闭合",
+        "SELECT '未闭合", "SELECT \"未闭合", "SELECT `未闭合",
+        "DROP TABLE users; DROP TABLE users;--", "émoji🚀中文表名", new string('A', 100000),
+        "SELECT * FROM t WHERE x='a;b;c';SELECT 2", "\x00\x01\x02", "sel;ect;;;from;;where;",
+        "INSERT INTO t VALUES ('it''s'); -- 注释\nSELECT 1", "‌‍零宽字符",
+    };
+    int splitOk = 0, guardOk = 0;
+    foreach (var s in nastySql)
+    {
+        try { var parts = SqlSplitter.Split(s); if (parts is not null) splitOk++; }
+        catch (Exception ex) { Console.WriteLine("[MNK-SQL] Split threw: " + ex.GetType().Name); }
+        try { var checks = RiskySqlGuard.InspectScript(s, DbEngine.SQLite, q => q); if (checks is not null) guardOk++; }
+        catch (Exception ex) { Console.WriteLine("[MNK-SQL] Guard threw: " + ex.GetType().Name); }
+    }
+    Check("MNK-SQL-切分器畸形不崩", splitOk == nastySql.Length, $"{splitOk}/{nastySql.Length}");
+    Check("MNK-SQL-守卫畸形不崩", guardOk == nastySql.Length, $"{guardOk}/{nastySql.Length}");
+    var sp = SqlSplitter.Split("SELECT 'a;b' AS c;UPDATE t SET x=1;-- 尾注释");
+    Check("MNK-SQL-引号内分号不切", sp.Count == 3 && sp[0].Contains("'a;b'") && sp[1].StartsWith("UPDATE"), string.Join("||", sp));
+
+    // --- 怪问题灌问库引擎：空串/emoji/注入串/超长/不存在列，只许明确拒答，不许崩 ---
+    var nlCols = new List<ColumnSpec>
+    {
+        new() { Name = "amount", DataType = "DECIMAL" },
+        new() { Name = "name", DataType = "VARCHAR" },
+    };
+    string[] nastyQuestions =
+    {
+        "", "???", "🚀🚀", "'; DROP TABLE users;--", string.Concat(Enumerable.Repeat("多少", 2500)),
+        "平均金额最大的前3名是谁", "xyzzy不存在的列名多少条",
+    };
+    int nlOk = 0;
+    foreach (var q in nastyQuestions)
+    {
+        try { var r = NaturalLanguageQuery.Ask(q, "orders", nlCols, DbEngine.SQLite); if (r is not null) nlOk++; }
+        catch (Exception ex) { Console.WriteLine("[MNK-NL] threw: " + ex.GetType().Name); }
+    }
+    Check("MNK-问库-怪问题不崩", nlOk == nastyQuestions.Length, $"{nlOk}/{nastyQuestions.Length}");
+    var nl = NaturalLanguageQuery.Ask("平均金额是多少", "orders", nlCols, DbEngine.SQLite);
+    Check("MNK-问库-正常问题仍可用", nl.Ok && nl.Sql.ToUpperInvariant().Contains("AVG"), nl.Sql);
+
+    // --- 畸形 CSV 灌导入流：未闭合引号/二进制垃圾/BOM/跨行字段/超宽行，只许容错不许崩 ---
+    string[] nastyCsv =
+    {
+        "", "\n\n\n", "a,b\n1", "a,b\n\"未闭合,1", "a,b\n\x00\x01,2",
+        "a,b\n" + new string('x', 500000), "a,b\r\n1,2\r\n3,4", "﻿a,b\n1,2",
+        "a,b\n\"multi\nline\",2", "a,b\n1,2,3,4,5",
+    };
+    int csvOk = 0;
+    foreach (var c in nastyCsv)
+    {
+        try { var batches = ImportStreaming.CsvBatches(new StringReader(c)).ToList(); if (batches is not null) csvOk++; }
+        catch (Exception ex) { Console.WriteLine("[MNK-CSV] threw: " + ex.GetType().Name); }
+    }
+    Check("MNK-CSV-畸形不崩", csvOk == nastyCsv.Length, $"{csvOk}/{nastyCsv.Length}");
+    var csvGood = ImportStreaming.CsvBatches(new StringReader("a,b\r\n1,2\r\n3,4")).ToList();
+    Check("MNK-CSV-正常两行一批收齐", csvGood.Count == 1 && csvGood[0].Rows.Count == 2);
+    var spillCsv = new TempFileSpillStore();
+    try
+    {
+        var sum = ImportStreaming.CsvIngest(new StringReader("a,b\n1,2\n3,4"), spillCsv);
+        Check("MNK-CSV-汇入暂存口径一致", sum is not null && sum.TotalRows == 2 && sum.BatchCount == 1,
+            $"行{sum?.TotalRows} 批{sum?.BatchCount}");
+    }
+    finally { spillCsv.Dispose(); }
+
+    // --- 固定时长机械遍历：种子固定可复现，随机组合纯逻辑引擎，未文档化异常即红（约2秒，不拖垮全量） ---
+    var rng = new Random(20261121);
+    var swMonkey = Stopwatch.StartNew();
+    int monkeyOps = 0;
+    Exception? monkeyBoom = null;
+    var timeline = new List<SchemaTimelineEntry>();
+    var snapTables = new List<SchemaTableSnapshot>
+    {
+        new() { Table = "t1", Columns = { new TableColumnDesign { Name = "id", SqlType = "INT", IsPrimaryKey = true } } },
+    };
+    while (swMonkey.Elapsed.TotalSeconds < 2.0)
+    {
+        try
+        {
+            switch (rng.Next(6))
+            {
+                case 0: timeline = SchemaTimeline.Append(timeline, snapTables, "切面" + monkeyOps).ToList(); break;
+                case 1: SchemaTimeline.Parse(rng.Next(2) == 0 ? null : "{\"bad\":"); break;
+                case 2:
+                    var plan = new ShardPlan("t" + monkeyOps, "k", ShardingWizard.ShardStrategy.Hash,
+                        2 + rng.Next(4), Array.Empty<string>(), Array.Empty<ShardCategory>());
+                    ShardRouting.RouteToShard(plan, rng.Next(2) == 0 ? rng.Next().ToString() : "");
+                    break;
+                case 3: SyncCheckpoint.FailSafeParse("t", rng.Next(2) == 0 ? null : rng.Next().ToString("N")); break;
+                case 4: MigrationResume.FromJson(rng.Next(2) == 0 ? "" : "[1,2,3]"); break;
+                case 5: BackupPlanner.FromJson(rng.Next(2) == 0 ? "" : "[]"); break;
+            }
+            monkeyOps++;
+        }
+        catch (ArgumentException) { monkeyOps++; }   // 文档化异常：非法入参被明确拒绝
+        catch (NotSupportedException) { monkeyOps++; }
+        catch (Exception ex) { monkeyBoom = ex; break; }
+    }
+    Check("MNK-遍历-固定时长无未文档化异常", monkeyBoom is null && monkeyOps > 50,
+        $"ops={monkeyOps} {monkeyBoom?.GetType().Name}");
+}
+
+Console.WriteLine("\n== 入口对账（R4 盲区补齐 2026-11-21）==");
+Layer("制度补齐");
+{
+    // App 层 UI 类不可在 LogicTest 实例化（会拉 WinUI 依赖）：入口对账用源码文本断言；
+    // Infrastructure 层可实例化部分走真测。源码根定位：从测试二进制逐级向上找含 Src/TaoDBM.App 的目录。
+    static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "Src", "TaoDBM.App")))
+            dir = dir.Parent;
+        if (dir is null) throw new InvalidOperationException("未定位到源码根（Src/TaoDBM.App）");
+        return dir.FullName;
+    }
+    static string Src(string rel) => File.ReadAllText(Path.Combine(RepoRoot(), "Src", rel));
+
+    // 1) 快捷键：F1 全局手册挂根 Grid；WorkTab F5/Ctrl+Enter/Ctrl+Space/Ctrl+S
+    var mw = Src("TaoDBM.App/MainWindow.xaml.cs");
+    Check("ENT-快捷键-F1全局手册挂根Grid", mw.Contains("VirtualKey.F1") && mw.Contains("KeyboardAccelerators.Add"));
+    var wt = Src("TaoDBM.App/UI/WorkTab.cs");
+    Check("ENT-快捷键-工作表四键齐全",
+        wt.Contains("VirtualKey.F5") && wt.Contains("VirtualKey.Enter, Windows.System.VirtualKeyModifiers.Control")
+        && wt.Contains("VirtualKey.Space") && wt.Contains("VirtualKey.S, Windows.System.VirtualKeyModifiers.Control"));
+
+    // 2) 命令行 .sql 参数：跳过 - 开头、只收 .sql 后缀（App 层文本断言 + Infrastructure 登记簿真测）
+    var host = Src("TaoDBM.App/UI/SqlHandoffHost.cs");
+    Check("ENT-命令行-只收sql后缀", host.Contains("GetCommandLineArgs") && host.Contains(".sql"));
+    var appCs = Src("TaoDBM.App/App.xaml.cs");
+    Check("ENT-命令行-交接失败回落新实例", appCs.Contains("TryHandoffToExisting") && appCs.Contains("Current.Exit()"));
+
+    // 3) 管道交接登记簿（Infrastructure 真测）：登记/激活/坏行容错/死亡进程清理
+    var regFile = Path.Combine(Path.GetTempPath(), "taodbm-ent-reg-" + Guid.NewGuid().ToString("N") + ".txt");
+    SqlHandoffRegistry.UseFile(regFile);
+    try
+    {
+        SqlHandoffRegistry.Register("pipe-a", 1);
+        SqlHandoffRegistry.Touch("pipe-a", 1);
+        Check("ENT-管道-登记与防重复", SqlHandoffRegistry.IsRegistered("pipe-a"));
+        SqlHandoffRegistry.Register("pipe-a", 1);
+        Check("ENT-管道-重复登记不叠行", File.ReadAllLines(regFile).Length == 1);
+        Check("ENT-管道-pid非正拒收", SqlHandoffRegistry.Parse("pipe-b|0|20261121000000000") is null
+            && SqlHandoffRegistry.Parse("pipe-b|-3|20261121000000000") is null);
+        Check("ENT-管道-坏行整行丢弃", SqlHandoffRegistry.Parse("垃圾行") is null && SqlHandoffRegistry.Parse("a|b|c") is null);
+        var e = SqlHandoffRegistry.Parse("pipe-c|42|20261121093000000");
+        Check("ENT-管道-好行往返", e is not null && e.Pid == 42 && SqlHandoffRegistry.Format(e) == "pipe-c|42|20261121093000000");
+        // 死亡进程清理：登记一个必死的 pid（取当前进程树外随机大号），MostRecentAlive 后应被摘除
+        File.AppendAllText(regFile, "pipe-dead|2147480000|20261121093000000\n");
+        SqlHandoffRegistry.MostRecentAlive(Environment.ProcessId);
+        Check("ENT-管道-死亡进程被清理", !File.ReadAllText(regFile).Contains("pipe-dead"));
+    }
+    finally { SqlHandoffRegistry.UseFile(""); try { File.Delete(regFile); } catch { } }
+
+    // 4) 拖放：WorkTabs.AllowDrop 挂在 MainWindow.SqlLoad.cs
+    var sqlLoad = Src("TaoDBM.App/MainWindow.SqlLoad.cs");
+    Check("ENT-拖放-允许拖入", sqlLoad.Contains("AllowDrop = true"));
+
+    // 5) 托盘：单例 + 五事件 + 最近列表上限
+    var tray = Src("TaoDBM.App/UI/TrayIcon.cs");
+    Check("ENT-托盘-五事件齐全", new[] { "OpenRequested", "NewConnectionRequested", "ThemeRequested", "SettingsRequested", "ExitRequested" }
+        .All(ev => tray.Contains(ev)));
+    Check("ENT-托盘-最近列表上限8", tray.Contains("RecentMax = 8"));
+
+    // 6) .sql 文件关联：安装器注册 TaoDBM.SqlFile + .sql 键
+    var wxs = File.ReadAllText(Path.Combine(RepoRoot(), "Installer", "Package.wxs"));
+    Check("ENT-文件关联-注册表键齐全", wxs.Contains("TaoDBM.SqlFile") && wxs.Contains(".sql"));
+
+    // 7) 窗口状态记忆与 .sql 打开偏好（Infrastructure 真测）：损坏回落默认，绝不闪退
+    var wsFile = Path.Combine(Path.GetTempPath(), "taodbm-ent-ws-" + Guid.NewGuid().ToString("N") + ".json");
+    WindowStateStore.UseFile(wsFile);
+    try
+    {
+        Check("ENT-窗口-缺失回默认", WindowStateStore.Load() is WindowStateItem);
+        WindowStateStore.Save(new WindowStateItem { X = 10, Y = 20, Width = 1200, Height = 800, Maximized = false, LeftPaneWidth = 300 });
+        var ws = WindowStateStore.Load();
+        Check("ENT-窗口-写读往返", ws.X == 10 && ws.Width == 1200 && ws.LeftPaneWidth == 300);
+        File.WriteAllText(wsFile, "{broken");
+        Check("ENT-窗口-损坏回默认", WindowStateStore.Load() is WindowStateItem);
+        Check("ENT-窗口-默认尺寸口径", WindowStateStore.DefaultSize(1920, 1080) == (1536.0, 864.0)
+            && WindowStateStore.DefaultSize(1000, 700) == (1000.0, 700.0));
+    }
+    finally { WindowStateStore.UseFile(""); try { File.Delete(wsFile); } catch { } }
+    var prefsFile = Path.Combine(Path.GetTempPath(), "taodbm-ent-pref-" + Guid.NewGuid().ToString("N") + ".json");
+    SqlOpenPrefs.UseFile(prefsFile);
+    try
+    {
+        Check("ENT-偏好-缺失默认开", SqlOpenPrefs.Load());
+        SqlOpenPrefs.Save(false);
+        Check("ENT-偏好-写读往返", !SqlOpenPrefs.Load());
+        File.WriteAllText(prefsFile, "{broken");
+        Check("ENT-偏好-损坏回落默认", SqlOpenPrefs.Load());
+    }
+    finally { SqlOpenPrefs.UseFile(""); try { File.Delete(prefsFile); } catch { } }
+
+    // 8) 数据目录迁移：Tao 系列存储 D 盘探测回退（Infrastructure 真测，只验路径口径不真迁）
+    Check("ENT-迁移-路径口径可复现", TaoPaths.FilePath("windowstate.json").EndsWith("windowstate.json"));
 }
 
 Console.WriteLine("\n== 操作手册（2026-11-20 老板令）==");
