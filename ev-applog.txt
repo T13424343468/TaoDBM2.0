@@ -8,3 +8,4 @@
 2026-11-21 21:05:28.695 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
 2026-11-21 21:05:28.715 [新建查询] worktab built db=main
 2026-11-21 21:05:28.727 [新建查询] tab selected
+2026-11-21 21:05:37.703 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
