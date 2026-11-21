@@ -27,3 +27,4 @@ shot ev-shot-result-S13.png 43557 bytes
 S13 ledger: 2026-11-21 11:40:03.852 [执行账] sql=SELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
 shot shot-09-sum.png 43557 bytes
 coverage-func S13 SQL真实执行-聚合 => pass
+shot ev-shot-result-S14.png 47406 bytes
