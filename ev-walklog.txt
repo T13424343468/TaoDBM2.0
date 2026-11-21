@@ -35,3 +35,4 @@ shot ev-shot-result-S15.png 73260 bytes
 S15 ledger: 2026-11-21 03:39:42.042 [执行账] sql=SELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
 shot shot-11-cell-value.png 73260 bytes
 coverage-func S15 SQL真实执行-取值比对 => pass
+shot ev-shot-result-S16.png 63802 bytes
