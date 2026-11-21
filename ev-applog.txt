@@ -12,3 +12,4 @@
 2026-11-21 00:03:05.360 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
 2026-11-21 00:03:16.105 [执行账] sql=SELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
 2026-11-21 00:03:27.866 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;ELECT SUM(amount) AS s FROM orders;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92 | title=ELECT SUM(amount) AS s FROM orders rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
+2026-11-21 00:03:39.028 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
