@@ -1,0 +1,40 @@
+probe quiet-watch start (10s, no UIA)
+probe quiet-watch done
+shot shot-01-start.png 37460 bytes
+coverage: 15 named elements in main window
+shot shot-05-newconn-dialog.png 50901 bytes
+coverage-func S01 新建连接-打开对话框 => pass
+coverage-func S02 连接-选择SQLite引擎 => pass
+coverage-func S03 连接-填写名称 => pass
+coverage-func S04 连接-填写主机 => pass
+coverage-func S04b 连接-填写端口 => pass
+coverage-func S04c 连接-填写账号 => pass
+coverage-func S04d 连接-填写密码 => pass
+coverage-func S04e 连接-填写数据库 => pass
+shot shot-06-conn-saved.png 40437 bytes
+coverage-func S05 连接-保存 => pass
+coverage-func S06 对象树-连接节点出现 => pass
+coverage-func S07 对象树-展开连接 => pass
+coverage-func S08 对象树-展开数据库 => pass
+shot shot-07-table-tree.png 47680 bytes
+coverage-func S09 对象树-真实表清单 => pass
+step S10 skipped (SkipIds)
+coverage-func S10 查询-选中连接 => skip
+step S11 skipped (SkipIds)
+coverage-func S11 查询-新建查询入口 => skip
+step S12 skipped (SkipIds)
+coverage-func S12 SQL真实执行-计数 => skip
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
