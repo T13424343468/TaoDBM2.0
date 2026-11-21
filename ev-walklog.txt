@@ -36,3 +36,4 @@ S15 ledger: 2026-11-21 03:40:21.774 [执行账] sql=SELECT name FROM products WH
 shot shot-11-cell-value.png 67727 bytes
 coverage-func S15 SQL真实执行-取值比对 => pass
 shot ev-shot-result-S16.png 71420 bytes
+S16 ledger: 2026-11-21 03:40:33.712 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;ELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | title=ELECT name FROM products WHERE id = 7 rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
