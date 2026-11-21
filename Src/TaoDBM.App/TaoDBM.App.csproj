@@ -12,6 +12,8 @@
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
+    <!-- #216: export/import pickers moved to WinForms dialogs - WinUI FileSavePicker natively crashes on Windows Server sessions (walk runners 4/4 app-death); WinForms dialog is the classic #32770 both Server and client render -->
+    <UseWinForms>true</UseWinForms>
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>

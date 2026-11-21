@@ -687,15 +687,17 @@ foreach ($s in $plan.steps) {
             } catch { Push-Evidence "S17d iter-err" }
           }
         } catch { Push-Evidence ("S17c scan-err " + $_.Exception.GetType().Name + ": " + (($_.Exception.Message -replace '\s+','_')) + "@" + $_.InvocationInfo.ScriptLineNumber) }
+        Push-Evidence "S17d-resolved picked=$picked"
+        Assert-AppAlive "S17c-after-scan"
         if (-not $picked) { throw "save picker not handled" }
         $csvPath = Join-Path $PWD "ui-export-orders.csv"
         $fileOk = $false
-        for ($i = 0; $i -lt 15; $i++) {
+        for ($i = 0; $i -lt 6; $i++) {
           if (Test-Path $csvPath) { $fileOk = $true; break }
           Start-Sleep -Seconds 1
         }
         Push-Evidence "S17e file=$fileOk"
-        if (-not $fileOk) { Log "S17 export file missing after 15s: $csvPath" }
+        if (-not $fileOk) { Log "S17 export file missing after 6s: $csvPath" }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {
