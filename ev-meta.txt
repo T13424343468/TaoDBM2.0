@@ -5,3 +5,4 @@ tag=step-start S04 time=2026-11-21T05:54:28.5696029+00:00 appMem=144 MB
 tag=step-start S05 time=2026-11-21T05:54:30.0962467+00:00 appMem=146 MB
 tag=step-start S06 time=2026-11-21T05:54:33.8348109+00:00 appMem=159 MB
 tag=step-start S07 time=2026-11-21T05:54:41.6374577+00:00 appMem=153 MB
+tag=expand-ok 🗄️ ui-auto-sqlite time=2026-11-21T05:54:43.0337105+00:00 appMem=154 MB
