@@ -667,6 +667,11 @@ jobs:
           }
           $rt = Join-Path $env:TEMP 'taodbm-runtime.log'
           if (Test-Path $rt) { Copy-Item $rt 'ev-taodbm-runtime.log' -Force }
+          # CA runs as LocalSystem whose TEMP is C:\Windows\Temp; ProgramData mirror is the second source (#215 evidence gap)
+          $rtSys = 'C:\Windows\Temp\taodbm-runtime.log'
+          if ((-not (Test-Path 'ev-taodbm-runtime.log')) -and (Test-Path $rtSys)) { Copy-Item $rtSys 'ev-taodbm-runtime.log' -Force }
+          $rtPd = 'C:\ProgramData\TaoDBM\taodbm-runtime.log'
+          if ((-not (Test-Path 'ev-taodbm-runtime.log')) -and (Test-Path $rtPd)) { Copy-Item $rtPd 'ev-taodbm-runtime.log' -Force }
           Get-ChildItem ev-*.log -ErrorAction SilentlyContinue | ForEach-Object {
             if ((Get-Item $_).Length -gt 2MB) { Get-Content $_ -Tail 800 | Set-Content $_ -Encoding utf8 }
           }
