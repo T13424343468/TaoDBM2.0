@@ -10,3 +10,4 @@ tag=step-start S05 time=2026-11-21T03:39:47.3954373+00:00 appMem=148 MB
 tag=step-start S10 time=2026-11-21T03:39:50.8068193+00:00 appMem=159 MB
 tag=step-start S11 time=2026-11-21T03:39:53.3437462+00:00 appMem=158 MB
 tag=menu-find-start time=2026-11-21T03:39:54.8323468+00:00 appMem=158 MB
+tag=menu-button-found time=2026-11-21T03:39:56.3448262+00:00 appMem=158 MB
