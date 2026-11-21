@@ -4,3 +4,6 @@
 2026-11-21 11:39:00.358 托盘: 消息托管到主窗 hwnd=0x40054
 2026-11-21 11:39:00.368 托盘: 向系统注册成功
 2026-11-21 11:39:42.704 [Flyout] opening
+2026-11-21 11:39:45.912 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
+2026-11-21 11:39:45.928 [新建查询] worktab built db=main
+2026-11-21 11:39:45.937 [新建查询] tab selected
