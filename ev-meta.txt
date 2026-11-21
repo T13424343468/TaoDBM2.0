@@ -14,3 +14,4 @@ tag=step-start S08 time=2026-11-21T11:41:58.0094958+00:00 appMem=173 MB
 tag=kb-tree-items PopupHost | Popup | F1 | F1 | Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | ＋ 新建连接 | 主题 | 手册 | 关于 | 🗄️ ui-auto-mysql（MySQL） | 🗄️ ui-auto-mysql（MySQL） | 📁 information_schema | 📁 information_schema | 📁 mysql | 📁 mysql | 📁 performance_schema time=2026-11-21T11:42:01.0100706+00:00 appMem=174 MB
 tag=kb-state taodbmui Collapsed time=2026-11-21T11:42:02.2246955+00:00 appMem=174 MB
 tag=kb-state-afterA taodbmui Collapsed time=2026-11-21T11:42:05.0877286+00:00 appMem=175 MB
+tag=kb-state-afterB taodbmui Expanded time=2026-11-21T11:42:08.3990525+00:00 appMem=179 MB
