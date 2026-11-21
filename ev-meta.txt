@@ -10,3 +10,4 @@ tag=S18c item-found time=2026-11-21T11:41:22.9561205+00:00 appMem=158 MB
 tag=S18d item-clicked time=2026-11-21T11:41:26.2994500+00:00 appMem=156 MB
 tag=SP shot-done time=2026-11-21T11:41:27.6430750+00:00 appMem=156 MB
 tag=SP closed time=2026-11-21T11:41:30.8205483+00:00 appMem=158 MB
+tag=step-start S19 time=2026-11-21T11:41:32.3269010+00:00 appMem=158 MB
