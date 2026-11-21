@@ -77,7 +77,9 @@ $ErrorActionPreference = 'Continue'
     ForEach-Object { Write-RtLog ("dotnet-install: " + $_) }
 $ErrorActionPreference = $eapBak
 Write-RtLog ("dotnet-install-exit " + $LASTEXITCODE)
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# #231 定谳: dotnet-install.ps1 经 & 调用不设 LASTEXITCODE(空), '' -ne 0 为真 → 提前 exit 0,
+# 'runtime-download-install ok' 永远落不了账; 且其提示走 Write-Host, 5.1 管道抓不到属正常。
+# 唯一真闸门 = 装后实测 Test-DesktopRuntime10, 不再按 LASTEXITCODE 提前退场。
 if (-not (Test-DesktopRuntime10)) { Write-RtLog 'verify-failed'; exit 31337 }
 Write-RtLog 'runtime-download-install ok'
 exit 0
