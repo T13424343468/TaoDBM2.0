@@ -52,3 +52,4 @@ tag=S17a start time=2026-11-21T00:00:49.6342753+00:00 appMem=164 MB
 tag=S17a btn-found=True time=2026-11-21T00:00:51.2638779+00:00 appMem=163 MB
 tag=S17b invoked time=2026-11-21T00:00:53.2884968+00:00 appMem=168 MB
 tag=S17c dialog-scan-start time=2026-11-21T00:00:56.9718212+00:00 appMem=167 MB
+tag=S17c scan-err time=2026-11-21T00:00:58.6862973+00:00 appMem=167 MB
