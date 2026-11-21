@@ -9,3 +9,4 @@
 2026-11-21 11:42:08.343 [新建查询] worktab built db=taodbmui
 2026-11-21 11:42:08.350 [新建查询] tab selected
 2026-11-21 11:42:17.231 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+2026-11-21 11:42:28.235 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
