@@ -1,0 +1,58 @@
+main-window named-interactive-elements: 15 (visible-list capped 200)
+ControlType.Pane | False | Non Client Input Sink Window
+ControlType.Pane | False | AppWindow Custom Title Bar
+ControlType.Button | False | Minimize
+ControlType.Button | False | Restore
+ControlType.Button | False | Close
+ControlType.Button | False | ＋ 新建连接
+ControlType.Button | False | 主题
+ControlType.Button | False | 手册
+ControlType.Button | False | 关于
+ControlType.TabItem | False | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis
+ControlType.Text | False | 开始
+ControlType.Button | False | Add New Tab
+ControlType.Pane | False | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis
+ControlType.Text | False | 欢迎使用 TaoDBM。
+
+1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
+2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
+3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
+
+支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis
+ControlType.Text | False | 共 0 个连接
+feature-level coverage account:
+[S01] 新建连接-打开对话框 => pass
+[S02] 连接-选择SQLite引擎 => pass
+[S03] 连接-填写名称 => pass
+[S04] 连接-填写主机 => pass
+[S04b] 连接-填写端口 => pass
+[S04c] 连接-填写账号 => pass
+[S04d] 连接-填写密码 => pass
+[S04e] 连接-填写数据库 => pass
+[S05] 连接-保存 => pass
+[S06] 对象树-连接节点出现 => skip
+[S07] 对象树-展开连接 => skip
+[S08] 对象树-展开数据库 => skip
+[S09] 对象树-真实表清单 => skip
+[S10] 查询-选中连接 => pass
+[S11] 查询-新建查询入口 => pass
+[S12] SQL真实执行-计数 => pass
+[S13] SQL真实执行-聚合 => skip
+[S14] SQL真实执行-空值过滤 => skip
+[S15] SQL真实执行-取值比对 => skip
+[S16] SQL真实执行-脏数据行 => skip
+[S17] 导出CSV => miss
+[S18] 主题切换 => skip
+[S19] 关于页 => skip
