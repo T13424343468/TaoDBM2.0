@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题，即“取用户名左边 3 个字符”。首先，我需要理解用户的需求。他们可能希望从users表中获取每个用户的名称的前三个字符，但问题中的“取用户名左边 3个字符”可能需要进一步明确。不过，根据问题描述，用户可能只是想提取name字段的前三个字符，而不管其他表结构。
+
+接下来，我需要检查表结构。users表有name字段，类型是VARCHAR(50)。所以，直接使用substring(name, 1, 3)应该可以得到前三个字符。但需要注意，如果name的长度不足三个字符，可能会返回不足的部分，但用户的问题可能没有特别说明处理这种情况，所以直接使用即可。
+
+然后，确认是否需要关联其他表。问题中提到的表结构中，其他表如products、orders、order_items、payments可能与问题无关，因此不需要关联查询。只需要从users表中选取name字段的前三个字符。
+
+因此，正确的SQL应该是SELECT substring(name, 1, 3) FROM users;。不过，用户可能希望得到具体的列名，但问题中没有提到需要列名，只是要取左边三个字符，所以直接选择name字段的前三个字符即可。
+[End thinking]
+
+SELECT substring(name, 1, 3) FROM users;
+
+[ Prompt: 20.0 t/s | Generation: 6.9 t/s ]
+
+
+Exiting...

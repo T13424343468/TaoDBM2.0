@@ -1,0 +1,54 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题和表结构生成一个SQL查询。用户的问题是“姓名左侧三位”，但这里的“姓名”可能指的是用户表中的name字段。不过，问题描述可能有些歧义，需要仔细分析。
+
+首先，用户提到的“姓名左侧三位”可能是指提取name字段的前三个字符。但通常“姓名”可能指的是用户的名字，比如中文名字，但SQL中处理字符串时，可能需要考虑不同的情况。不过，用户可能只是想取name字段的前三个字符，不管是否是中文。
+
+表结构中，users表有name字段，类型是VARCHAR(50)。所以问题可能是要从users表中获取name字段的前三个字符。但用户的问题描述可能有误，或者需要进一步澄清。例如，是否是取name字段的前三个字符，还是其他含义？
+
+假设用户的问题是想获取name字段的前三个字符，那么SQL语句应该是SELECT LEFT(name, 3) FROM users。但用户可能希望将这个结果作为某个条件，比如在订单或其他表中使用，但问题中没有提到具体使用场景，所以可能只需要直接查询。
+
+另外，用户可能希望将name字段的前三个字符作为某个字段，但问题中没有说明。因此，可能只需要直接查询name字段的前三个字符。
+
+所以，最终的SQL应该是SELECT LEFT(name, 3) FROM users; 或者如果用户希望将结果作为某个字段，可能需要使用别名，但问题中没有说明，所以直接查询即可。
+[End thinking]
+
+SELECT LEFT(name, 3) FROM users;
+
+[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

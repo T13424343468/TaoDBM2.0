@@ -1,0 +1,57 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题：每笔订单距今天数。首先，用户提到的表结构中有orders表，其中包含created_at字段，这个字段存储的是订单创建的时间。问题是要计算每笔订单距今天数，也就是从订单创建时间到当前日期之间的天数差。
+
+首先，我需要确定如何计算两个日期之间的天数差。在SQLite中，可以使用日期函数来处理。比如，CURRENT_DATE或者DATE函数，但需要注意的是，SQLite的日期函数可能需要处理时区问题，不过用户可能希望使用当前日期时间，所以可能需要使用CURRENT_DATE。
+
+接下来，我需要从orders表中获取每个订单的created_at时间，并计算与当前日期的天数差。这里可能需要使用DATEDIFF函数，但SQLite并没有直接的DATEDIFF函数，不过可以使用CURRENT_DATE减去created_at，然后计算天数差。不过，SQLite的日期处理可能需要使用日期函数来计算天数差。
+
+例如，可以使用以下查询：SELECT DATEDIFF(CURRENT_DATE, created_at) AS days FROM orders。不过，我需要确认SQLite是否支持DATEDIFF函数。根据我的知识，SQLite没有直接的DATEDIFF函数，但可以使用日期差的计算方法，比如将日期转换为时间戳，然后相减，再除以一天的毫秒数。不过，这可能比较复杂。
+
+或者，可以使用日期函数来计算天数差。例如，使用CURRENT_DATE - created_at，然后计算天数差。不过，这可能需要使用日期函数来处理。例如，可以使用以下方式：
+
+SELECT (CURRENT_DATE - created_at) AS days FROM orders;
+
+不过，这可能返回的是日期差，但需要转换为天数。例如，如果created_at是2023-04-01，而当前日期是2023-04-05，那么差是4天。但如何将这个差转换为天数呢？
+
+或者，可以使用日期函数来计算天数差。例如，使用EXTRACT函数，但SQLite不支持EXTRACT，所以可能需要其他方法。
+
+另一种方法是使用日期差的计算，比如将created_at转换为时间戳，然后计算当前时间戳减去created_at的时间戳，再除以86400（即一天的毫秒数）。不过，这可能需要处理时区问题，但用户可能希望使用当前日期时间，所以可能需要使用
+
+[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...

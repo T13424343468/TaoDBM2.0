@@ -1,0 +1,52 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题，写出一个MySQL查询语句，只输出一条SQL，不要任何解释。问题是要列出所有用户的姓名。
+
+首先，查看表结构。用户表是users，里面有id、name、city、created_at。所以需要从users表中选择name字段。
+
+问题中的关键词是“列出所有用户的姓名”，所以只需要选择users表中的name列。不需要关联其他表，因为没有提到其他表的字段。
+
+所以SQL语句应该是SELECT name FROM users; 这样就能得到所有用户的姓名了。
+
+检查是否有其他可能的表需要关联，但问题里没有提到，所以不需要。确保只选择name字段，不需要其他列。这样就能满足用户的需求了。
+[End thinking]
+
+SELECT name FROM users;
+
+[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
+
+
+Exiting...

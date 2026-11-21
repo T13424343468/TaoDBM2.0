@@ -1,0 +1,59 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题：“消费高于全场平均的用户。”首先，我得理解这个问题的意思。用户指的是那些消费金额超过全场平均值的用户。那么，我需要找到每个用户的总消费金额，然后计算全场的平均消费，再比较每个用户的总消费是否高于这个平均值。
+
+首先，我需要确定如何计算每个用户的总消费。用户表里有id、name、city、created_at，但消费数据可能在orders或order_items里。订单表orders有user_id和status，而order_items关联了order_id和product_id，还有quantity和unit_price。所以，我需要从order_items表中获取每个用户的订单总金额，然后汇总。
+
+步骤一：计算全场的平均消费。这需要先计算所有订单的总金额，然后除以订单数量。或者，可能需要先计算每个用户的总消费，然后取平均值。不过，问题中的“全场平均”可能指的是所有订单的总金额除以总订单数，或者每个用户的总消费平均。但根据问题描述，可能是指每个用户的总消费超过全场平均，所以需要先计算全场的平均消费，然后比较每个用户的总消费是否高于这个平均值。
+
+步骤二：计算每个用户的总消费。这需要将order_items中的product_id和对应的order_id关联起来，然后计算每个用户的订单总金额。例如，对于每个用户，sum(order_items.quantity * order_items.unit_price)。
+
+步骤三：计算全场的平均消费。这需要先计算所有订单的总金额，然后除以订单数量。或者，可能需要先计算所有订单的总金额，然后除以订单数量，得到平均值。
+
+不过，可能更简单的是，先计算每个用户的总消费，然后计算这些总消费的平均值，再比较每个用户的总消费是否高于这个平均值。但这样可能需要先计算所有用户的总消费，然后取平均，再比较。
+
+但问题中的“消费高于全场平均”可能指的是每个用户的总消费超过全场所有订单的平均消费。例如，全场平均消费是所有订单总金额除以订单数量，而每个用户的总消费是否高于这个平均值。
+
+所以，我需要先计算所有订单的总金额，然后除以订单数量得到平均值。然后，计算每个用户的总消费，如果某个用户的总消费大于这个平均值，就返回该用户。
+
+但如何将这些步骤转化为SQL查询呢？
+
+首先，我需要从order_items
+
+[ Prompt: 19.7 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

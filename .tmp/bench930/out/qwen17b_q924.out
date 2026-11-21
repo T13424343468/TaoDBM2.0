@@ -1,0 +1,52 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题和表结构写出一个MySQL查询语句，找出金额为负的支付记录。首先，用户提到的“金额为负的支付记录”应该是指支付金额字段（amount）为负数的记录。
+
+首先，查看表结构，payments表有amount字段，类型是DECIMAL(10,2)。所以需要查询payments表中amount < 0的记录。
+
+然后，用户要求只输出SQL，不要解释。所以直接写出SELECT语句，可能需要使用WHERE条件过滤掉负数的金额。
+
+需要注意的是，DECIMAL的范围可能有负号，所以直接使用amount < 0即可。不需要额外的处理，比如绝对值，因为题目明确说金额为负。
+
+所以正确的SQL应该是SELECT * FROM payments WHERE amount < 0;
+[End thinking]
+
+SELECT * FROM payments WHERE amount < 0;
+
+[ Prompt: 19.4 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

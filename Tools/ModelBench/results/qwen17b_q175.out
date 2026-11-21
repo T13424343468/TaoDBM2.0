@@ -1,0 +1,52 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题，即“取用户名左边 3 个字符”。首先，用户提到的表结构中有users表，其中包含name字段。问题是要从name字段中取左边三个字符。
+
+首先，我需要确认用户的需求是否明确。用户可能希望查询某个用户的姓名的前三个字符，比如如果名字是“John Doe”，那么结果应该是“Joh”。但问题中没有提到具体的用户ID或名字，所以可能需要假设用户想要查询所有用户的姓名的前三个字符，或者可能有其他条件。
+
+不过，问题中的“取用户名左边 3 个字符”可能是指从name字段中提取前三个字符，而不需要任何条件。因此，可能需要使用子查询或者直接查询name字段的前三个字符。
+
+在SQLite中，可以使用字符串函数来提取前几个字符。例如，使用SUBSTR函数，SUBSTR(name, 1, 3)会返回name的前三个字符。因此，正确的SQL应该是SELECT SUBSTR(name, 1, 3) FROM users;。
+
+但用户的问题可能希望得到一个具体的查询，比如取某个特定用户的前三个字符，但问题中没有给出条件，所以可能需要假设是所有用户的name字段的前三个字符。因此，最终的SQL应该是SELECT SUBSTR(name, 1, 3) FROM users;。
+[End thinking]
+
+SELECT SUBSTR(name, 1, 3) FROM users;
+
+[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

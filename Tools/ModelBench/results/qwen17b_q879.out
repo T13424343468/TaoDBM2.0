@@ -1,0 +1,62 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要帮用户创建一个SQL Server函数，按城市查询用户。首先，用户提到的表结构中有users表，包含id、name、city和created_at。函数需要返回符合条件的用户信息。
+
+首先，函数的名称应该明确，比如GetUsersByCity。然后，函数需要接受一个参数，比如city，类型是VARCHAR(50)。接下来，需要从users表中筛选出city等于传入参数的记录，并返回这些记录。但用户要求的是“返回表的函数”，所以可能需要使用SELECT语句来返回结果集。
+
+在SQL Server中，函数通常使用CREATE FUNCTION语句。函数体部分需要使用SELECT语句来查询符合条件的用户。需要注意的是，函数返回的类型是表类型，所以需要使用RETURN语句或者使用SELECT来返回结果。不过，SQL Server的函数返回表类型需要使用RETURN，但可能需要使用CTE或者直接返回结果集。
+
+不过，用户可能希望函数返回一个表，所以可能需要使用RETURN语句，但需要确认是否允许。或者，可能用户希望函数返回一个结果集，所以需要使用SELECT语句。不过，根据标准写法，函数返回表类型的话，应该使用RETURN，但可能需要使用CTE或者直接返回结果集。
+
+可能需要使用CREATE FUNCTION，然后在函数体内使用SELECT语句，然后RETURN结果集。但需要确认SQL Server的语法是否允许这样。或者，可能用户希望函数返回一个表，所以使用RETURN语句，但需要确保结果集的结构正确。
+
+另外，用户可能希望函数返回所有符合条件的用户，所以需要使用WHERE子句过滤city参数。例如，WHERE city = @city。然后，函数返回这些用户的信息。
+
+所以，最终的SQL应该是创建一个函数，名称为GetUsersByCity，参数是city，返回users表的查询结果。函数体部分使用SELECT语句，然后RETURN结果集。不过，可能需要使用RETURN，但需要确认是否正确。
+
+可能的SQL代码如下：
+
+CREATE FUNCTION GetUsersByCity (@city VARCHAR(50)) RETURNS TABLE AS RETURN (SELECT * FROM users WHERE city = @city);
+
+但需要确认是否允许返回表类型。在SQL Server中，函数可以返回表类型，所以这样写是可行的。因此，最终的SQL应该是这样的。
+[End thinking]
+
+CREATE FUNCTION GetUsersByCity (@city VARCHAR(50)) RETURNS TABLE AS RETURN (SELECT * FROM users
+
+[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...

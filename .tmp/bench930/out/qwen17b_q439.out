@@ -1,0 +1,52 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题：“用户都是哪一年注册的？”根据提供的表结构，用户注册的时间是通过created_at字段来记录的。用户表users中的created_at字段存储的是注册时间，所以需要查询这个字段的年份。
+
+首先，我需要确定用户表users中的created_at字段的类型是DATETIME，所以可以直接提取年份。要获取用户注册的年份，可以使用YEAR函数。在SQLite中，YEAR函数的用法是YEAR(date_column)，所以应该用YEAR(users.created_at)。
+
+然后，问题问的是“用户都是哪一年注册的”，这可能意味着需要列出所有用户的注册年份。因此，正确的SQL语句应该是SELECT YEAR(users.created_at) FROM users; 这样就能得到所有用户的注册年份。
+
+需要注意的是，用户可能希望看到每个用户的年份，但问题中的“用户都是哪一年注册的”可能指的是所有用户的注册年份，而不是每个用户单独的年份。因此，这里需要确保查询返回所有用户的年份，而不是每个用户单独的年份。不过，根据问题描述，可能只需要列出所有用户的年份，所以使用SELECT YEAR(users.created_at) FROM users是正确的。
+
+另外，要确保没有其他表的created_at字段干扰，但根据表结构，用户表的created_at是唯一的，所以不需要考虑其他表的字段。因此，最终的SQL语句应该是正确的。
+[End thinking]
+
+SELECT YEAR(users.created_at) FROM users;
+
+[ Prompt: 19.0 t/s | Generation: 7.0 t/s ]
+
+
+Exiting...

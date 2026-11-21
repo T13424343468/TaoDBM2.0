@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题和表结构写出一个MySQL查询语句，只输出一条SQL，不要任何解释。用户的问题是“支付方式去重列表”，也就是要获取所有不同的支付方式。
+
+首先，我需要确定哪些表涉及支付方式。根据表结构，payments表有method字段，记录了支付方式。所以需要查询payments表中的method列，然后去重。
+
+去重通常用DISTINCT关键字，但有时候可能需要使用GROUP BY或者子查询。不过这里直接用DISTINCT应该就可以。所以SQL语句应该是SELECT DISTINCT method FROM payments;。
+
+不过，用户可能希望得到所有不同的支付方式，所以直接SELECT DISTINCT method即可。不需要其他表的关联，因为问题只涉及payments表。因此，正确的SQL是SELECT DISTINCT method FROM payments;
+[End thinking]
+
+SELECT DISTINCT method FROM payments;
+
+[ Prompt: 19.6 t/s | Generation: 7.3 t/s ]
+
+
+Exiting...

@@ -1,0 +1,54 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，用户的问题是关于查看现有过程定义的写法，但需要输出一条SQL语句。首先，我需要理解用户的需求。他们可能在使用PostgreSQL，需要查询某个过程的定义，但问题描述有点模糊，因为通常过程是用PL/pgSQL或其他语言定义的，而用户提到的是“现有过程定义”，可能是指查看数据库中的存储过程或函数。
+
+接下来，查看用户提供的表结构，发现没有存储过程或函数的定义表，所以可能用户的问题有误，或者他们想查询某个过程的定义，但表结构中没有相关表。这时候需要确认，但根据用户的要求，只能根据给定的表结构来回答。
+
+用户可能误以为有相关表，但实际没有。因此，可能需要指出这一点，但根据要求，只能输出SQL，不能解释。所以可能需要假设用户想查询某个过程的定义，但表结构中没有相关表，因此无法生成对应的SQL。
+
+不过，用户的问题可能是指查看现有过程的定义，但表结构中没有存储过程的表，所以无法直接查询。因此，可能需要返回一个错误的SQL，或者指出无法完成。但根据用户要求，只能输出SQL，所以可能需要返回一个错误的查询，比如SELECT * FROM pg_proc，但用户可能没有提供相关表。
+
+或者，用户可能想查询某个过程的定义，但表结构中没有相关表，所以无法生成对应的SQL。因此，可能需要返回一个无法执行的SQL，或者提示无法完成，但根据要求只能输出SQL，所以可能需要返回一个错误的查询，比如SELECT * FROM pg_proc，但用户可能没有提供相关表。
+
+综上，可能用户的问题存在错误，但根据要求，只能输出SQL，所以可能需要返回一个查询，比如SELECT * FROM pg_proc，但需要确认是否在表结构中存在。但根据给定的表结构，没有存储过程的表，所以无法生成对应的SQL。因此，可能需要返回一个错误的SQL，但用户可能希望得到一个标准的SQL，比如查询所有存储过程的定义，所以可能返回SELECT * FROM pg_proc。
+[End thinking]
+
+SELECT * FROM pg_proc;
+
+[ Prompt: 19.0 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...

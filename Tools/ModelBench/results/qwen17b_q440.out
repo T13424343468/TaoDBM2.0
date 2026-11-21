@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户的问题生成一个MySQL查询语句。用户的问题是“按注册年份看用户”，也就是要按用户注册的年份分组统计用户数量或者类似的信息。
+
+首先，我需要确定表结构。用户表是users，里面有created_at字段，类型是DATETIME。所以，我需要从users表中获取created_at的年份，然后分组统计。
+
+接下来，我需要写出SQL语句。SELECT YEAR(created_at) AS year, COUNT(*) AS user_count FROM users GROUP BY year; 这样就能按年份分组并统计用户数量了。不过，用户的问题可能需要更详细的信息，比如每个年份的用户数，或者是否有其他要求。但根据问题描述，只要按年份分组即可。
+
+需要注意的是，created_at是DATETIME类型，YEAR函数可以处理DATETIME的年份部分。所以这个查询应该是正确的。不需要其他表的关联，因为问题只涉及users表。因此，最终的SQL应该是这样的。
+[End thinking]
+
+SELECT YEAR(created_at) AS year, COUNT(*) AS user_count FROM users GROUP BY year;
+
+[ Prompt: 19.4 t/s | Generation: 7.0 t/s ]
+
+
+Exiting...

@@ -1,0 +1,48 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，用户让我把订单表整个删掉，我需要根据提供的表结构来写SQL语句。首先，我要确认要删除的表是orders。表结构里有CREATE TABLE orders，所以直接使用DROP TABLE语句就可以了。
+
+不过，用户可能有其他考虑，比如是否需要先备份数据，但问题里没有提到这些，所以直接删除就行。确认一下，订单表的结构是id、user_id、status、created_at，所以DROP TABLE orders应该能彻底删除这个表的所有数据和结构。
+
+需要注意的是，DROP TABLE语句会删除整个表，包括数据和结构，所以用户的问题确实是要求删除整个表。不需要任何解释，只输出SQL。所以最终的SQL应该是DROP TABLE orders;
+[End thinking]
+
+DROP TABLE orders;
+
+[ Prompt: 20.5 t/s | Generation: 7.0 t/s ]
+
+
+Exiting...

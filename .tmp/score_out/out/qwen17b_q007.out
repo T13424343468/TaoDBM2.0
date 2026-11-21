@@ -1,0 +1,52 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，用户的问题是“有哪些支付方式？”，我需要根据提供的表结构写出对应的SQL查询。首先，我得看看哪个表存储了支付方式的信息。
+
+看表结构，payments表有method字段，这应该就是存储支付方式的地方。用户问的是有哪些支付方式，所以需要查询payments表中的method列的所有值。不过可能需要考虑是否有重复，但用户可能只需要不同的方法，所以用DISTINCT或者直接SELECT。
+
+不过问题里没有提到需要去重，所以直接SELECT method就可以了。但为了稳妥，用DISTINCT可能更好，避免重复。不过用户可能希望看到所有不同的方法，所以应该用DISTINCT。
+
+然后，根据要求，只输出一条SQL，不要解释。所以最终的SQL应该是SELECT DISTINCT method FROM payments; 或者SELECT method FROM payments; 但可能用户希望看到所有不同的方法，所以用DISTINCT。不过要看具体数据库的处理，有些数据库可能不支持DISTINCT在SELECT里，但这里应该没问题。
+
+所以最终的SQL应该是SELECT DISTINCT method FROM payments;
+[End thinking]
+
+SELECT DISTINCT method FROM payments;
+
+[ Prompt: 132.0 t/s | Generation: 26.3 t/s ]
+
+
+Exiting...

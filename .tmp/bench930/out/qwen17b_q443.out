@@ -1,0 +1,56 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+
+[Start thinking]
+
+嗯，用户的问题是要求按注册年份查看用户。我需要根据提供的表结构来生成对应的SQL查询。首先，表结构里有users表，其中created_at是DATETIME类型。所以，我需要从users表中提取created_at字段，并按年份分组。
+
+首先，确定如何提取年份。created_at是DATETIME类型，所以可以使用DATE函数来提取年份部分。比如DATE(created_at)会得到一个日期，然后用YEAR函数来获取年份。这样就能把年份作为分组依据。
+
+接下来，需要统计每个年份的用户数量。这里可能需要使用GROUP BY语句，按年份分组，然后用COUNT(*)来统计用户数。不过用户的问题只是要按年份查看用户，可能不需要具体的数量，但根据问题描述，可能需要统计每个年份的用户数。
+
+所以，SQL的结构应该是SELECT YEAR(created_at) AS year, COUNT(*) AS user_count FROM users GROUP BY YEAR(created_at)。不过用户的问题可能只需要分组，而不需要计数，但根据问题描述“按注册年份看用户”，可能需要统计每个年份的用户数量，所以加上COUNT(*)是合理的。
+
+不过，可能用户只是想按年份分组，而不需要计数。但根据问题中的“看用户”可能需要统计数量。不过，可能用户的问题更倾向于分组，比如显示每个年份的用户数量。所以，我需要确认是否需要计数。
+
+但根据问题描述，用户可能希望得到每个年份的用户数量，所以应该使用COUNT(*)。不过，可能用户的问题只是分组，而不需要计数。但根据问题中的“按注册年份看用户”，可能需要统计每个年份的用户数，所以应该包括COUNT(*)。
+
+因此，最终的SQL应该是SELECT YEAR(created_at) AS year, COUNT(*) AS user_count FROM users GROUP BY YEAR(created_at)。
+[End thinking]
+
+SELECT YEAR(created_at) AS year, COUNT(*) AS user_count FROM users GROUP BY YEAR(created_at);
+
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...

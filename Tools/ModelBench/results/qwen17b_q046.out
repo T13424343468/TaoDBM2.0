@@ -1,0 +1,48 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，用户要求删除用户表，但根据提供的表结构，用户表已经存在，所以需要先确认是否真的要删除。不过问题明确说要删掉，所以需要写出删除用户表的SQL语句。
+
+首先，删除表的语法是DROP TABLE table_name。所以这里应该用DROP TABLE users;。需要确保用户有权限删除这个表，但根据问题，只需要写出SQL语句，不需要处理权限问题。
+
+检查是否有其他可能的陷阱，比如表是否存在，但问题明确说要删掉，所以直接执行DROP TABLE users;即可。
+[End thinking]
+
+DROP TABLE users;
+
+[ Prompt: 19.4 t/s | Generation: 7.1 t/s ]
+
+
+Exiting...

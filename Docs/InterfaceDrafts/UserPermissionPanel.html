@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>B3 用户与权限管理 - TaoDBM 2.0 界面稿</title>
+</head>
+<body style="margin:0;font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;">
+
+<div style="background:#e6f4ff;border:1px solid #91caff;border-radius:8px;padding:12px 16px;margin:16px;font-size:13px;line-height:1.7;">
+  <strong style="color:#1677ff;">界面稿说明</strong>｜模块：用户与权限管理（档三 B3）。用户列表、新建用户、授权/回收、权限矩阵四块。对应后台能力：<code>PermissionAuditor</code>（GRANT 解析、风险发现 R101/R102/R103、对等 REVOKE 生成）。<br>
+  <span style="color:#888;">灰色「接线」标签为评审标注，正式版不出现。</span>
+</div>
+
+<div style="margin:0 16px 16px;display:flex;gap:16px;">
+
+  <!-- 用户列表 -->
+  <div style="flex:1.4;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="font-weight:600;">用户列表</div>
+      <span style="background:#1677ff;color:#fff;font-size:12px;padding:2px 10px;border-radius:4px;">+ 新建用户</span>
+      <span style="float:right;color:#bbb;font-size:11px;">接线：SHOW GRANTS → GrantRecord 清单</span>
+    </div>
+    <table style="border-collapse:collapse;width:100%;font-size:13px;">
+      <tr style="background:#fafafa;">
+        <th style="border:1px solid #eee;padding:6px 10px;text-align:left;">账号</th>
+        <th style="border:1px solid #eee;padding:6px 10px;text-align:left;">允许来源</th>
+        <th style="border:1px solid #eee;padding:6px 10px;text-align:left;">权限数</th>
+        <th style="border:1px solid #eee;padding:6px 10px;text-align:left;">风险</th>
+        <th style="border:1px solid #eee;padding:6px 10px;text-align:left;">操作</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #eee;padding:6px 10px;">root</td><td style="border:1px solid #eee;padding:6px 10px;">%</td>
+        <td style="border:1px solid #eee;padding:6px 10px;">全部</td>
+        <td style="border:1px solid #eee;padding:6px 10px;color:#ff4d4f;">⚠ 全库全权给宽账号（R101）</td>
+        <td style="border:1px solid #eee;padding:6px 10px;"><a style="color:#1677ff;" href="#">查看权限</a>｜<a style="color:#1677ff;" href="#">生成回收</a></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #eee;padding:6px 10px;">app_rw</td><td style="border:1px solid #eee;padding:6px 10px;">10.0.%</td>
+        <td style="border:1px solid #eee;padding:6px 10px;">6</td>
+        <td style="border:1px solid #eee;padding:6px 10px;color:#faad14;">可转授（R102）</td>
+        <td style="border:1px solid #eee;padding:6px 10px;"><a style="color:#1677ff;" href="#">查看权限</a>｜<a style="color:#1677ff;" href="#">生成回收</a></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #eee;padding:6px 10px;">report_ro</td><td style="border:1px solid #eee;padding:6px 10px;">10.0.3.20</td>
+        <td style="border:1px solid #eee;padding:6px 10px;">2</td>
+        <td style="border:1px solid #eee;padding:6px 10px;color:#52c41a;">无</td>
+        <td style="border:1px solid #eee;padding:6px 10px;"><a style="color:#1677ff;" href="#">查看权限</a></td>
+      </tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;color:#888;">「生成回收」= 按风险项自动生成对等 REVOKE 草稿，语句可逐条勾选，确认后才执行。</div>
+  </div>
+
+  <!-- 权限矩阵 -->
+  <div style="flex:1;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:16px;">
+    <div style="font-weight:600;margin-bottom:12px;">权限矩阵｜app_rw</div>
+    <table style="border-collapse:collapse;width:100%;font-size:12px;text-align:center;">
+      <tr style="background:#fafafa;"><th style="border:1px solid #eee;padding:6px;">权限</th><th style="border:1px solid #eee;padding:6px;">shop_db.*</th><th style="border:1px solid #eee;padding:6px;">*.*</th></tr>
+      <tr><td style="border:1px solid #eee;padding:6px;text-align:left;">SELECT</td><td style="border:1px solid #eee;">✔</td><td style="border:1px solid #eee;color:#ccc;">—</td></tr>
+      <tr><td style="border:1px solid #eee;padding:6px;text-align:left;">INSERT / UPDATE</td><td style="border:1px solid #eee;">✔</td><td style="border:1px solid #eee;color:#ccc;">—</td></tr>
+      <tr><td style="border:1px solid #eee;padding:6px;text-align:left;">DROP</td><td style="border:1px solid #eee;color:#ff4d4f;">✔ 高危</td><td style="border:1px solid #eee;color:#ccc;">—</td></tr>
+      <tr><td style="border:1px solid #eee;padding:6px;text-align:left;">GRANT OPTION</td><td style="border:1px solid #eee;color:#ff4d4f;">✔ 高危</td><td style="border:1px solid #eee;color:#ccc;">—</td></tr>
+    </table>
+    <div style="margin:12px 0 0;background:#fffbe6;border:1px solid #ffe58f;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.7;">
+      <strong>授权 / 回收动作</strong><br>
+      授权：勾选对象与权限 → 生成 GRANT 草稿 → 预览确认执行；<br>
+      回收：勾选矩阵单元格 → 生成 REVOKE 草稿 → 同样预览确认。
+    </div>
+  </div>
+</div>
+
+<div style="margin:0 16px 24px;background:#fffbe6;border:1px solid #ffe58f;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.8;">
+  <strong>🔒 数据安全设计专节</strong>
+  <ul style="margin:6px 0 0;padding-left:20px;">
+    <li><strong>危险操作预览+确认</strong>：所有授权/回收仅生成语句草稿，弹窗预览全文并标注风险码（R101/R102/R103），不勾选不执行。</li>
+    <li><strong>可回滚/可审计</strong>：每次授权/回收写入本地操作历史（语句+时间），REVOKE 草稿即天然回滚路径。</li>
+    <li><strong>最小权限/凭据</strong>：账号管理走当前连接凭据，界面上不出现、不落盘任何密码；口令设置项由数据库自身流程完成。</li>
+  </ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12532-08c252e22
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句。用户的问题是关于安排一个代理作业，每天工作日的9点执行归档存储过程。首先，我需要理解问题的具体要求。
+
+首先，用户提到的“代理作业安排”可能是指创建一个SQL Server Agent job，这个job每天在工作日的9点执行某个存储过程。但问题中提到的“归档存储过程”可能是指某个特定的存储过程，比如ARCHIVE_PROCEDURE，但用户没有明确说明存储过程的名称。不过，用户可能希望我根据表结构中的信息来推断可能的存储过程，或者可能问题中的“归档存储过程”是用户自己定义的，但这里可能需要假设。
+
+不过，用户的问题可能更倾向于创建一个SQL Server Agent job的步骤，但根据用户的要求，只需要输出SQL，不需要解释。所以可能需要生成创建作业的SQL语句。
+
+但问题中的“归档存储过程”可能是指某个存储过程，比如ARCHIVE_PROCEDURE，但用户可能没有给出具体的存储过程名称。不过，可能用户希望我根据表结构中的信息来推断可能的存储过程，或者可能问题中的“归档存储过程”是用户自己定义的，但这里可能需要假设。
+
+不过，用户的问题可能更倾向于创建一个作业，每天在工作日的9点执行某个存储过程。因此，我需要生成创建SQL Server Agent job的SQL语句，包括设置执行时间、频率、触发器等。
+
+但用户可能希望我根据表结构中的信息来生成相关的SQL，比如可能需要在存储过程中使用某些表，或者需要关联表。但问题中的“归档存储过程”可能是指某个存储过程，比如将订单和产品信息归档，但用户没有给出具体存储过程的名称。
+
+不过，用户可能希望我生成一个创建作业的SQL，比如：
+
+CREATE JOB [ArchiveJob] ON [dbo].[ArchiveProc] EVERY DAY AT 9:00 AM ON WORKDAYS;
+
+但需要确认是否正确。不过，SQL Server Agent的作业创建语句需要使用特定的语法，比如：
+
+EXEC sp_add_job @job_name = 'ArchiveJob', @enabled = 1, @start_time = 9, @frequency = 1, @frequency_type = 1, @active_start_date = 20230101, @active_end_date = 2
+
+[ Prompt: 19.8 t/s | Generation: 6.7 t/s ]
+
+
+Exiting...

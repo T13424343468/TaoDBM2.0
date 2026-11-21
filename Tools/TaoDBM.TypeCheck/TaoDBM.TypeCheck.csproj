@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.App/**/*.cs" />
+    <Compile Include="Stubs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Core/TaoDBM.Core.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Core.Abstractions/TaoDBM.Core.Abstractions.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../Src/TaoDBM.Infrastructure/TaoDBM.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Linux 沙箱 App 层类型闸：用 WinUI/WinRT 托管桩程序集做纯编译校验（不运行 XAML）。
+       桩目录可用 -p:StubDir=... 覆盖；桩来自 nuget.org 的
+       Microsoft.WindowsAppSDK.WinUI 2.6.5 与 Microsoft.Windows.SDK.NET.Ref 10.0.19041.56。 -->
+  <PropertyGroup>
+    <StubDir Condition="'$(StubDir)' == ''">/root/workspace/.nuget/stubs/was</StubDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.WinUI">
+      <HintPath>$(StubDir)/WinUI.dll</HintPath>
+    </Reference>
+    <Reference Include="WinRT.Runtime">
+      <HintPath>$(StubDir)/WinRT.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Windows.SDK.NET">
+      <HintPath>$(StubDir)/Microsoft.Windows.SDK.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.InteractiveExperiences.Projection">
+      <HintPath>$(StubDir)/Microsoft.InteractiveExperiences.Projection.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
