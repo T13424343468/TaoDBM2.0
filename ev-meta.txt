@@ -14,3 +14,4 @@ tag=menu-button-found time=2026-11-21T03:39:56.3448262+00:00 appMem=158 MB
 tag=menu-button-invoked time=2026-11-21T03:39:57.7758923+00:00 appMem=159 MB
 tag=menu-item-found time=2026-11-21T03:39:59.2426369+00:00 appMem=161 MB
 tag=menu-item-invoked time=2026-11-21T03:40:00.6808491+00:00 appMem=162 MB
+tag=step-start S12 time=2026-11-21T03:40:05.1892712+00:00 appMem=164 MB
