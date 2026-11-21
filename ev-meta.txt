@@ -21,3 +21,4 @@ tag=kb-tree-items-after PopupHost | Popup | F1 | F1 | Non Client Input Sink Wind
 tag=expand-kb-ok 🗄️ ui-auto-sqlite child=main state=Expanded time=2026-11-21T00:05:50.8638494+00:00 appMem=165 MB
 tag=step-start S09 time=2026-11-21T00:05:58.3049154+00:00 appMem=163 MB
 tag=step-start S10 time=2026-11-21T00:06:06.1805870+00:00 appMem=163 MB
+tag=step-start S11 time=2026-11-21T00:06:08.7065082+00:00 appMem=163 MB
