@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT COUNT(*) FROM users WHERE city IS NOT NULL AND city != ''
 
-[Start thinking]
-
-好的，我需要解决用户的问题：留下联系方式的城市数（非空城市计数）。首先，我得理解问题的意思。用户可能指的是在users表中，city字段不为空的城市数量。因为问题提到“留下联系方式的城市”，所以可能是指用户有城市信息，并且城市不是空的。
-
-接下来，我需要查看表结构。users表有id、name、city、created_at。其中city的类型是VARCHAR(50)，所以可能有空值。问题要求统计非空城市的数量，也就是city字段不为NULL的行数。
-
-那么，我需要查询users表中city不为空的记录数。SQL语句应该是SELECT COUNT(*) FROM users WHERE city IS NOT NULL。不过，需要注意的是，如果city字段允许NULL，那么IS NOT NULL条件会过滤掉那些NULL值。但根据表结构，city的默认值可能没有设置，所以可能需要确认。不过用户的问题里没有提到默认值，所以假设city可以有NULL。
-
-不过，可能用户的问题中的“非空城市”指的是city字段不为空，所以正确的查询应该是统计users表中city不为空的行数。因此，正确的SQL应该是SELECT COUNT(*) FROM users WHERE city IS NOT NULL;。不过，可能需要确认是否要排除那些city为NULL的情况。比如，如果用户有city为NULL的记录，那么这些行应该被排除。所以最终的SQL应该是这样的。
-[End thinking]
-
-SELECT COUNT(*) FROM users WHERE city IS NOT NULL;
-
-[ Prompt: 19.7 t/s | Generation: 6.9 t/s ]
+[ Prompt: 61.8 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+TRUNCATE orders;
 
-[Start thinking]
-
-好的，用户让我写一个MySQL的TRUNCATE orders的SQL语句，而且只输出一条SQL，不需要解释。首先，我需要确认用户的需求。TRUNCATE语句用于删除表中的所有行，但不能回滚，而且需要管理员权限。用户可能是在测试或者演示的时候需要清除orders表的数据，所以直接执行TRUNCATE。
-
-接下来，检查表结构。用户提供的表结构中，orders表的结构是id、user_id、status、created_at。TRUNCATE orders的话，只需要指定表名，因为TRUNCATE后面直接跟表名即可。不需要任何其他参数，比如WHERE条件或者选项。所以正确的SQL应该是TRUNCATE TABLE orders;。
-
-不过，用户可能有其他意图吗？比如是否需要考虑其他表的关系？比如order_items和payments可能和orders有关，但TRUNCATE只是针对orders表，所以不需要涉及其他表。用户的问题明确是TRUNCATE orders，所以直接输出TRUNCATE orders;就可以了。
-
-再检查是否有拼写错误，比如表名是否正确，是否需要加引号。在MySQL中，表名不需要引号，直接写即可。所以最终的SQL就是TRUNCATE orders;。
-[End thinking]
-
-TRUNCATE TABLE orders;
-
-[ Prompt: 19.5 t/s | Generation: 7.1 t/s ]
+[ Prompt: 66.6 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

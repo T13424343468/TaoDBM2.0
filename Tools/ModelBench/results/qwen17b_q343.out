@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,33 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+CREATE TABLE order_items (id IN ... (truncated)
+SELECT ROUND(unit_price, 0) AS rounded_price FROM order_items;
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构写出一个SQLite查询语句，只输出一条SQL，不要解释。问题是要对单价进行四舍五入到整数。
-
-首先，用户提到的单价是order_items表中的unit_price。需要将这个字段四舍五入到整数。在SQLite中，四舍五入可以用ROUND函数，但要注意的是，ROUND函数的参数是小数点后的位数，这里需要四舍五入到整数，也就是小数点后0位，所以应该用ROUND(unit_price, 0)。
-
-接下来，我需要确定需要修改的表。问题中提到的是单价四舍五入，但用户并没有明确说明要更新哪个表的单价。不过，根据问题描述，可能是指在某个操作中需要四舍五入单价，比如计算订单总金额时，或者在插入数据时处理单价。
-
-但用户的问题没有明确说明是更新还是查询，但根据问题中的“单价四舍五入到整数”，可能是指在某个查询中需要四舍五入，或者在某个操作中需要处理单价。不过，用户可能希望得到一个查询语句，比如SELECT语句，将unit_price四舍五入到整数。
-
-假设用户希望查询所有order_items中的unit_price，并四舍五入到整数，那么SQL语句应该是SELECT ROUND(unit_price, 0) FROM order_items;。
-
-但需要确认是否需要考虑其他表，比如orders或payments，但问题中没有提到这些表，所以可能只需要处理order_items表的unit_price。
-
-因此，最终的SQL应该是SELECT ROUND(unit_price, 0) FROM order_items;
-[End thinking]
-
-SELECT ROUND(unit_price, 0) FROM order_items;
-
-[ Prompt: 19.6 t/s | Generation: 7.0 t/s ]
+[ Prompt: 66.2 t/s | Generation: 13.0 t/s ]
 
 
 Exiting...

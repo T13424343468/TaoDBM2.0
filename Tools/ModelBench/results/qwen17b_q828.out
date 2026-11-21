@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,29 +24,19 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+CREATE PROCEDURE get_user_count AS
+BEGIN
+    SELECT COUNT(*) AS user_count FROM users;
+END;
 
-[Start thinking]
-
-好的，我需要帮用户创建一个无参的过程，用来查询用户总数。首先，用户提到的表结构中有users表，里面有一个id作为主键，而且用户总数应该就是users表中的行数。
-
-那问题是要创建一个过程，没有参数。在SQL Server中，过程通常用CREATE PROCEDURE来定义。所以首先我需要写出CREATE PROCEDURE的语句。然后，过程的名字要合适，比如GetUserCount或者类似的名字。接下来，需要查询users表的行数，所以应该用SELECT COUNT(*) FROM users。这样就能得到用户总数。
-
-不过要注意的是，SQL Server的COUNT(*)在没有WHERE子句的时候会统计所有行，所以这里没问题。然后，这个过程不需要参数，所以不需要任何输入参数的声明。最后，要确保语句正确，没有多余的空格或者符号。
-
-所以综合起来，正确的SQL应该是创建一个名为GetUserCount的过程，然后执行SELECT COUNT(*) FROM users。不过用户要求只输出SQL，所以整个语句应该是一条，不需要分号或者其他东西。可能还需要注意关键字的大小写，比如CREATE PROCEDURE和SELECT的大小写，但通常SQL Server是区分大小写的，不过可能用户希望用标准的大小写，所以应该保持一致。
-
-最后检查一下有没有语法错误，比如括号是否正确，关键字是否正确。确认之后就可以输出了。
-[End thinking]
-
-CREATE PROCEDURE GetUserCount AS SELECT COUNT(*) FROM users;
-
-[ Prompt: 19.4 t/s | Generation: 6.9 t/s ]
+[ Prompt: 72.5 t/s | Generation: 15.1 t/s ]
 
 
 Exiting...

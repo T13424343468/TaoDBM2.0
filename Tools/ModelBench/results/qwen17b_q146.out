@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,31 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT name + '-' + city AS name_city FROM users;
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句，只输出一条SQL，不包含任何解释。问题是要输出“姓名-城市”的拼接结果。
-
-首先，用户提到的表结构中有users表，其中包含name和city字段。所以需要从users表中获取name和city的值，然后拼接成“姓名-城市”的格式。
-
-接下来，我需要确定如何拼接这两个字段。在SQL Server中，可以使用CONCAT函数或者字符串连接符+。例如，CONCAT(name, '-', city)或者name + '-' + city。
-
-然后，我需要确保查询的正确性。因为用户要求只输出SQL，所以需要写出SELECT语句，并且使用正确的表名和字段名。表名是users，字段是name和city，所以SELECT CONCAT(name, '-', city) FROM users。
-
-检查是否有其他可能的表需要关联，但问题中没有提到需要关联其他表，所以只需要直接查询users表。同时，问题中的order_items和payments表似乎与问题无关，不需要涉及。
-
-最后，确保SQL语句正确，没有多余的注释或解释，只输出查询语句。所以最终的SQL应该是SELECT CONCAT(name, '-', city) FROM users;
-[End thinking]
-
-SELECT CONCAT(name, '-', city) FROM users
-
-[ Prompt: 19.9 t/s | Generation: 6.9 t/s ]
+[ Prompt: 78.6 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

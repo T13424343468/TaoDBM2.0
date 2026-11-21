@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,50 +24,22 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
-
-[Start thinking]
-
-好的，我需要帮用户写一个SQL Server的查询，过程内循环插入10条测试数据。首先，用户提到的是“过程内循环插入”，但SQL Server本身没有内置的循环结构，所以可能需要使用存储过程或者使用其他方法来实现循环。
-
-首先，我需要确定用户的需求。他们想要在过程中插入10条测试数据，可能是指在某个存储过程中，通过循环来插入数据。但SQL Server的存储过程通常不直接支持循环，所以可能需要使用动态SQL或者在循环中执行INSERT语句。
-
-不过，用户可能希望用一种标准的方法，比如使用循环来生成数据，但如何在SQL Server中实现循环呢？通常，可以使用 WHILE 循环，但需要先生成数据，比如使用生成器函数或者在循环中动态生成INSERT语句。
-
-但用户可能希望的是一个直接的SQL语句，而不是存储过程。不过，根据问题描述，用户可能希望的是一个存储过程的写法，因为循环通常在存储过程中实现。
-
-不过，用户特别指出只输出SQL，不要解释，所以可能需要构造一个存储过程，使用循环来插入数据。
-
-例如，可以创建一个存储过程，使用WHILE循环，每次插入一条数据，循环10次。但需要考虑如何生成数据，比如使用变量来模拟循环次数，或者使用递增的ID。
-
-不过，可能更简单的方法是使用动态SQL，比如在循环中生成INSERT语句，然后执行。但需要确保循环次数正确。
-
-例如，可以使用以下结构：
-
-CREATE PROCEDURE InsertTestData
-AS
+CREATE TABLE order_items (i ... (truncated)
+INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (2, 'Bob', 'Los Angeles', GETDATE())
+INSERT INTO users (id, name, city, created_at) WHILE @i < 10
 BEGIN
-    DECLARE @i INT = 1
-    WHILE @i <= 10
-    BEGIN
-        INSERT INTO users (id, name, city, created_at)
-        VALUES (@i, 'User' + CAST(@i AS VARCHAR(50)), 'City' + CAST(@i AS VARCHAR(50)), GETDATE())
-        SET @i = @i + 1
-    END
+    SET @i = @i + 1
+    INSERT INTO users (id, name, city, created_at) VALUES (@i, 'User' + CAST(@i AS VARCHAR(10)), 'City' + CAST(@i AS VARCHAR(10)), GETDATE())
 END
 
-但用户可能希望的是直接的SQL语句，而不是存储过程。不过，用户的问题可能希望的是一个标准的写法，可能是指使用存储过程。
-
-不过，用户可能希望的是直接的SQL语句，比如使用一个循环结构，但SQL Server不支持直接的循环，所以可能需要使用其他方法，比如使用递归或生成器。
-
-或者，用户可能希望的是使用一个临时表，或者使用其他方式
-
-[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
+[ Prompt: 73.8 t/s | Generation: 14.4 t/s ]
 
 
 Exiting...

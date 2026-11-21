@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
-
-[Start thinking]
-
-好的，我需要解决用户的问题：去掉重复后一共有多少个城市有用户？首先，我得理解问题。用户想知道不同城市中有哪些城市有用户，但要去掉重复的。也就是说，需要统计各个城市的数量，但每个城市只出现一次。
-
-首先，我需要确定哪些表包含城市信息。根据表结构，users表有city字段，而orders和order_items可能也有city，但问题可能主要关注users表中的city。不过，可能需要确认是否所有用户都属于某个城市，或者是否有其他表中的城市需要考虑。但问题中没有提到其他表，所以可能只需要考虑users表中的city。
-
-接下来，我需要找出所有不同的城市。使用DISTINCT关键字可以去掉重复。然后，统计这些城市的数量。所以，正确的SQL应该是SELECT COUNT(DISTINCT city) FROM users;。这样就能得到不同城市的数量。
-
-不过，可能需要确认是否用户表中的city字段是否有重复，或者是否有其他表中的city需要考虑。但根据问题描述，用户的问题是关于“城市有用户”，所以应该只考虑users表中的city。因此，最终的SQL应该是SELECT COUNT(DISTINCT city) FROM users;。
-[End thinking]
-
+CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(DISTINCT city) FROM users;
 
-[ Prompt: 19.7 t/s | Generation: 7.0 t/s ]
+[ Prompt: 64.4 t/s | Generation: 12.8 t/s ]
 
 
 Exiting...

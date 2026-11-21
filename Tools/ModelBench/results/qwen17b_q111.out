@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
-
-[Start thinking]
-
-好的，我现在需要解决用户的问题，即列出姓名及其长度，并且只输出SQL语句。首先，我得仔细看一下表结构。
-
-用户提供的表有users表，里面包含id、name、city和created_at。问题是要列出姓名及其长度，所以需要从users表中获取name字段，并计算其长度。SQLite的字符串长度可以用LENGTH函数，对吧？比如LENGTH(name)。
-
-那SQL语句应该是SELECT name, LENGTH(name) FROM users；这样就能得到每个用户的姓名和其长度了。不过要注意，用户可能希望只显示姓名和长度，所以需要确保字段正确。另外，是否需要考虑名字的长度是否包括空格？比如中文名字可能有不同的处理方式，但根据问题描述，可能用户只是想计算字符数，所以用LENGTH应该没问题。
-
-再检查一下表结构，users表的name是VARCHAR(50)，所以长度应该没问题。不需要其他表的关联，因为问题只涉及users表。所以最终的SQL应该是正确的。
-[End thinking]
-
+CREATE TABLE order_items (id IN ... (truncated)
 SELECT name, LENGTH(name) FROM users;
 
-[ Prompt: 19.6 t/s | Generation: 7.3 t/s ]
+[ Prompt: 64.1 t/s | Generation: 14.5 t/s ]
 
 
 Exiting...

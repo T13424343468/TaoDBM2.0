@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,34 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+EXECUTE AS OWNER OF 'archival_procedure';
+GO
+EXEC [archival_procedure];
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，生成一个SQL Server的查询语句。用户的问题是关于每小时整点执行归档存储过程的代理作业安排。首先，我需要理解问题的具体要求。
-
-用户提到的“代理作业安排”可能是指创建一个SQL Server Agent job，这个job每小时执行一次归档存储过程。但问题中并没有给出具体的存储过程名称或具体需要归档的数据，所以可能需要假设一个存储过程的名称，比如ArchiveDataProc。
-
-接下来，我需要确定如何设置SQL Server Agent job的触发器。通常，SQL Server Agent jobs可以设置为在特定时间执行，比如每小时的整点。这可以通过在job的schedule中设置“On a schedule”选项，然后选择“Every hour”和“At the beginning of the hour”。
-
-然后，需要将存储过程绑定到这个job。这通常通过在job的steps中添加一个step，执行存储过程，比如ArchiveDataProc。但用户可能需要具体的SQL语句来创建这个job，但问题中没有给出存储过程的具体内容，所以可能需要假设存储过程的名称。
-
-另外，用户可能希望生成一个SQL脚本来创建这个job，但问题中只允许输出一条SQL，所以可能需要生成创建job的SQL语句，但需要确保只输出一条语句，可能涉及多个部分，但用户可能希望将整个创建job的步骤合并成一个SQL。
-
-不过，用户的问题可能更倾向于如何设置定时任务，而不是具体的SQL语句。但根据用户的要求，必须只输出一条SQL，所以可能需要生成创建job的SQL，但可能需要多个部分，但用户可能希望将整个过程用一条SQL完成，或者可能用户希望生成一个定时任务的SQL。
-
-但根据问题描述，用户可能希望生成一个SQL Server Agent job的创建语句，每小时执行归档存储过程。因此，需要构造一个SQL脚本，创建一个job，设置schedule为每小时，然后在steps中执行存储过程。
-
-但用户可能希望只输出一条SQL，所以可能需要将创建job的步骤合并成一个SQL语句，或者可能用户希望生成一个定时任务的SQL，比如使用sp_add_job，sp_add_schedule，sp_add_jobstep等存储过程。
-
-不过，用户可能希望生成一个具体的SQL语句，比如创建一个job，设置schedule，然后添加step执行存储过程。但需要确保只输出一条SQL，
-
-[ Prompt: 19.4 t/s | Generation: 5.4 t/s ]
+[ Prompt: 62.2 t/s | Generation: 14.4 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,21 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
-
-[Start thinking]
-
-好的，用户问的是“现在几点？”，但根据提供的表结构，没有涉及到时间相关的字段。表中有一个created_at字段，但问题是要获取当前时间，而表中没有存储当前时间的记录。因此，无法通过这些表来获取当前时间。需要确认用户是否理解表结构，或者是否有其他意图。但根据问题，用户可能希望得到当前时间，但表中没有相关数据，所以无法生成SQL查询。需要输出无法查询的SQL，但根据要求只能输出一条SQL，所以可能需要返回一个错误查询或者无法查询的语句。
-[End thinking]
-
+CREATE TABLE order_items (i ... (truncated)
 SELECT GETDATE()
 
-[ Prompt: 19.5 t/s | Generation: 7.1 t/s ]
+[ Prompt: 68.9 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

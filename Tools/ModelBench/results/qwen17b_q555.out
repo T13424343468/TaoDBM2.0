@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,36 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+CREATE TABLE order_items (id IN ... (truncated)
+SELECT created_at + INTERVAL '1 month' AS adjusted_created_at FROM users;
 
-[Start thinking]
-
-好的，我需要解决用户的问题，即在SQLite中将created_at字段加上一个月。首先，我得确定用户的需求是什么。他们可能希望更新某个表中的created_at字段，将其值增加一个月。但问题中提到的是“created_at 加 1 个月”，这可能是指在查询或更新时，将created_at字段的值加上一个月的时间。
-
-不过，用户的问题描述可能有些模糊。他们可能是在问如何编写一个SQL语句来更新某个表的created_at字段，或者是在查询时计算created_at加上一个月的值。但根据问题中的“created_at 加 1 个月”，可能是指在查询时，将created_at字段的值加上一个月的时间。
-
-首先，我需要确定用户是否希望更新数据还是查询数据。如果用户希望更新数据，比如将created_at字段的值加上一个月，那么需要使用UPDATE语句。但如果是查询，可能需要使用SELECT语句，并加上一个时间计算。
-
-但根据问题中的“created_at 加 1 个月”，可能是指在查询时，将created_at字段的值加上一个月。例如，用户可能想获取某个记录的created_at加上一个月后的日期。这时候，SQL语句可能需要使用日期函数，如DATE_ADD或CURRENT_DATE。
-
-不过，SQLite的日期函数可能有所不同。例如，SQLite的DATE_ADD函数可能不存在，但可以使用CURRENT_DATE加上一个月。或者，用户可能希望将created_at字段的值加上一个月，这可能需要使用日期加法。
-
-但问题中没有明确说明是更新还是查询，所以需要根据常见情况来判断。如果用户的问题是希望在查询时计算created_at加上一个月，那么SQL语句可能需要使用日期函数。例如，SELECT created_at + INTERVAL '1 month' FROM users; 但需要注意，SQLite的日期加法可能需要使用特定的函数。
-
-不过，SQLite的日期加法可能需要使用日期函数，比如CURRENT_DATE加上一个月。或者，用户可能希望将created_at字段的值加上一个月，这可能需要使用日期函数来计算。
-
-但根据问题中的“created_at 加 1 个月”，可能是指在查询时，将created_at字段的值加上一个月。因此，正确的SQL语句可能是：
-
-SELECT created_at + INTERVAL '1 month' FROM users;
-
-但需要确认SQLite是否支持这种语法。例如，SQLite的日期加法可能使用INTERVAL，但需要确认是否可用。或者，可能需要使用DATE_ADD函数，但
-
-[ Prompt: 19.7 t/s | Generation: 6.5 t/s ]
+[ Prompt: 62.6 t/s | Generation: 14.0 t/s ]
 
 
 Exiting...

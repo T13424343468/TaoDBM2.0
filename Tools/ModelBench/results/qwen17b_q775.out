@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,39 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT o.id FROM orders o JOIN payments p ON o.id = p.order_id WHERE o.id = p.order_id;
 
-[Start thinking]
-
-好的，我需要解决用户的问题：找出有订单的ID和有支付的ID有交集的记录。首先，我得理解问题。用户想要的是那些同时存在于订单表和支付表中的订单ID。也就是说，订单的ID在订单表里存在，并且对应的支付记录也存在。
-
-首先，我需要确定两个表的结构。订单表是orders，里面有order_id，而支付表是payments，也有order_id。所以，我需要找到订单表中的order_id，同时在支付表中也存在相同的order_id。
-
-接下来，我需要构造一个SQL查询。通常，这种需要两个表之间关联的查询，可以用JOIN操作。不过，用户的问题是找出交集，也就是两个表中的order_id有共同的值。所以，可能需要使用INNER JOIN，然后筛选出那些同时存在于两个表中的记录。
-
-不过，用户的问题可能更简单，只需要找出那些订单ID在两个表中都存在的记录。所以，正确的做法是用INNER JOIN，然后在WHERE子句中检查两个表的order_id是否相同。或者，也可以用子查询，比如先找出订单表中的order_id，然后检查这些order_id是否在支付表中存在。
-
-不过，可能更直接的方式是使用INNER JOIN，然后选择那些order_id在两个表中都存在的记录。例如：
-
-SELECT o.id
-FROM orders o
-INNER JOIN payments p ON o.id = p.order_id;
-
-这样就能得到所有同时存在于订单和支付表中的订单ID。不过，用户的问题是否需要考虑订单是否已经支付？比如，可能有些订单没有支付，但问题只是要找交集，所以不管是否支付，只要订单存在且支付存在即可。
-
-所以，正确的SQL应该是这样的，使用INNER JOIN连接两个表，然后选择order_id相同的记录。这样就能得到交集的订单ID。
-[End thinking]
-
-SELECT o.id
-FROM orders o
-INNER JOIN payments p ON o.id = p.order_id;
-
-[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 70.6 t/s | Generation: 16.5 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT name FROM users WHERE city = '北京';
 
-[Start thinking]
-
-好的，我需要解决用户的问题，即列出用户表中北京的用户。首先，我得确认表结构。用户表是users，里面有id、name、city和created_at。问题是要找出北京的用户，所以需要筛选city等于'北京'的记录。
-
-接下来，我需要构造SQL查询。基本的SELECT语句会选中id和name，然后WHERE子句过滤city为北京。因为用户要求只输出SQL，所以不需要解释。确保表名正确，字段名正确。注意城市名称是否是'北京'，可能需要确认是否有大小写问题，但根据问题描述，应该直接使用'北京'。
-
-然后，检查是否有其他可能的条件或需要注意的地方。比如，是否需要考虑大小写，但问题里没有提到，所以按字面量处理。确认没有其他表需要关联，比如orders或products，但问题只涉及users表，所以直接查询users表即可。
-
-最后，写出SQL语句：SELECT id, name FROM users WHERE city = '北京';
-[End thinking]
-
-SELECT id, name FROM users WHERE city = '北京';
-
-[ Prompt: 20.7 t/s | Generation: 7.1 t/s ]
+[ Prompt: 68.8 t/s | Generation: 12.0 t/s ]
 
 
 Exiting...

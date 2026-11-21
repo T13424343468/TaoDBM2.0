@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,48 +24,19 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
-
-[Start thinking]
-
-好的，我需要帮用户创建一个无参的过程，用来查询用户总数。首先，用户提到的是SQL Server，所以得用SQL Server的语法。用户表是users，里面有id作为主键，所以用户总数应该是用户表的行数。
-
-接下来，用户要求创建一个无参的过程，也就是不带参数的存储过程。在SQL Server中，存储过程的创建使用CREATE PROCEDURE，然后指定过程名，这里可能用GetUserCount或者类似的名称。不过用户可能希望过程名更直观，比如GetUserCount。
-
-然后，过程需要返回用户总数，所以需要使用RETURN语句，或者在查询中返回结果。不过在SQL Server中，存储过程可以返回单个值，所以可能需要使用SELECT语句来返回结果。或者，可能需要使用OUTPUT参数，但用户可能希望更简单的方式。
-
-不过用户的问题是“查询用户总数”，所以可能需要一个SELECT语句，返回用户数量。但存储过程通常用来执行操作，比如插入、更新、删除，或者返回结果。所以可能需要在存储过程中执行SELECT语句，并返回结果。
-
-不过用户可能希望过程返回一个数值，所以可能需要使用RETURN，或者在存储过程中使用SELECT INTO，但可能更简单的是使用RETURN。不过在SQL Server中，存储过程可以返回单个值，所以可能需要使用RETURN，或者在存储过程中使用SELECT语句返回结果。
-
-比如，创建一个存储过程，名称为GetUserCount，然后在其中执行SELECT COUNT(*) FROM users，然后返回结果。或者，可能需要使用OUTPUT参数，但用户可能希望更直接的方式。
-
-不过用户的问题可能希望过程返回一个数值，所以可能需要使用RETURN。例如：
-
-CREATE PROCEDURE GetUserCount
-AS
+CREATE TABLE order_items (i ... (truncated)
+CREATE PROCEDURE get_user_count AS
 BEGIN
-    SELECT @count = COUNT(*) FROM users;
-    RETURN @count;
+    SELECT COUNT(*) AS user_count FROM users;
 END;
 
-不过可能需要使用OUTPUT参数，或者直接返回结果。不过在SQL Server中，存储过程可以返回单个值，所以可能需要使用RETURN。或者，可能需要使用SELECT语句返回结果，但存储过程本身不返回结果，而是通过RETURN返回值。
-
-不过用户的问题可能希望过程返回一个数值，所以正确的做法是使用RETURN。因此，最终的SQL应该是创建一个存储过程，名称为GetUserCount，然后执行SELECT COUNT(*) FROM users，并返回结果。
-
-所以最终的SQL应该是：
-
-CREATE PROCEDURE GetUserCount
-AS
-BEGIN
-    SELECT @count = COUNT(*) FROM users;
-
-[ Prompt: 19.2 t/s | Generation: 6.6 t/s ]
+[ Prompt: 62.5 t/s | Generation: 16.3 t/s ]
 
 
 Exiting...

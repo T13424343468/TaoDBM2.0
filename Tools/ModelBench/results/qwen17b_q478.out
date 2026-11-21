@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,37 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT GETDATE() + 7 days FROM sys.time;
 
-[Start thinking]
-
-好的，用户的问题是“未来 7 天后的时间？”，但需要根据提供的表结构写出SQL Server查询语句，并且只输出一条SQL，不解释。首先，我需要理解用户的问题到底是什么。
-
-用户可能想要获取未来7天的时间点，比如在某个时间点之后的7天。但问题中的“未来7天后的时间”可能需要明确具体是什么时间点。不过，用户没有提供具体的日期或时间，所以可能需要假设当前时间或者某个默认时间。
-
-不过，根据表结构中的created_at字段，可能用户想查询某个时间点之后的7天，比如订单创建时间之后的7天，或者某个特定的日期。但问题中没有给出具体条件，所以可能需要使用当前时间或者某个默认值。
-
-但问题中的“未来7天后的时间”可能是指未来7天的日期，比如今天之后的7天。这时候可能需要使用日期函数来计算未来7天的日期。例如，使用GETDATE()函数获取当前日期，加上7天。
-
-不过，用户可能希望得到一个日期值，而不是时间点。例如，未来7天的日期，比如2023-10-05，但需要根据当前日期计算。但问题中没有给出具体日期，所以可能需要使用系统函数来生成未来7天的日期。
-
-但用户的问题可能需要一个具体的日期，比如未来7天的日期，但如果没有具体条件，可能需要使用当前日期加上7天。因此，SQL查询可能需要使用DATEADD函数来计算未来7天的日期。
-
-例如，SELECT DATEADD(DAY, 7, GETDATE())。但用户可能需要的是一个日期值，而不是计算结果。不过，问题中的“未来7天后的时间”可能是指未来7天的日期，所以需要生成一个日期值。
-
-但用户可能希望得到一个日期，比如未来7天的日期，所以SQL应该是SELECT DATEADD(DAY, 7, GETDATE())。不过，可能需要考虑是否需要将结果作为日期类型返回，但根据问题，用户可能只需要一个日期值。
-
-因此，最终的SQL应该是SELECT DATEADD(DAY, 7, GETDATE())。
-[End thinking]
-
-SELECT DATEADD(DAY, 7, GETDATE())
-
-[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
+[ Prompt: 65.1 t/s | Generation: 13.3 t/s ]
 
 
 Exiting...

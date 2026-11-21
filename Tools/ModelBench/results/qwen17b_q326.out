@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,36 +24,19 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT order_items.product_id, order_items.quantity, order_items.unit_price, products.name, products.category, products.price
+FROM order_items
+JOIN products ON order_items.product_id = products.id
+WHERE order_items.unit_price > 100;
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构写出一个SQL Server查询语句，只输出一条SQL，不带任何解释。用户的问题是“格式化显示价格”，所以我要找出如何将价格字段格式化显示。
-
-首先，查看表结构。价格在products表里，是DECIMAL(10,2)类型。格式化显示通常意味着需要将数值转换为带有千位分隔符的形式，比如123456.78变成123,456.78。
-
-在SQL Server中，可以使用FORMAT函数来格式化数值。例如，FORMAT(price, 2)会将数值格式化为两位小数，但可能需要处理千位分隔符。不过，FORMAT函数在SQL Server 2012及以后版本中可用。如果用户使用的是较旧的版本，可能需要使用其他方法，比如使用CONVERT或PATINDEX。
-
-不过，用户可能希望使用最直接的方法。假设用户使用的是支持FORMAT的版本，那么可以写SELECT FORMAT(price, 'N')来显示带有千位分隔符的价格。但需要确认是否正确。或者，使用CONVERT来格式化，比如CONVERT(decimal(10,2), price)可能不会改变格式，但可能需要结合其他函数。
-
-另外，可能需要考虑是否需要将价格转换为字符串，比如使用CONVERT(varchar, price, 112)来显示为带有千位分隔符的字符串。但用户的问题是“格式化显示价格”，可能希望保留数值类型，但显示格式化。
-
-所以，可能的SQL是SELECT CONVERT(varchar, price, 112) FROM products。或者使用FORMAT函数。但需要确定哪个更合适。
-
-如果使用CONVERT，例如：SELECT CONVERT(varchar, price, 112) AS formatted_price FROM products; 这样会将价格转换为带有千位分隔符的字符串。但用户可能希望保留数值类型，但显示格式化，所以可能需要使用FORMAT。
-
-不过，用户可能希望直接显示格式化后的数值，所以可能需要使用FORMAT。例如，SELECT FORMAT(price, 'N') FROM products; 但需要确认是否正确。
-
-或者，使用CAST(price AS decimal(10,2))，但这样不会改变格式。所以可能需要结合FORMAT函数。
-
-因此，最终的SQL可能是SELECT FORMAT(price, 'N') FROM products; 或者使用CON
-
-[ Prompt: 20.3 t/s | Generation: 6.9 t/s ]
+[ Prompt: 66.5 t/s | Generation: 15.3 t/s ]
 
 
 Exiting...

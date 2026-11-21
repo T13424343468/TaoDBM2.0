@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,37 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT * FROM order_items WHERE quantity > 0 AND created_at > CURRENT_TIME - INTERVAL '10 MINUTE';
 
-[Start thinking]
-
-好的，我需要根据用户的问题和提供的表结构，生成一个PostgreSQL的SQL查询语句，用于每10分钟执行一次归档查询。用户提到使用pg_cron来安排任务，所以需要确保查询能够被定时执行。
-
-首先，问题中的“归档查询”需要明确具体是什么操作。但用户没有给出具体的归档条件或逻辑，所以可能需要假设一个常见的归档任务，比如清理过期的订单或产品。例如，可能需要删除库存不足的产品，或者标记某些订单为归档。
-
-不过，用户可能希望有一个通用的查询，或者可能需要根据常见的归档操作来构造。例如，可能需要删除库存数量为零的产品，或者标记订单为归档。但如果没有具体说明，可能需要假设一个常见的操作，比如删除过期的订单。
-
-假设归档查询是删除库存数量为零的产品，那么SQL语句可能涉及products表，条件是stock=0。但需要确保查询是正确的，比如使用DELETE语句。
-
-另外，用户提到使用pg_cron每10分钟执行一次，所以需要确保查询是可执行的，并且可能需要考虑事务或锁的问题，但用户可能只需要查询语句本身，不需要处理调度部分。
-
-因此，可能的SQL语句是删除stock为0的产品，或者类似的操作。例如：
-
-DELETE FROM products WHERE stock = 0;
-
-但需要确认是否需要考虑其他条件，比如时间范围，或者是否需要关联其他表。但根据问题描述，可能只需要处理products表。
-
-所以最终的SQL应该是DELETE FROM products WHERE stock = 0; 或者类似的语句。但需要确保语法正确，比如使用正确的表名和条件。
-[End thinking]
-
-DELETE FROM products WHERE stock = 0;
-
-[ Prompt: 19.7 t/s | Generation: 7.0 t/s ]
+[ Prompt: 74.9 t/s | Generation: 13.6 t/s ]
 
 
 Exiting...

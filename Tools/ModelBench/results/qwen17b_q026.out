@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,31 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT SUM(p.amount) AS total_payment_amount
+FROM payments p
+WHERE YEAR(p.paid_at) = 2023;
 
-[Start thinking]
-
-好的，我需要解决用户的问题：“今年的支付总额是多少？”首先，我得理解问题的要求。用户想要计算所有在2023年内的支付总额。
-
-首先，我需要确定哪些表涉及支付信息。根据表结构，payments表有order_id和amount字段，其中amount是支付金额。所以需要查询payments表中created_at时间在2023年的记录，然后将这些amount相加。
-
-接下来，我需要考虑如何筛选2023年的数据。created_at是DATETIME类型，所以可以使用WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31'来限制时间范围。
-
-然后，计算总和。使用SUM(amount)即可，因为每个payment的amount是单独的，所以直接相加就能得到总额。
-
-需要注意的是，表中的payments表的order_id可能与orders表相关联，但这里的问题只关心支付金额，所以不需要关联其他表。此外，确保created_at的日期格式正确，避免时间范围错误。
-
-最后，编写SQL语句：SELECT SUM(amount) FROM payments WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31'; 这应该就能得到正确的结果。
-[End thinking]
-
-SELECT SUM(amount) FROM payments WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31';
-
-[ Prompt: 20.4 t/s | Generation: 6.8 t/s ]
+[ Prompt: 80.6 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...
