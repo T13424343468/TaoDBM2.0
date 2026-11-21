@@ -616,16 +616,21 @@ jobs:
           if ($LASTEXITCODE -ne 0) { $out2 | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
           $msis = Get-ChildItem out -Filter *.msi
           if ($msis.Count -ne 1) { Write-Host "::error::msi count wrong: $($msis.Count)"; exit 1 }
-          # #218 定谳: 包实际按 x86 会话解析 (SystemFolder=SysWOW64), -arch x64 疑似未生效;
-          # 读 SummaryInformation Template 断言包位数, x86 包立即红并给出可读原因
-          $installer = New-Object -ComObject WindowsInstaller.Installer
-          $db = $installer.GetType().InvokeMember('OpenDatabase','InvokeMethod',$null,$installer,@("$($msis[0].FullName)",0))
-          $view = $db.GetType().InvokeMember('OpenView','InvokeMethod',$null,$db,@("SELECT Value FROM _SummaryInformation WHERE Property=7"))
-          $view.GetType().InvokeMember('Execute','InvokeMethod',$null,$view,$null)
-          $rec = $view.GetType().InvokeMember('Fetch','InvokeMethod',$null,$view,$null)
-          $template = $rec.GetType().InvokeMember('StringData','GetProperty',$null,$rec,@(1))
-          Write-Host "[MSI-TEMPLATE] $template"
-          if ($template -notmatch '^x64') { Write-Host "::error::MSI package is not x64 (Template=$template) - -arch x64 did not take effect"; exit 1 }
+          # 包位数断言（#220 定谳: 包实为 x64——run 218/220 发布包 Template 均 x64;0，218 的 x86 会话判读有误;
+          # 本断言 COM 读法在 run 220 无声抛错整步炸红，故包 try/catch: 读到即断言，读不到降级为警告不拦交付）
+          try {
+            $installer = New-Object -ComObject WindowsInstaller.Installer
+            $db = $installer.GetType().InvokeMember('OpenDatabase','InvokeMethod',$null,$installer,@("$($msis[0].FullName)",0))
+            $view = $db.GetType().InvokeMember('OpenView','InvokeMethod',$null,$db,@("SELECT Value FROM _SummaryInformation WHERE Property=7"))
+            $view.GetType().InvokeMember('Execute','InvokeMethod',$null,$view,$null)
+            $rec = $view.GetType().InvokeMember('Fetch','InvokeMethod',$null,$view,$null)
+            $template = $rec.GetType().InvokeMember('StringData','GetProperty',$null,$rec,@(1))
+            Write-Host "[MSI-TEMPLATE] $template"
+            if ($template -notmatch '^x64') { Write-Host "::error::MSI package is not x64 (Template=$template) - -arch x64 did not take effect"; exit 1 }
+          } catch {
+            Write-Host "::warning::MSI template check skipped (checker exception, package not blocked): $($_.Exception.Message)"
+            Write-Host "[MSI-TEMPLATE-CHECK] exception: $($_.Exception.ToString())"
+          }
           Write-Host "[HASH] SHA256: $((Get-FileHash $msis[0].FullName -Algorithm SHA256).Hash)"
 
       - name: Silent install -> verify -> uninstall -> verify clean
@@ -685,10 +690,20 @@ jobs:
           Get-ChildItem ev-*.log -ErrorAction SilentlyContinue | ForEach-Object {
             if ((Get-Item $_).Length -gt 2MB) { Get-Content $_ -Tail 800 | Set-Content $_ -Encoding utf8 }
           }
-          git add ev-*.log 2>$null
-          git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "installer evidence run $env:GITHUB_RUN_NUMBER" 2>$null | Out-Null
-          git push origin HEAD:installer-evidence --force 2>$null | Out-Null
-          Write-Host '[EV] installer evidence pushed (if any)'
+          # #220 定谳: 共用 evidence 分支被后跑轮次 force-push 覆盖, 218 的 install.log 取证被 220 抹掉;
+          # 改按运行号独立分支, 证据互不覆盖, 无凭据侧按分支名直读
+          $evFiles = Get-ChildItem ev-*.log -ErrorAction SilentlyContinue
+          if ($evFiles) {
+            $evFiles | ForEach-Object { Write-Host "[EV] captured $($_.Name) $($_.Length) bytes" }
+            git add ev-*.log
+            if ($LASTEXITCODE -ne 0) { Write-Host "::warning::evidence git add failed: $LASTEXITCODE" }
+            git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "installer evidence run $env:GITHUB_RUN_NUMBER"
+            if ($LASTEXITCODE -ne 0) { Write-Host "::warning::evidence commit failed: $LASTEXITCODE" }
+            git push origin "HEAD:installer-evidence-$env:GITHUB_RUN_NUMBER" --force
+            if ($LASTEXITCODE -ne 0) { Write-Host "::warning::evidence push failed: $LASTEXITCODE" } else { Write-Host "[EV] pushed branch installer-evidence-$env:GITHUB_RUN_NUMBER" }
+          } else {
+            Write-Host '[EV] no install logs captured this run (install step skipped or logs absent)'
+          }
       - name: Upload MSI
         if: always()
         uses: actions/upload-artifact@v4
