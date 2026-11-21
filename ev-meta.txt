@@ -14,3 +14,4 @@ tag=menu-item-invoked time=2026-11-21T11:39:45.9278047+00:00 appMem=162 MB
 tag=step-start N12 time=2026-11-21T11:39:50.2133954+00:00 appMem=165 MB
 tag=N12 run-invoked time=2026-11-21T11:39:54.3730045+00:00 appMem=175 MB
 tag=N12 result-shot time=2026-11-21T11:39:58.9638883+00:00 appMem=173 MB
+tag=N12 ledger-hit time=2026-11-21T11:40:00.3220692+00:00 appMem=173 MB
