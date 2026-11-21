@@ -159,8 +159,8 @@
       </Dialog>
 
       <InstallUISequence>
-        <!-- 默认装 D 盘：CostFinalize 前对 INSTALLFOLDER 赋绝对值（UI 与执行序列各挂一次，序号 1150 避开 MigrateFeatureStates）；值必须以目录分隔符结尾（MSI 官方规则：自定义动作设置的目录属性可能不带尾分隔符，快捷方式 Target 拼接会黏连成坏路径） -->
-        <Custom Action="SetInstallFolderUI" Sequence="1150" />
+        <!-- 默认装 D 盘：CostFinalize 前对 INSTALLFOLDER 赋绝对值（UI 与执行序列各挂一次，序号 940 必须早于 CostFinalize 的 950；#227 定谟：1150 排在 CostFinalize 之后，改盘符不生效，文件落 C 盘而快捷方式指 D 盘）；值必须以目录分隔符结尾（MSI 官方规则：自定义动作设置的目录属性可能不带尾分隔符，快捷方式 Target 拼接会黏连成坏路径） -->
+        <Custom Action="SetInstallFolderUI" Sequence="940" />
         <Show Dialog="MainDlg" Sequence="1250" />
         <Show Dialog="ProgressDlg" Before="ExecuteAction" />
         <Show Dialog="ExitDialog" OnExit="success" />
@@ -176,7 +176,7 @@
 
     <InstallExecuteSequence>
       <Custom Action="KillRunningApp" After="InstallValidate" />
-      <Custom Action="SetInstallFolderExec" Sequence="1150" />
+      <Custom Action="SetInstallFolderExec" Sequence="940" />
       <Custom Action="SetRtEnsureCmd" After="InstallFiles" />
       <Custom Action="EnsureDotNetRuntime" After="SetRtEnsureCmd" Condition="NOT REMOVE" />
     </InstallExecuteSequence>
