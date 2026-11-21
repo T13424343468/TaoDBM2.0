@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); public delegate bool EnumProc(IntPtr hWnd, IntPtr lParam); [DllImport(\"user32.dll\")] public static extern bool EnumWindows(EnumProc cb, IntPtr lParam); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -687,15 +687,17 @@ foreach ($s in $plan.steps) {
             } catch { Push-Evidence "S17d iter-err" }
           }
         } catch { Push-Evidence ("S17c scan-err " + $_.Exception.GetType().Name + ": " + (($_.Exception.Message -replace '\s+','_')) + "@" + $_.InvocationInfo.ScriptLineNumber) }
+        Push-Evidence "S17d-resolved picked=$picked"
+        Assert-AppAlive "S17c-after-scan"
         if (-not $picked) { throw "save picker not handled" }
         $csvPath = Join-Path $PWD "ui-export-orders.csv"
         $fileOk = $false
-        for ($i = 0; $i -lt 15; $i++) {
+        for ($i = 0; $i -lt 6; $i++) {
           if (Test-Path $csvPath) { $fileOk = $true; break }
           Start-Sleep -Seconds 1
         }
         Push-Evidence "S17e file=$fileOk"
-        if (-not $fileOk) { Log "S17 export file missing after 15s: $csvPath" }
+        if (-not $fileOk) { Log "S17 export file missing after 6s: $csvPath" }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {

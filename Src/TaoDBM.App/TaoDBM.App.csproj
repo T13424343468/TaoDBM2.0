@@ -12,6 +12,8 @@
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
+    <!-- #216: export/import pickers moved to WinForms dialogs - WinUI FileSavePicker natively crashes on Windows Server sessions (walk runners 4/4 app-death); WinForms dialog is the classic #32770 both Server and client render -->
+    <!-- #217 fix: UseWinForms is not a recognized property under Microsoft.NET.Sdk (WindowsDesktop-SDK only) - CS0234 'Forms' missing; reference the WinForms shared framework explicitly -->
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
@@ -28,6 +30,10 @@
          MSI 裁剪发布下必挂。TrimMode=partial 本就不裁应用元数据，显式恢复反射序列化器。 -->
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
