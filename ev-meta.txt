@@ -27,3 +27,4 @@ tag=kb-tree-items Non Client Input Sink Window | AppWindow Custom Title Bar | Mi
 
 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis | ui-auto-sqlite：1 个库 time=2026-11-21T05:54:53.9966046+00:00 appMem=160 MB
 tag=kb-state main Collapsed time=2026-11-21T05:54:55.5918743+00:00 appMem=160 MB
+tag=kb-state-afterA main Collapsed time=2026-11-21T05:54:58.7045829+00:00 appMem=162 MB
