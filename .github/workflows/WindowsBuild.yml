@@ -645,7 +645,14 @@ jobs:
           Write-Host "[PREFLIGHT] EnsureRuntime.ps1 exit=$code"
           if (Test-Path $rtlog) { Get-Content $rtlog | ForEach-Object { Write-Host "[RT-LOG] $_" } }
           if ($code -ne 0) { Write-Host "::error::preflight EnsureRuntime.ps1 exit=$code (script-level failure, CA side is not the cause)"; exit 1 }
-          Write-Host "[OK] preflight zero-download path clean"
+          # #225 教训: CA 用的是系统 Windows PowerShell 5.1, pwsh 7 过不代表 5.1 过; 5.1 也必须过预检
+          Remove-Item $rtlog -Force -ErrorAction SilentlyContinue
+          powershell -NoProfile -ExecutionPolicy Bypass -File Installer/EnsureRuntime.ps1
+          $code51 = $LASTEXITCODE
+          Write-Host "[PREFLIGHT-51] EnsureRuntime.ps1 exit=$code51"
+          if (Test-Path $rtlog) { Get-Content $rtlog | ForEach-Object { Write-Host "[RT-LOG-51] $_" } }
+          if ($code51 -ne 0) { Write-Host "::error::preflight(PS5.1) EnsureRuntime.ps1 exit=$code51 (CA runtime is 5.1; script must be 5.1-clean)"; exit 1 }
+          Write-Host "[OK] preflight zero-download path clean (pwsh7 + PS5.1)"
 
       - name: Silent install -> verify -> uninstall -> verify clean
         shell: pwsh
@@ -701,6 +708,9 @@ jobs:
           if ((-not (Test-Path 'ev-taodbm-runtime.log')) -and (Test-Path $rtSys)) { Copy-Item $rtSys 'ev-taodbm-runtime.log' -Force }
           $rtPd = 'C:\ProgramData\TaoDBM\taodbm-runtime.log'
           if ((-not (Test-Path 'ev-taodbm-runtime.log')) -and (Test-Path $rtPd)) { Copy-Item $rtPd 'ev-taodbm-runtime.log' -Force }
+          # #226: CA 侧落盘现场 - INSTALLFOLDER 目录清单(定谳载荷是否落盘) + 脚本启动标记
+          if (Test-Path 'C:\ProgramData\rt-ca-dir.log') { Copy-Item 'C:\ProgramData\rt-ca-dir.log' 'ev-rt-ca-dir.log' -Force }
+          if (Test-Path 'C:\ProgramData\TaoDBM\rt-ca-out.txt') { Copy-Item 'C:\ProgramData\TaoDBM\rt-ca-out.txt' 'ev-rt-ca-out.log' -Force }
           Get-ChildItem ev-*.log -ErrorAction SilentlyContinue | ForEach-Object {
             if ((Get-Item $_).Length -gt 2MB) { Get-Content $_ -Tail 800 | Set-Content $_ -Encoding utf8 }
           }

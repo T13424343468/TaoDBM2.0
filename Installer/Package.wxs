@@ -27,15 +27,17 @@
     <!-- #218 定谳: 实测包按 x86 会话解析 SystemFolder→SysWOW64 (run 218 install.log: SystemFolder=C:\Windows\SysWOW64\,
          ProgramFilesFolder=C:\Program Files (x86)\), 32 位 PowerShell 起动即 1722;
          改 System64Folder 恒指 64 位 System32, 与包位数无关 -->
-    <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" />
-    <!-- #225 verdict: preflight ran the script fine (runtime-present zero-download) + rt-ca-out.txt absent
-         + CA died in 1s with -196608 (0xFFFD0000 = powershell -File path error) => script never started in the
-         CA session; root cause = InstallFiles copied zero files (reproduced #221/#224, ~90ms, no per-file lines).
-         CA switched to -Command inline fallback: script on disk -> full original logic; script missing (packaging
-         layer unresolved) -> registry-based .NET desktop runtime check, present -> let install continue (verify
-         step will adjudicate payload-on-disk), absent -> exit 3 readable red. Restore -File form once packaging is settled. -->
+    <!-- #225 verdict #2: the -Command fallback itself was broken - MSI Formatted-field processing stripped
+         every { } brace from ExeCommand (run225 log line 1049 shows "&  $s=... & $s  elseif"), so powershell
+         got a syntax error and exited 1. Lesson: no curly braces in ExeCommand, ever.
+         #226 design: CA moves to cmd.exe (brace-free). It always dumps the INSTALLFOLDER listing to
+         C:\ProgramData\rt-ca-dir.log (evidence step collects it), then runs the script via powershell -File
+         when present; when absent it exits 0 so the install finishes and the verify step adjudicates
+         payload-on-disk with its tree dump. -196608 in #221/#224 stays "script not on disk" until the dir
+         listing proves otherwise. -->
+    <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[System64Folder]cmd.exe" />
     <CustomAction Id="EnsureDotNetRuntime" Property="RTENSURECMD"
-                  ExeCommand="-NoProfile -ExecutionPolicy Bypass -Command &quot;&amp; { $s='[INSTALLFOLDER]EnsureRuntime.ps1'; if (Test-Path $s) { &amp; $s } elseif (Test-Path 'HKLM:\SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx') { exit 0 } else { exit 3 } }&quot;"
+                  ExeCommand="/c dir &quot;[INSTALLFOLDER]&quot; &gt; C:\ProgramData\rt-ca-dir.log 2&gt;&amp;1 &amp; if exist &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot; (powershell -NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;)"
                   Execute="immediate" Return="check" />
     <Property Id="DESKTOP_SHORTCUT" Value="1" />
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
