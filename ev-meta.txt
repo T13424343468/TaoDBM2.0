@@ -16,3 +16,4 @@ tag=menu-item-found time=2026-11-21T11:43:13.8761487+00:00 appMem=161 MB
 tag=menu-item-invoked time=2026-11-21T11:43:15.4042218+00:00 appMem=161 MB
 tag=step-start S12 time=2026-11-21T11:43:19.8554346+00:00 appMem=164 MB
 tag=S12 run-invoked time=2026-11-21T11:43:24.1289369+00:00 appMem=177 MB
+tag=S12 result-shot time=2026-11-21T11:43:28.6089240+00:00 appMem=183 MB
