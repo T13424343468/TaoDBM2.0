@@ -24,3 +24,4 @@ coverage-func S09 对象树-真实表清单 => skip
 coverage-func S10 查询-选中连接 => pass
 coverage-func S11 查询-新建查询入口 => pass
 shot ev-shot-result-S12.png 39217 bytes
+S12 ledger: 2026-11-21 08:52:10.828 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
