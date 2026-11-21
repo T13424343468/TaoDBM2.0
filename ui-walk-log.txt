@@ -1,0 +1,43 @@
+probe quiet-watch start (10s, no UIA)
+probe quiet-watch done
+shot shot-01-start.png 37492 bytes
+coverage: 15 named elements in main window
+shot shot-05-newconn-dialog.png 50935 bytes
+coverage-func S01 新建连接-打开对话框 => pass
+coverage-func S02 连接-选择SQLite引擎 => pass
+coverage-func S03 连接-填写名称 => pass
+coverage-func S04 连接-填写数据库文件 => pass
+shot shot-06-conn-saved.png 40324 bytes
+coverage-func S05 连接-保存 => pass
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
+coverage-func S10 查询-选中连接 => pass
+coverage-func S11 查询-新建查询入口 => pass
+shot ev-shot-result-S12.png 38516 bytes
+S12 ledger: 2026-11-21 11:39:51.223 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-08-count-5000.png 38516 bytes
+coverage-func S12 SQL真实执行-计数 => pass
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+shot ev-shot-result-S15.png 43842 bytes
+S15 ledger: 2026-11-21 11:40:02.544 [执行账] sql=SELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
+shot shot-11-cell-value.png 43842 bytes
+coverage-func S15 SQL真实执行-取值比对 => pass
+shot ev-shot-result-S16.png 47308 bytes
+S16 ledger: 2026-11-21 11:40:14.260 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;ELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | title=ELECT name FROM products WHERE id = 7 rows=0 cols= | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
+shot shot-12-dirty-rows.png 47308 bytes
+coverage-func S16 SQL真实执行-脏数据行 => pass
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
