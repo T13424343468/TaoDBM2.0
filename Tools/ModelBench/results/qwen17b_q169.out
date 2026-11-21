@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 不过，根据常见的SQL语法，要匹配前三个字符，应该使用LIKE '%%%'，但这样会匹配任何三个字符，而不仅仅是前三个。例如，如果名字是“John”，那么LIKE '%%%'会匹配，但如果是“John”，那么前三个字符是“Joh”，所以可能用户的意思是前三个字符，所以正确的写法应该是
 
-[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 20.1 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

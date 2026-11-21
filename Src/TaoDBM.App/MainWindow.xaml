@@ -32,6 +32,7 @@
                                 <MenuFlyoutItem Text="删除连接" Click="OnDelConn"/>
                                 <MenuFlyoutSeparator/>
                                 <MenuFlyoutItem Text="设置" Click="OnSettings"/>
+                                <MenuFlyoutItem Text="操作手册" Click="OnManual"/>
                                                             </MenuFlyout>
                         </Button.Flyout>
                         <Image x:Name="LogoImg" Width="26" Height="26"/>
@@ -53,6 +54,8 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+                    <Button x:Name="BtnManual" Content="手册" Click="OnManual" AutomationProperties.AutomationId="BtnManual"
+                            Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                     <Button x:Name="BtnAbout" Content="关于" Click="OnAbout" ClickMode="Press" AutomationProperties.AutomationId="BtnAbout"
                             Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                 </StackPanel>
@@ -62,20 +65,36 @@
         <!-- 主区 -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition x:Name="TreeCol" Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition x:Name="MainCol" Width="*" MinWidth="480"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 左侧连接树：仅显示连接 / 库 / 表 -->
-            <Border Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
-                <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
-                          Expanding="OnNodeExpanding"
-                          SelectionChanged="OnTreeSelection"
-                          RightTapped="OnTreeRightTapped"/>
+            <!-- 左侧连接树：仅显示连接 / 库 / 表；顶部挂元数据失败重试条（s2） -->
+            <Border x:Name="TreeBorder" Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
+                <StackPanel>
+                    <InfoBar x:Name="MetaRetryBar" IsOpen="False" Severity="Warning"
+                             Title="元数据加载失败" Message=""
+                             IsClosable="True" Margin="4,4,4,0">
+                        <InfoBar.ActionButton>
+                            <Button Content="重试" Click="OnMetaRetry"/>
+                        </InfoBar.ActionButton>
+                    </InfoBar>
+                    <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
+                              Expanding="OnNodeExpanding"
+                              SelectionChanged="OnTreeSelection"
+                              RightTapped="OnTreeRightTapped"/>
+                </StackPanel>
             </Border>
 
+            <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复） -->
+            <Border x:Name="TreeSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Left"
+                    Background="Transparent" PointerPressed="OnSplitterPointerPressed"
+                    PointerMoved="OnSplitterPointerMoved" PointerReleased="OnSplitterPointerReleased"
+                    PointerCaptureLost="OnSplitterPointerReleased"/>
+
             <!-- 右侧工作区 -->
-            <TabView x:Name="WorkTabs" Grid.Column="1" Background="{ThemeResource AntBg}"
+            <TabView x:Name="WorkTabs" Grid.Column="2" Background="{ThemeResource AntBg}"
                      TabWidthMode="SizeToContent" CanDragTabs="False"
                      TabCloseRequested="OnTabClose"/>
         </Grid>

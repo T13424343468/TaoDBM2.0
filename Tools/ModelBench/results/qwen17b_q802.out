@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -69,7 +69,7 @@ FOR XML EXPLICIT;
 
 不过，用户的问题可能更倾向于将所有商品名称组合成一个XML片段，比如
 
-[ Prompt: 18.8 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.0 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

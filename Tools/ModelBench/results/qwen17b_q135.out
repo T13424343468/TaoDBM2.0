@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 但用户的问题可能有误，或者他们想表达的是其他意思。比如，可能想计算每个名字的字节数，比如每个字符的字节数，但需要知道编码方式。例如，在UTF-8中，每个字符可能占1-3字节，但数据库中的字符串存储是按字符处理的，所以直接使用LENGTH函数可能无法得到字节数，除非使用其他函数，比如BYTE函数，但SQLite中没有BYTE函数
 
-[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

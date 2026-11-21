@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户可能希望删除重复的行，比如在order_items表中，同一order_id的多个记录，但需要删除重复的。例如，如果同一order_id有多个order_items记录，但它们的product_id不同，但可能用户想删除这些
 
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 21.3 t/s | Generation: 6.4 t/s ]
 
 
 Exiting...

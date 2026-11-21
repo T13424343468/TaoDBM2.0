@@ -73,7 +73,8 @@ public static class ExplainPlanEngine
         return plan;
     }
 
-    /// <summary>瓶颈标注：P201 全表扫描 / P202 文件排序 / P203 临时表；全表扫描同时给出索引建议。</summary>
+    /// <summary>瓶颈标注：P201 全表扫描 / P202 文件排序 / P203 临时表；全表扫描同时给出索引建议。
+    /// 兼容 MySQL filesort / SQLite SCAN / MSSQL SHOWPLAN 文本（Table|Index Scan、Sort、Spool）。</summary>
     public static List<PlanFinding> Annotate(ExplainPlan plan)
     {
         var findings = new List<PlanFinding>();
@@ -85,7 +86,13 @@ public static class ExplainPlanEngine
                 findings.Add(new PlanFinding(text, "P202", "danger", "需要额外一轮排序，数据量大时明显拖慢查询", "检查排序列是否已有索引，或让索引顺序同时覆盖过滤与排序列"));
                 continue;
             }
-            if (text.Contains("TEMP", StringComparison.OrdinalIgnoreCase) || text.Contains("临时表"))
+            if (System.Text.RegularExpressions.Regex.IsMatch(text, @"\bSort\s*\(", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                findings.Add(new PlanFinding(text, "P202", "danger", "需要额外一轮排序，数据量大时明显拖慢查询", "检查排序列是否已有索引，或让索引顺序同时覆盖过滤与排序列"));
+                continue;
+            }
+            if (text.Contains("TEMP", StringComparison.OrdinalIgnoreCase) || text.Contains("临时表")
+                || text.Contains("Spool", StringComparison.OrdinalIgnoreCase))
             {
                 findings.Add(new PlanFinding(text, "P203", "warn", "用临时表中转结果，额外消耗内存与落盘", "考虑减少 DISTINCT/GROUP BY 范围或为相关列建覆盖索引"));
                 continue;
@@ -101,13 +108,32 @@ public static class ExplainPlanEngine
         return findings;
     }
 
-    /// <summary>提取全表扫描的目标表名：SQLite "SCAN 表名"、MySQL "Table scan on 表名"。</summary>
+    /// <summary>提取全表扫描的目标表名：SQLite "SCAN 表名"、MySQL "Table scan on 表名"、
+    /// MSSQL SHOWPLAN "Table Scan(OBJECT:([db].[schema].[table]))" / "Clustered Index Scan(OBJECT:(…))"。</summary>
     public static string? ExtractFullScanTable(string text)
     {
         var m = System.Text.RegularExpressions.Regex.Match(text, @"Table scan on\s+`?(?<t>[\w$]+)`?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (m.Success) return m.Groups["t"].Value;
         m = System.Text.RegularExpressions.Regex.Match(text, @"SCAN\s+(?!ON\b)`?(?<t>[\w$]+)`?", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (m.Success && !text.Contains("USING INDEX", StringComparison.OrdinalIgnoreCase)) return m.Groups["t"].Value;
+        m = System.Text.RegularExpressions.Regex.Match(text, @"(?:Table|Clustered\s+Index|Index)\s+Scan\s*\(\s*OBJECT:\s*\((?<obj>[^\)]*)\)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (m.Success)
+        {
+            var segs = System.Text.RegularExpressions.Regex.Matches(m.Groups["obj"].Value, @"\[([^\[\]]+)\]");
+            if (segs.Count > 0) return segs[^1].Groups[1].Value;
+        }
         return null;
+    }
+
+    /// <summary>取估算执行计划的包装语句：MySQL / PG 前缀 EXPLAIN；MSSQL 用 SET SHOWPLAN_ALL 包裹（估算计划，不执行查询本体）。</summary>
+    public static string PlanSql(DbEngine e, string sql)
+    {
+        var s = sql.Trim().TrimEnd(';');
+        return e switch
+        {
+            DbEngine.MySQL or DbEngine.PostgreSQL => $"EXPLAIN {s}",
+            DbEngine.SqlServer => $"SET SHOWPLAN_ALL ON;\n{s};\nSET SHOWPLAN_ALL OFF;",
+            _ => throw new NotSupportedException("该引擎暂无统一执行计划包装口径"),
+        };
     }
 }

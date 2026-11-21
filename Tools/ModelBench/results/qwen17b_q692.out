@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -85,7 +85,7 @@ SELECT ... FROM cte;
 
 不过，这里需要明确CTE的结构。假设问题是要对订单进行排名，那么正确的CTE应该包含订单的销售数据
 
-[ Prompt: 18.9 t/s | Generation: 6.5 t/s ]
+[ Prompt: 19.8 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

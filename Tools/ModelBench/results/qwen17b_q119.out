@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 但问题中的“字符数统计”可能是指统计每个字段的字符数，比如每个字段的长度，或者总字符数。例如，统计所有
 
-[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.2 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 假设用户希望为orders表的order_id字段添加右对齐的编号，可能需要使用自增，但可能用户希望生成一个右对齐的编号，比如在orders表中，order_id字段需要右对齐，但通常自增会自动处理。或者用户可能希望为某个字段添加一个右对齐的补位，比如在order_items中添加一个
 
-[ Prompt: 19.9 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

@@ -52,6 +52,10 @@ public partial class MainWindow : Window
         BtnLogo.Flyout.PinTheme();
         BtnTheme.Flyout.PinTheme();
         UpdateThemeChecks();
+        // F1 全局唤起操作手册（2026-11-20 老板令）：挂在根 Grid 上，任何焦点下都响应
+        var f1 = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.F1 };
+        f1.Invoked += (_, args) => { args.Handled = true; UI.ManualDialog.Show(this); };
+        ((Microsoft.UI.Xaml.Controls.Grid)Content).KeyboardAccelerators.Add(f1);
         var trayIcoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "TaoDBM.ico");
         Safe.Run(() =>
         {
@@ -77,7 +81,13 @@ public partial class MainWindow : Window
         LoadConnections();
         AddWelcomeTab();
         RestoreSession();
-        Closed += (_, _) => { SaveSession(); SshTunnel.StopAll(); };
+        ApplyWindowState();
+        SizeChanged += EnforceMinimumSize;
+        SizeChanged += OnSizeTierChanged;   // 批次H：弹性布局三档（第十五章）
+        ApplyLayoutTier();
+        EnableSqlDrop();
+        DispatcherQueue.TryEnqueue(LoadSqlFromCommandLine);
+        Closed += (_, _) => { SaveWindowState(); SaveSession(); SshTunnel.StopAll(); };
     }
 
     /// <summary>系统通知点击跳转：回主窗并打开对应功能入口（P4）。路由键见 ToastCenter.Route。</summary>
@@ -165,6 +175,9 @@ public partial class MainWindow : Window
             return;
         }
     }
+
+    /// <summary>.sql 跨实例交接入口：前置窗口并装载（收口与托盘唤醒一致）。</summary>
+    public void ActivateFromHandoff() => ShowFromTray();
 
     private void ShowFromTray()
     {
@@ -453,6 +466,7 @@ public partial class MainWindow : Window
                 Item("编辑连接", async (_, _) => await EditConnection(info));
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                 Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
+                Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
                 Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
@@ -467,6 +481,7 @@ public partial class MainWindow : Window
                 Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
                 Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
                 Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
+                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
@@ -477,20 +492,26 @@ public partial class MainWindow : Window
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
                 Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
+                Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
                 Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
                 Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                 Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
+                Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
                 Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
                 Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
+                Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
                 break;
             case NodeKind.Table:
                 Item("刷新", (_, _) => RefreshNode(node));
                 Item("新建查询", (_, _) => OpenQueryTab(info));
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
                 Item("拟真数据", (_, _) => OpenFaker(info));
                 break;
             case NodeKind.Category:
@@ -502,6 +523,13 @@ public partial class MainWindow : Window
                     Item("打开到查询窗口", (_, _) => _ = OpenObjectToQuery(info));
                 else
                     Item("详情", (_, _) => _ = InfoAsync(info.RowText.Length > 0 ? info.RowText : "（无详情）"));
+                if (info.Category == "routines")
+                    Item(RoutineManager.DebugSupported(info.Profile.Engine) ? "断点调试" : "断点调试（v2.0 暂不支持）",
+                        async (_, _) =>
+                        {
+                            if (!RoutineManager.DebugSupported(info.Profile.Engine)) { await InfoAsync(RoutineManager.DebugUnsupportedText); return; }
+                            await OpenRoutineDebug(info);
+                        });
                 break;
         }
         fly.ShowAt(e.OriginalSource as FrameworkElement ?? ConnTree);
@@ -573,6 +601,8 @@ public partial class MainWindow : Window
                     SetStatus($"正在连接 {info.Profile.DisplayName}…");
                     info.Provider ??= ProviderFactory.Create(info.Profile);
                     var dbs = await info.Provider.GetDatabases();
+                    // #154 S09 取证先行：连接装载零打点致 MSSQL 红账无法定谳，装载链路入应用日志
+                    Core.AppLog.Write($"[对象树] 连接展开 engine={info.Profile.Engine} dbs={dbs.Count} [{string.Join(",", dbs.Take(8))}]");
                     foreach (var db in dbs)
                     {
                         var childInfo = new NodeInfo
@@ -592,6 +622,8 @@ public partial class MainWindow : Window
                 case NodeKind.Database:
                     var prov = info.Provider!;
                     var children = await prov.GetChildren(info.Db);
+                    // #154 S09 取证先行：库级装载打点（children 数与前三项），红账直接分辨「查询没返回 vs 读树口径」
+                    Core.AppLog.Write($"[对象树] 库展开 db={info.Db} children={children.Count} [{string.Join(",", children.Take(3))}]");
                     foreach (var c in children)
                     {
                         var cInfo = new NodeInfo
@@ -605,8 +637,8 @@ public partial class MainWindow : Window
                     }
                     if (children.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Name}：{children.Count} 个{(prov.IsNoSql ? prov.BrowseLabel : "表")}");
-                    // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载）
-                    if (!prov.IsNoSql && ObjectTreeCatalog.Supported(info.Profile.Engine))
+                    // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载；七库全覆盖——Mongo 走 TAODBMCMD，Redis 走空清单 SCAN）
+                    if (ObjectTreeCatalog.Supported(info.Profile.Engine))
                     {
                         foreach (var (cat, label) in new[] { ("views", "视图"), ("indexes", "索引"), ("fks", "外键"), ("routines", "例程"), ("triggers", "触发器") })
                         {
@@ -652,14 +684,30 @@ public partial class MainWindow : Window
                     SetStatus($"{info.Db} · {info.Name}：{objCount} 项");
                     break;
             }
+            MetaRetryBar.IsOpen = false;   // s2：装载成功收重试条
         }
         catch (Exception ex)
         {
             info.Loaded = false;
             node.Children.Clear();
             node.Children.Add(new TreeViewNode { Content = "⚠ " + ex.Message + "（点击刷新重试）" });
+            // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
+            Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
             SetStatus("加载失败：" + ex.Message);
+            // s2 失败重试条：元数据加载失败时顶部亮重试条，点重试即重载该节点
+            _metaRetryNode = node;
+            MetaRetryBar.Message = $"{info.Name}：{ex.Message}";
+            MetaRetryBar.IsOpen = true;
         }
+    }
+
+    private TreeViewNode? _metaRetryNode;
+
+    /// <summary>s2 重试条动作：重载最近一次装载失败的节点，成功后收条。</summary>
+    private void OnMetaRetry(object sender, RoutedEventArgs e)
+    {
+        MetaRetryBar.IsOpen = false;
+        if (_metaRetryNode is not null) RefreshNode(_metaRetryNode);
     }
 
     private void OnTreeSelection(TreeView sender, TreeViewSelectionChangedEventArgs args)
@@ -750,6 +798,9 @@ public partial class MainWindow : Window
             "WinUI3 + .NET 8 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n\n道生一，一生二，二生三，三生万物。数据即万物。");
     }
 
+    /// <summary>操作手册（2026-11-20 老板令）：顶栏「手册」/ 左上菜单「操作手册」/ 全局 F1 三入口，内容离线内置。</summary>
+    private void OnManual(object sender, RoutedEventArgs e) => UI.ManualDialog.Show(this);
+
     // ---------- 打开标签页 ----------
 
     private void AddWelcomeTab()
@@ -758,7 +809,7 @@ public partial class MainWindow : Window
         {
             Margin = new Thickness(24),
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 14,
+            FontSize = AntTokens.FontEmphasis,
             Foreground = UI.Ant.TextSub,
             Text = "欢迎使用 TaoDBM。\n\n1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。\n2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。\n3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。\n\n支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis",
         };
@@ -778,12 +829,21 @@ public partial class MainWindow : Window
         {
             if (info is null) { _ = InfoAsync("请先在左侧树中选中库、表或连接。"); return; }
             Core.AppLog.Write($"[新建查询] enter kind={info.Kind} name={info.Name} provider={(info.Provider is null ? "null" : "ok")}");
+            // #153 修红：走查 seg2/seg3 跳过树展开步（S07/S08）时连接节点 Provider 尚未懒建——
+            // WorkTab 拿到 null provider 后会话保存（SessionConnectionId→Profile.Id）与执行账双 NRE，
+            // 曾判「间歇性」，实为分段确定性；此处对齐 OnNodeExpanding 同款懒建口径
+            info.Provider ??= ProviderFactory.Create(info.Profile);
             var (db, hint) = info.Kind switch
             {
                 NodeKind.Database => (info.Name, ""),
                 NodeKind.Table => (info.Db, DefaultSnippet(info)),
                 NodeKind.ObjectDef => (info.Db, ""),
-                _ => (info.Provider?.IsNoSql == true ? "" : (info.Profile.Database.Length > 0 && info.Profile.Engine == DbEngine.SQLite ? "main" : "" ), ""),
+                // 023374b 移植：服务器引擎（MySQL/MSSQL/PG/Oracle）连接节点带连接配置默认库，
+                // 否则 S12 裸表名 SQL 在无库上下文执行、计数账不符；SQLite 保持 main 口径
+                _ => (info.Provider.IsNoSql ? "" :
+                      info.Profile.Engine == DbEngine.SQLite
+                          ? (info.Profile.Database.Length > 0 ? "main" : "")
+                          : info.Profile.Database, ""),
             };
             if (info.Provider is MongoProvider m && info.Kind == NodeKind.Table) m.CurrentCollection = info.Name;
             if (info.Provider is RedisProvider r && info.Kind == NodeKind.Table) r.CurrentKey = info.Name;
@@ -965,6 +1025,16 @@ public partial class MainWindow : Window
         var ddl = await TryReadDefinition(info);
         if (ddl is null) return;
         OpenQueryTab(info, ddl);
+    }
+
+    /// <summary>例程断点调试入口：v2.0 仅 MySQL（2026-11-19 拍板），把调试脚手架打开到查询窗口，过程内中间结果用 SELECT 观测。</summary>
+    private async Task OpenRoutineDebug(NodeInfo info)
+    {
+        if (!RoutineManager.DebugSupported(info.Profile.Engine)) { await InfoAsync(RoutineManager.DebugUnsupportedText); return; }
+        var kind = info.RowText.Contains("FUNCTION", StringComparison.OrdinalIgnoreCase)
+            ? RoutineKind.Function
+            : RoutineKind.Procedure;
+        OpenQueryTab(info, RoutineManager.DebugScript(info.Profile.Engine, kind, info.Name));
     }
 
     private async Task InfoAsync(string msg)

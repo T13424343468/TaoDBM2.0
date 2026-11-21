@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 不过，用户可能希望将价格字段的值取整到整数，而不管小数部分，这时候CAST(price AS INTEGER)更直接。但需要看数据库的兼容性，比如SQLite
 
-[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.4 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

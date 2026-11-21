@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ JOIN payments ON orders.id = payments.order_id;
 
 不过，可能用户希望同时看到订单的详细信息和支付的信息，所以需要包括所有相关的字段。但根据问题描述，可能只需要简单的JOIN，不需要额外的字段。因此
 
-[ Prompt: 18.8 t/s | Generation: 6.5 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

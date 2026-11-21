@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题中没有明确说明需要从哪个表获取数据，所以可能需要假设用户需要查询order_items中的unit_price四舍五入后的值。因此，SQL查询可能是SELECT ROUND(unit_price, 0) FROM order_items; 或者如果需要结合其他表，比如products，可能需要JOIN。但问题中没有提到需要关联
 
-[ Prompt: 19.2 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

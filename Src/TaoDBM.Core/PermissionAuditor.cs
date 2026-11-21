@@ -13,7 +13,7 @@ public sealed record PermissionFinding(string Grantee, string Code, string Sever
 
 public static class PermissionAuditor
 {
-    private static readonly string[] HighRisk = { "FILE", "SUPER", "DROP", "SHUTDOWN", "GRANT OPTION", "SYSTEM_USER" };
+    private static readonly string[] HighRisk = { "FILE", "SUPER", "DROP", "SHUTDOWN", "GRANT OPTION", "SYSTEM_USER", "CONTROL" };
     private static readonly string[] AdminPrivs = { "ALL", "ALL PRIVILEGES", "SUPER", "SHUTDOWN", "SYSTEM_USER" };
 
     /// <summary>解析 GRANT 语句：GRANT p1, p2 ON obj TO 'u'@'h', PUBLIC [WITH GRANT OPTION]。</summary>

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 但根据问题要求，必须根据表结构写出SQL，所以可能需要假设用户表中的某个字段是电话号码，或者可能问题中的“电话号码”是其他表中的字段，比如orders表
 
-[ Prompt: 19.6 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

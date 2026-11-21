@@ -7,9 +7,12 @@ using Windows.Storage.Pickers;
 
 namespace TaoDBM.UI;
 
-/// <summary>备份 / 还原对话框：按引擎分流（官方 CLI、T-SQL、文件复制）。</summary>
+/// <summary>备份 / 恢复四步向导（设计稿 §5）：① 选库/表 → ② 备份点 → ③ 目标 → ④ 执行确认。
+/// 恢复属高危不可逆：影响范围预览、默认勾选恢复前自动备份、输入目标库名点亮开始恢复；演练入口接 BackupDrillDialog。</summary>
 public static class BackupDialog
 {
+    private static readonly string[] StepNames = { "选库/表", "备份点", "目标", "执行确认" };
+
     /// <summary>info 须为连接节点（携带 Profile 与 Provider）。</summary>
     public static async Task Show(MainWindow owner, NodeInfo info)
     {
@@ -17,7 +20,7 @@ public static class BackupDialog
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (!BackupTools.Supported(profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("备份 / 还原", BackupTools.UnsupportedReason(profile.Engine));
+            await new MessageDialogHelper(owner).Show("备份 / 恢复", BackupTools.UnsupportedReason(profile.Engine));
             return;
         }
 
@@ -25,19 +28,58 @@ public static class BackupDialog
         try { dbs = await prov.GetDatabases(); }
         catch { dbs = new List<string> { profile.Database }; }
 
-        var dbBox = new ComboBox { MinWidth = 240, PlaceholderText = "选择数据库" };
-        foreach (var d in dbs) dbBox.Items.Add(d);
-        if (profile.Database.Length > 0 && dbs.Contains(profile.Database)) dbBox.SelectedItem = profile.Database;
-        else if (dbs.Count > 0) dbBox.SelectedIndex = 0;
+        bool[] done = new bool[4];
+        var stepBar = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
+        var body = new StackPanel { Spacing = 10, MinWidth = 620 };
+        ContentDialog? dlg = null;
 
+        void UpdateStepBar()
+        {
+            var parts = new List<string>();
+            for (int i = 0; i < 4; i++)
+                parts.Add($"{"①②③④"[i]} {StepNames[i]}{(done[i] ? " ✔" : "")}");
+            stepBar.Text = string.Join(" → ", parts);
+        }
+
+        // ---- 步骤 ①：选库/表 ----
         var isBackup = new RadioButton { Content = "备份到文件", IsChecked = true, GroupName = "brMode" };
         var isRestore = new RadioButton { Content = "从文件还原", GroupName = "brMode" };
         var modePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
         modePanel.Children.Add(isBackup);
         modePanel.Children.Add(isRestore);
 
+        var dbBox = new ComboBox { MinWidth = 240, PlaceholderText = "选择数据库" };
+        foreach (var d in dbs) dbBox.Items.Add(d);
+        if (profile.Database.Length > 0 && dbs.Contains(profile.Database)) dbBox.SelectedItem = profile.Database;
+        else if (dbs.Count > 0) dbBox.SelectedIndex = 0;
+
+        var scopeInfo = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var step1 = new StackPanel { Spacing = 8 };
+        step1.Children.Add(modePanel);
+        var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        row1.Children.Add(new TextBlock { Text = "数据库", VerticalAlignment = VerticalAlignment.Center });
+        row1.Children.Add(dbBox);
+        step1.Children.Add(row1);
+        step1.Children.Add(scopeInfo);
+
+        async void LoadScope()
+        {
+            string db = dbBox.SelectedItem as string ?? "";
+            if (db.Length == 0) { scopeInfo.Text = "请选择数据库。"; return; }
+            scopeInfo.Text = "读取表清单…";
+            try
+            {
+                var tables = await prov.GetChildren(db);
+                scopeInfo.Text = $"整库口径：{db} 共 {tables.Count} 张表；备份 / 恢复按整库进行。";
+            }
+            catch (Exception ex) { scopeInfo.Text = $"表清单读取失败：{ex.Message}（不影响备份 / 恢复执行）。"; }
+        }
+        dbBox.SelectionChanged += (_, _) => LoadScope();
+
+        // ---- 步骤 ②：备份点 / 文件 ----
         var fileBox = new TextBox { MinWidth = 360, PlaceholderText = "选择或输入文件路径" };
-        var pickBtn = new Button { Content = "选择文件…", CornerRadius = new CornerRadius(4) };
+        var pickBtn = new Button { Content = "选择文件…", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         pickBtn.Click += async (_, _) =>
         {
             try
@@ -64,14 +106,98 @@ public static class BackupDialog
             }
             catch { /* 用户取消 */ }
         };
+        var fileInfo = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var step2 = new StackPanel { Spacing = 8 };
+        var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        row2.Children.Add(fileBox);
+        row2.Children.Add(pickBtn);
+        step2.Children.Add(row2);
+        step2.Children.Add(fileInfo);
 
-        var runBtn = new Button
+        void ShowFileInfo()
         {
-            Content = "执行",
+            string file = fileBox.Text.Trim();
+            if (file.Length == 0) { fileInfo.Text = ""; return; }
+            try
+            {
+                var fi = new FileInfo(file);
+                fileInfo.Text = fi.Exists
+                    ? $"备份点：时间 {fi.LastWriteTime:yyyy-MM-dd HH:mm} · 大小 {fi.Length / 1024.0:N1} KB"
+                    : "文件尚不存在：备份将新建该文件；还原请选择已有备份文件。";
+            }
+            catch { fileInfo.Text = ""; }
+        }
+        fileBox.TextChanged += (_, _) => ShowFileInfo();
+
+        // ---- 步骤 ③：目标与影响 ----
+        var targetBox = new TextBox { Header = "目标数据库（恢复写入对象）", Text = profile.Database };
+        var autoBackup = new CheckBox { Content = "恢复前自动备份当前状态（强烈建议）", IsChecked = true };
+        var impactBtn = new Button { Content = "刷新影响预览", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var impactBox = new TextBox
+        {
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            Height = 120,
+            FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
+            FontSize = AntTokens.FontMinor,
+            Text = "还原模式：点「刷新影响预览」查看将覆盖的表与行数估计。",
+        };
+        var backupNote = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var step3 = new StackPanel { Spacing = 8 };
+        step3.Children.Add(targetBox);
+        step3.Children.Add(autoBackup);
+        step3.Children.Add(impactBtn);
+        step3.Children.Add(impactBox);
+        step3.Children.Add(backupNote);
+
+        async void LoadImpact()
+        {
+            string db = targetBox.Text.Trim();
+            if (db.Length == 0) { impactBox.Text = "请先填目标数据库。"; return; }
+            impactBox.Text = "统计中…";
+            try
+            {
+                var tables = await prov.GetChildren(db);
+                if (tables.Count == 0) { impactBox.Text = $"目标库 {db} 当前没有表。"; return; }
+                var lines = new List<string> { $"将覆盖目标库 {db}：共 {tables.Count} 张表。" };
+                int shown = Math.Min(tables.Count, 20);
+                for (int i = 0; i < shown; i++)
+                {
+                    string rows = "行数未知";
+                    try
+                    {
+                        var rs = await prov.Execute(db, $"SELECT COUNT(*) AS c FROM {prov.Quote(tables[i])}");
+                        if (rs.Count > 0 && rs[0].Rows.Count > 0) rows = $"{rs[0].Rows[0][0]} 行（估计）";
+                    }
+                    catch { /* 单表统计失败不阻断预览 */ }
+                    lines.Add($"· {tables[i]}：{rows}");
+                }
+                if (tables.Count > shown) lines.Add($"· …另有 {tables.Count - shown} 张表未估算。");
+                impactBox.Text = string.Join('\n', lines);
+            }
+            catch (Exception ex) { impactBox.Text = $"影响预览失败：{ex.Message}"; }
+        }
+        impactBtn.Click += (_, _) => LoadImpact();
+
+        // ---- 步骤 ④：执行确认 ----
+        var confirmBox = new TextBox { Header = "高风险确认：输入目标库名以点亮「开始恢复」" };
+        var drillHint = new TextBlock
+        {
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+            Text = "恢复前建议先做恢复演练：把备份恢复到临时库验证可用，再对真实库执行。",
+        };
+        var drillBtn = new Button { Content = "打开恢复演练", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        drillBtn.Click += (_, _) => _ = BackupDrillDialog.Show(owner, info);
+        var startBtn = new Button
+        {
+            Content = "开始备份",
             Background = Ant.Primary,
             Foreground = Ant.OnPrimary,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
         var output = new TextBox
         {
@@ -80,9 +206,29 @@ public static class BackupDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 150,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
-            Text = "选好数据库和文件后点「执行」。",
+            FontSize = AntTokens.FontMinor,
+            Text = "确认无误后点「开始」。",
         };
+        var step4 = new StackPanel { Spacing = 8 };
+        step4.Children.Add(confirmBox);
+        step4.Children.Add(drillHint);
+        step4.Children.Add(drillBtn);
+        step4.Children.Add(startBtn);
+        step4.Children.Add(output);
+
+        void RefreshConfirm()
+        {
+            bool restore = isRestore.IsChecked == true;
+            startBtn.Content = restore ? "开始恢复" : "开始备份";
+            confirmBox.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
+            drillHint.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
+            drillBtn.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
+            startBtn.IsEnabled = !restore || (targetBox.Text.Trim().Length > 0 && confirmBox.Text.Trim() == targetBox.Text.Trim());
+        }
+        confirmBox.TextChanged += (_, _) => RefreshConfirm();
+        targetBox.TextChanged += (_, _) => RefreshConfirm();
+        isBackup.Checked += (_, _) => { RefreshConfirm(); ShowFileInfo(); };
+        isRestore.Checked += (_, _) => { RefreshConfirm(); ShowFileInfo(); };
 
         string note = profile.Engine switch
         {
@@ -90,123 +236,182 @@ public static class BackupDialog
             DbEngine.SqlServer => "用 T-SQL BACKUP / RESTORE 执行；磁盘路径是数据库服务器上的路径（本机连接时即本机路径）。",
             _ => "直接复制 / 覆盖 .db 文件；还原会覆盖当前库文件，请确认没有其他程序占用。",
         };
+        backupNote.Text = note;
 
-        var content = new StackPanel { Spacing = 10, MinWidth = 560 };
-        content.Children.Add(new TextBlock { Text = $"引擎：{EngineInfo.Name(profile.Engine)} · {profile.DisplayName}", FontSize = 12, Foreground = Ant.TextSub });
-        var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row1.Children.Add(new TextBlock { Text = "数据库", VerticalAlignment = VerticalAlignment.Center });
-        row1.Children.Add(dbBox);
-        content.Children.Add(row1);
-        content.Children.Add(modePanel);
-        var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row2.Children.Add(fileBox);
-        row2.Children.Add(pickBtn);
-        content.Children.Add(row2);
-        content.Children.Add(new TextBlock { Text = note, FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
-        content.Children.Add(runBtn);
-        content.Children.Add(output);
+        // ---- 步骤条与导航 ----
+        var panels = new[] { step1, step2, step3, step4 };
+        var prevBtn = new Button { Content = "上一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var nextBtn = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        nav.Children.Add(prevBtn);
+        nav.Children.Add(nextBtn);
 
-        var dlg = new ContentDialog
+        int cur = 0;
+        void ShowStep(int i)
         {
-            Title = "备份 / 还原",
-            Content = content,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
+            cur = i;
+            body.Children.Clear();
+            body.Children.Add(stepBar);
+            var head = new TextBlock { Text = $"步骤 {i + 1}/4 · {StepNames[i]}", FontSize = AntTokens.FontTitle, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+            body.Children.Add(head);
+            body.Children.Add(panels[i]);
+            body.Children.Add(status);
+            body.Children.Add(nav);
+            prevBtn.IsEnabled = i > 0;
+            nextBtn.Visibility = i == 3 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        prevBtn.Click += (_, _) => { if (cur > 0) ShowStep(cur - 1); };
+        nextBtn.Click += (_, _) =>
+        {
+            if (cur == 0)
+            {
+                if (dbBox.SelectedItem is null) { status.Text = "请先选择数据库。"; return; }
+                done[0] = true;
+                if (isRestore.IsChecked == true && targetBox.Text.Trim().Length == 0)
+                    targetBox.Text = dbBox.SelectedItem as string ?? "";
+                LoadScope();
+            }
+            else if (cur == 1)
+            {
+                if (fileBox.Text.Trim().Length == 0) { status.Text = "请先选择文件。"; return; }
+                if (isRestore.IsChecked == true && !File.Exists(fileBox.Text.Trim()))
+                {
+                    status.Text = "备份文件不存在，请重新选择。";
+                    return;
+                }
+                done[1] = true;
+                ShowFileInfo();
+            }
+            else if (cur == 2)
+            {
+                if (isRestore.IsChecked == true && targetBox.Text.Trim().Length == 0)
+                {
+                    status.Text = "请先填目标数据库。";
+                    return;
+                }
+                done[2] = true;
+                if (isRestore.IsChecked == true) LoadImpact();
+            }
+            UpdateStepBar();
+            if (cur < 3) ShowStep(cur + 1);
         };
 
-        async void OnRun()
+        // ---- 执行（沿用既有引擎分流；恢复前自动备份默认开启） ----
+        async Task<string> RunBackupAsync(string db, string file)
         {
-            string db = dbBox.SelectedItem as string ?? "";
+            switch (profile.Engine)
+            {
+                case DbEngine.MySQL:
+                {
+                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
+                    var spec = BackupTools.MysqlDump(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec);
+                    return code == 0 && text.Trim().Length == 0
+                        ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
+                        : $"退出码 {code}\n{text}";
+                }
+                case DbEngine.PostgreSQL:
+                {
+                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
+                    var spec = BackupTools.PgDump(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec);
+                    return code == 0 && text.Trim().Length == 0
+                        ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
+                        : $"退出码 {code}\n{text}";
+                }
+                case DbEngine.SqlServer:
+                {
+                    var sql = BackupTools.SqlServerBackupSql(db, file);
+                    var list = await prov.Execute("", sql);
+                    var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    return err is null ? $"备份完成：服务器已写入 {file}" : err.Message;
+                }
+                case DbEngine.SQLite:
+                    BackupTools.SqliteBackup(profile.Database, file);
+                    return $"备份完成：{profile.Database} → {file}";
+                default:
+                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
+            }
+        }
+
+        async Task<string> RunRestoreAsync(string db, string file)
+        {
+            switch (profile.Engine)
+            {
+                case DbEngine.MySQL:
+                {
+                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
+                    var spec = BackupTools.MysqlRestore(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec);
+                    return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";
+                }
+                case DbEngine.PostgreSQL:
+                {
+                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
+                    var spec = BackupTools.PgRestore(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec);
+                    return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";
+                }
+                case DbEngine.SqlServer:
+                {
+                    var sql = BackupTools.SqlServerRestoreSql(db, file);
+                    var list = await prov.Execute("", sql);
+                    var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    return err is null ? $"还原完成：{db} 已从 {file} 恢复" : err.Message;
+                }
+                case DbEngine.SQLite:
+                    BackupTools.SqliteRestore(profile.Database, file);
+                    return $"还原完成：{file} → {profile.Database}";
+                default:
+                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
+            }
+        }
+
+        static string PreRestoreFile(string file)
+        {
+            string dir = Path.GetDirectoryName(file) ?? ".";
+            string name = Path.GetFileNameWithoutExtension(file);
+            string ext = Path.GetExtension(file);
+            return Path.Combine(dir, $"{name}.pre-restore-{DateTime.Now:yyyyMMdd-HHmmss}{ext}");
+        }
+
+        async void OnExecute()
+        {
+            bool backup = isBackup.IsChecked == true;
+            string db = backup ? dbBox.SelectedItem as string ?? "" : targetBox.Text.Trim();
             string file = fileBox.Text.Trim();
             if (db.Length == 0) { output.Text = "请先选择数据库。"; return; }
             if (file.Length == 0) { output.Text = "请先选择文件。"; return; }
-            bool backup = isBackup.IsChecked == true;
-            if (!backup)
-            {
-                // 还原是覆盖现有数据的危险操作：不静默执行，先给确认（说明写回对象与不可撤销）。
-                string effect = profile.Engine switch
-                {
-                    DbEngine.SqlServer => $"将用 {file} 的备份内容覆盖服务器上 {db} 的现有数据。",
-                    DbEngine.SQLite => $"将用 {file} 覆盖当前库文件：\n{profile.Database}\n\n请先关闭其他占用该文件的程序。",
-                    _ => $"将把 {file} 的内容写回 {db}，现有数据会被覆盖。",
-                };
-                var confirm = new ContentDialog
-                {
-                    Title = "确认还原",
-                    Content = new TextBlock
-                    {
-                        Text = effect + "\n\n还原会覆盖现有数据且不可撤销，请确认已有其他备份。",
-                        TextWrapping = TextWrapping.Wrap,
-                    },
-                    PrimaryButtonText = "执行还原",
-                    CloseButtonText = "取消",
-                    DefaultButton = ContentDialogButton.Close,
-                    XamlRoot = owner.Content.XamlRoot,
-                };
-                if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary)
-                {
-                    output.Text = "已取消。";
-                    return;
-                }
-            }
-            runBtn.IsEnabled = false;
+
+            startBtn.IsEnabled = false;
             output.Text = "执行中…";
             try
             {
-                switch (profile.Engine)
+                string result;
+                if (backup)
                 {
-                    case DbEngine.MySQL:
-                    {
-                        var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
-                        var spec = backup ? BackupTools.MysqlDump(h, p, profile.User, profile.Password, db, file)
-                                          : BackupTools.MysqlRestore(h, p, profile.User, profile.Password, db, file);
-                        output.Text = "> " + spec.Describe + "\n执行中…";
-                        var (code, text) = await RunAsync(spec);
-                        output.Text = backup && code == 0 && text.Trim().Length == 0
-                            ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
-                            : $"退出码 {code}\n{text}";
-                        break;
-                    }
-                    case DbEngine.PostgreSQL:
-                    {
-                        var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
-                        var spec = backup ? BackupTools.PgDump(h, p, profile.User, profile.Password, db, file)
-                                          : BackupTools.PgRestore(h, p, profile.User, profile.Password, db, file);
-                        output.Text = "> " + spec.Describe + "\n执行中…";
-                        var (code, text) = await RunAsync(spec);
-                        output.Text = backup && code == 0 && text.Trim().Length == 0
-                            ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
-                            : $"退出码 {code}\n{text}";
-                        break;
-                    }
-                    case DbEngine.SqlServer:
-                    {
-                        var sql = backup ? BackupTools.SqlServerBackupSql(db, file) : BackupTools.SqlServerRestoreSql(db, file);
-                        output.Text = "-- " + sql;
-                        var list = await prov.Execute("", sql);
-                        var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
-                        output.Text = err is null
-                            ? (backup ? $"备份完成：服务器已写入 {file}" : $"还原完成：{db} 已从 {file} 恢复")
-                            : err.Message;
-                        break;
-                    }
-                    case DbEngine.SQLite:
-                    {
-                        if (backup)
-                        {
-                            BackupTools.SqliteBackup(profile.Database, file);
-                            output.Text = $"备份完成：{profile.Database} → {file}";
-                        }
-                        else
-                        {
-                            BackupTools.SqliteRestore(profile.Database, file);
-                            output.Text = $"还原完成：{file} → {profile.Database}";
-                        }
-                        break;
-                    }
+                    result = await RunBackupAsync(db, file);
                 }
-                // P4：备份 / 还原结果接通知调度（规则判定不够格就静默）；消息取结果首行，超长截断
-                var firstLine = output.Text.Split('\n')[0].Trim();
+                else
+                {
+                    if (autoBackup.IsChecked == true)
+                    {
+                        string pre = PreRestoreFile(file);
+                        output.Text = $"恢复前自动备份当前状态 → {pre}\n执行中…";
+                        string preResult = await RunBackupAsync(db, pre);
+                        if (!preResult.StartsWith("备份完成", StringComparison.Ordinal))
+                        {
+                            output.Text = $"恢复前自动备份失败，已停止恢复（现有数据未动）：\n{preResult}";
+                            return;
+                        }
+                        output.Text = $"恢复前自动备份完成：{pre}\n开始恢复…";
+                    }
+                    result = await RunRestoreAsync(db, file);
+                }
+                output.Text = result;
+                // P4：备份 / 恢复结果接通知调度（规则判定不够格就静默）；消息取结果首行，超长截断
+                var firstLine = result.Split('\n')[0].Trim();
                 if (firstLine.Length > 120) firstLine = firstLine[..120];
                 ToastCenter.Publish(new NotifyEvent(
                     backup ? NotifyKind.Backup : NotifyKind.Restore, db,
@@ -219,14 +424,26 @@ public static class BackupDialog
                     ? "未找到命令行工具。请安装 MySQL / PostgreSQL 客户端工具并加入 PATH 后重试。\n"
                     : "") + "失败：" + ex.Message;
             }
-            finally { runBtn.IsEnabled = true; }
+            finally { RefreshConfirm(); }
         }
-        runBtn.Click += (_, _) => OnRun();
+        startBtn.Click += (_, _) => OnExecute();
 
-        _ = dlg.ShowThemedAsync();
+        UpdateStepBar();
+        RefreshConfirm();
+        LoadScope();
+        ShowStep(0);
+
+        dlg = new ContentDialog
+        {
+            Title = "备份 / 恢复向导",
+            Content = body,
+            CloseButtonText = "关闭",
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        await dlg.ShowThemedAsync();
     }
 
-    private static async Task<(int Code, string Output)> RunAsync(ToolSpec spec)
+    private static async Task<(int Code, string Output)> RunTool(ToolSpec spec)
     {
         var psi = new ProcessStartInfo(spec.FileName, spec.Arguments)
         {
@@ -238,19 +455,49 @@ public static class BackupDialog
         foreach (var kv in spec.Env) psi.Environment[kv.Key] = kv.Value;
         if (spec.InputFile != null) psi.RedirectStandardInput = true;
 
-        using var p = new Process { StartInfo = psi };
-        p.Start();
-        var outTask = p.StandardOutput.ReadToEndAsync();
-        var errTask = p.StandardError.ReadToEndAsync();
-        if (spec.InputFile != null)
+        // 辅助文件（mongodump --config / expdp parfile）：启动前落盘，退出后删除；内容不进命令行与展示文本。
+        var tempFiles = new List<string>();
+        foreach (var kv in spec.Files)
         {
-            var content = await File.ReadAllTextAsync(spec.InputFile);
-            await p.StandardInput.WriteAsync(content);
-            p.StandardInput.Close();
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), kv.Key);
+            await File.WriteAllTextAsync(path, kv.Value);
+            tempFiles.Add(path);
+            // parfile/--config 为相对文件名时依赖工作目录；统一改写为绝对路径引用。
+            spec.Arguments = spec.Arguments.Replace(BackupTools.QuoteArg(kv.Key), BackupTools.QuoteArg(path));
         }
-        await p.WaitForExitAsync();
-        var text = await outTask;
-        var err = await errTask;
-        return (p.ExitCode, (text + "\n" + err).Trim());
+        psi = new ProcessStartInfo(spec.FileName, spec.Arguments)
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        foreach (var kv in spec.Env) psi.Environment[kv.Key] = kv.Value;
+        if (spec.InputFile != null) psi.RedirectStandardInput = true;
+
+        try
+        {
+            using var p = new Process { StartInfo = psi };
+            p.Start();
+            var outTask = p.StandardOutput.ReadToEndAsync();
+            var errTask = p.StandardError.ReadToEndAsync();
+            if (spec.InputFile != null)
+            {
+                var content = await File.ReadAllTextAsync(spec.InputFile);
+                await p.StandardInput.WriteAsync(content);
+                p.StandardInput.Close();
+            }
+            await p.WaitForExitAsync();
+            var text = await outTask;
+            var err = await errTask;
+            return (p.ExitCode, (text + "\n" + err).Trim());
+        }
+        finally
+        {
+            foreach (var f in tempFiles)
+            {
+                try { File.Delete(f); } catch { /* 清理失败不掩盖主流程结果 */ }
+            }
+        }
     }
 }

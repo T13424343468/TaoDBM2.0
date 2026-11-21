@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ WHERE (SELECT SUM(unit_price * quantity) FROM order_items WHERE order_id = order
 
 不过，这里
 
-[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.4 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

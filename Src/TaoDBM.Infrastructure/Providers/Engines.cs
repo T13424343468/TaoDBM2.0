@@ -106,7 +106,7 @@ public class SqlServerProvider : RelationalProvider
     protected override char CloseQuote => ']';
     public override bool SupportsBrowse => true;
 
-    private Microsoft.Data.SqlClient.SqlConnection Build(string? db)
+    private Microsoft.Data.SqlClient.SqlConnection Build(string? db, bool encrypt)
     {
         var (host, port) = Endpoint();
         var sb = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder
@@ -116,6 +116,8 @@ public class SqlServerProvider : RelationalProvider
             Password = Profile.Password,
             TrustServerCertificate = true,
             ConnectTimeout = 10,
+            // 老库（2008 R2 及以前）默认无 TLS1.2 补丁：首连保持驱动默认加密，握手被拒后由 AdaptiveDbConnection 降级重连
+            Encrypt = encrypt,
         };
         if (!string.IsNullOrEmpty(db)) sb.InitialCatalog = db;
         foreach (var kv in Profile.Parameters.Split(';', StringSplitOptions.RemoveEmptyEntries))
@@ -126,7 +128,12 @@ public class SqlServerProvider : RelationalProvider
         return new Microsoft.Data.SqlClient.SqlConnection(sb.ConnectionString);
     }
 
-    protected override DbConnection Open(string? db) => Build(db);
+    // 全版本兼容矩阵（2026-11-19 12:14/13:08 老板令）：首连按驱动默认加密，老 TLS 库握手失败自动关加密重连
+    protected override DbConnection Open(string? db) =>
+        new AdaptiveDbConnection(
+            Build(db, encrypt: true),
+            ConnectionCompatibility.IsSqlServerLegacyTlsFailure,
+            () => Build(db, encrypt: false));
 
     protected override string ListDatabasesSql() => "SELECT name FROM sys.databases ORDER BY name";
 
@@ -218,7 +225,17 @@ public class OracleProvider : RelationalProvider
         return new Oracle.ManagedDataAccess.Client.OracleConnection(sb.ConnectionString);
     }
 
-    protected override DbConnection Open(string? db) => Build(db);
+    // 全版本兼容矩阵（2026-11-19 13:08 老板令，Oracle 11g 必须支持）：常驻 23.x 驱动官方支持线 12.1+，
+    // 老库报 ORA-28040/ORA-03134 时自动转 19.x 系专用驱动（程序目录 drivers/oracle19 side-by-side 隔离加载）
+    protected override DbConnection Open(string? db)
+    {
+        var (host, port) = Endpoint();
+        var dataSource = $"{host}:{(port > 0 ? port : EngineInfo.DefaultPort(DbEngine.Oracle))}/{(string.IsNullOrEmpty(Profile.Parameters) ? "orcl" : Profile.Parameters)}";
+        return new AdaptiveDbConnection(
+            Build(db),
+            ConnectionCompatibility.IsOracleLegacyAuthFailure,
+            () => OracleLegacyDriver.Create(dataSource, Profile.User, Profile.Password));
+    }
 
     protected override string ListDatabasesSql() =>
         "SELECT username FROM all_users ORDER BY username";

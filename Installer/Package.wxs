@@ -198,6 +198,21 @@
     <Feature Id="PathEnvF" Title="添加到系统 PATH" Level="1">
       <ComponentRef Id="PathEnv" />
     </Feature>
+    <Feature Id="SqlAssocF" Title="关联 .sql 文件" Description="双击 .sql 文件用 TaoDBM 打开（仅装载脚本，不执行）" Level="1">
+      <ComponentRef Id="SqlAssoc" />
+    </Feature>
+
+    <!-- .sql 文件关联：双击 .sql 用 TaoDBM 打开（注册表方式，不用 ProgId 表避免与 Files 通配组件的 File Id 冲突） -->
+    <Component Id="SqlAssoc" Directory="INSTALLFOLDER" Guid="8F1A4C63-2E7B-4D59-A0B3-6C9E5D2F8A41">
+      <RegistryValue Root="HKLM" Key="Software\Classes\TaoDBM.SqlFile"
+                     Value="TaoDBM SQL 脚本" Type="string" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\TaoDBM.SqlFile\DefaultIcon"
+                     Value="[INSTALLFOLDER]TaoDBM.exe,0" Type="string" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\TaoDBM.SqlFile\shell\open\command"
+                     Value="&quot;[INSTALLFOLDER]TaoDBM.exe&quot; &quot;%1&quot;" Type="string" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\.sql"
+                     Value="TaoDBM.SqlFile" Type="string" KeyPath="yes" />
+    </Component>
 
     <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="2B4C5D6E-7F80-4A92-B3C4-D5E6F7090301">
       <RegistryValue Root="HKCU" Key="Software\TaoDBM" Name="DesktopShortcut"

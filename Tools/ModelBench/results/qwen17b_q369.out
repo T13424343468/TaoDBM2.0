@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题描述不够明确，可能需要根据常见的库存处理逻辑来推断。例如，当处理订单时，库存减少，但如果有退货，库存
 
-[ Prompt: 19.4 t/s | Generation: 6.0 t/s ]
+[ Prompt: 18.8 t/s | Generation: 6.4 t/s ]
 
 
 Exiting...

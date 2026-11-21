@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -64,7 +64,7 @@ LIMIT 2;
 
 不过，这里可能需要考虑用户可能有多个支付，但需要取前两笔。但LIMIT 2可能无法处理所有情况，比如用户有三笔支付，但只取
 
-[ Prompt: 17.9 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

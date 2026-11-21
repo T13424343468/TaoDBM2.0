@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ FOR XML EXPLICIT;
 
 另外，用户可能希望将商品名作为XML的子元素，比如根元素是products，下面有多个name元素。这时候可能需要使用FOR XML
 
-[ Prompt: 18.8 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

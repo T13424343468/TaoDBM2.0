@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户的问题可能更倾向于找出所有日期等于今天的记录，不管时间部分如何。例如，如果created_at的值是2023-10-05 00:0
 
-[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

@@ -139,6 +139,9 @@ public sealed class TaskCenter
         lock (_lock)
         {
             if (!_states.TryGetValue(taskId, out var s)) return;
+            // 取消即终态：Cancel 与执行完成存在竞态（出队检查后才取消），完成态不得覆盖已取消任务，
+            // 否则同一任务先后派发 canceled + done 两条终态事件（R2 注入实测 2026-11-21）
+            if (s.State == "canceled") return;
             done = s with { State = state, Message = message, EndedAt = DateTimeOffset.Now };
             _states[taskId] = done;
         }

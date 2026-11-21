@@ -8,7 +8,7 @@ namespace TaoDBM.LogicTest.Combo;
 
 /// <summary>
 /// COMBO MATRIX OPERATION REGISTRY (Phase 2 full coverage batch).
-/// One ComboOp per usable operation: 17 connection-menu items (C01..C17),
+/// One ComboOp per usable operation: 18 connection-menu items (C01..C18),
 /// 12 database-menu items (D01..D12) and extended operations (X01..X11).
 /// Every op runs on the shared ComboData workspace for a given State and Dialect,
 /// and returns null when all of its postconditions hold, else a problem detail.
@@ -443,6 +443,40 @@ public static class ComboOps
                     return null;
                 },
             },
+            new()
+            {
+                Id = "C18", Label = "SHARD-ROUTE-LINK", MenuPath = "CONN", Kind = "PLAN", Gate = GateSharding,
+                EnginePath = "Src/TaoDBM.Core/ShardRouting.cs",
+                Run = (d, eng) =>
+                {
+                    if (!ShardingWizard.Supported(eng)) return "unexpected gate pass";
+                    var hashPlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.Hash, 4,
+                        Array.Empty<string>(), Array.Empty<ShardCategory>());
+                    if (ShardRouting.RouteToShard(hashPlan, "7") != 3) return "hash numeric route wrong";
+                    if (ShardRouting.RouteToShard(hashPlan, "7") != ShardRouting.RouteToShard(hashPlan, "7")) return "hash route unstable";
+                    var rangePlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.Range, 4,
+                        new[] { "0", "1000", "2000" }, Array.Empty<ShardCategory>());
+                    if (ShardRouting.RouteToShard(rangePlan, "-5") != 0) return "range below-first wrong";
+                    if (ShardRouting.RouteToShard(rangePlan, "1500") != 2) return "range mid wrong";
+                    if (ShardRouting.RouteToShard(rangePlan, "9999") != 3) return "range maxvalue wrong";
+                    var listPlan = new ShardPlan(d.Table, d.PkColumn, ShardingWizard.ShardStrategy.List, 2,
+                        Array.Empty<string>(), new ShardCategory[] { new("south", new[] { "1", "2" }), new("north", new[] { "3", "4" }) });
+                    if (ShardRouting.RouteToShard(listPlan, "2") != 0) return "list south wrong";
+                    if (ShardRouting.RouteToShard(listPlan, "4") != 1) return "list north wrong";
+                    bool rejected = false;
+                    try { ShardRouting.RouteToShard(listPlan, "99"); } catch (ArgumentException) { rejected = true; }
+                    if (!rejected) return "list unmatched must reject";
+                    var replicas = new[] { new ReplicaNode("r1", 5, true), new ReplicaNode("r2", 30, true) };
+                    var pv = ShardRouting.Preview(hashPlan, new[] { "7", "8", "9" }, replicas, 10);
+                    if (pv.Routes.Count != 3) return "preview route count wrong";
+                    if (!pv.ReadDecision.HasTarget || pv.ReadDecision.FellBackToPrimary) return "read route should hit r1";
+                    if (!pv.ReadDecision.EligibleReplicas[0].Equals("r1")) return "read route order wrong";
+                    var topo = ShardRouting.TopologyRows(hashPlan);
+                    if (topo.Count != 4 || topo.Any(t => t.Role != "分片")) return "topology rows wrong";
+                    if (ShardRouting.PlanSummary(rangePlan).Length == 0) return "summary empty";
+                    return null;
+                },
+            },
 
             // ===== database right-click menu (12) =====
             new()
@@ -577,8 +611,8 @@ public static class ComboOps
                     var count = ReconcileEngine.CountSql(d.Table, null, eng);
                     if (!count.Contains("COUNT(*)")) return "count sql malformed";
                     var chk = ReconcileEngine.ChecksumSql(d.Table, new[] { "id" }, null, eng);
-                    if (eng is DbEngine.MySQL or DbEngine.PostgreSQL && chk == null) return "checksum sql missing for engine with support";
-                    if (eng is DbEngine.SqlServer or DbEngine.SQLite && chk != null) return "checksum must fall back to null (ReconcileEngine.cs:34)";
+                    if (eng is DbEngine.MySQL or DbEngine.PostgreSQL or DbEngine.SqlServer or DbEngine.Oracle && chk == null) return "checksum sql missing for engine with support";
+                    if (eng is DbEngine.SQLite && chk != null) return "checksum must fall back to null (ReconcileEngine.cs:34)";
                     long n = d.DeclaredRows;
                     var v1 = ReconcileEngine.Compare(n, n, null, null);
                     if (v1.Level != "match") return $"equal counts verdict {v1.Level}";
@@ -902,6 +936,42 @@ public static class ComboOps
                     var (stmts, skip) = SchemaDiff.PlanSync(src, tgt, diffs, eng, Quoter(eng));
                     if (stmts.Count == 0) return "sync plan empty";
                     if (!stmts.All(s => s.Contains("ADD"))) return "sync plan must add missing column";
+                    return null;
+                },
+            },
+            new()
+            {
+                Id = "X12", Label = "ALERT-RULE", MenuPath = "EXT", Kind = "PLAN",
+                EnginePath = "Src/TaoDBM.Core/AlertRule.cs",
+                Run = (d, eng) =>
+                {
+                    var now = DateTime.Parse("2026-11-20T08:00:00Z", null, System.Globalization.DateTimeStyles.RoundtripKind);
+                    var conn = AlertEngine.FromTemplate(AlertEngine.Templates[0]);   // 连接数过高 >80
+                    var repl = AlertEngine.FromTemplate(AlertEngine.Templates[1]);   // 复制中断 ==1
+                    var metrics = new Dictionary<string, double> { ["connections"] = 90, ["replication_break"] = 1 };
+                    var fired = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now);
+                    if (fired.Count != 2) return $"expected 2 fired, got {fired.Count}";
+                    if (fired.Any(f => f.RuleName == "复制中断" && f.Severity != "error")) return "replication break must be red";
+                    if (fired.Any(f => f.RuleName == "连接数过高" && f.Severity != "warn")) return "threshold alert must be warn";
+                    if (conn.TriggerCount != 1 || repl.TriggerCount != 1) return "trigger count not updated";
+                    // 防轰炸：冷却窗内重复触发合并（复制中断冷却 0 分仍立即再报；连接数冷却 5 分被合并）
+                    var again = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now.AddMinutes(1));
+                    if (again.Count != 1 || again[0].RuleName != "复制中断") return $"cooldown merge wrong ({again.Count})";
+                    // 冷却窗过后再报
+                    var later = AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(6));
+                    if (later.Count != 1) return "cooldown expiry must re-fire";
+                    // 未启用规则不触发
+                    conn.Enabled = false;
+                    if (AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(20)).Count != 0) return "disabled rule fired";
+                    // 规则落盘回读
+                    var f = Path.Combine(Path.GetTempPath(), "combo-alert-" + Guid.NewGuid().ToString("N") + ".json");
+                    try
+                    {
+                        AlertEngine.SaveRules(f, new List<AlertRule> { conn, repl });
+                        var loaded = AlertEngine.LoadRules(f);
+                        if (loaded.Count != 2 || loaded[0].Metric != "connections") return "rules roundtrip failed";
+                    }
+                    finally { if (File.Exists(f)) File.Delete(f); }
                     return null;
                 },
             },

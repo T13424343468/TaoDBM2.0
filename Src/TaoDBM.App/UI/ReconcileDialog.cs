@@ -14,7 +14,7 @@ public static class ReconcileDialog
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         List<string> dbs = new();
         try { dbs = await prov.GetDatabases(); }
@@ -41,10 +41,10 @@ public static class ReconcileDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 240,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "填好两端的库和表后点「开始对账」。",
         };
-        var sampleBtn = new Button { Content = "查看源端样本", CornerRadius = new CornerRadius(4), Visibility = Visibility.Collapsed };
+        var sampleBtn = new Button { Content = "查看源端样本", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Visibility = Visibility.Collapsed };
         string sampleSql = "";
 
         sampleBtn.Click += (_, _) =>
@@ -52,7 +52,7 @@ public static class ReconcileDialog
             if (sampleSql.Length > 0) owner.OpenQueryTab(info, sampleSql);
         };
 
-        var runBtn = new Button { Content = "开始对账", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "开始对账", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         runBtn.Click += async (_, _) =>
         {
             sampleBtn.Visibility = Visibility.Collapsed;
@@ -77,7 +77,7 @@ public static class ReconcileDialog
         panel.Children.Add(new TextBlock
         {
             Text = "对同一连接下的两个库做行数与内容校验和比对（迁移 / 同步后核对用）；只读查询，不修改任何数据。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         });

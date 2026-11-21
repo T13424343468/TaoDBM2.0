@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ LIMIT 1;
 
 不过，原问题中没有明确说明是否需要商品名称，所以可能需要根据情况处理。但根据问题中的表结构，可能需要关联products表，但用户的问题可能只需要产品ID，或者可能需要更详细的信息。不过，用户的问题可能只需要产品ID，所以可能直接使用
 
-[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

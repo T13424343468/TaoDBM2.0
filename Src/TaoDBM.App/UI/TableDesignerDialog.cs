@@ -15,7 +15,7 @@ public static class TableDesignerDialog
         public CheckBox Pk = new() { Content = "主键", MinWidth = 56, VerticalAlignment = VerticalAlignment.Center };
         public CheckBox Null = new() { Content = "可空", MinWidth = 56, IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
         public CheckBox Inc = new() { Content = "自增", MinWidth = 56, VerticalAlignment = VerticalAlignment.Center };
-        public Button Del = new() { Content = "✕", Padding = new Thickness(6, 2, 6, 2), CornerRadius = new CornerRadius(4) };
+        public Button Del = new() { Content = "✕", Padding = new Thickness(6, 2, 6, 2), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
     }
 
     /// <summary>table 为 null 表示新建表；existing 传入旧列定义（改表用）。</summary>
@@ -72,12 +72,12 @@ public static class TableDesignerDialog
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Height = 170,
             Text = "点「生成 SQL」预览将执行的语句。",
         };
 
-        var addBtn = new Button { Content = "＋ 加一列", CornerRadius = new CornerRadius(4) };
+        var addBtn = new Button { Content = "＋ 加一列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         addBtn.Click += (_, _) => AddRow(null);
 
         var genBtn = new Button
@@ -86,9 +86,9 @@ public static class TableDesignerDialog
             Background = Ant.Primary,
             Foreground = Ant.OnPrimary,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
-        var runBtn = new Button { Content = "执行", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "执行", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         actions.Children.Add(addBtn);
@@ -98,7 +98,7 @@ public static class TableDesignerDialog
         var head = new TextBlock
         {
             Text = $"列定义（引擎：{prov.EngineName}{(table != null ? " · 改表模式" : " · 新建表")}）",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
         };
 
@@ -199,6 +199,8 @@ public static class TableDesignerDialog
                     ? $"已执行 {stmts.Count} 条语句，成功。请在左侧树点「刷新」查看结果。"
                     : $"执行出错（{errs.Count} 条失败）：\n" + string.Join("\n", errs.Select(r => r.Message));
                 QueryHistory.Add(prov.EngineName, db, "-- 表结构设计：" + Read().TableName + "\n" + string.Join(";\n", stmts));
+                // s15 改表保存后自动弹血缘影响地图：按本库查询历史语料建图，追溯该表下游引用。
+                if (table != null) _ = ShowLineageImpactAsync(owner, db, table);
             }
             catch (Exception ex)
             {
@@ -210,6 +212,45 @@ public static class TableDesignerDialog
         genBtn.Click += (_, _) => OnGenerate();
         runBtn.Click += (_, _) => OnRun();
         _ = dlg.ShowThemedAsync();
+    }
+
+    // s15 血缘影响地图：改表保存后自动弹出，用本库查询历史里的 CREATE 段建图做影响追溯；无语料时如实说明。
+    private static async Task ShowLineageImpactAsync(MainWindow owner, string db, string tableName)
+    {
+        var corpusText = string.Join("\n\n", QueryHistory.Items
+            .Where(h => h.Database == db)
+            .Select(h => h.Sql)
+            .Reverse());
+        var map = DesignAssistDialog.ParseCorpus(corpusText);
+        string report;
+        if (map is null)
+        {
+            report = "本库的查询历史里没有可建图的 CREATE TABLE / VIEW / PROC 语料，无法追溯影响面。\n\n"
+                + "可在「设计辅助 → 血缘图」粘贴视图 / 存储过程定义后建图追溯。";
+        }
+        else
+        {
+            var impacts = LineageMapper.Impact(map, tableName);
+            var sb = new System.Text.StringBuilder();
+            if (impacts.Count == 0)
+                sb.AppendLine($"{tableName} 没有下游引用（视图 / 存储过程），改动风险低。");
+            else
+            {
+                sb.AppendLine($"改动 {tableName} 的影响（{impacts.Count} 项）：");
+                foreach (var i in impacts)
+                    sb.AppendLine($"  {i.Object}（{i.Type}）：{string.Join(" → ", i.Path)}");
+                foreach (var h in LineageMapper.Hints(impacts))
+                    sb.AppendLine("  " + h);
+            }
+            report = sb.ToString();
+        }
+        await new ContentDialog
+        {
+            Title = $"血缘影响地图 · {tableName}",
+            Content = new TextBlock { Text = report, TextWrapping = TextWrapping.Wrap, FontSize = AntTokens.FontMinor },
+            CloseButtonText = "关闭",
+            XamlRoot = owner.Content.XamlRoot,
+        }.ShowThemedAsync();
     }
 
     private static Grid ColumnRow(RowWidgets w)

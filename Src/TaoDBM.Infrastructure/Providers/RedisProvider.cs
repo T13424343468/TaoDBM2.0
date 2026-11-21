@@ -140,8 +140,22 @@ public class RedisProvider : IDbProvider
                     qr.Columns.Add("deleted"); qr.Rows.Add(new object?[] { n ? "1" : "0" });
                     break;
                 }
+                case "INFO":
+                {
+                    // 诊断口径：INFO [section]（server/stats 等），逐行键值展示
+                    var serverNode = Connect().GetServers().FirstOrDefault() ?? throw new InvalidOperationException("Redis 服务器不可用。");
+                    string section = parts.Length > 1 ? parts[1] : "";
+                    var groups = string.IsNullOrEmpty(section) ? serverNode.Info() : serverNode.Info(section);
+                    qr.Columns.Add("指标");
+                    qr.Columns.Add("值");
+                    foreach (var g in groups)
+                        foreach (var item in g)
+                            qr.Rows.Add(new object?[] { item.Key, item.Value });
+                    if (qr.Rows.Count == 0) qr.Message = $"INFO {section} 无返回。";
+                    break;
+                }
                 default:
-                    qr.Message = $"暂不支持命令 {cmd}。可用：KEYS 模式 / GET / TYPE / TTL / EXISTS / STRLEN / LLEN / DEL 键名（也可只输入 GET 后在树中选中键）。";
+                    qr.Message = $"暂不支持命令 {cmd}。可用：KEYS 模式 / GET / TYPE / TTL / EXISTS / STRLEN / LLEN / DEL / INFO [分区] 键名（也可只输入 GET 后在树中选中键）。";
                     break;
             }
         }

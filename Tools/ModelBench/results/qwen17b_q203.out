@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -50,7 +50,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 SELECT TRIM(name) FROM users;
 
-[ Prompt: 14.8 t/s | Generation: 5.4 t/s ]
+[ Prompt: 19.8 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

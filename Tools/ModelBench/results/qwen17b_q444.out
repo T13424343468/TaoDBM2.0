@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS count FROM users G
 
 SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS count FROM users GROUP BY month ORDER BY month;
 
-[ Prompt: 19.0 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

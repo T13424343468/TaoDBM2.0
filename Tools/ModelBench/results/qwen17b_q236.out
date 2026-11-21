@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 由于用户的问题描述不够明确，可能需要根据常见的操作来推测。例如，可能用户想将name字段中的每个字符替换为某个特定的字符，比如替换为全名，但需要具体的替换规则。或者，可能用户想进行一个更新操作，比如将name字段中的某些
 
-[ Prompt: 20.2 t/s | Generation: 6.8 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

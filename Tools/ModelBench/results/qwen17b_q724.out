@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ JOIN payments ON orders.id = payments.order_id;
 
 不过需要确认表名是否正确。比如，orders表的主键是id，而payments表的order_id是外键。所以正确的JOIN条件是orders.id = payments.order_id。但问题中的表结构中，orders的id是主键，而payments的order
 
-[ Prompt: 18.9 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.4 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

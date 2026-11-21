@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ SELECT EXTRACT(WEEKDAY FROM created_at) AS week_day FROM orders;
 
 但问题中的例子可能需要具体的名称
 
-[ Prompt: 18.7 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

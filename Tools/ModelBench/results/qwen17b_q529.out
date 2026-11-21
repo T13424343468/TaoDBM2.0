@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ SELECT (CURRENT_DATE - INTERVAL '1 day') + INTERVAL '1 month' + INTERVAL '1 day'
 
 或者，使用日期函数来获取每个月的最后一天。例如，使用CURRENT_DATE - INTERVAL '1 day' + INTERVAL '1 month'，这可能得到当前月份的最后一天。
 
-[ Prompt: 19.0 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.4 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

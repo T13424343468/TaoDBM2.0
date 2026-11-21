@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# gen-testdb.py -- generate a real SQLite test DB (or MySQL/SQL Server SQL
-# script with the SAME data contract) with dirty data + expected values for
-# the UI real-db walk (v3.13 real-db smoke). Deterministic output.
+# gen-testdb.py -- generate a real SQLite test DB (or MySQL/PostgreSQL/SQL
+# Server SQL script with the SAME data contract) with dirty data + expected
+# values for the UI real-db walk (v3.13 real-db smoke). Deterministic output.
 import argparse
 import json
 import os
@@ -62,6 +62,15 @@ def write_server_sql(engine, out_path, db_name):
                     " email VARCHAR(200), price INT);\n")
             f.write("CREATE TABLE orders (id INT PRIMARY KEY, product_id INT,"
                     " amount INT NOT NULL, note TEXT);\n")
+        elif engine == "postgres":
+            # psql 脚本：默认连 postgres 库执行，建库后 \connect 切入目标库（PG 无 USE 语句）
+            f.write("DROP DATABASE IF EXISTS %s;\nCREATE DATABASE %s;\n" % (db_name, db_name))
+            f.write("\\connect %s\n" % db_name)
+            f.write("DROP TABLE IF EXISTS orders;\nDROP TABLE IF EXISTS products;\n")
+            f.write("CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(200) NOT NULL,"
+                    " email VARCHAR(200), price INT);\n")
+            f.write("CREATE TABLE orders (id INT PRIMARY KEY, product_id INT,"
+                    " amount INT NOT NULL, note TEXT);\n")
         else:  # mssql
             f.write("IF DB_ID(N'%s') IS NULL CREATE DATABASE [%s];\nGO\nUSE [%s];\nGO\n" % (db_name, db_name, db_name))
             f.write("IF OBJECT_ID(N'orders','U') IS NOT NULL DROP TABLE orders;\nIF OBJECT_ID(N'products','U') IS NOT NULL DROP TABLE products;\nGO\n")
@@ -81,8 +90,8 @@ def write_server_sql(engine, out_path, db_name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-dir", default="testdb")
-    ap.add_argument("--engine", default="sqlite", choices=["sqlite", "mysql", "mssql"],
-                    help="sqlite = real db file; mysql/mssql = SQL script for server load")
+    ap.add_argument("--engine", default="sqlite", choices=["sqlite", "mysql", "mssql", "postgres"],
+                    help="sqlite = real db file; mysql/mssql/postgres = SQL script for server load")
     ap.add_argument("--db-name", default="taodbmui",
                     help="schema/database name for server engines")
     args = ap.parse_args()

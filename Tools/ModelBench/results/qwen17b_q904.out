@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -58,7 +58,7 @@ END;
 
 不过，这里可能需要考虑是否在事件中执行DELETE操作，
 
-[ Prompt: 20.0 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.3 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

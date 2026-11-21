@@ -10,13 +10,13 @@ public static class DraftOps
 {
     public static async Task ConfirmExecuteAsync(MainWindow owner, IDbProvider prov, string title, List<string> drafts, TextBlock status)
     {
-        var checks = drafts.Select(d => new CheckBox { Content = new TextBlock { Text = d, FontFamily = new FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.Wrap }, IsChecked = true }).ToList();
+        var checks = drafts.Select(d => new CheckBox { Content = new TextBlock { Text = d, FontFamily = new FontFamily("Consolas"), FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap }, IsChecked = true }).ToList();
         var list = new StackPanel { Spacing = 6 };
         foreach (var c in checks) list.Children.Add(c);
         var warn = new TextBlock
         {
             Text = "仅执行勾选项。执行前请确认连接账号具备对应权限；回收类草稿即授权的回滚路径。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.Error,
             TextWrapping = TextWrapping.Wrap,
         };

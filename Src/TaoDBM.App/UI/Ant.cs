@@ -40,6 +40,11 @@ public static class Ant
     public static readonly SolidColorBrush Error = Brush("#FF4D4F");
     public static readonly SolidColorBrush HeadBg = Brush("#F0F5FF");
     public static readonly SolidColorBrush AltRow = Brush("#FAFBFC");
+    /// <summary>语义浅底色（设计稿分级确认浅底）：错误浅底/主色浅底/警示浅底/成功浅底。</summary>
+    public static readonly SolidColorBrush ErrorBg = Brush("#FFF1F0");
+    public static readonly SolidColorBrush PrimaryBg = Brush("#E6F4FF");
+    public static readonly SolidColorBrush WarnBg = Brush("#FFF7E8");
+    public static readonly SolidColorBrush SuccessBg = Brush("#F6FFED");
     /// <summary>主色底上的文字（按钮字）：水墨/天青白字、墨夜近黑字（WCAG 按钮字 4.0 口径）。</summary>
     public static readonly SolidColorBrush OnPrimary = Brush("#FFFFFF");
 
@@ -137,6 +142,36 @@ public static class Ant
             Application.Current.Resources["AntCard"] = Card;
         }
     }
+}
+
+/// <summary>视觉尺规令牌（需求合并稿第十五章，2026-11-19 23:50 老板令）：
+/// 字号六档 / 间距五档 / 圆角三档，界面落码一律取令牌、不再手写零散值。</summary>
+public static class AntTokens
+{
+    /// <summary>字号六档（px 对应 XAML 像素）：说明文字/次要/正文/强调/标题/页面标题。</summary>
+    public const double FontCaption = 11;
+    public const double FontMinor = 12;
+    public const double FontBody = 13;
+    public const double FontEmphasis = 14;
+    public const double FontTitle = 16;
+    public const double FontPage = 20;
+
+    /// <summary>间距五档：紧凑/默认/宽松/区块/页面留白。</summary>
+    public const double SpaceXs = 4;
+    public const double SpaceSm = 8;
+    public const double SpaceMd = 12;
+    public const double SpaceLg = 16;
+    public const double SpaceXl = 24;
+
+    /// <summary>圆角三档：直角感/默认/卡片。</summary>
+    public const double RadiusSm = 2;
+    public const double RadiusMd = 4;
+    public const double RadiusLg = 6;
+
+    /// <summary>胶囊圆角（徽标/状态点）：设计稿 99px 胶囊口径。</summary>
+    public const double RadiusPill = 99;
+
+    public static CornerRadius CornerRadius(double token) => new(token);
 }
 
 /// <summary>内容弹窗扩展：弹层挂在窗口内容之外，继承不到根元素明暗象，须在显示前显式钉定。</summary>

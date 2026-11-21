@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 不过，用户可能希望生成一个查询语句，例如，从users表中选择所有记录，或者某个特定的字段。但问题中的“右去空格”可能是一个错误，或者用户可能希望查询某个特定的字段，比如name，去除其中的空格。例如，SELECT TRIM(name) FROM
 
-[ Prompt: 19.7 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

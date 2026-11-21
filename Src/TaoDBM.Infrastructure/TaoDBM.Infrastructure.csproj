@@ -27,4 +27,10 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
+  <!-- 全版本兼容矩阵（2026-11-19 13:08 老板令）：Oracle 11g 级老库专用 19c 系驱动（ODP.NET Core 19 线，100% 托管），
+       随程序输出到 drivers/oracle19，由 OracleLegacyDriver 独立 AssemblyLoadContext 隔离加载，不与常驻 23.x 驱动冲突 -->
+  <ItemGroup>
+    <Content Include="drivers\oracle19\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

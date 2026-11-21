@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 例如，可能需要生成一个查询，该查询在工作日的9点执行，比如使用CURRENT_DATE和CURRENT_TIME来判断，然后执行某些操作。但用户的问题可能更倾向于生成一个SQL语句，该语句在特定时间执行，比如使用pg_cron的cron表达式，但用户可能希望生成一个SQL语句，该
 
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

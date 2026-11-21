@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 所以，SQL语句应该是SELECT orders.*, order_items.* FROM orders JOIN order_items ON orders.id = order_items.order_id。不过，可能需要考虑是否需要其他字段，比如product_name，但用户没有提到，所以可能不需要。但问题中的“明细”可能指的是订单项中的产品信息，所以可能需要order_items中的product_id、quantity、unit_price，以及order_items中的其他字段，比如product_name，但表结构中没有给出product_name，只有product_id和name。哦，表结构中products表有name和category，但order_items表中没有name字段，所以可能需要通过products表来获取产品名称。不过用户的问题可能只需要订单项的明细，即order_items中的字段，
 
-[ Prompt: 19.3 t/s | Generation: 6.5 t/s ]
+[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

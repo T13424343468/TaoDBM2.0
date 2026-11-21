@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ INSERT INTO users (id, name, city) VALUES (1, 'Alice', 'New York') ON CONFLICT (
 
 但根据用户的问题，可能需要使用触发器，所以最终的SQL可能包括创建
 
-[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

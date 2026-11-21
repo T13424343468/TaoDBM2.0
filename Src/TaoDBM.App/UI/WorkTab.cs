@@ -166,6 +166,7 @@ public class WorkTab : Grid
         AddAccelerator(Windows.System.VirtualKey.F5, Windows.System.VirtualKeyModifiers.None, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Enter, Windows.System.VirtualKeyModifiers.Control, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Space, Windows.System.VirtualKeyModifiers.Control, ShowComplete);
+        if (mode == WorkMode.Query) AddAccelerator(Windows.System.VirtualKey.S, Windows.System.VirtualKeyModifiers.Control, () => _ = SaveSourceFileAsync());
 
         _dbBox.ItemsSource = new List<string> { string.IsNullOrEmpty(db) ? "(默认)" : db };
         _dbBox.SelectedIndex = 0;
@@ -186,6 +187,58 @@ public class WorkTab : Grid
         var acc = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = key, Modifiers = mod };
         acc.Invoked += (s, e) => { e.Handled = true; action(); };
         KeyboardAccelerators.Add(acc);
+    }
+
+    /// <summary>归属 .sql 文件路径（需求合并稿第一章之二：Ctrl+S 覆盖保存用；空=未归属，另存）。</summary>
+    public string SourceFile { get; set; } = "";
+
+    /// <summary>Ctrl+S：有归属文件直接覆盖（UTF-8）；否则另存对话框（UTF-8 默认，可 BOM / GBK）。只写文件不执行。</summary>
+    private async Task SaveSourceFileAsync()
+    {
+        if (_mode != WorkMode.Query) { _messageBox.Text = "表数据页没有可保存的 SQL。"; return; }
+        try
+        {
+            var sql = EditorText;
+            if (SourceFile.Length > 0)
+            {
+                Core.SqlFileIo.Save(SourceFile, sql);
+                _messageBox.Text = $"已保存到 {SourceFile}";
+                return;
+            }
+
+            var picker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = "未命名.sql",
+            };
+            picker.FileTypeChoices.Add("SQL 文件", new List<string> { ".sql" });
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) return;
+
+            // 编码选择：UTF-8（默认）/ UTF-8(BOM) / GBK
+            var encBox = new ComboBox { MinWidth = 200, SelectedIndex = 0 };
+            encBox.Items.Add("UTF-8");
+            encBox.Items.Add("UTF-8（带 BOM）");
+            encBox.Items.Add("GBK");
+            var dlg = new ContentDialog
+            {
+                Title = "保存编码",
+                Content = encBox,
+                PrimaryButtonText = "保存",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = _owner.Content.XamlRoot,
+            };
+            if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
+            Core.SqlFileIo.Save(file.Path, sql, gbk: encBox.SelectedIndex == 2, bom: encBox.SelectedIndex == 1);
+            SourceFile = file.Path;
+            _messageBox.Text = $"已另存到 {file.Path}";
+        }
+        catch (Exception ex)
+        {
+            _messageBox.Text = "保存失败：" + ex.Message;
+        }
     }
 
     private async void RunNow()
@@ -253,7 +306,12 @@ public class WorkTab : Grid
             {
                 var sql = EditorText;
                 if (string.IsNullOrWhiteSpace(sql)) { _messageBox.Text = "请输入要执行的语句。"; return; }
-                var list = await _provider.Execute(_db, sql);
+                // 批次F：关系库走流式底座列懒加载通道（宽表首屏只物化可见列，横向滚动增量拉取）；流式关闭或非关系引擎回旧整包
+                List<QueryResult> list;
+                if (StreamingSwitch.Enabled && _provider is RelationalProvider lazyProv)
+                    list = await QueryRouter.ExecuteLazyAsync(lazyProv, _db, sql, 64, CancellationToken.None);
+                else
+                    list = await _provider.Execute(_db, sql);
                 QueryHistory.Add(_provider.EngineName, _db, sql);
                 ShowResults(list);
                 // 执行账（2026-11-19）：执行值直接落应用日志，供云端走查零 UIA 对账（run 94-96 实锤 UIA 读结果轮询带走云机器）
@@ -299,7 +357,7 @@ public class WorkTab : Grid
         var msgs = new System.Text.StringBuilder();
         foreach (var r in list)
         {
-            panel.Children.Add(GridBuilder.Build(r));
+            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName));   // 批次E：结果网格右键分析/钉住
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
         }
         _resultsHost.Content = panel;
@@ -310,9 +368,9 @@ public class WorkTab : Grid
     {
         _last = new List<QueryResult> { r };
         FrameworkElement el;
-        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap);
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx));
-        else el = GridBuilder.Build(r);
+        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName);
+        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName);
+        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName);
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
@@ -370,7 +428,14 @@ public class WorkTab : Grid
             WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
             var file = await picker.PickSaveFileAsync();
             if (file == null) return;
-            var content = csv ? Exporter.Csv(_last[0]) : Exporter.InsertSql(_last[0], _child.Length > 0 ? _child : "table");
+            // 批次F：懒加载结果导出全列——先把所有列拉齐再物化（列按需通道下导出=显式全量动作）
+            QueryResult exportSrc = _last[0];
+            if (exportSrc is LazyQueryResult lz)
+            {
+                await lz.Store.EnsureColumnsAsync(Enumerable.Range(0, lz.Store.TotalColumns));
+                exportSrc = lz.Materialize(Enumerable.Range(0, lz.Store.TotalColumns).ToList());
+            }
+            var content = csv ? Exporter.Csv(exportSrc) : Exporter.InsertSql(exportSrc, _child.Length > 0 ? _child : "table");
             await Windows.Storage.FileIO.WriteTextAsync(file, content);
             _messageBox.Text = $"已导出到 {file.Path}";
         }
@@ -747,10 +812,12 @@ public class WorkTab : Grid
             });
         }
         var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = new CornerRadius(4) };
+        var dictBtn = new Button { Content = "导出数据字典（HTML / Word）", CornerRadius = new CornerRadius(4) };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = 12 });
         panel.Children.Add(lv);
         panel.Children.Add(exportBtn);
+        panel.Children.Add(dictBtn);
         var dlg = new ContentDialog
         {
             Title = "报表 · " + qr.Title,
@@ -772,6 +839,38 @@ public class WorkTab : Grid
                 _messageBox.Text = "报表已导出到 " + file.Path;
             }
             catch (Exception ex) { _messageBox.Text = "导出失败：" + ex.Message; }
+        };
+        // 数据字典完整导出：当前连接的库逐表取列，HTML / Word 双口径（对账表第五章收口）
+        dictBtn.Click += async (_, _) =>
+        {
+            try
+            {
+                var tables = new List<DictionaryTable>();
+                var names = await _provider.GetChildren(_db);
+                foreach (var name in names)
+                {
+                    List<ColumnSpec> cols;
+                    try { cols = await _provider.GetColumns(_db, name); }
+                    catch { continue; }
+                    if (cols.Count == 0) continue;
+                    tables.Add(DataDictionary.FromSpecs(name, cols));
+                }
+                if (tables.Count == 0) { _messageBox.Text = "该库没有可导出的表。"; return; }
+                var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+                picker.FileTypeChoices.Add("HTML 数据字典", new List<string> { ".html" });
+                picker.FileTypeChoices.Add("Word 数据字典", new List<string> { ".doc" });
+                picker.SuggestedFileName = $"TaoDBM-数据字典-{_db}-{DateTime.Now:yyyyMMdd-HHmm}";
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
+                var file = await picker.PickSaveFileAsync();
+                if (file is null) return;
+                bool isWord = file.Path.EndsWith(".doc", StringComparison.OrdinalIgnoreCase);
+                string content = isWord
+                    ? DataDictionary.ToWord(tables, $"数据字典 · {_db}")
+                    : DataDictionary.ToHtml(tables, $"数据字典 · {_db}");
+                await Windows.Storage.FileIO.WriteTextAsync(file, content);
+                _messageBox.Text = $"数据字典已导出（{tables.Count} 张表）到 " + file.Path;
+            }
+            catch (Exception ex) { _messageBox.Text = "字典导出失败：" + ex.Message; }
         };
         await dlg.ShowThemedAsync();
     }

@@ -149,6 +149,142 @@ public static class QueryRetest
     public sealed record RetestReport(double BeforeMs, double AfterMs, double Speedup, int Iterations);
 }
 
+/// <summary>
+/// 优化回访登记与闭环复测（2026-11-20 批次 D）：优化动作执行后登记回访任务，
+/// 到期自动重跑诊断项（静态规则 + 计划体检），产出前后对比卡（耗时/计划/建议命中变化），
+/// 「复测通过/未通过」落账。纯内存引擎：持久化由调用方拿 Json 走落盘通道（对齐 TaskCenter 快照口径）。
+/// </summary>
+public static class OptimizationFollowup
+{
+    /// <summary>回访任务：一次优化动作的登记记录与复测结论。</summary>
+    public sealed record FollowupTask
+    {
+        public string TaskId { get; init; } = Guid.NewGuid().ToString("N")[..12];
+        public string Title { get; init; } = "";
+        public string Sql { get; init; } = "";
+        public string Engine { get; init; } = "";
+        /// <summary>登记时间（优化动作完成时点）。</summary>
+        public DateTimeOffset RegisteredAt { get; init; } = DateTimeOffset.Now;
+        /// <summary>回访间隔（天，可配）：到期判定基于 RegisteredAt + IntervalDays。</summary>
+        public int IntervalDays { get; init; } = 1;
+        /// <summary>登记时的静态诊断命中（变化对比基准）。</summary>
+        public List<string> BaselineCodes { get; init; } = new();
+        /// <summary>登记时的计划体检命中（空=未做计划体检）。</summary>
+        public List<string> BaselinePlanCodes { get; init; } = new();
+        /// <summary>登记时中位耗时（ms；null=未计时）。</summary>
+        public double? BaselineMs { get; init; }
+        /// <summary>复测结论：pending / passed / failed。</summary>
+        public string Verdict { get; init; } = "pending";
+        public DateTimeOffset? RetestedAt { get; init; }
+        public double? RetestMs { get; init; }
+        public List<string> RetestCodes { get; init; } = new();
+        public List<string> RetestPlanCodes { get; init; } = new();
+        public string? Note { get; init; }
+        /// <summary>已并入任务中心的任务号（并入后回填）。</summary>
+        public string? CenterTaskId { get; init; }
+    }
+
+    /// <summary>登记回访任务：以当前诊断命中（静态+计划）与耗时为基准。间隔须为正。</summary>
+    public static FollowupTask Register(string title, string sql, string engine, IEnumerable<string> baselineCodes,
+        IEnumerable<string> baselinePlanCodes, double? baselineMs, int intervalDays = 1, DateTimeOffset? now = null)
+    {
+        if (intervalDays <= 0) throw new ArgumentOutOfRangeException(nameof(intervalDays));
+        return new FollowupTask
+        {
+            Title = title?.Trim() ?? "",
+            Sql = sql ?? "",
+            Engine = engine ?? "",
+            RegisteredAt = now ?? DateTimeOffset.Now,
+            IntervalDays = intervalDays,
+            BaselineCodes = baselineCodes?.Distinct().ToList() ?? new(),
+            BaselinePlanCodes = baselinePlanCodes?.Distinct().ToList() ?? new(),
+            BaselineMs = baselineMs,
+        };
+    }
+
+    /// <summary>到期判定：now >= 登记时间 + 间隔天；结论已出的不再触发。</summary>
+    public static bool IsDue(FollowupTask t, DateTimeOffset? now = null) =>
+        t.Verdict == "pending" && (now ?? DateTimeOffset.Now) >= t.RegisteredAt.AddDays(t.IntervalDays);
+
+    /// <summary>到期未复测的任务（按到期时间先后）。</summary>
+    public static List<FollowupTask> DueOf(IEnumerable<FollowupTask> tasks, DateTimeOffset? now = null) =>
+        tasks.Where(t => IsDue(t, now)).OrderBy(t => t.RegisteredAt).ToList();
+
+    /// <summary>
+    /// 复测：到期任务重跑诊断项（静态规则 + 计划体检），与登记基准逐项对比出对比卡。
+    /// 耗时比基准下降或持平（<=1.05 倍，噪声容差）且静态/计划命中均未恶化 → 通过；否则未通过。
+    /// 传入 planText 时做计划对比；耗时未计时（null）时只对比诊断命中。
+    /// </summary>
+    public static FollowupTask Retest(FollowupTask t, double? retestMs, IEnumerable<string> retestCodes,
+        string? planText = null, string? note = null, DateTimeOffset? now = null)
+    {
+        if (t.Verdict != "pending") throw new InvalidOperationException("该回访已出结论，不可重复复测");
+        var codes = retestCodes?.Distinct().ToList() ?? new();
+        var planCodes = planText is null ? t.BaselinePlanCodes : SlowQueryDiagnoser.AnalyzePlan(planText).Select(x => x.Code).Distinct().ToList();
+
+        bool timeOk = t.BaselineMs is null || retestMs is null || retestMs.Value <= t.BaselineMs.Value * 1.05;
+        bool staticOk = !codes.Except(t.BaselineCodes).Any();
+        bool planOk = t.BaselinePlanCodes.Count == 0 || !planCodes.Except(t.BaselinePlanCodes).Any();
+        bool passed = timeOk && staticOk && planOk;
+
+        return t with
+        {
+            Verdict = passed ? "passed" : "failed",
+            RetestedAt = now ?? DateTimeOffset.Now,
+            RetestMs = retestMs,
+            RetestCodes = codes,
+            RetestPlanCodes = planCodes,
+            Note = note,
+        };
+    }
+
+    /// <summary>前后对比卡：逐行文字账（耗时/静态/计划/结论），UI 直接展示。</summary>
+    public static List<string> CompareCard(FollowupTask t)
+    {
+        var lines = new List<string>
+        {
+            $"[{t.TaskId}] {t.Title}（{t.Engine}）",
+            $"登记：{t.RegisteredAt:yyyy-MM-dd HH:mm}  间隔：{t.IntervalDays} 天  基准命中：{(t.BaselineCodes.Count > 0 ? string.Join(",", t.BaselineCodes) : "无")}",
+        };
+        if (t.BaselinePlanCodes.Count > 0) lines.Add($"基准计划命中：{string.Join(",", t.BaselinePlanCodes)}");
+        if (t.BaselineMs is { } baseMs) lines.Add($"基准耗时：{baseMs:F1} ms");
+        if (t.Verdict == "pending")
+        {
+            lines.Add(IsDue(t) ? "状态：到期待复测" : string.Format("状态：未到期（约 {0:F0} 小时后到期）", Math.Max(0, (t.RegisteredAt.AddDays(t.IntervalDays) - DateTimeOffset.Now).TotalHours)));
+            return lines;
+        }
+        var delta = t.BaselineMs is { } b && t.RetestMs is { } a ? $"（{b:F1} → {a:F1} ms）" : "";
+        lines.Add($"复测：{t.RetestedAt:yyyy-MM-dd HH:mm}  命中：{(t.RetestCodes.Count > 0 ? string.Join(",", t.RetestCodes) : "无")}{delta}");
+        if (t.BaselinePlanCodes.Count > 0) lines.Add($"复测计划命中：{(t.RetestPlanCodes.Count > 0 ? string.Join(",", t.RetestPlanCodes) : "无")}");
+        lines.Add($"结论：复测{(t.Verdict == "passed" ? "通过" : "未通过")}{(string.IsNullOrEmpty(t.Note) ? "" : " — " + t.Note)}");
+        return lines;
+    }
+
+    /// <summary>并入任务中心：以 retest 类型提交长活（由宿主 Runner 解释执行）；重复并入返回原任务号。</summary>
+    public static string AttachToCenter(Core.Streaming.TaskCenter center, FollowupTask t)
+    {
+        if (!string.IsNullOrEmpty(t.CenterTaskId)) return t.CenterTaskId;
+        var h = center.Submit(new Core.Streaming.TaskSpec
+        {
+            Kind = "retest",
+            Title = $"优化回访复测：{t.Title}",
+            Db = "",
+            Sql = t.Sql,
+        });
+        return h.TaskId;
+    }
+
+    // ── 快照往返：调用方落盘/回放（对齐 TaskCenter.ExportStates 口径） ──
+    public static string ToJson(IEnumerable<FollowupTask> tasks) =>
+        System.Text.Json.JsonSerializer.Serialize(tasks.ToList());
+
+    public static List<FollowupTask>? FromJson(string json)
+    {
+        try { return System.Text.Json.JsonSerializer.Deserialize<List<FollowupTask>>(json); }
+        catch (System.Text.Json.JsonException) { return null; }
+    }
+}
+
 /// <summary>容量增长预测：对 (时间, 已用空间) 采样做最小二乘线性拟合，外推阈值触达时间。</summary>
 public static class CapacityForecaster
 {

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -62,7 +62,7 @@ SELECT REVERSE(name) AS reversed_name FROM users;
 不过，可能需要考虑是否需要处理空值或特殊字符，但用户没有提到这些，所以假设name字段是有效的。
 
 
-[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

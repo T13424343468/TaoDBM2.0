@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ UPDATE users SET name = UPPER(name);
 
 UPDATE users SET name = UPPER(name);
 
-[ Prompt: 19.6 t/s | Generation: 7.0 t/s ]
+[ Prompt: 20.0 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

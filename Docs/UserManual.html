@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaoDBM 操作手册</title>
+<style>
+  :root{--primary:#1677FF;--primary-dark:#0958D9;--bg:#F5F6F8;--card:#FFFFFF;--border:#E5E7EB;--text:#1F2329;--sub:#6B7280}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.75}
+  header{background:var(--primary);color:#fff;padding:18px 28px}
+  header h1{margin:0;font-size:20px}
+  header p{margin:4px 0 0;font-size:12px;opacity:.85}
+  .wrap{max-width:1080px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:220px 1fr;gap:18px}
+  nav{position:sticky;top:16px;align-self:start;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px}
+  nav a{display:block;padding:6px 10px;color:var(--text);text-decoration:none;border-radius:4px;font-size:13px}
+  nav a:hover{background:#E6F4FF;color:var(--primary-dark)}
+  main section{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:18px 22px;margin-bottom:16px}
+  h2{font-size:17px;color:var(--primary-dark);margin:0 0 4px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:15px;color:var(--primary-dark);margin:18px 0 6px}
+  p{margin:6px 0}
+  .bullet{margin:4px 0 4px 18px}
+  .note{margin:4px 0 4px 18px;color:var(--primary-dark)}
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:16px 0 28px}
+</style>
+</head>
+<body>
+<header><h1>TaoDBM 操作手册</h1><p>程序内随时按 F1 打开 · 本文件与程序内手册同源 · 支持七库：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis</p></header>
+<div class="wrap">
+<nav>
+<a href="#ch0">快速上手</a>
+<a href="#ch1">连接管理</a>
+<a href="#ch2">对象树与数据浏览</a>
+<a href="#ch3">SQL 查询与调试</a>
+<a href="#ch4">表设计与例程</a>
+<a href="#ch5">备份与恢复</a>
+<a href="#ch6">数据传输与同步</a>
+<a href="#ch7">ER 图</a>
+<a href="#ch8">用户与权限</a>
+<a href="#ch9">分库分区分表</a>
+<a href="#ch10">智能工具与诊断</a>
+<a href="#ch11">告警中心与任务中心</a>
+<a href="#ch12">数据安全与留痕</a>
+<a href="#ch13">设置与主题</a>
+<a href="#ch14">七库方言差异速查</a>
+<a href="#ch15">快捷键一览</a>
+</nav>
+<main>
+<section id="ch0"><h2>1. 快速上手</h2>
+<h3>第一次打开 TaoDBM</h3>
+<p>启动后你会看到一个「开始」标签页，上面写着三步走通：新建连接 → 展开库与表 → 新建查询。</p>
+<p>本手册就是这三步的详细版：顶栏点「手册」或随时按 F1 都能打开。</p>
+<h3>界面布局</h3>
+<p class="bullet">· 顶栏：左上角 TaoDBM 图标点开是功能菜单（刷新、新建查询、查看数据、设计表、备份/还原、传输、ER 图、编辑连接、删除连接、设置、操作手册）；右侧依次是「＋ 新建连接」「主题」「手册」「关于」。</p>
+<p class="bullet">· 左侧：连接树，展开后是库、表、视图等对象。</p>
+<p class="bullet">· 中部：标签页工作区，查询、数据浏览、ER 图等都开在这里，互不干扰。</p>
+<p class="bullet">· 主题：顶栏「主题」可切换水墨 / 天青 / 墨夜三套配色。</p>
+<p class="bullet">· 就地提示：操作结果直接在界面上提示，重要告警进告警中心可回溯，不弹窗轰炸。</p>
+<h3>五分钟走通全流程</h3>
+<p>1. 点右上角「＋ 新建连接」，选数据库类型，填主机、端口、账号、密码。</p>
+<p>2. 点「测试连接」，提示通过后保存。</p>
+<p>3. 在左侧树展开连接 → 库 → 表，双击表即可浏览数据。</p>
+<p>4. 选中库或表后点「新建查询」，写 SQL 按 F5 执行。</p>
+<p class="note">！连接生产库时建议先用只读账号，确认无误后再用高权限账号做变更。</p>
+<h3>遇到问题怎么办</h3>
+<p class="bullet">· 先用「一键诊断」给连接或库做只读体检：连通性、版本、对象规模、锁等待、数据抽样，一眼定位问题层。</p>
+<p class="bullet">· 程序运行日志在本地落盘，反馈问题时把日志带上，定位更快。</p>
+<p class="bullet">· 功能入口找不到时按 F1 回到本手册，按章节找。</p>
+<p class="bullet">· 本手册也随交付包带一份网页版，不装程序双击就能看。</p>
+</section>
+<section id="ch1"><h2>2. 连接管理</h2>
+<h3>新建连接</h3>
+<p class="bullet">· 入口：右上角「＋ 新建连接」，或左上角菜单「编辑连接」。</p>
+<p class="bullet">· 支持七种数据库：MySQL、PostgreSQL、SQL Server、SQLite、Oracle、MongoDB、Redis。</p>
+<p class="bullet">· SQLite 是文件库，选好数据库文件即可，无需主机账号。</p>
+<p class="bullet">· 填完先点「测试连接」，通过再保存，避免保存了连不上的配置。</p>
+<h3>编辑与删除</h3>
+<p class="bullet">· 编辑：左上角菜单「编辑连接」，改完同样先测试再保存。</p>
+<p class="bullet">· 删除：左上角菜单「删除连接」。删除只移除本机保存的连接配置，不会动数据库里的任何数据。</p>
+<h3>连接安全</h3>
+<p class="bullet">· 连接配置只保存在本机，不上传到任何服务器。</p>
+<p class="bullet">· 需要跳板机访问内网库时，可配置 SSH 隧道，凭据仅在会话内使用。</p>
+<p class="note">！不要把生产库密码发给任何人；程序内也不会明文展示已保存的密码。</p>
+<h3>多实例并行</h3>
+<p class="bullet">· 支持同时开多个实例、多窗口操作不同连接，互不干扰。</p>
+<p class="bullet">· 实例之间通过 .sql 脚本交接工作：一个实例里写好的脚本，拖到另一个实例接着跑。</p>
+</section>
+<section id="ch2"><h2>3. 对象树与数据浏览</h2>
+<h3>连接树</h3>
+<p class="bullet">· 展开连接看到库列表，再展开库看到表、视图等对象。</p>
+<p class="bullet">· 在连接节点上点右键（或用左上角菜单）可刷新、新建查询、查看数据、设计表、备份/还原、传输、ER 图、编辑连接、删除连接。</p>
+<p class="bullet">· 树是懒加载的：点开展开才去查库，大数据量实例也不会一打开就卡。</p>
+<h3>查看数据</h3>
+<p class="bullet">· 双击表打开数据浏览页，分页加载，大数据量走虚拟滚动，翻页不卡。</p>
+<p class="bullet">· 可以直接在表格里改单元格、删行；改动会留痕（见「数据安全与留痕」一章），误删可回滚。</p>
+<p class="bullet">· 查询结果可导出 CSV / INSERT SQL，也支持流式导出大表。</p>
+<h3>看板</h3>
+<p class="bullet">· 把常用查询钉在看板上，随时看最新结果与到期状态。</p>
+<p class="bullet">· 看板刷新走流式查询，不会整表物化；关掉看板即停，不后台空转。</p>
+<h3>数据浏览页里的操作</h3>
+<p class="bullet">· 点列头排序，配合筛选快速定位数据；分页翻看不卡顿。</p>
+<p class="bullet">· 单元格直接改值、选行删除；所有改动先落草稿，执行前可预览，改过的数据都能在审计里查到。</p>
+<p class="bullet">· 结果随手导出：CSV、INSERT SQL 都支持，字段多的表也不怕。</p>
+</section>
+<section id="ch3"><h2>4. SQL 查询与调试</h2>
+<h3>基本操作</h3>
+<p class="bullet">· 新建查询：选中库或表后点「新建查询」，或左上角菜单「新建查询」。</p>
+<p class="bullet">· 执行：F5 或 Ctrl+Enter；保存脚本：Ctrl+S；补全：Ctrl+Space。</p>
+<p class="bullet">· 结果集支持排序、筛选、导出；大结果集分批拉取，不撑爆内存。</p>
+<h3>断点调试</h3>
+<p class="bullet">· 存储过程支持断点调试：打断点后启动调试，F10 单步、F11 步入、继续执行 F5。</p>
+<p class="bullet">· 断点调试目前仅 MySQL 支持；其他库的例程可查看定义，调试入口会如实标注「暂不支持」。</p>
+<h3>危险拦截</h3>
+<p class="bullet">· 执行前会自动过一遍高危检查：不带 WHERE 的 UPDATE / DELETE、全表 TRUNCATE 等会弹拦截窗。</p>
+<p class="bullet">· 拦截窗里能看到影响行数预估；确认要执行可输入目标库名解除拦截，或改用安全模式（自动加 LIMIT 分批）。</p>
+<p class="bullet">· 也可以把整份脚本粘进「高危 SQL 检查」逐条分级预检（见「数据安全与留痕」）。</p>
+<h3>长任务与脚本交接</h3>
+<p class="bullet">· 长查询、大导出会进任务中心后台跑，可暂停、续跑、取消、重跑，不阻塞其他操作。</p>
+<p class="bullet">· 把 .sql 文件拖进窗口即可打开；多个实例并行时，脚本可在实例间交接，互不抢锁。</p>
+<h3>结果导出与快照</h3>
+<p class="bullet">· 查询结果可导出 CSV 或 INSERT SQL；CSV 自带逗号、引号、换行转义与 BOM，Excel 直接打开不乱码。</p>
+<p class="bullet">· 超大结果走流式导出，边查边写，不整包占内存；中途可取消，取消后可恢复。</p>
+<p class="bullet">· 需要把结果交给别人核对时，可打成带指纹的快照包，对方验包确认内容未被改动。</p>
+</section>
+<section id="ch4"><h2>5. 表设计与例程</h2>
+<h3>设计表</h3>
+<p class="bullet">· 选中表后点「设计表」，可视化编辑列定义（名称、类型、默认值、可空、主键等）。</p>
+<p class="bullet">· 改完先看 DDL 预览，确认无误再执行；执行前同样过危险检查。</p>
+<h3>例程管理</h3>
+<p class="bullet">· 存储过程、函数、触发器统一管理：左树右码，双击节点打开定义。</p>
+<p class="bullet">· MySQL 支持断点调试；其他库显示定义与说明。</p>
+<h3>批量清理与拟真数据</h3>
+<p class="bullet">· 批量清理：为删除类操作生成小批量分批计划（行数估算 + 逐批 SQL），默认先跑少量批次验证，逐条勾选确认后才执行，绝不静默删数据。</p>
+<p class="bullet">· 拟真数据：按表结构生成仿真测试数据，多表模式可一次铺满，开发测试不用手造数据。</p>
+<h3>改表前的好习惯</h3>
+<p class="bullet">· 动手前先备份：备份向导四步走完，出问题有退路。</p>
+<p class="bullet">· 大表改结构前，把 DDL 粘进「上线审查」看一眼评分与发现，能提前排掉大部分坑。</p>
+<p class="bullet">· 执行链还有危险拦截兜底：不带 WHERE 的变更、全表清空都会被拦下来二次确认。</p>
+</section>
+<section id="ch5"><h2>6. 备份与恢复</h2>
+<h3>备份 / 恢复向导</h3>
+<p class="bullet">· 入口：选中库或表后，左上角菜单「备份 / 还原」。</p>
+<p class="bullet">· 四步走：① 选库/表 → ② 选备份点 → ③ 选目标 → ④ 执行确认。</p>
+<p class="bullet">· 备份文件保存在你指定的本机位置，程序不代管。</p>
+<h3>恢复（高危操作）</h3>
+<p class="bullet">· 恢复会覆盖目标库数据，属高危不可逆操作。</p>
+<p class="bullet">· 恢复前会展示影响范围预览，默认勾选「恢复前自动备份」；需要输入目标库名点亮「开始恢复」按钮，防手滑。</p>
+<p class="note">！恢复前务必确认目标库选对了；有自动备份也要看一眼备份点时间。</p>
+<h3>备份可用性演练</h3>
+<p class="bullet">· 备份了不等于能恢复：演练功能把备份恢复到临时库，逐表计数与备份时点对账，出验证报告。</p>
+<p class="bullet">· 全程只碰临时库/临时副本，不动原库。建议重要备份定期演练一次。</p>
+<h3>备份计划</h3>
+<p class="bullet">· 备份计划展示未来 7 天备份槽位、下次执行时间与保留清理预览。</p>
+<p class="bullet">· 清理清单只是预览参考，实际执行由任务中心触发，不会偷偷删备份。</p>
+</section>
+<section id="ch6"><h2>7. 数据传输与同步</h2>
+<h3>传输（跨库迁移）</h3>
+<p class="bullet">· 入口：左上角菜单「传输」。</p>
+<p class="bullet">· 选源连接/库/表 → 目标连接/库，可选「补结构」「传数据」，适合换库、上云、异构迁移。</p>
+<h3>数据对账</h3>
+<p class="bullet">· 对同一连接下的两个库做行数与校验和比对，全程只读。</p>
+<p class="bullet">· 结论不一致时给出抽样 SQL，打开到查询窗口人工比对，程序不自动改数据。</p>
+<h3>迁移续传</h3>
+<p class="bullet">· 整库迁移中断后可续传：载入清单与状态，已完成表校验、半途表续传、未动表整表拷贝。</p>
+<p class="bullet">· 续传计划支持另存 JSON，换机器也能接着跑。</p>
+<h3>迁移组合拳（建议流程）</h3>
+<p>1. 迁移前：先做一次数据对账，记下源库行数与校验和基线。</p>
+<p>2. 迁移中：大库走传输 + 断点续传，中断不重头再来。</p>
+<p>3. 迁移后：再做一次对账，两边一致才算迁移完成；有备份点可先做备份演练验证可恢复性。</p>
+<p class="note">！迁移是组合动作，单靠一步就宣布完成容易留隐患。</p>
+<h3>一键分布式部署</h3>
+<p class="bullet">· 面向主从/分布式场景的部署向导：账号 → 播种 → 复制 → 探活 → 上线，五步走完。</p>
+<p class="bullet">· 目前 MySQL 先行；其他引擎不支持的部分会如实报出，不硬翻。</p>
+<p class="bullet">· SSH / 数据库凭据仅在授权会话内使用，不落盘明文。</p>
+</section>
+<section id="ch7"><h2>8. ER 图</h2>
+<h3>生成与编辑</h3>
+<p class="bullet">· 选中库后点「ER 图」，自动加载库内表结构与外键关系成图。</p>
+<p class="bullet">· 节点可拖拽排布，布局可保存 / 打开，下次接着用。</p>
+<h3>导出</h3>
+<p class="bullet">· 一键导出 PNG，直接贴进文档、评审材料。</p>
+<p class="note">！ER 图是只读视图，改表结构请走「设计表」。</p>
+</section>
+<section id="ch8"><h2>9. 用户与权限</h2>
+<h3>权限面板</h3>
+<p class="bullet">· 入口：选中连接后打开「用户与权限」。</p>
+<p class="bullet">· 内容：用户列表 + 风险发现 + 权限矩阵；能发现空密码、过宽授权等风险项。</p>
+<h3>授权与回收</h3>
+<p class="bullet">· 所有授权 / 回收只生成语句草稿，弹窗预览、逐条勾选确认后才执行，执行写入审计日志。</p>
+<p class="note">！权限差异因库而异（MySQL 库级、PG 对象级、SQL Server 角色级），界面按最大公约数展示，方言差异见「七库方言差异速查」。</p>
+</section>
+<section id="ch9"><h2>10. 分库分区分表</h2>
+<h3>图形化向导</h3>
+<p class="bullet">· 入口：选中表后打开「分库分区分表向导」。</p>
+<p class="bullet">· 四步式：选表 → 选拆分方式 → 选分片键 → 确认方案。</p>
+<p class="bullet">· 三种拆分策略：按范围、按哈希、按类别，全量点选，不用手写配置。</p>
+<h3>分片键怎么选</h3>
+<p class="bullet">· 默认只允许主键、有索引等「有依据」的字段做分片键；确有需要可用熟手开关解锁全部字段（解锁动作写入审计日志）。</p>
+<p class="bullet">· 选了无依据字段会黄牌提醒并二次确认。</p>
+<p class="bullet">· 拿不准就用「分片键评估」：输入候选列的基数、倾斜比、谓词命中等画像，引擎给得分与建议策略，还能预演哈希/范围路由。</p>
+<h3>配套工具</h3>
+<p class="bullet">· 热点倾斜检测：按负载画像判热点与冷清分片，给逐分片档位与处置建议。</p>
+<p class="bullet">· 再均衡计划：热点分片超出均值的量与冷清分片缺口贪心配对，生成搬迁清单。</p>
+<p class="bullet">· 读写路由：输入副本延迟与健康度，预演读请求该路由到哪个副本。</p>
+</section>
+<section id="ch10"><h2>11. 智能工具与诊断</h2>
+<h3>智能工具</h3>
+<p class="bullet">· 慢查询诊断：静态规则 + 执行计划补充，指出慢在哪。</p>
+<p class="bullet">· 查询重测：同一查询多次计时取中位数，改写前后对比有依据。</p>
+<h3>一键诊断</h3>
+<p class="bullet">· 面向连接 / 库的只读体检：连通性与版本、对象规模、锁等待与死锁检出、数据体检抽样。</p>
+<p class="bullet">· 全程只读，放心点。</p>
+<h3>自然语言问库</h3>
+<p class="bullet">· 用中文提问（如「上个月销量前十的商品」），程序确定性地解析成 SELECT，先给你看 SQL，确认后才执行。</p>
+<p class="bullet">· 解析纯本地完成，问题与表结构不出本机；「在编辑器打开」可带去查询窗口继续改。</p>
+<h3>上线审查</h3>
+<p class="bullet">· 把要上线的脚本粘进来，逐条评分与发现，给「可上线 / 需复核 / 不建议」档位。</p>
+<p class="bullet">· 只审查不执行，上线动作仍由你在查询窗口自己跑。</p>
+<h3>主从与分布式管理</h3>
+<p class="bullet">· 拓扑节点列表 + 复制延迟一览，主从状态心里有数。</p>
+<p class="bullet">· 暂停/恢复、重建通道、切换主库都只生成语句草稿，预览勾选确认后才执行，不直接动线上。</p>
+<p class="bullet">· 配合告警中心的复制延迟指标，延迟一超阈值就知道。</p>
+</section>
+<section id="ch11"><h2>12. 告警中心与任务中心</h2>
+<h3>告警中心</h3>
+<p class="bullet">· 规则模板化创建：连接数、锁等待、复制延迟等指标选模板填阈值即可。</p>
+<p class="bullet">· 支持立即巡检、触发记录回溯、防轰炸合并（同类告警合并推送，不刷屏）。</p>
+<p class="bullet">· 指标采集只做各引擎真支持的部分，不支持的引擎会如实标注，不装样子。</p>
+<h3>通知送达方式</h3>
+<p class="bullet">· 告警以应用内通知为主，打开程序就能看到；系统级通知默认关闭，需要时在设置里打开。</p>
+<p class="bullet">· 系统通知支持免打扰时段与同类事件节流，夜里不被吵醒，白天不被刷屏。</p>
+<h3>任务中心</h3>
+<p class="bullet">· 长活（查询、导出）提交进统一队列，后台执行。</p>
+<p class="bullet">· 可查看状态、暂停/续跑、取消、重跑、快照导出；对话框关了任务照跑。</p>
+</section>
+<section id="ch12"><h2>13. 数据安全与留痕</h2>
+<h3>留痕审计</h3>
+<p class="bullet">· 表格里的行编辑、删除都会留痕，审计列表可查看改动差异。</p>
+<p class="bullet">· 单条可回滚：生成逆 SQL → 预览 → 危险确认后执行。</p>
+<h3>误删恢复</h3>
+<p class="bullet">· 快照捕获当前数据（只读），误删后生成拼回草稿，逐条勾选确认才执行，执行写审计日志。</p>
+<p class="note">！恢复的是捕获快照之后的数据，快照之后的新改动需要人工核对。</p>
+<h3>数据脱敏</h3>
+<p class="bullet">· 按列名自动推断敏感档位（手机号、证件号等），对查询结果打码预览。</p>
+<p class="bullet">· 只读预览不改库；正式导出走同一套脱敏规则。</p>
+<h3>高危 SQL 检查</h3>
+<p class="bullet">· 粘贴整份脚本逐条检查，按危险 / 警告 / 通过分级展示，附行数预估 SQL。</p>
+<p class="bullet">· 只检查不执行。</p>
+<h3>快照包 / 共享包 / 团队合并</h3>
+<p class="bullet">· 快照包：查询结果打包成带指纹的可校验快照，另存 JSON。</p>
+<p class="bullet">· 共享包：局域网搬运的封包与验包预演，SHA256 指纹防篡改、防截断。</p>
+<p class="bullet">· 团队合并：本地与远端条目合并预演（后写胜出），凭据键剔除留痕，不落库。</p>
+<p class="note">！共享包请走可信渠道传递；验包不通过不要导入。</p>
+<h3>安全好习惯</h3>
+<p class="bullet">· 日常用只读账号，做变更时再切高权限账号，用完切回。</p>
+<p class="bullet">· 危险操作一律走草稿确认制：先预览、再勾选、后执行，不图快跳过预览。</p>
+<p class="bullet">· 重要库定期备份 + 定期演练，真出事时有得恢复、恢复得了。</p>
+</section>
+<section id="ch13"><h2>14. 设置与主题</h2>
+<h3>设置</h3>
+<p class="bullet">· 关闭主窗口时：每次询问 / 最小化到托盘 / 直接退出，三种行为任选。</p>
+<p class="bullet">· 系统通知：总开关、免打扰时段、同类事件节流、按类型开关。</p>
+<h3>主题</h3>
+<p class="bullet">· 顶栏「主题」切换：水墨（默认浅色）、天青、墨夜。</p>
+<p class="bullet">· 弹窗、菜单等浮层会跟随主题，换肤后立即生效。</p>
+<h3>流式开关</h3>
+<p class="bullet">· 流式通道状态在此只读展示（由环境变量决定），含含义说明与回退方法，程序不代改环境变量。</p>
+<h3>窗口与布局</h3>
+<p class="bullet">· 窗口尺寸、位置、分栏宽度会记住：下次打开还是你上次的布局。</p>
+<p class="bullet">· 窗口有最小尺寸保护，缩到多小布局都不乱；中间分栏可拖动调节。</p>
+<p class="bullet">· 工作区多标签页并存，查询、浏览、ER 图各占一页，随手切换。</p>
+</section>
+<section id="ch14"><h2>15. 七库方言差异速查</h2>
+<h3>总则</h3>
+<p class="bullet">· 方言差异的处理口径：能翻的翻、翻不了的报——程序不会把不支持的功能装作支持。</p>
+<p class="bullet">· 同一功能在不同库上的行为差异，界面会就地提示；本节是速查版。</p>
+<h3>MySQL</h3>
+<p class="bullet">· 功能覆盖最全：存储过程断点调试、分布式部署向导、备份演练命令行恢复均支持。</p>
+<p class="bullet">· 标识符用反引号；密码类命令行走环境变量，不明文拼接。</p>
+<h3>PostgreSQL</h3>
+<p class="bullet">· 权限为对象级，粒度更细；标识符用双引号（大小写敏感）。</p>
+<p class="bullet">· 备份演练走 psql 恢复，库名带引号处理。</p>
+<h3>SQL Server</h3>
+<p class="bullet">· 权限为角色级；标识符用方括号。</p>
+<p class="bullet">· 备份恢复走 T-SQL（RESTORE DATABASE），建临时库前先判存。</p>
+<h3>SQLite</h3>
+<p class="bullet">· 文件库：无需主机端口，选文件即用。</p>
+<p class="bullet">· 无服务端进程，备份即拷贝文件（演练会先校验文件头）。</p>
+<h3>Oracle</h3>
+<p class="bullet">· 支持 11g 及以上版本；标识符默认大写。</p>
+<p class="bullet">· 部分管理视图因版本而异，诊断项以实际返回为准。</p>
+<h3>MongoDB</h3>
+<p class="bullet">· 文档型：浏览以集合为单位，查询用筛选条件而非 SQL。</p>
+<p class="bullet">· 不支持 SQL 例程调试；告警指标仅限真支持的部分。</p>
+<h3>Redis</h3>
+<p class="bullet">· 键值型：按库（db）浏览键，默认端口 6379。</p>
+<p class="bullet">· 无表结构概念；设计表、ER 图等结构类功能不适用。</p>
+</section>
+<section id="ch15"><h2>16. 快捷键一览</h2>
+<h3>全局与编辑器</h3>
+<p class="bullet">· F1：打开操作手册（任何界面可用）。</p>
+<p class="bullet">· F5：执行当前查询。</p>
+<p class="bullet">· Ctrl+Enter：执行当前查询（同 F5）。</p>
+<p class="bullet">· Ctrl+S：保存脚本。</p>
+<p class="bullet">· Ctrl+Space：补全。</p>
+<p class="bullet">· F10：调试单步。</p>
+<p class="bullet">· F11：调试步入。</p>
+<p class="bullet">· 鼠标：双击树上的表直接打开数据浏览；把 .sql 文件拖进窗口即打开脚本。</p>
+<p class="note">！快捷键在对应标签页获得焦点时生效；F1 全局生效。</p>
+</section>
+</div>
+<footer>TaoDBM · 道生一，一生二，二生三，三生万物。数据即万物。</footer>
+</body></html>

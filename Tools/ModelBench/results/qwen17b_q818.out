@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ INSERT INTO orders (id, user_id, status, created_at) VALUES (?, ?, ?, ?) ON DUPL
 
 INSERT INTO orders (id, user_id, status, created_at) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = '
 
-[ Prompt: 15.0 t/s | Generation: 4.9 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

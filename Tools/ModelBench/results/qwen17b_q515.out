@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
 
 但用户的问题只是需要统计每个季度的订单数，所以可能需要将created_at转换为季度号，然后统计每个季度的订单数量。不过，用户可能希望得到每个季度的订单数，比如每个季度的
 
-[ Prompt: 19.4 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -64,7 +64,7 @@ FROM order_items
 JOIN orders ON order_items.order_id = orders.id
 WHERE orders.created_at >= CURRENT_DATE - INTERVAL '1 day' AND orders.created
 
-[ Prompt: 20.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.1 t/s | Generation: 6.3 t/s ]
 
 
 Exiting...

@@ -24,17 +24,6 @@ to support the 10s acceptance decision. Requires cloud real machine, idle window
 - Accounts without a fingerprint are treated as non-comparable; they are not valid
   evidence for any acceptance decision.
 
-## Engine pin (mandatory, 2026-11-20 20:0x monitor line)
-- The workflow now downloads llama.cpp release tag `b12559` EXPLICITLY
-  (build 12559 / commit 7e960f40f - the same build as the B1 account 537e4f61).
-  Root cause of the three drifts (95b09b62b -> 76f186df7 -> 7e960f40f) was the
-  previous latest-release fetch; 5 releases landed on 11-20 alone.
-- Consequence: from the next round on, consecutive rounds run on the SAME build.
-  The 99% verdict needs N>=2 consecutive same-build rounds with pass-rate delta
-  <=0.5pp - the series starts with the first post-pin round.
-- Do NOT bump the pin tag without a fresh baseline round; a bumped tag voids
-  comparability with all prior accounts.
-
 ## Manifest
 ab_manifest.json: selection_45 (model-selection set) + trap_30 (all TRAP) + trunc_stratified_25.
 

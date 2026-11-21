@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -78,7 +78,7 @@ WHERE p.paid_at = min_paid.min_paid_at;
 
 不过，这可能需要更仔细的结构。或者，可能需要使用
 
-[ Prompt: 19.0 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

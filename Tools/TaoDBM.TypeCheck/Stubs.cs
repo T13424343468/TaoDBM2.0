@@ -28,11 +28,64 @@ namespace TaoDBM
         internal Microsoft.UI.Xaml.Controls.ToggleMenuFlyoutItem ThemeInk = null!;
         internal Microsoft.UI.Xaml.Controls.ToggleMenuFlyoutItem ThemeSky = null!;
         internal Microsoft.UI.Xaml.Controls.ToggleMenuFlyoutItem ThemeNight = null!;
+        internal Microsoft.UI.Xaml.Controls.ColumnDefinition TreeCol = null!;
+        internal Microsoft.UI.Xaml.Controls.ColumnDefinition MainCol = null!;
+        internal Microsoft.UI.Xaml.Controls.Border TreeBorder = null!;
+        internal Microsoft.UI.Xaml.Controls.GridSplitter TreeSplitter = null!;
+        internal Microsoft.UI.Xaml.Controls.InfoBar MetaRetryBar = null!;
     }
 
     public partial class App
     {
         public void InitializeComponent() { }
+    }
+}
+
+// 桩 WinUI.dll 与投影程序集中均不含 GridSplitter 类型，按真实 WinUI 元数据补齐供编译校验。
+namespace Microsoft.UI.Xaml.Controls
+{
+    public class GridSplitter : Control
+    {
+        public GridSplitter() { }
+        public GridResizeBehavior ResizeBehavior { get; set; }
+        public GridResizeDirection ResizeDirection { get; set; }
+        public GridSplitterIncrementMode IncrementControl { get; set; }
+        public double KeyboardIncrement { get; set; }
+    }
+
+    public enum GridResizeBehavior { BasedOnAlignment, CurrentAndNext, PreviousAndCurrent, PreviousAndNext }
+    public enum GridResizeDirection { Auto, Columns, Rows }
+    public enum GridSplitterIncrementMode { Pixel, Uniform }
+}
+
+// .sql 三件套：Windows App SDK 的 Microsoft.Windows.AppLifecycle 投影不在这批桩程序集里，
+// 按真实元数据（1.x AppInstance API）补齐，仅供单实例重定向的纯编译校验；真机行为以真机为准。
+namespace Microsoft.Windows.AppLifecycle
+{
+    public sealed class AppActivationArguments
+    {
+        public Microsoft.Windows.AppLifecycle.AppActivationKind Kind => Microsoft.Windows.AppLifecycle.AppActivationKind.Launch;
+        public object? Data => null;
+    }
+
+    public enum AppActivationKind { Launch, File, Protocol, CommandLine }
+
+    public sealed class AppInstance
+    {
+        private AppInstance() { }
+        public static Microsoft.Windows.AppLifecycle.AppInstance FindOrRegisterForKey(string key) =>
+            throw new System.NotSupportedException();
+        public static Microsoft.Windows.AppLifecycle.AppActivationArguments GetActivatedEventArgs() =>
+            throw new System.NotSupportedException();
+        public bool IsRunning => false;
+        public global::Windows.Foundation.IAsyncAction RedirectActivationToAsync(Microsoft.Windows.AppLifecycle.AppActivationArguments args) =>
+            throw new System.NotSupportedException();
+        // 桩事件：只供订阅方编译（CS0067 以空 add/remove 压制）
+        public event global::Windows.Foundation.TypedEventHandler<Microsoft.Windows.AppLifecycle.AppInstance, Microsoft.Windows.AppLifecycle.AppActivationArguments>? Activated
+        {
+            add { }
+            remove { }
+        }
     }
 }
 

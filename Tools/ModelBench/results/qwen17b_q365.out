@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -59,7 +59,7 @@ SELECT ABS(SUM(order_items.quantity * order_items.unit_price - (SELECT stock FRO
 FROM order_items
 JOIN products
 
-[ Prompt: 19.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 15.3 t/s | Generation: 6.0 t/s ]
 
 
 Exiting...

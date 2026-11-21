@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但问题中没有提到特定的用户，所以可能需要查询所有用户的name长度。因此，正确的SQL应该是SELECT LEN(name) FROM users; 但用户可能希望得到一个更具体的查询，比如统计所有name的长度总和，
 
-[ Prompt: 19.4 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

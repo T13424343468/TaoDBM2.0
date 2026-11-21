@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -45,7 +45,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 所以最终的SQL应该是SELECT id FROM users WHERE id NOT IN (SELECT user_id FROM orders)。这样就能得到那些没有订单的用户ID，然后根据name或者其他字段输出结果。但问题只问用户有哪些，所以可能需要SELECT name，但用户要求只输出SQL，所以可能只需要SELECT id，或者根据问题可能需要name。不过问题中没有指定需要哪些字段，所以可能只需要用户ID，或者根据表结构，可能需要name。但原问题中的例子可能需要name，但用户可能希望只输出SQL，所以可能需要SELECT name，但不确定。不过问题中的例子可能需要name，但用户可能希望只输出SQL，所以可能需要SELECT name，但原问题可能需要更准确的字段。不过根据问题描述，用户可能只需要用户ID，但可能需要name。不过原问题可能需要name，但用户可能希望只输出SQL，所以可能需要SELECT name，但不确定。不过原问题中的例子可能需要name，但用户可能希望只输出SQL，所以可能需要SELECT name，但可能需要更准确的字段。不过根据问题，用户可能只需要用户ID，所以可能需要
 
-[ Prompt: 19.9 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.5 t/s ]
 
 
 Exiting...

@@ -27,10 +27,10 @@ public static class SharePacketBuilderDialog
         };
         var chunkBox = new TextBox { PlaceholderText = "分块大小（字符，默认 4000）", MinWidth = 160 };
         var report = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var buildBtn = new Button { Content = "封包", CornerRadius = new CornerRadius(4) };
-        var verifyBtn = new Button { Content = "验包", CornerRadius = new CornerRadius(4) };
-        var saveBtn = new Button { Content = "另存包文件", CornerRadius = new CornerRadius(4), IsEnabled = false };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var buildBtn = new Button { Content = "封包", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var verifyBtn = new Button { Content = "验包", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saveBtn = new Button { Content = "另存包文件", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
 
         buildBtn.Click += async (_, _) =>
         {
@@ -99,7 +99,7 @@ public static class SharePacketBuilderDialog
         panel.Children.Add(new TextBlock
         {
             Text = $"局域网搬运（{sender}）：封包生成 SHA256 指纹头，接收方重算指纹防篡改防截断；大包可分块过线。凭据已在「团队合并」净化阶段剔除。载荷只读展示。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(itemsBox);
         panel.Children.Add(packetBox);
@@ -131,7 +131,7 @@ public static class SharePacketBuilderDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, Margin = new Thickness(indent * 16, 0, 0, 0),
+            Text = text, FontSize = AntTokens.FontMinor, Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
         });
@@ -141,7 +141,7 @@ public static class SharePacketBuilderDialog
     {
         p.Children.Add(new TextBlock
         {
-            Text = title, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = title, FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary, Margin = new Thickness(0, 6, 0, 0),
         });
     }

@@ -27,13 +27,17 @@ public static class TaskCenterDialog
         _ => state,
     };
 
+    /// <summary>共享任务中心入口：供智能线回访等模块并入长活（不暴露实例本体）。</summary>
+    public static string SubmitShared(TaoDBM.Core.Streaming.TaskSpec spec) => Shared.Submit(spec).TaskId;
+
     private static readonly TaskCenter Shared = new()
     {
-        // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交
+        // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交。
+        // 优化回访复测（retest）为轻量等待口径：结论已在登记时算定，这里只走任务流水。
         Runner = async h =>
         {
             await Task.Delay(300, h.Token);
-            if (h.Spec.Sql.Length == 0) return;
+            if (h.Spec.Sql.Length == 0 || h.Spec.Kind != "retest") return;
         },
     };
 
@@ -44,13 +48,14 @@ public static class TaskCenterDialog
         var titleBox = new TextBox { PlaceholderText = "任务标题", MinWidth = 200 };
         var sqlBox = new TextBox { PlaceholderText = "SQL（长查询/导出语句）", MinWidth = 360 };
         var list = new StackPanel { Spacing = 8 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var submitBtn = new Button { Content = "提交任务", CornerRadius = new CornerRadius(4) };
-        var refreshBtn = new Button { Content = "刷新列表", CornerRadius = new CornerRadius(4) };
-        var pauseBtn = new Button { Content = "暂停队列", CornerRadius = new CornerRadius(4) };
-        var resumeBtn = new Button { Content = "续跑队列", CornerRadius = new CornerRadius(4) };
-        var exportBtn = new Button { Content = "导出快照", CornerRadius = new CornerRadius(4) };
+        var submitBtn = new Button { Content = "提交任务", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var refreshBtn = new Button { Content = "刷新列表", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var pauseBtn = new Button { Content = "暂停队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var resumeBtn = new Button { Content = "续跑队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var exportBtn = new Button { Content = "导出快照", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var schedBtn = new Button { Content = "定时 SQL 管理", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         submitBtn.Click += async (_, _) =>
         {
@@ -91,12 +96,14 @@ public static class TaskCenterDialog
         var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row2.Children.Add(submitBtn); row2.Children.Add(refreshBtn);
         row2.Children.Add(pauseBtn); row2.Children.Add(resumeBtn); row2.Children.Add(exportBtn);
+        row2.Children.Add(schedBtn);
+        schedBtn.Click += async (_, _) => { await ShowScheduled(owner, prov, db, status); };
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 720 };
         panel.Children.Add(new TextBlock
         {
             Text = "长活统一队列：查询/导出进任务中心按序执行，可暂停/续跑/取消/重跑；快照可落盘留档。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(row1);
         panel.Children.Add(row2);
@@ -140,11 +147,120 @@ public static class TaskCenterDialog
         return "";
     }
 
+    /// <summary>定时 SQL 管理面：任务列表 + 新增/启停/删除；到点扫描由任务中心重跑入口触发。</summary>
+    private static async Task ShowScheduled(MainWindow owner, IDbProvider prov, string db, TextBlock parentStatus)
+    {
+        var list = new StackPanel { Spacing = 8 };
+        var nameBox = new TextBox { PlaceholderText = "任务名", MinWidth = 120 };
+        var sqlBox = new TextBox { PlaceholderText = "SQL（到点自动执行）", MinWidth = 300 };
+        var ivBox = new TextBox { PlaceholderText = "间隔(分)", MinWidth = 70, Text = "60" };
+        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+
+        var addBtn = new Button { Content = "新增定时任务", CornerRadius = new CornerRadius(4) };
+        var runDueBtn = new Button { Content = "执行到期任务", CornerRadius = new CornerRadius(4) };
+        var refreshBtn = new Button { Content = "刷新", CornerRadius = new CornerRadius(4) };
+
+        addBtn.Click += async (_, _) =>
+        {
+            try
+            {
+                if (!int.TryParse(ivBox.Text?.Trim(), out int iv)) { status.Text = "间隔请填数字（分钟）。"; return; }
+                var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv);
+                status.Text = $"已新增定时任务 {e.Name}（{e.Id}），下次执行 {e.NextRunAt:HH:mm}。";
+                RefreshSched(list, prov, status);
+            }
+            catch (Exception ex) { status.Text = "新增失败：" + ex.Message; }
+            await Task.CompletedTask;
+        };
+        runDueBtn.Click += async (_, _) =>
+        {
+            var due = SqlScheduler.TakeDue();
+            if (due.Count == 0) { status.Text = "暂无到期任务。"; return; }
+            int ok = 0;
+            foreach (var e in due)
+            {
+                try
+                {
+                    var rs = await prov.Execute(e.Db.Length > 0 ? e.Db : db, e.Sql);
+                    bool bad = rs.Any(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    SqlScheduler.RecordResult(e.Id, bad ? "failed" : "done");
+                    if (!bad) ok++;
+                }
+                catch (Exception ex) { SqlScheduler.RecordResult(e.Id, "failed: " + ex.Message); }
+            }
+            status.Text = $"到期任务 {due.Count} 条执行完毕，成功 {ok} 条。";
+            RefreshSched(list, prov, status);
+            await Task.CompletedTask;
+        };
+        refreshBtn.Click += (_, _) => RefreshSched(list, prov, status);
+
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        row.Children.Add(nameBox); row.Children.Add(sqlBox); row.Children.Add(ivBox);
+        var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        row2.Children.Add(addBtn); row2.Children.Add(runDueBtn); row2.Children.Add(refreshBtn);
+
+        var panel = new StackPanel { Spacing = 12, MinWidth = 720 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "定时 SQL：到点自动执行（间隔分钟），结果回写最近状态；任务持久化到本机，重启不丢。",
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+        });
+        panel.Children.Add(row);
+        panel.Children.Add(row2);
+        panel.Children.Add(new ScrollViewer { Content = list, MaxHeight = 240, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        panel.Children.Add(status);
+
+        var dlg = new ContentDialog
+        {
+            Title = "定时 SQL 管理",
+            Content = panel,
+            CloseButtonText = "关闭",
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        RefreshSched(list, prov, status);
+        await dlg.ShowThemedAsync();
+        parentStatus.Text = "定时 SQL 管理已关闭。";
+    }
+
+    private static void RefreshSched(StackPanel list, IDbProvider prov, TextBlock status)
+    {
+        list.Children.Clear();
+        var items = SqlScheduler.List();
+        if (items.Count == 0) { AddLine(list, "暂无定时任务。"); status.Text = ""; return; }
+        foreach (var e in items)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            row.Children.Add(new TextBlock
+            {
+                Text = $"{(e.Enabled ? "▶" : "⏸")} {e.Name}（{e.Id}）每 {e.IntervalMinutes} 分 · 下次 {e.NextRunAt:MM-dd HH:mm}" +
+                       (e.LastResult.Length == 0 ? "" : $" · 最近 {e.LastResult}"),
+                FontSize = 12, Foreground = Ant.TextSub, FontFamily = new FontFamily("Consolas"),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            var toggleBtn = new Button
+            {
+                Content = e.Enabled ? "停用" : "启用",
+                CornerRadius = new CornerRadius(3), FontSize = 11, Padding = new Thickness(8, 2, 8, 2),
+            };
+            toggleBtn.Click += (_, _) => { SqlScheduler.Update(e.Id, null, null, null, null, !e.Enabled); RefreshSched(list, prov, status); };
+            var delBtn = new Button
+            {
+                Content = "删除",
+                CornerRadius = new CornerRadius(3), FontSize = 11, Padding = new Thickness(8, 2, 8, 2),
+            };
+            delBtn.Click += (_, _) => { SqlScheduler.Delete(e.Id); RefreshSched(list, prov, status); };
+            row.Children.Add(toggleBtn);
+            row.Children.Add(delBtn);
+            list.Children.Add(row);
+        }
+        status.Text = $"共 {items.Count} 条定时任务。";
+    }
+
     private static void AddLine(StackPanel p, string text, Brush? brush = null)
     {
         p.Children.Add(new TextBlock
         {
-            Text = text, FontSize = 12, TextWrapping = TextWrapping.Wrap,
+            Text = text, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub, FontFamily = new FontFamily("Consolas"),
         });
     }

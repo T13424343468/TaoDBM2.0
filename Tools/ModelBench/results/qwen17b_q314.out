@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -52,7 +52,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 但根据用户的要求，只输出SQL，不解释，所以可能需要构造一个查询来检查
 
-[ Prompt: 19.8 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

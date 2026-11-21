@@ -3,10 +3,11 @@
 namespace TaoDBM.Core;
 
 /// <summary>B3 接线：用户与权限清单目录 SQL。账号清单 + 每账号授权文本（喂给 PermissionAuditor.Parse），不执行任何授权/回收。</summary>
-/// <remarks>MySQL 走 SHOW GRANTS FOR；PostgreSQL 从目录合成等价 GRANT 文本；SQLite 无账号体系；SQL Server 目录语法差异大，下一批补齐。</remarks>
+/// <remarks>MySQL 走 SHOW GRANTS FOR；PostgreSQL 从目录合成等价 GRANT 文本；
+/// SQL Server 从 sys.database_permissions 合成 GRANT 文本；SQLite 无账号体系。</remarks>
 public static class UserPermissionCatalog
 {
-    public static bool Supported(DbEngine e) => e is DbEngine.MySQL or DbEngine.PostgreSQL;
+    public static bool Supported(DbEngine e) => e is DbEngine.MySQL or DbEngine.PostgreSQL or DbEngine.SqlServer;
 
     public static string UnsupportedReason(DbEngine e) => e switch
     {
@@ -15,19 +16,24 @@ public static class UserPermissionCatalog
         _ => "该引擎的权限清单接线下一批补齐，暂用数据库自带工具查看。",
     };
 
-    /// <summary>账号清单：两列（user, host）。MySQL 用 mysql.user（需相应读权）；PG 统一 host 列为 '-'。</summary>
+    /// <summary>账号清单：两列（user, host）。MySQL 用 mysql.user（需相应读权）；PG 统一 host 列为 '-'；
+    /// SQL Server 列数据库用户（sys.database_principals，排除固定角色与 Windows 组），host 列放类型描述。</summary>
     public static string ListAccountsSql(DbEngine e) => e switch
     {
         DbEngine.MySQL => "SELECT user, host FROM mysql.user ORDER BY user, host",
         DbEngine.PostgreSQL => "SELECT usename AS user, '-' AS host FROM pg_user ORDER BY usename",
+        DbEngine.SqlServer => "SELECT name AS user, type_desc AS host FROM sys.database_principals " +
+            "WHERE type IN ('S', 'U') AND is_fixed_role = 0 ORDER BY name",
         _ => throw new NotSupportedException(UnsupportedReason(e)),
     };
 
-    /// <summary>取某账号的授权文本。MySQL 返回 SHOW GRANTS 结果（单列「Grants for …」）；PG 从目录合成 GRANT 语句文本。</summary>
+    /// <summary>取某账号的授权文本。MySQL 返回 SHOW GRANTS 结果（单列「Grants for …」）；
+    /// PG / SQL Server 从目录合成 GRANT 语句文本。</summary>
     public static string GrantsSql(DbEngine e, string user, string host) => e switch
     {
         DbEngine.MySQL => $"SHOW GRANTS FOR '{Q(user)}'@'{Q(host)}'",
         DbEngine.PostgreSQL => PostgresGrantsSql(user),
+        DbEngine.SqlServer => SqlServerGrantsSql(user),
         _ => throw new NotSupportedException(UnsupportedReason(e)),
     };
 
@@ -74,6 +80,22 @@ public static class UserPermissionCatalog
     }
 
     private static string Q(string s) => s.Replace("'", "''");
+
+    /// <summary>SQL Server：把对象级 / 库级 / 架构级授权合成回 GRANT 文本（grantee 用方括号引用，配合 Parse）。</summary>
+    private static string SqlServerGrantsSql(string user)
+    {
+        var u = Q(user);
+        return
+            "SELECT 'GRANT ' + dp.permission_name + ' ON ' + ISNULL(OBJECT_SCHEMA_NAME(dp.major_id) + '.', '') + OBJECT_NAME(dp.major_id) + ' TO [' + usr.name + ']'" +
+            " + CASE WHEN dp.state IN ('W', 'G') THEN ' WITH GRANT OPTION' ELSE '' END" +
+            " FROM sys.database_permissions dp JOIN sys.database_principals usr ON usr.principal_id = dp.grantee_principal_id" +
+            $" WHERE usr.name = '{u}' AND dp.class = 1 ORDER BY 1" +
+            " UNION ALL " +
+            "SELECT 'GRANT ' + dp.permission_name + ' ON DATABASE::' + DB_NAME() + ' TO [' + usr.name + ']'" +
+            " + CASE WHEN dp.state IN ('W', 'G') THEN ' WITH GRANT OPTION' ELSE '' END" +
+            " FROM sys.database_permissions dp JOIN sys.database_principals usr ON usr.principal_id = dp.grantee_principal_id" +
+            $" WHERE usr.name = '{u}' AND dp.class = 0 ORDER BY 1";
+    }
 
     /// <summary>账号显示名（列表用）：'u'@'h' 口径；PG 无 host 则只显名字。</summary>
     public static string AccountLabel(DbEngine e, string user, string host) =>

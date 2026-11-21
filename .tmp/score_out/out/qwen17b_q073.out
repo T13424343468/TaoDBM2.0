@@ -1,0 +1,48 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，用户让我写一个TRUNCATE orders的SQL语句。首先，我需要确认用户的需求。他们可能是在删除orders表中的所有记录，而不需要事务处理，因为TRUNCATE比DELETE更快，而且不会产生删除日志。
+
+接下来，检查表结构。orders表有id、user_id、status和created_at。TRUNCATE orders的话，只需要表结构中存在这些字段，但不需要任何条件，因为TRUNCATE不带参数。所以直接写TRUNCATE orders即可。
+
+用户可能没有提到其他条件，所以直接执行TRUNCATE。需要注意的是，TRUNCATE在某些数据库系统中可能需要权限，但MySQL支持。另外，TRUNCATE不会触发DELETE触发器，所以不需要考虑触发器的问题。确认表名正确，没有拼写错误。最后，确保只输出SQL，不加任何解释。
+[End thinking]
+
+TRUNCATE orders;
+
+[ Prompt: 133.4 t/s | Generation: 26.8 t/s ]
+
+
+Exiting...

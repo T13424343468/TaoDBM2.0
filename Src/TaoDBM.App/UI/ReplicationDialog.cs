@@ -20,13 +20,68 @@ public static class ReplicationDialog
             return;
         }
 
-        var roleText = new TextBlock { FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
-        var nodeList = new StackPanel { Spacing = 4 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var roleText = new TextBlock { FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+        var topoPanel = new StackPanel { Spacing = 10 };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+
+        // 图形化拓扑节点框（设计稿 §14）：主库框 + 「══ 状态 · 延迟 ══▶」连线 + 从库框；右键向导化操作。
+        Border NodeBox(string title, string sub, SolidColorBrush border, SolidColorBrush bg)
+        {
+            var b = new Border
+            {
+                BorderBrush = border,
+                BorderThickness = new Thickness(1.5),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                Padding = new Thickness(10, 8, 10, 8),
+                Background = bg,
+            };
+            var sp = new StackPanel { Spacing = 2 };
+            sp.Children.Add(new TextBlock { Text = title, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
+            sp.Children.Add(new TextBlock { Text = sub, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, FontFamily = new FontFamily("Consolas") });
+            b.Child = sp;
+            return b;
+        }
+
+        MenuFlyout NodeMenu(string nodeName)
+        {
+            var menu = new MenuFlyout();
+            var probe = new MenuFlyoutItem { Text = "探活（刷新）" };
+            probe.Click += async (_, _) => await RefreshAsync();
+            menu.Items.Add(probe);
+            if (profile.Engine == DbEngine.MySQL)
+            {
+                var deploy = new MenuFlyoutItem { Text = "建复制账号 / 配置从库（向导）" };
+                deploy.Click += (_, _) => _ = DeploymentWizardDialog.Show(owner, info);
+                menu.Items.Add(deploy);
+                var seed = new MenuFlyoutItem { Text = "备份播种" };
+                seed.Click += (_, _) => _ = BackupDialog.Show(owner, info);
+                menu.Items.Add(seed);
+            }
+            return menu;
+        }
+
+        TextBlock LinkArrow(TopologyNode n)
+        {
+            var lagText = n.LagSeconds is null ? "—" : $"{n.LagSeconds:0.###}s";
+            var color = n.State switch
+            {
+                "正常" => Ant.Success,
+                "延迟偏高" or "严重滞后" => Ant.Warn,
+                "已断开" => Ant.Error,
+                _ => Ant.TextSub,
+            };
+            return new TextBlock
+            {
+                Text = $"══ {n.State} · 延迟 {lagText} ══▶",
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = AntTokens.FontMinor,
+                Foreground = color,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
 
         async Task RefreshAsync()
         {
-            nodeList.Children.Clear();
             status.Text = "正在采集复制拓扑…";
             try
             {
@@ -71,25 +126,29 @@ public static class ReplicationDialog
                     roleText.Text = "本节点角色：主库";
                 }
 
+                topoPanel.Children.Clear();
+                var masterBox = NodeBox(
+                    isReplica ? "上游主库" : "master（本机）",
+                    $"{EngineInfo.Name(profile.Engine)} · {profile.Host}:{(profile.Port > 0 ? profile.Port : EngineInfo.DefaultPort(profile.Engine))}",
+                    Ant.Primary, Ant.PrimaryBg);
+                masterBox.RightTapped += (s, _) => { if (s is Border b) NodeMenu("master").ShowAt(b, new Windows.Foundation.Point(40, 20)); };
+                topoPanel.Children.Add(masterBox);
+
                 foreach (var n in nodes)
                 {
-                    var lagText = n.LagSeconds is null ? "—" : $"{n.LagSeconds:0.###}s";
-                    var mark = n.State switch
-                    {
-                        "正常" => "●",
-                        "延迟偏高" or "严重滞后" => "▲",
-                        "已断开" => "✕",
-                        _ => "○",
-                    };
-                    nodeList.Children.Add(new TextBlock
-                    {
-                        Text = $"{mark} {n.Name}｜{n.Role}｜{n.State}｜延迟 {lagText}｜{n.Detail}",
-                        FontFamily = new FontFamily("Consolas"),
-                        FontSize = 12,
-                        TextWrapping = TextWrapping.Wrap,
-                    });
+                    var broken = n.State == "已断开";
+                    var replicaBox = NodeBox(
+                        n.Name,
+                        $"{n.Role} · {n.Detail}" + (broken ? "\n排查：网络/端口、复制账号权限、位点是否过期" : ""),
+                        broken ? Ant.Error : Ant.Border,
+                        broken ? Ant.ErrorBg : Ant.Card);
+                    replicaBox.RightTapped += (s, _) => { if (s is Border b) NodeMenu(n.Name).ShowAt(b, new Windows.Foundation.Point(40, 20)); };
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+                    row.Children.Add(LinkArrow(n));
+                    row.Children.Add(replicaBox);
+                    topoPanel.Children.Add(row);
                 }
-                status.Text = $"共 {nodes.Count} 个节点。延迟 ≥{ReplicationCatalog.LagWarnSeconds:0}s 标黄（▲），≥{ReplicationCatalog.LagDangerSeconds:0}s 判严重滞后。";
+                status.Text = $"共 {nodes.Count} 个下游节点。延迟 ≥{ReplicationCatalog.LagWarnSeconds:0}s 标黄，≥{ReplicationCatalog.LagDangerSeconds:0}s 判严重滞后，断开标红；右键节点可探活 / 向导化操作。";
             }
             catch (Exception ex)
             {
@@ -99,7 +158,7 @@ public static class ReplicationDialog
 
         Button OpButton(string text, bool danger = false)
         {
-            var b = new Button { Content = text, CornerRadius = new CornerRadius(4) };
+            var b = new Button { Content = text, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
             if (danger) b.Foreground = Ant.Error;
             return b;
         }
@@ -145,7 +204,7 @@ public static class ReplicationDialog
             await DraftOps.ConfirmExecuteAsync(owner, prov, "切换主库（高危草稿）", drafts, status);
         };
 
-        var refreshBtn = new Button { Content = "刷新", CornerRadius = new CornerRadius(4) };
+        var refreshBtn = new Button { Content = "刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         refreshBtn.Click += async (_, _) => await RefreshAsync();
 
         var opRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -157,7 +216,7 @@ public static class ReplicationDialog
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 520 };
         panel.Children.Add(roleText);
-        panel.Children.Add(new ScrollViewer { Content = nodeList, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        panel.Children.Add(new ScrollViewer { Content = topoPanel, MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(opRow);
         panel.Children.Add(status);
 

@@ -15,16 +15,16 @@ public static class DiagnosticsDialog
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
-        var runBtn = new Button { Content = "开始诊断", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "开始诊断", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var sqlBox = new TextBox
         {
             PlaceholderText = "粘贴一条 SELECT / UPDATE 等 SQL，跑执行计划并标注瓶颈",
             MinWidth = 520,
         };
-        var planBtn = new Button { Content = "诊断这条 SQL", CornerRadius = new CornerRadius(4) };
+        var planBtn = new Button { Content = "诊断这条 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         runBtn.Click += async (_, _) => await RunDiagAsync(owner, info, prov, report, status);
         planBtn.Click += async (_, _) => await RunPlanAsync(prov, CurrentDb(info), sqlBox.Text, report, status);
@@ -42,7 +42,7 @@ public static class DiagnosticsDialog
             Text = "只读体检：连通性 / 版本 / 规模 / 锁等待与死锁 / 数据抽样体检；SQL 计划诊断只跑 EXPLAIN，不改数据。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(topBar);
         panel.Children.Add(new ScrollViewer
@@ -83,7 +83,7 @@ public static class DiagnosticsDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Margin = new Thickness(indent * 16, 0, 0, 0),
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
@@ -96,7 +96,7 @@ public static class DiagnosticsDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),
@@ -165,6 +165,29 @@ public static class DiagnosticsDialog
                 AddLine(report, "SQLite 版本：" + ver);
                 AddLine(report, "SQLite 为单文件库，锁与体检深度检查不适用。");
             }
+            else if (DiagnosticsCatalog.Supported(profile.Engine))
+            {
+                // 批次 N：Oracle / MongoDB / Redis 深度体检口径（目录引擎生成只读命令）
+                var ver = await Scalar(prov, dbName, DiagnosticsCatalog.VersionQuery(profile.Engine));
+                if (ver.Length > 80) ver = ver.Substring(0, 80) + "…";
+                AddLine(report, $"数据库版本：{ver}");
+                var topQ = DiagnosticsCatalog.TopTablesQuery(profile.Engine, dbName);
+                if (topQ is not null)
+                {
+                    var top = await Rows(prov, dbName, topQ);
+                    AddSection(report, "规模最大的表（前 8）");
+                    foreach (var row in top) AddLine(report, $"  {S(row[0])}  约 {ToLong(row[1])} 行");
+                }
+                var health = DiagnosticsCatalog.HealthCommand(profile.Engine);
+                if (health is not null)
+                {
+                    var hs = await prov.Execute(dbName, health);
+                    AddSection(report, "健康快照");
+                    if (hs.Count > 0)
+                        foreach (var row in hs[0].Rows)
+                            AddLine(report, $"  {S(row[0])}  {S(row.Length > 1 ? row[1] : null)}");
+                }
+            }
             else
             {
                 AddLine(report, "该引擎暂无深度体检口径，仅做连通性检查。");
@@ -175,8 +198,8 @@ public static class DiagnosticsDialog
             AddLine(report, "规模 / 版本信息采集受限：" + ex.Message, Ant.Primary);
         }
 
-        // 3. 锁等待与死锁检出（LockAnalyzer）
-        if (profile.Engine is DbEngine.MySQL or DbEngine.PostgreSQL)
+        // 3. 锁等待与死锁检出（LockAnalyzer；口径来自诊断目录引擎）
+        if (DiagnosticsCatalog.LockWaitQuery(profile.Engine) is not null)
         {
             await CheckLocks(owner, info, prov, dbName, report, status);
         }
@@ -208,6 +231,14 @@ public static class DiagnosticsDialog
                     foreach (var row in rs[0].Rows)
                         waits.Add(new LockWait(S(row[0]), S(row[1]), S(row[2])));
             }
+            else if (info.Profile.Engine == DbEngine.Oracle)
+            {
+                // 批次 N：Oracle v$ 锁等待口径（会话级等待边）
+                var rs = await prov.Execute(dbName, DiagnosticsCatalog.LockWaitQuery(DbEngine.Oracle)!);
+                if (rs.Count > 0)
+                    foreach (var row in rs[0].Rows)
+                        waits.Add(new LockWait(S(row[0]), S(row[1]), "等 " + ToLong(row.Length > 2 ? row[2] : null) + " 秒"));
+            }
             else
             {
                 var rs = await prov.Execute(dbName,
@@ -238,6 +269,26 @@ public static class DiagnosticsDialog
         AddLine(report, $"共有 {waits.Count} 条等待边：");
         foreach (var w in waits) AddLine(report, $"  {w.Waiter} 等 {w.Holder}（{w.Resource}）");
 
+        // s16：冻结快照 + 终止会话（危险确认+留痕）+ 复制诊断包
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
+        var freezeBtn = new Button { Content = "冻结快照", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        freezeBtn.Click += (_, _) => _ = FreezeSnapshotAsync(info, prov, dbName, waits, status);
+        actions.Children.Add(freezeBtn);
+        foreach (var id in waits.Select(w => w.Holder).Distinct().Take(5))
+        {
+            var killBtn = new Button { Content = $"终止会话 {id}", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+            var sid = id;
+            killBtn.Click += (_, _) => _ = KillSessionAsync(owner, info, prov, dbName, sid, status);
+            actions.Children.Add(killBtn);
+        }
+        if (ReplicationCatalog.Supported(info.Profile.Engine))
+        {
+            var packBtn = new Button { Content = "复制诊断包", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+            packBtn.Click += (_, _) => _ = ReplicationPackAsync(info, prov, dbName, waits, status);
+            actions.Children.Add(packBtn);
+        }
+        report.Children.Add(actions);
+
         var cycles = LockAnalyzer.FindDeadlocks(waits);
         if (cycles.Count == 0)
         {
@@ -259,6 +310,90 @@ public static class DiagnosticsDialog
         AddLine(report, "建议终止回滚代价最小的会话解开环。以下草稿已放进查询窗口，确认后再执行：", Ant.Primary);
         foreach (var d in drafts) AddLine(report, "  " + d, Ant.Primary);
         if (drafts.Count > 0) owner.OpenQueryTab(info, string.Join(";\n", drafts));
+    }
+
+    /// <summary>s16 冻结快照：把当前锁等待现场原样落盘（含时间戳），供事后回溯比对。</summary>
+    private static async Task FreezeSnapshotAsync(NodeInfo info, IDbProvider prov, string dbName,
+        List<LockWait> waits, TextBlock status)
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"# TaoDBM 锁等待冻结快照 {DateTime.Now:yyyy-MM-dd HH:mm:ss} engine={info.Profile.Engine} db={dbName}");
+            foreach (var w in waits) sb.AppendLine($"{w.Waiter}\t等\t{w.Holder}\t{w.Resource}");
+            var file = TaoPaths.FilePath($"lock-snapshot-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            await File.WriteAllTextAsync(file, sb.ToString());
+            AppLog.Write($"[锁冻结快照] waits={waits.Count} file={Path.GetFileName(file)}");
+            status.Text = "冻结快照已落盘：" + file;
+        }
+        catch (Exception ex) { status.Text = "冻结快照失败：" + ex.Message; }
+    }
+
+    /// <summary>s16 终止会话：高风险操作，显式输入会话 ID 解除（分级确认），执行后留痕。</summary>
+    private static async Task KillSessionAsync(MainWindow owner, NodeInfo info, IDbProvider prov, string dbName,
+        string sessionId, TextBlock status)
+    {
+        var confirm = new ContentDialog
+        {
+            Title = "终止会话（危险操作）",
+            Content = new StackPanel { Spacing = 8, MinWidth = 380 },
+            PrimaryButtonText = "终止",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        var box = new TextBox { PlaceholderText = $"输入会话 ID {sessionId} 以确认" };
+        ((StackPanel)confirm.Content).Children.Add(new TextBlock
+        {
+            Text = $"将执行 {LockAnalyzer.KillSql(sessionId, info.Profile.Engine)}，回滚可能需要时间，且该会话未提交事务会丢失。",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.Error,
+        });
+        ((StackPanel)confirm.Content).Children.Add(box);
+        if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+        if (box.Text.Trim() != sessionId) { status.Text = "会话 ID 不符，未执行。"; return; }
+        try
+        {
+            var kill = LockAnalyzer.KillSql(sessionId, info.Profile.Engine);
+            if (string.IsNullOrEmpty(kill)) { status.Text = "该引擎没有可用的终止会话语句。"; return; }
+            await prov.Execute(dbName, kill);
+            AppLog.Write($"[终止会话] engine={info.Profile.Engine} session={sessionId}");
+            status.Text = $"会话 {sessionId} 已终止（回滚由数据库自行进行）。";
+        }
+        catch (Exception ex) { status.Text = "终止会话失败：" + ex.Message; }
+    }
+
+    /// <summary>s16 复制诊断包：复制状态 + 锁等待现场打包落盘，供贴给 DBA 排查。</summary>
+    private static async Task ReplicationPackAsync(NodeInfo info, IDbProvider prov, string dbName,
+        List<LockWait> waits, TextBlock status)
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"# TaoDBM 复制诊断包 {DateTime.Now:yyyy-MM-dd HH:mm:ss} engine={info.Profile.Engine} db={dbName}");
+            foreach (var sql in new[] { ReplicationCatalog.ReplicasSql(info.Profile.Engine), ReplicationCatalog.ReplicaSelfStatusSql(info.Profile.Engine) })
+            {
+                if (sql is null) continue;
+                sb.AppendLine($"## {sql}");
+                try
+                {
+                    var rs = await prov.Execute(dbName, sql);
+                    var r = rs.LastOrDefault();
+                    if (r is null) { sb.AppendLine("（无结果）"); continue; }
+                    sb.AppendLine(string.Join("\t", r.Columns));
+                    foreach (var row in r.Rows) sb.AppendLine(string.Join("\t", row.Select(S)));
+                }
+                catch (Exception ex) { sb.AppendLine("（查询失败：" + ex.Message + "）"); }
+            }
+            sb.AppendLine("## 锁等待现场");
+            foreach (var w in waits) sb.AppendLine($"{w.Waiter}\t等\t{w.Holder}\t{w.Resource}");
+            var file = TaoPaths.FilePath($"repl-pack-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+            await File.WriteAllTextAsync(file, sb.ToString());
+            AppLog.Write($"[复制诊断包] file={Path.GetFileName(file)}");
+            status.Text = "复制诊断包已落盘：" + file;
+        }
+        catch (Exception ex) { status.Text = "复制诊断包失败：" + ex.Message; }
     }
 
     private static async Task SampleHealth(IDbProvider prov, DbEngine engine, string dbName,

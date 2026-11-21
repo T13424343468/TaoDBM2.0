@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ DO DELETE FROM orders WHERE created_at < CURRENT_DATE - INTERVAL 30 DAY;
 
 不过需要确认是否正确。另外，可能需要考虑时间的计算是否正确，比如CURRENT_DATE是否是UTC时间，或者是否需要使用UTC的日期函数。例如，如果用户使用的是UTC时间，那么可能需要使用UTC的日期函数，比如CURRENT_TIMESTAMP，但可能需要根据具体情况
 
-[ Prompt: 19.4 t/s | Generation: 6.6 t/s ]
+[ Prompt: 10.8 t/s | Generation: 5.5 t/s ]
 
 
 Exiting...

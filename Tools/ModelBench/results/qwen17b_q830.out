@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ So the correct SQL would be CREATE PROCEDURE get_user_count AS $BODY$ SELECT COU
 
 But I need to check the exact syntax. The procedure name can be anything, but the user didn't specify a name. The problem says "创建无参过程" but doesn't give a name. So maybe the procedure is named something like get_user_count. But the user didn't specify the name, so perhaps the procedure is created with a default name, but in SQL, you have to specify the
 
-[ Prompt: 19.5 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

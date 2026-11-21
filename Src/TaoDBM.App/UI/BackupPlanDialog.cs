@@ -13,7 +13,7 @@ public static class BackupPlanDialog
 {
     public static async Task Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var fullBox = new TextBox { PlaceholderText = "全量间隔（小时）", Text = "168", MinWidth = 110 };
         var incrBox = new TextBox { PlaceholderText = "增量间隔（小时）", Text = "24", MinWidth = 110 };
         var retainBox = new TextBox { PlaceholderText = "保留全量份数", Text = "3", MinWidth = 110 };
@@ -25,11 +25,11 @@ public static class BackupPlanDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 280,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "填好策略后点「生成计划」。",
         };
 
-        var runBtn = new Button { Content = "生成计划", CornerRadius = new CornerRadius(4) };
+        var runBtn = new Button { Content = "生成计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         runBtn.Click += (_, _) => Run(fullBox.Text, incrBox.Text, retainBox.Text, anchorBox.Text, output, status);
 
         static void Run(string fullText, string incrText, string retainText, string anchorText, TextBox output, TextBlock status)
@@ -95,7 +95,7 @@ public static class BackupPlanDialog
         panel.Children.Add(new TextBlock
         {
             Text = "生成未来 7 天的备份槽位计划与保留清理预览；只做计算预览，不执行备份或删除。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         });

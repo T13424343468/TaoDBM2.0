@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 
 例如，假设用户想查询users表中id字段的余数，那么SQL可能是SELECT MOD(id, 3) FROM users; 但问题中的“
 
-[ Prompt: 18.2 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.2 t/s ]
 
 
 Exiting...

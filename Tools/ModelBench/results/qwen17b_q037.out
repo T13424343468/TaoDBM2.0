@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -58,7 +58,7 @@ WHERE p.method = '支付宝';
 
 SELECT u.id, u.name FROM users u JOIN orders o ON u.id = o.user_id JOIN payments p ON o.id = p.order_id WHERE p.method = '支付宝';
 
-[ Prompt: 20.1 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.5 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

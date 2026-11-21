@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -57,7 +57,7 @@ SET name = REPLACE(name, 'a', 'x')
 不过，用户的问题可能希望将每个a替换为x，不管大小写。但根据问题描述，可能只需要替换小写a。但需要确认。
 
 
-[ Prompt: 19.9 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

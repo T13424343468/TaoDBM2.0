@@ -1,0 +1,62 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题：“今天已经付了款的订单有哪些？”首先，我得理解问题的要求。用户想要找出今天已经支付的订单，也就是支付时间在今天的订单。
+
+首先，我需要确定今天的日期。MySQL中的日期函数可以用来获取当前日期，比如CURRENT_DATE。但要注意，如果用户使用的是MySQL 5.7或更高版本，可能需要使用CURDATE()函数，而如果是更早的版本，可能需要用CURRENT_DATE。不过根据常见的用法，这里应该用CURDATE()。
+
+接下来，我需要查看相关的表结构。订单表orders有created_at和paid_at字段。支付表payments有order_id和paid_at。所以，我需要关联这两个表，找到那些在paid_at时间在今天，并且对应的订单已经支付的记录。
+
+问题中的“今天”指的是当前日期，所以需要将payments表中的paid_at与orders表的created_at进行比较。不过，这里可能需要考虑支付时间是否在订单创建之后。例如，订单可能在昨天创建，但支付在今天。所以，正确的条件应该是payments.paid_at >= CURDATE()，并且orders.created_at <= CURDATE()？或者是否需要同时满足支付时间和订单创建时间？
+
+不过，用户的问题是“今天已经付了款的订单”，即订单的支付时间在今天，不管订单创建时间。所以，正确的条件应该是payments.paid_at >= CURDATE()，并且订单的创建时间可能在任何时间，但支付时间在今天。不过，可能需要确保订单的创建时间在今天之前，否则可能订单已经过期。但问题中没有明确说明，所以可能只需要支付时间在今天。
+
+不过，可能需要更准确的条件。例如，订单的创建时间可能在今天之前，但支付在今天。所以，正确的条件应该是payments.paid_at >= CURDATE()，并且orders.created_at <= CURDATE()？或者是否只需要payments.paid_at >= CURDATE()？
+
+可能用户的问题中的“今天”指的是当前日期，所以只需要支付时间在今天。因此，正确的SQL应该是：
+
+SELECT o.id
+FROM orders o
+JOIN payments p ON o.id = p.order_id
+WHERE p.paid_at >= CURDATE();
+
+但需要确认是否需要考虑订单的创建时间。例如，如果订单在昨天创建，但今天支付，那么应该包括在内。所以，只要支付时间在今天，不管订单创建时间如何，都是符合条件的。
+
+因此，正确的SQL应该是
+
+[ Prompt: 124.9 t/s | Generation: 25.6 t/s ]
+
+
+Exiting...

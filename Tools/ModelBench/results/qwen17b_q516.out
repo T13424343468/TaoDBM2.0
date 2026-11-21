@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -46,7 +46,7 @@ MySQL的DATE函数可以将日期转换为日期类型，但需要知道具体�
 
 SELECT DAYNAME(created_at) FROM orders;
 
-[ Prompt: 19.5 t/s | Generation: 7.1 t/s ]
+[ Prompt: 19.2 t/s | Generation: 7.0 t/s ]
 
 
 Exiting...

@@ -32,7 +32,7 @@ public static class FakerDialog
         var infoText = new TextBlock
         {
             Text = $"目标库：{db} · {tables.Count} 个表（{EngineInfo.Name(provider.Profile.Engine)}）",
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             Foreground = Ant.Text,
             Margin = new Thickness(0, 0, 0, 4),
         };
@@ -70,13 +70,13 @@ public static class FakerDialog
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             BorderBrush = Ant.Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
             Padding = new Thickness(8, 6, 8, 6),
         };
         var listTitle = new TextBlock
         {
             Text = "每个表的生成行数（1 – 100000；留空不生成）",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
         };
 
@@ -87,7 +87,7 @@ public static class FakerDialog
             Header = "生成预览",
             IsReadOnly = true,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             MinHeight = 110,
             MaxHeight = 200,
             TextWrapping = TextWrapping.NoWrap,
@@ -97,7 +97,7 @@ public static class FakerDialog
         var progress = new ProgressBar { Minimum = 0, Maximum = 100, Visibility = Visibility.Collapsed };
         var statusText = new TextBlock
         {
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
             Text = provider is MongoProvider
@@ -108,7 +108,7 @@ public static class FakerDialog
         var previewBtn = new Button
         {
             Content = "生成预览",
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
             Padding = new Thickness(10, 4, 10, 4),
             HorizontalAlignment = HorizontalAlignment.Left,
         };

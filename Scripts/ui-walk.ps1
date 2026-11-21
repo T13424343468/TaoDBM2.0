@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); public delegate bool EnumProc(IntPtr hWnd, IntPtr lParam); [DllImport(\"user32.dll\")] public static extern bool EnumWindows(EnumProc cb, IntPtr lParam); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -251,7 +251,11 @@ function Push-Evidence([string]$tag) {
     git add ev-walklog.txt ev-applog.txt ev-meta.txt 2>$null
     git add ev-shot-*.png 2>$null
     git -c user.email=ci@taodbm.local -c user.name=TaoDBM-CI commit -m "evi $tag" 2>$null | Out-Null
-    git push origin HEAD:ui-smoke-evidence --force 2>$null | Out-Null
+    # #154 定谁：矩阵作业共用 ui-smoke-evidence 时 --force 互相覆盖，MSSQL 现场被并跑作业顶掉（取证通道相撞）
+    # 修法：WALK_EVIDENCE_BRANCH 按作业注入独立分支；未注入时保留旧通道兜底
+    $evBranch = if ($env:WALK_EVIDENCE_BRANCH) { $env:WALK_EVIDENCE_BRANCH } else { 'ui-smoke-evidence' }
+    git push origin HEAD:$evBranch --force 2>$null | Out-Null
+    Write-Host ("[EV] push -> {0}" -f $evBranch)
   } catch { }
 }
 function Assert-AppAlive([string]$where) {
@@ -439,10 +443,18 @@ foreach ($s in $plan.steps) {
         }
         foreach ($v in $needles) {
           if (-not $txt.Contains($v)) {
-            # 真红入账：把树文本快照推上证据分支，定谳「表名缺失＝子级未渲染还是读树口径」
+            # #153 取证先行（MSSQL S09 三轮同模式失败）：树全文 dump（限 4000 字符，不再 300 截断）
+            # ＋ 应用日志装载/连接相关行入证据，定谳「装库没载入 vs 目录查询没返回 vs 读树口径」
             $snap = ($txt -replace '\r?\n', ' | ')
-            if ($snap.Length -gt 300) { $snap = $snap.Substring(0, 300) }
+            if ($snap.Length -gt 4000) { $snap = $snap.Substring(0, 4000) }
             Push-Evidence "treetxt $snap"
+            foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+              if (Test-Path $lg) {
+                $errLines = @(Get-Content $lg -Tail 200 | Where-Object { $_ -match '连接|装载|展开|错误|error|Exception|catalog|tree' })
+                if ($errLines.Count -gt 0) { Push-Evidence ("applog-conn " + (($errLines | Select-Object -Last 20) -join ' || ')) }
+                break
+              }
+            }
             throw "tree text missing: $v"
           }
         }
@@ -597,31 +609,93 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'export-csv' {
+        # S17 四连死拆步版 v2（2026-11-20 夜批①）：UIA SetFocus 对该保存对话框必现 1.2s 循环失败（聚焦手段无效，11-19 定谳）。
+        # 改走 Win32 句柄直取：GetClassName 过滤 #32770/Picker 类对话框 → FindWindowExW/GetDlgItem 定位文件名编辑框
+        # → SetWindowTextW 写路径 + IDOK(=1) BM_CLICK 确认，全程零焦点依赖；句柄摸不到再回退键盘导航；
+        # 仍不行由 allowMiss 弃步记 miss 续链（100s 守卫不变）
+        $sw17 = [System.Diagnostics.Stopwatch]::StartNew()
+        Push-Evidence "S17a start"
         $btn = Find-ElWait @{ automationId = 'work-csv' } 6 $mainRoot
+        Push-Evidence "S17a btn-found=$($null -ne $btn)"
         if ($null -eq $btn) { throw "work-csv not found" }
+        if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before invoke" }
         Invoke-El $btn
-        Start-Sleep -Seconds 4
+        Push-Evidence "S17b invoked"
+        Start-Sleep -Seconds 2
+        if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before dialog scan" }
         $picked = $false
+        $script:s17logged = @()
         try {
-          $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-          foreach ($w in $wins) {
-            if ($w.Current.NativeWindowHandle -ne $handle -and $w.Current.NativeWindowHandle -ne 0) {
+          Push-Evidence "S17c dialog-scan-start"
+          # run 202 定谳：UIA 桌面 FindAll 扫描是多轮走查暴毙统一死亡点（COM 崩溃无红账）；
+          # 改纯 user32 EnumWindows 枚举顶层可见窗口，热点路径零 UIA
+          # run 204: EnumWindows scriptblock delegate threw inside callback (S17c scan-err);
+          # iterate top-level dialogs via FindWindowExW class walk instead - zero callback, zero UIA
+          $dlgHwnds = New-Object System.Collections.Generic.List[IntPtr]
+          $hScan = [IntPtr]::Zero
+          do {
+            $hScan = [WinNative]::FindWindowExW([IntPtr]::Zero, $hScan, '#32770', $null)
+            if ($hScan -ne [IntPtr]::Zero -and [WinNative]::IsWindowVisible($hScan)) { $dlgHwnds.Add($hScan) | Out-Null }
+          } while ($hScan -ne [IntPtr]::Zero)
+          Push-Evidence "S17c dlg-count=$($dlgHwnds.Count)"
+          foreach ($h in $dlgHwnds) {
+            if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
+            if ($h -eq $handle -or $h -eq [IntPtr]::Zero) { continue }
+            try {
+              $cn = New-Object System.Text.StringBuilder 256
+              [WinNative]::GetClassNameW($h, $cn, 256) | Out-Null
+              $cls = $cn.ToString()
+              if ($script:s17logged -notcontains $cls) { $script:s17logged += $cls; Push-Evidence "S17c class=$cls" }
+              if ($cls -notmatch '32770|Picker') { continue }
+              # 句柄直取：经典 #32770 文件名编辑框直挂 Edit；Explorer 风格走 ComboBox 内 Edit
+              $edit = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'Edit', $null)
+              if ($edit -eq [IntPtr]::Zero) {
+                $cb = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'ComboBox', $null)
+                if ($cb -ne [IntPtr]::Zero) { $edit = [WinNative]::FindWindowExW($cb, [IntPtr]::Zero, 'Edit', $null) }
+              }
+              Push-Evidence "S17d edit-found=$($edit -ne [IntPtr]::Zero)"
+              if ($edit -ne [IntPtr]::Zero) {
+                $csvPath = Join-Path $PWD "ui-export-orders.csv"
+                if (-not [WinNative]::SetWindowTextW($edit, $csvPath)) { Push-Evidence "S17d settext-fail" }
+                else {
+                  $ok = [WinNative]::GetDlgItem($h, 1)
+                  Push-Evidence "S17d idok-found=$($ok -ne [IntPtr]::Zero)"
+                  if ($ok -ne [IntPtr]::Zero) {
+                    [WinNative]::SendMessageW($ok, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+                    Push-Evidence "S17d bmclick-sent"
+                    $picked = $true
+                    break
+                  }
+                }
+              }
+              # 键盘导航兜底（原路保留）：前置窗口后路径键入；仍失败则落 allowMiss
               try {
-                $w.SetFocus()
-                Start-Sleep -Milliseconds 500
+                Push-Evidence "S17d kbd-nav-attempt"
+                [WinNative]::SetForegroundWindow($h) | Out-Null
+                Start-Sleep -Milliseconds 400
                 [System.Windows.Forms.SendKeys]::SendWait("^a")
+                Push-Evidence "S17d ctrl-a-sent"
                 Start-Sleep -Milliseconds 150
                 [System.Windows.Forms.SendKeys]::SendWait((Escape-SendKeys (Join-Path $PWD "ui-export-orders.csv")))
+                Push-Evidence "S17d path-sent"
                 Start-Sleep -Milliseconds 300
                 [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Push-Evidence "S17d enter-sent"
                 $picked = $true
                 break
-              } catch { }
-            }
+              } catch { Push-Evidence "S17d kbd-nav-err" }
+            } catch { Push-Evidence "S17d iter-err" }
           }
-        } catch { }
+        } catch { Push-Evidence ("S17c scan-err " + $_.Exception.GetType().Name + ": " + (($_.Exception.Message -replace '\s+','_')) + "@" + $_.InvocationInfo.ScriptLineNumber) }
         if (-not $picked) { throw "save picker not handled" }
-        Start-Sleep -Seconds 3
+        $csvPath = Join-Path $PWD "ui-export-orders.csv"
+        $fileOk = $false
+        for ($i = 0; $i -lt 15; $i++) {
+          if (Test-Path $csvPath) { $fileOk = $true; break }
+          Start-Sleep -Seconds 1
+        }
+        Push-Evidence "S17e file=$fileOk"
+        if (-not $fileOk) { Log "S17 export file missing after 15s: $csvPath" }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {

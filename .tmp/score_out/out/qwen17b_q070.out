@@ -1,0 +1,48 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要回答用户的问题，即orders表里的status有哪些值。用户要求只输出一条SQL，不要解释。首先，我得确定问题需要什么。
+
+问题问的是orders表里的status的值，所以需要查询orders表中status列的所有值。那SQL语句应该是SELECT status FROM orders; 这样就能得到所有可能的值了。不过要注意，用户可能希望看到所有不同的值，但根据问题描述，可能只需要列出所有可能的值，不管重复。不过MySQL的SELECT语句默认会返回所有行，包括重复的。但用户可能只需要不同的值，但问题里没有明确说明，所以按照常规理解，直接查询status列即可。
+
+另外，用户提到只输出SQL，所以不需要任何解释。需要确认是否有其他条件，比如是否需要过滤某些数据，但问题里没有提到，所以直接查询所有status值。因此，正确的SQL应该是SELECT status FROM orders;
+[End thinking]
+
+SELECT status FROM orders;
+
+[ Prompt: 134.8 t/s | Generation: 26.7 t/s ]
+
+
+Exiting...

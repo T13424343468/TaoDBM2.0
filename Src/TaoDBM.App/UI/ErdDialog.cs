@@ -37,7 +37,7 @@ public static class ErdDialog
         _hint = new TextBlock
         {
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(12, 10, 0, 0),
             Text = "选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。",
@@ -70,12 +70,12 @@ public static class ErdDialog
             }, "ER图默认库列表");
         }
 
-        var genBtn = new Button { Content = "生成 ER 图", CornerRadius = new CornerRadius(4) };
-        var layoutBtn = new Button { Content = "重新布局", CornerRadius = new CornerRadius(4) };
-        var pngBtn = new Button { Content = "导出 PNG", CornerRadius = new CornerRadius(4) };
-        var saveBtn = new Button { Content = "保存布局", CornerRadius = new CornerRadius(4) };
-        var openBtn = new Button { Content = "打开布局", CornerRadius = new CornerRadius(4) };
-        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = new CornerRadius(4) };
+        var genBtn = new Button { Content = "生成 ER 图", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var layoutBtn = new Button { Content = "重新布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var pngBtn = new Button { Content = "导出 PNG", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var saveBtn = new Button { Content = "保存布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var openBtn = new Button { Content = "打开布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         ddlBtn.Click += async (_, _) =>
         {
             if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型，再正向生成 DDL。"; return; }
@@ -99,6 +99,14 @@ public static class ErdDialog
                 XamlRoot = owner.Content.XamlRoot,
             }.ShowThemedAsync();
             _hint.Text = $"已按模型生成 {r.Ddl.Count} 条 DDL（只读预览，可复制到查询窗口执行）。";
+        };
+
+        var revBtn = new Button { Content = "逆向拉取（差异预览）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        revBtn.Click += async (_, _) =>
+        {
+            var sel = await Selected();
+            if (sel is null) return;
+            await ReverseDiff(owner, sel.Value.Db, sel.Value.Prov);
         };
 
         Task<(string Db, IDbProvider Prov)?> Selected()
@@ -132,6 +140,7 @@ public static class ErdDialog
         bar.Children.Add(connBox);
         bar.Children.Add(dbBox);
         bar.Children.Add(genBtn);
+        bar.Children.Add(revBtn);
         bar.Children.Add(layoutBtn);
         bar.Children.Add(pngBtn);
         bar.Children.Add(saveBtn);
@@ -151,7 +160,7 @@ public static class ErdDialog
             },
             BorderBrush = Ant.Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
             Height = 560,
         };
         panel.Children.Add(border);
@@ -188,12 +197,110 @@ public static class ErdDialog
                 _pkOf[name] = cols.FirstOrDefault(c => c.IsKey)?.Name ?? "";
             }
             if (_model.Tables.Count == 0) { _hint.Text = "该库没有可用表。"; return; }
-            _model.Edges = ErdModel.InferEdges(_model);
+            // 深度推断：先取真库外键清单（目录引擎），失败退命名约定
+            List<object?[]>? fkRows = null;
+            try
+            {
+                var fkSql = ObjectTreeCatalog.ListForeignKeys(prov.Profile.Engine, db);
+                var fkRs = await prov.Execute(db, fkSql);
+                fkRows = fkRs.Count > 0 ? fkRs[0].Rows : null;
+            }
+            catch { /* 无外键视图或权限不足：退命名约定 */ }
+            _model.Edges = ErdModel.InferEdgesDeep(_model, fkRows);
             ErdModel.AutoLayout(_model);
             Place(_model);
-            _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（最多取前 40 张表）。";
+            int fkReal = fkRows?.Count ?? 0;
+            _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条，最多取前 40 张表）。";
         }
         catch (Exception ex) { _hint.Text = "生成失败：" + ex.Message; }
+    }
+
+    // s6 逆向拉取：先出差异预览（新增表 / 结构变化 / 仅模型有），确认后才并入模型，不直接覆盖。
+    private static async Task ReverseDiff(MainWindow owner, string db, IDbProvider prov)
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "当前模型为空，请先用「生成 ER 图」载入，再做逆向差异比对。"; return; }
+        List<string> live;
+        try { live = await prov.GetChildren(db); }
+        catch (Exception ex) { _hint.Text = "逆向拉取失败：" + ex.Message; return; }
+
+        var byName = _model.Tables.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
+        var liveSet = live.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var added = new List<(string Name, List<ColumnSpec> Cols)>();
+        var changed = new List<(ErdTable T, List<ColumnSpec> Cols, List<string> Delta)>();
+        int limit = Math.Min(live.Count, 40);
+        for (int i = 0; i < limit; i++)
+        {
+            List<ColumnSpec> cols;
+            try { cols = await prov.GetColumns(db, live[i]); }
+            catch { continue; }
+            if (cols.Count == 0) continue;
+            if (!byName.TryGetValue(live[i], out var t)) { added.Add((live[i], cols)); continue; }
+            var delta = new List<string>();
+            var liveCols = cols.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+            var modelCols = t.Columns.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+            foreach (var c in cols)
+            {
+                if (!modelCols.TryGetValue(c.Name, out var m)) { delta.Add($"+{c.Name} {c.DataType}（新增列）"); continue; }
+                if (!string.Equals(m.Type, c.DataType, StringComparison.OrdinalIgnoreCase) || m.IsKey != c.IsKey)
+                    delta.Add($"~{c.Name} {m.Type}→{c.DataType}{(m.IsKey != c.IsKey ? (c.IsKey ? "、升为主键" : "、取消主键") : "")}");
+            }
+            foreach (var c in t.Columns)
+                if (!liveCols.ContainsKey(c.Name)) delta.Add($"-{c.Name} {c.Type}（移除列）");
+            if (delta.Count > 0) changed.Add((t, cols, delta));
+        }
+        var modelOnly = _model.Tables.Where(t => !liveSet.Contains(t.Name)).Select(t => t.Name).ToList();
+        if (added.Count == 0 && changed.Count == 0 && modelOnly.Count == 0)
+        {
+            _hint.Text = "逆向拉取完成：模型与库内结构一致，无差异。";
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var (name, cols) in added) sb.AppendLine($"【新增表】{name}（{cols.Count} 列）");
+        foreach (var (t, _, delta) in changed) sb.AppendLine($"【结构变化】{t.Name}：{string.Join("；", delta)}");
+        if (modelOnly.Count > 0) sb.AppendLine($"【仅模型有】{string.Join("、", modelOnly)}（库中不存在，保留不删）");
+        sb.AppendLine();
+        sb.AppendLine($"共 {added.Count} 张新增、{changed.Count} 张结构变化。应用后仅并入新增与更新，不删除模型中的表。");
+
+        var box = new TextBox
+        {
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            Text = sb.ToString(),
+            FontFamily = new FontFamily("Consolas"),
+            MinWidth = 620,
+            MinHeight = 320,
+            MaxHeight = 420,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var diffCount = added.Count + changed.Count;
+        var dlg = new ContentDialog
+        {
+            Title = "逆向拉取 · 差异预览",
+            Content = box,
+            PrimaryButtonText = $"应用差异到模型（{diffCount} 项）",
+            IsPrimaryButtonEnabled = diffCount > 0,
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) { _hint.Text = "已取消，模型未改动。"; return; }
+
+        double maxX = _model.Tables.Count > 0 ? _model.Tables.Max(t => t.X) : 0;
+        double y = 40;
+        foreach (var (name, cols) in added)
+        {
+            var nt = ErdModel.FromSpecs(name, cols);
+            nt.X = maxX + 300;
+            nt.Y = y;
+            y += 260;
+            _model.Tables.Add(nt);
+        }
+        foreach (var (t, cols, _) in changed)
+            t.Columns = cols.Select(c => new ErdColumn { Name = c.Name, Type = c.DataType, IsKey = c.IsKey }).ToList();
+        _model.Edges = ErdModel.InferEdges(_model);
+        Place(_model);
+        _hint.Text = $"已并入 {added.Count} 张新增表、更新 {changed.Count} 张表结构；关系线已按新结构重新推断。";
     }
 
     private static void Place(ErdModel m)
@@ -216,7 +323,7 @@ public static class ErdDialog
             Background = Ant.Card,
             BorderBrush = Ant.Primary,
             BorderThickness = new Thickness(1.5),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
             Padding = new Thickness(10, 6, 10, 6),
             MinWidth = 180,
             MaxWidth = 260,
@@ -229,7 +336,7 @@ public static class ErdDialog
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 0, 0, 4),
         });
-        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = 12, LineHeight = 16, Foreground = Ant.TextSub });
+        stack.Children.Add(new TextBlock { Text = sb.ToString(), FontSize = AntTokens.FontMinor, LineHeight = 16, Foreground = Ant.TextSub });
         box.Child = stack;
 
         double startX = 0, startY = 0, baseX = t.X, baseY = t.Y;

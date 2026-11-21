@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -47,7 +47,7 @@ CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
 
 因此，正确的SQL应该是ALTER TABLE products MODIFY name VARCHAR(10)。但需要确认是否允许这样的操作。不过，用户可能希望的是在查询时处理，比如用SUBSTRING，但
 
-[ Prompt: 19.3 t/s | Generation: 6.8 t/s ]
+[ Prompt: 19.9 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

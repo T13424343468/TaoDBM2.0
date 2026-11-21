@@ -12,7 +12,7 @@ public static class RebalancePlannerDialog
 {
     public static Task Show(MainWindow owner, NodeInfo info)
     {
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
 
         var loadsBox = new TextBox
@@ -21,10 +21,10 @@ public static class RebalancePlannerDialog
             Height = 132,
             TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "shard_0,1200\nshard_1,300\nshard_2,350\nshard_3,320",
         };
-        var planBtn = new Button { Content = "生成再均衡计划", CornerRadius = new CornerRadius(4) };
+        var planBtn = new Button { Content = "生成再均衡计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         planBtn.Click += async (_, _) => await RunPlanAsync(loadsBox.Text, report, status);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 620 };
@@ -33,7 +33,7 @@ public static class RebalancePlannerDialog
             Text = "每行一个分片：名称,负载（行数或请求数，口径统一即可）。引擎生成搬迁清单，只展示计划，不执行搬迁。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(loadsBox);
         panel.Children.Add(planBtn);
@@ -108,7 +108,7 @@ public static class RebalancePlannerDialog
         p.Children.Add(new TextBlock
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             TextWrapping = TextWrapping.Wrap,
             Foreground = brush ?? Ant.TextSub,
             FontFamily = new FontFamily("Consolas"),
@@ -120,7 +120,7 @@ public static class RebalancePlannerDialog
         p.Children.Add(new TextBlock
         {
             Text = title,
-            FontSize = 13,
+            FontSize = AntTokens.FontBody,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Primary,
             Margin = new Thickness(0, 6, 0, 0),

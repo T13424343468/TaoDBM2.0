@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -65,7 +65,7 @@ GROUP BY u.id, u.name;
 
 但需要确认是否正确。例如，是否需要考虑订单的总金额，而每个订单可能有
 
-[ Prompt: 19.0 t/s | Generation: 6.6 t/s ]
+[ Prompt: 19.1 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

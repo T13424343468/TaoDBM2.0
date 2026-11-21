@@ -1,0 +1,48 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIM ... (truncated)
+
+[Start thinking]
+
+好的，我需要解决用户的问题，即取用户名左边三个字符。首先，我需要查看提供的表结构。用户提到的表是users，其中包含name字段。问题是要取name的前三个字符，所以应该使用字符串函数来实现。
+
+在SQL Server中，字符串函数LEFT用于提取字符。LEFT函数的语法是LEFT(表达式, 长度)，这里需要提取前三个字符，所以参数应该是3。需要注意的是，如果name的长度不足三个字符，结果会是实际的长度，但用户的问题可能假设name足够长。
+
+因此，正确的SQL语句应该是SELECT LEFT(name, 3) FROM users。这样就能得到每个用户名字的前三个字符了。不需要其他表的关联，因为问题只涉及users表的name字段。
+[End thinking]
+
+SELECT LEFT(name, 3) FROM users
+
+[ Prompt: 20.3 t/s | Generation: 7.2 t/s ]
+
+
+Exiting...

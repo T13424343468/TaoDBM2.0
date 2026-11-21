@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -53,7 +53,7 @@ SELECT * FROM products WHERE stock < 1;
 
 因此，最终的SQL应该是查询products表中stock小于某个值的记录，比如stock < 1。但需要确认是否需要考虑其他表，比如orders或order_items，但根据问题描述，可能不需要，因为库存不足指的是产品本身的库存。
 
-[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.7 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

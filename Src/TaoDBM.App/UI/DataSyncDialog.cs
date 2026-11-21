@@ -52,14 +52,14 @@ public static class DataSyncDialog
         syncStruct.Checked += (_, _) => alignTypes.IsEnabled = true;
         syncStruct.Unchecked += (_, _) => alignTypes.IsEnabled = false;
 
-        var loadBtn = new Button { Content = "加载表列表", CornerRadius = new CornerRadius(4) };
+        var loadBtn = new Button { Content = "加载表列表", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var runBtn = new Button
         {
             Content = "开始传输",
             Background = Ant.Primary,
             Foreground = Ant.OnPrimary,
             BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
         var output = new TextBox
         {
@@ -68,7 +68,7 @@ public static class DataSyncDialog
             TextWrapping = TextWrapping.Wrap,
             Height = 170,
             FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Text = "选好源 / 目标连接与库，加载表列表后点「开始传输」。",
         };
 
@@ -205,7 +205,7 @@ public static class DataSyncDialog
         content.Children.Add(new TextBlock
         {
             Text = "源库只读；目标库会被直接建表、改列、写入数据。点「开始传输」后会先给出确认，确认才会动目标库。",
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         });

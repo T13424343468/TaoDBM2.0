@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -69,7 +69,7 @@ LIMIT 1;
 
 但这里可能需要考虑created_at的日期，比如如果多个订单在同一天，那么GROUP BY created_at会将它们分组，然后COUNT(*)得到该天的订单数量。然后按order_count降
 
-[ Prompt: 18.7 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.3 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

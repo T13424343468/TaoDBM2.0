@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -55,7 +55,7 @@ SELECT SUBSTR(name, 1, LENGTH(name)) AS reversed_name;
 
 或者，用户可能希望的是将name字段的每个字符顺序反转，比如“张三”变成“三张”，这可能需要将name字段的
 
-[ Prompt: 19.7 t/s | Generation: 6.6 t/s ]
+[ Prompt: 20.8 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

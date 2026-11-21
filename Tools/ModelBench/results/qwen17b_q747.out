@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -56,7 +56,7 @@ JOIN products p ON oi.product_id = p.id;
 
 不过，用户的问题可能希望每个订单的每个商品的信息，所以正确的SQL应该是连接这三个表
 
-[ Prompt: 19.0 t/s | Generation: 6.5 t/s ]
+[ Prompt: 19.2 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

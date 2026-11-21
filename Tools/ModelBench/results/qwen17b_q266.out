@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -48,7 +48,7 @@ CREATE TABLE order_items (id INT PRIM ... (truncated)
 因此，最终的SQL应该是SELECT CHARINDEX('a', name) AS first_a_position FROM users; 但需要确认是否正确。例如，如果name是“Alice”，CHARINDEX('a', 'Alice')返回1，因为第一个字符是A，第二个是l，第三个是i，第四个是 c，第五个是 e，所以可能我在这里有错误。哦，原问题中的name是“Alice”，第一个a在第1位，但CHARINDEX('a', 'Alice')会返回1吗？或者可能我搞错了。
 
 
-[ Prompt: 19.8 t/s | Generation: 6.7 t/s ]
+[ Prompt: 19.9 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

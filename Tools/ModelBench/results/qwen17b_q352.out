@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -49,7 +49,7 @@ UPDATE products SET price = CEIL(price);
 
 或者，用户可能想对某个特定的字段进行计算，比如计算某个订单的总金额，然后向上取
 
-[ Prompt: 18.9 t/s | Generation: 6.4 t/s ]
+[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12503-4577932fa
+build      : b12532-08c252e22
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -51,7 +51,7 @@ SELECT CONVERT(STR_TO_DATE('1234567890', '%Y%m%d%H%i%s'), '%Y-%m-%d %H:%i:%s') A
 
 SELECT STR_TO_DATE('1234567890', '%Y%m%d
 
-[ Prompt: 19.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 20.1 t/s | Generation: 6.7 t/s ]
 
 
 Exiting...

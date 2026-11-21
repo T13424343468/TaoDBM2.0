@@ -1,0 +1,46 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，用户要求删除用户表，但根据提供的表结构，用户表已经存在，所以需要先确认是否真的要删除。不过用户明确说要删掉，所以需要生成相应的SQL语句。
+
+首先，删除表的SQL语句是DROP TABLE。但需要确认表名是否正确。用户表是users，所以正确的语句应该是DROP TABLE users;。不过要注意，如果表存在，执行这个语句会删除整个表。用户可能希望直接删除，所以直接写DROP TABLE users;即可。不需要其他操作，因为问题只提到删除用户表，没有提到其他操作。
+[End thinking]
+
+DROP TABLE users;
+
+[ Prompt: 133.6 t/s | Generation: 26.9 t/s ]
+
+
+Exiting...

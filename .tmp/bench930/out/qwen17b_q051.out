@@ -1,0 +1,56 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12503-4577932fa
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+
+[Start thinking]
+
+好的，我需要根据用户提供的表结构和问题生成一个MySQL的删除语句。用户的问题是“删掉所有订单但别问我”，但注意只输出SQL，不需要解释。
+
+首先，分析表结构。用户提到的表有users、products、orders、order_items和payments。问题是要删除所有订单，但可能需要考虑相关联的表，比如order_items和payments，因为订单可能有相关记录。
+
+不过问题中的“删掉所有订单”可能指的是删除orders表中的记录。但需要确认是否有外键约束。例如，orders表中的user_id可能关联到users表，但问题中没有提到需要删除关联的用户或产品，所以可能只需要删除orders表中的所有记录。
+
+但用户的问题可能有歧义，比如是否要删除所有订单及其关联的items和payments。但根据问题描述，“删掉所有订单”可能指的是删除orders表中的记录，而不管其他表。不过需要检查是否有外键约束，比如order_items的order_id是否引用orders.id，以及payments的order_id是否引用orders.id。如果存在外键，删除orders表的数据可能需要先删除相关联的记录，否则会报错。
+
+但用户的问题可能只是简单地删除orders表中的所有记录，不管其他表。因此，正确的SQL应该是DELETE FROM orders;。不过需要确认是否有外键约束导致无法直接删除。但根据问题描述，用户可能只是希望删除orders表中的所有记录，所以直接使用DELETE FROM orders;即可。
+
+另外，用户可能希望删除所有订单，包括相关的order_items和payments，但问题中没有提到这些表，所以可能不需要。但根据常规情况，可能需要考虑外键约束，但问题中没有说明需要处理外键，所以可能直接删除orders表。
+
+因此，最终的SQL应该是DELETE FROM orders;。
+[End thinking]
+
+DELETE FROM orders;
+
+[ Prompt: 19.3 t/s | Generation: 6.8 t/s ]
+
+
+Exiting...
