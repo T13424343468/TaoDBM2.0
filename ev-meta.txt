@@ -1,1 +1,2 @@
 tag=step-start S01 time=2026-11-21T08:51:59.5877982+00:00 appMem=120 MB
+tag=step-start S02 time=2026-11-21T08:52:03.2361074+00:00 appMem=144 MB
