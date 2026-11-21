@@ -5,3 +5,6 @@
 2026-11-21 08:48:49.695 托盘: 向系统注册成功
 2026-11-21 08:48:50.714 布局分档切换: Compact @ 1008 DIP
 2026-11-21 08:49:32.127 [Flyout] opening
+2026-11-21 08:49:35.068 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
+2026-11-21 08:49:35.084 [新建查询] worktab built db=main
+2026-11-21 08:49:35.094 [新建查询] tab selected
