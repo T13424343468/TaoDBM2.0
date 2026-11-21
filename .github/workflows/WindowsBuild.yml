@@ -658,7 +658,23 @@ jobs:
         shell: pwsh
         run: |
           $msi = (Resolve-Path out/*.msi).Path
-          Remove-Item (Join-Path $env:TEMP 'taodbm-runtime.log') -Force -ErrorAction SilentlyContinue
+          # #229 定谳: CA 以 LocalSystem 起动, TEMP=C:\Windows\Temp, 运行日志落系统侧+ProgramData 镜像;
+          # 断言读 runner TEMP 必然「日志缺失」误报红。改读镜像(累积)与系统侧, runner TEMP 仅作兜底。
+          $rtMirror = 'C:\ProgramData\TaoDBM\taodbm-runtime.log'
+          $rtSys = 'C:\Windows\Temp\taodbm-runtime.log'
+          function Get-RtLines {
+            $lines = @()
+            foreach ($f in @($rtMirror, $rtSys, (Join-Path $env:TEMP 'taodbm-runtime.log'))) {
+              if (Test-Path $f) { $lines += (Get-Content $f -ErrorAction SilentlyContinue) }
+            }
+            return $lines
+          }
+          function Reset-RtLog {
+            Remove-Item $rtMirror -Force -ErrorAction SilentlyContinue
+            Remove-Item $rtSys -Force -ErrorAction SilentlyContinue
+            Remove-Item (Join-Path $env:TEMP 'taodbm-runtime.log') -Force -ErrorAction SilentlyContinue
+          }
+          Reset-RtLog
           $p1 = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install.log" -Wait -PassThru
           Write-Host "[INSTALL] exit=$($p1.ExitCode)"
           if ($p1.ExitCode -ne 0) { Get-Content install.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
@@ -666,9 +682,7 @@ jobs:
           if (-not $arp) { Write-Host "::error::no ARP entry after install"; exit 1 }
           Write-Host "[OK] ARP entry: $($arp.DisplayName) $($arp.DisplayVersion)"
           # 新标准断言一: 云台已装 .NET 10 桌面运行时, 首装必须零下载直接用 (与 TaoZip 同口径)
-          $rtlog = Join-Path $env:TEMP 'taodbm-runtime.log'
-          if (-not (Test-Path $rtlog)) { Write-Host "::error::运行时保障日志缺失: $rtlog"; exit 1 }
-          $rtlines = Get-Content $rtlog
+          $rtlines = Get-RtLines
           if (-not ($rtlines | Where-Object { $_ -match 'runtime-present zero-download' })) { Write-Host "::error::首装未走零下载路: $($rtlines -join '; ')"; exit 1 }
           Write-Host "[OK] runtime-path-natural zero-download"
           $p2 = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart","/l*v","uninstall.log" -Wait -PassThru
@@ -678,15 +692,15 @@ jobs:
           if ($arp2) { Write-Host "::error::ARP residue after uninstall"; exit 1 }
           Write-Host "[OK] uninstall clean"
           # 新标准断言二: 强制走下载路, 官方运行时装进系统统一 .NET 目录后装齐 (与 TaoZip 同口径)
-          Remove-Item (Join-Path $env:TEMP 'taodbm-runtime.log') -Force -ErrorAction SilentlyContinue
-          $env:TAODBM_FORCE_RUNTIME_DOWNLOAD = '1'
+          # #229 定谳: 环境变量经 msiexec 常驻服务传不到 CA, 改落标记文件由脚本读取
+          Reset-RtLog
+          New-Item -ItemType Directory -Path 'C:\ProgramData\TaoDBM' -Force | Out-Null
+          Set-Content -Path 'C:\ProgramData\TaoDBM\force-runtime-download.flag' -Value '1' -Force
           $p3 = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","forced-runtime.log" -Wait -PassThru
           Write-Host "[FORCED-RUNTIME-INSTALL] exit=$($p3.ExitCode)"
-          $env:TAODBM_FORCE_RUNTIME_DOWNLOAD = $null
+          Remove-Item 'C:\ProgramData\TaoDBM\force-runtime-download.flag' -Force -ErrorAction SilentlyContinue
           if ($p3.ExitCode -ne 0) { Get-Content forced-runtime.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
-          $rtlog2 = Join-Path $env:TEMP 'taodbm-runtime.log'
-          if (-not (Test-Path $rtlog2)) { Write-Host "::error::运行时保障日志缺失: $rtlog2"; exit 1 }
-          $rtlines2 = Get-Content $rtlog2
+          $rtlines2 = Get-RtLines
           if (-not ($rtlines2 | Where-Object { $_ -match 'runtime-download-install ok' })) { Write-Host "::error::强制下载路未装齐: $($rtlines2 -join '; ')"; exit 1 }
           Write-Host "[OK] runtime-path-forced download-install ok"
           # 清理: 断言二重装后再卸载, 恢复无残留态

@@ -3,7 +3,7 @@
 #   有则零下载直接用; 无则联网下载官方运行时并显示进度, 装进系统统一 .NET 目录
 #   (C:\Program Files\dotnet, 与现有版本同处一地, 不单独建运行时目录);
 #   无网且无运行时给通俗重试指引。
-# 云测钩子: TAODBM_FORCE_RUNTIME_DOWNLOAD=1 强制走下载路 (断言二用), 日常安装不设即走检测路。
+# 云测钩子: 标记文件 C:\ProgramData\TaoDBM\force-runtime-download.flag 或环境变量 TAODBM_FORCE_RUNTIME_DOWNLOAD=1 强制走下载路 (断言二用), 日常安装两者皆无即走检测路。
 # 写法与 TaoZip 首发实现同口径 (TaoZip.PC/tools/msi/EnsureRuntime.ps1, 提交 1032c44), 不另起炉灶。
 $ErrorActionPreference = 'Stop'
 # #221 取证: CA 秒败(-196608)且 TEMP/Windows/ProgramData 三路日志全空, 疑脚本未起或秒崩;
@@ -41,7 +41,10 @@ function Test-DesktopRuntime10 {
         return ($null -ne $shared)
     } catch { return $false }
 }
-if ($env:TAODBM_FORCE_RUNTIME_DOWNLOAD -ne '1' -and (Test-DesktopRuntime10)) {
+# #229 定谳: 环境变量经 msiexec 常驻服务传不到 CA, 云测强制下载路改用标记文件 (env 兼容保留)
+$forceFlag = Join-Path (Split-Path $logMirror) 'force-runtime-download.flag'
+$forced = ($env:TAODBM_FORCE_RUNTIME_DOWNLOAD -eq '1') -or (Test-Path $forceFlag)
+if (-not $forced -and (Test-DesktopRuntime10)) {
     Write-RtLog 'runtime-present zero-download'
     exit 0
 }
