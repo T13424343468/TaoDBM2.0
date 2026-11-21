@@ -745,7 +745,10 @@ jobs:
           - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }        # S01-S05+S10-S12 前缀 + S15-S16
           # #213 定谳: 导出步依赖查询后的编辑器状态, 独立段必须带 S10-S12 前置, 否则 work-csv 按钮不存在
-          - { name: seg4, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05 前缀 + S10-S12 编辑器 + S17-S19 导出与尾页
+          # #219 定谳: seg4 十一步走查超免费 runner ~6min 回收窗, S18 起步即被掐;
+          # 拆 seg4a(导出)/seg4b(尾页), 每段压回窗口内; S18/S19 为 soft-page 不依赖编辑器状态
+          - { name: seg4a, skip: "S06,S07,S08,S09,S13,S14,S15,S16,S18,S19" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出
+          - { name: seg4b, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17" }  # S01-S05 前缀 + S18-S19 尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -897,7 +900,9 @@ jobs:
           - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
           - { name: b, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }      # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: c1, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }     # S01-S05+S10-S12 前缀 + S15-S16
-          - { name: c2, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05 前缀 + S10-S12 编辑器 + S17-S19 导出与尾页
+          # #219 定谳: c2 十一步走查超 ~6min 回收窗, 双库同死; 拆 c2a(导出)/c2b(尾页)
+          - { name: c2a, skip: "S06,S07,S08,S09,S13,S14,S15,S16,S18,S19" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出
+          - { name: c2b, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17" }  # S01-S05 前缀 + S18-S19 尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
