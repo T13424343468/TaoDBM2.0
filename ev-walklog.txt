@@ -1,0 +1,4 @@
+probe quiet-watch start (10s, no UIA)
+probe quiet-watch done
+shot shot-01-start.png 37979 bytes
+coverage: 15 named elements in main window
