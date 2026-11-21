@@ -13,3 +13,4 @@ tag=S18b btn-clicked time=2026-11-21T11:42:40.7998420+00:00 appMem=159 MB
 tag=S18c item-found time=2026-11-21T11:42:42.1067048+00:00 appMem=159 MB
 tag=S18d item-clicked time=2026-11-21T11:42:45.4354936+00:00 appMem=159 MB
 tag=SP shot-done time=2026-11-21T11:42:46.7868595+00:00 appMem=159 MB
+tag=SP closed time=2026-11-21T11:42:49.9261699+00:00 appMem=159 MB
