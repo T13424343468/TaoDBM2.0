@@ -21,6 +21,13 @@
     <CustomAction Id="KillRunningApp" Property="KILLCMD"
                   ExeCommand="/d /c taskkill /f /im TaoDBM.exe"
                   Execute="immediate" Return="ignore" />
+    <!-- 运行时保障 (2026-11-21 全系安装器新标准): 装完文件后以系统实际注册为准检测/补装
+         .NET 桌面运行时 (卸载 REMOVE 时跳过); 失败即回滚, 无网时脚本弹通俗重试指引。
+         写法与 TaoZip 首发实现同口径 (属性转发定位 powershell, 避免 Value 内嵌 [SystemFolder] 的 WIX1077) -->
+    <CustomAction Id="SetRtEnsureCmd" Property="RTENSURECMD" Value="[SystemFolder]WindowsPowerShell\v1.0\powershell.exe" />
+    <CustomAction Id="EnsureDotNetRuntime" Property="RTENSURECMD"
+                  ExeCommand="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]EnsureRuntime.ps1&quot;"
+                  Execute="immediate" Return="check" />
     <Property Id="DESKTOP_SHORTCUT" Value="1" />
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
     <Property Id="ADD_TO_PATH" Value="1" />
@@ -159,6 +166,8 @@
     <InstallExecuteSequence>
       <Custom Action="KillRunningApp" After="InstallValidate" />
       <Custom Action="SetInstallFolderExec" Sequence="1150" />
+      <Custom Action="SetRtEnsureCmd" After="InstallFiles" />
+      <Custom Action="EnsureDotNetRuntime" After="SetRtEnsureCmd" Condition="NOT REMOVE" />
     </InstallExecuteSequence>
 
     <StandardDirectory Id="DesktopFolder" />

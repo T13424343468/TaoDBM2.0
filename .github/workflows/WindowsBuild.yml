@@ -586,17 +586,22 @@ jobs:
         run: dotnet tool install --global wix --version 5.0.2
         shell: pwsh
 
-      - name: Publish App (self-contained, untrimmed + ReadyToRun)
+      - name: Publish App (framework-dependent for MSI, untrimmed + ReadyToRun)
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           # 保全口径升级（2026-11-19 #88 云端定谳）：WinUI 3 裁剪发布是 0xC000027B 崩溃已知缺陷类（microsoft-ui-xaml #9914，
           # 微软建议 PublishTrimmed=false），本项目两度踩雷（#78 反射 JSON、#88 RichEditBox 首次实例化 E_NOINTERFACE 崩）。
           # MSI 正式交付停用裁剪，保留 R2R 预编译；裁剪可行性验证独立放 trim-r2r job，不再进交付链。
-          $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishReadyToRun=true -o publish/msi 2>&1
+          # 2026-11-21 全系安装器新标准（老板令 MSG-20261121T1310）：MSI 发布改框架依赖，包内不带 .NET 运行时；
+          # 安装期由 Installer/EnsureRuntime.ps1 以系统实际注册为准检测/补装（两路断言见安装链作业）。
+          $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained false -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishReadyToRun=true -o publish/msi 2>&1
           $out | ForEach-Object { Write-Host "$_" }
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path "publish/msi/TaoDBM.exe")) { Write-Host "::error::publish payload missing TaoDBM.exe"; exit 1 }
+          # 运行时保障脚本随包分发（安装期在目标机执行检测/下载）
+          Copy-Item Installer/EnsureRuntime.ps1 publish/msi/EnsureRuntime.ps1 -Force
+          if (Test-Path "publish/msi/coreclr.dll") { Write-Host "::error::MSI payload still bundles .NET runtime (self-contained files present)"; exit 1 }
 
       - name: Build MSI
         shell: pwsh
@@ -617,18 +622,40 @@ jobs:
         shell: pwsh
         run: |
           $msi = (Resolve-Path out/*.msi).Path
+          Remove-Item (Join-Path $env:TEMP 'taodbm-runtime.log') -Force -ErrorAction SilentlyContinue
           $p1 = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install.log" -Wait -PassThru
           Write-Host "[INSTALL] exit=$($p1.ExitCode)"
           if ($p1.ExitCode -ne 0) { Get-Content install.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
           $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
           if (-not $arp) { Write-Host "::error::no ARP entry after install"; exit 1 }
           Write-Host "[OK] ARP entry: $($arp.DisplayName) $($arp.DisplayVersion)"
+          # 新标准断言一: 云台已装 .NET 10 桌面运行时, 首装必须零下载直接用 (与 TaoZip 同口径)
+          $rtlog = Join-Path $env:TEMP 'taodbm-runtime.log'
+          if (-not (Test-Path $rtlog)) { Write-Host "::error::运行时保障日志缺失: $rtlog"; exit 1 }
+          $rtlines = Get-Content $rtlog
+          if (-not ($rtlines | Where-Object { $_ -match 'runtime-present zero-download' })) { Write-Host "::error::首装未走零下载路: $($rtlines -join '; ')"; exit 1 }
+          Write-Host "[OK] runtime-path-natural zero-download"
           $p2 = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart","/l*v","uninstall.log" -Wait -PassThru
           Write-Host "[UNINSTALL] exit=$($p2.ExitCode)"
           if ($p2.ExitCode -ne 0) { Get-Content uninstall.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
           $arp2 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
           if ($arp2) { Write-Host "::error::ARP residue after uninstall"; exit 1 }
           Write-Host "[OK] uninstall clean"
+          # 新标准断言二: 强制走下载路, 官方运行时装进系统统一 .NET 目录后装齐 (与 TaoZip 同口径)
+          Remove-Item (Join-Path $env:TEMP 'taodbm-runtime.log') -Force -ErrorAction SilentlyContinue
+          $env:TAODBM_FORCE_RUNTIME_DOWNLOAD = '1'
+          $p3 = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","forced-runtime.log" -Wait -PassThru
+          Write-Host "[FORCED-RUNTIME-INSTALL] exit=$($p3.ExitCode)"
+          $env:TAODBM_FORCE_RUNTIME_DOWNLOAD = $null
+          if ($p3.ExitCode -ne 0) { Get-Content forced-runtime.log -Tail 30 | ForEach-Object { Write-Host "::error::$_" }; exit 1 }
+          $rtlog2 = Join-Path $env:TEMP 'taodbm-runtime.log'
+          if (-not (Test-Path $rtlog2)) { Write-Host "::error::运行时保障日志缺失: $rtlog2"; exit 1 }
+          $rtlines2 = Get-Content $rtlog2
+          if (-not ($rtlines2 | Where-Object { $_ -match 'runtime-download-install ok' })) { Write-Host "::error::强制下载路未装齐: $($rtlines2 -join '; ')"; exit 1 }
+          Write-Host "[OK] runtime-path-forced download-install ok"
+          # 清理: 断言二重装后再卸载, 恢复无残留态
+          $arp3 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if ($arp3) { $p4 = Start-Process msiexec -ArgumentList "/x",$($arp3.PSChildName),"/qn","/norestart","/l*v","uninstall2.log" -Wait -PassThru; Write-Host "[CLEANUP-UNINSTALL] exit=$($p4.ExitCode)" }
 
       - name: Upload MSI
         if: always()
