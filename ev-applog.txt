@@ -7,3 +7,4 @@
 2026-11-21 11:42:32.068 [新建查询] enter kind=Connection name=ui-auto-mysql provider=null
 2026-11-21 11:42:32.086 [新建查询] worktab built db=taodbmui
 2026-11-21 11:42:32.095 [新建查询] tab selected
+2026-11-21 11:42:41.280 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
