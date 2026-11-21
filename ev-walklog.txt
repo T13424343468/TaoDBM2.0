@@ -32,3 +32,4 @@ coverage-func S13 SQL真实执行-聚合 => skip
 step S14 skipped (SkipIds)
 coverage-func S14 SQL真实执行-空值过滤 => skip
 shot ev-shot-result-S15.png 73260 bytes
+S15 ledger: 2026-11-21 03:39:42.042 [执行账] sql=SELECT name FROM products WHERE id = 7;ELECT COUNT(*) AS c FROM orders;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007 | title=ELECT COUNT(*) AS c FROM orders rows=0 cols=
