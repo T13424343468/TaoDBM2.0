@@ -856,7 +856,7 @@ jobs:
           - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
           - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }        # S01-S05+S10-S12 前缀 + S15-S16
-          - { name: seg4, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16" }  # S01-S05 前缀 + S17-S19 导出与尾页
+          - { name: seg4, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05+S10-S12 前缀 + S17-S19；S17a 依赖 S10-S12 先开工作页（#232 定谳）
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1008,7 +1008,7 @@ jobs:
           - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
           - { name: b, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }      # S01-S05 前缀 + S10-S14 SQL真执行
           - { name: c1, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }     # S01-S05+S10-S12 前缀 + S15-S16
-          - { name: c2, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16" }  # S01-S05 前缀 + S17-S19 导出与尾页
+          - { name: c2, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }  # S01-S05+S10-S12 前缀 + S17-S19；S17a 依赖 S10-S12 先开工作页（#232 定谳）
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4

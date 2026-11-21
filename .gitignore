@@ -1,4 +1,0 @@
-.nfs*
-bin/
-obj/
-*.user
