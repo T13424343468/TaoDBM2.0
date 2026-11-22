@@ -1,0 +1,17 @@
+{
+  "batch_id": "B1B2-20261122",
+  "timestamp": "2026-11-22T16:09:17.6039265\u002B08:00",
+  "corpus_rev": "4f6061bd",
+  "gauge2_note": "in-program runtime pending phase-1",
+  "gauge3_fed_accuracy": 1,
+  "gauge3_hits": 155,
+  "gauge3_total": 155,
+  "gauge4_lookup_ms": {
+    "p50": 0.084,
+    "p99": 6.689,
+    "max": 8.383
+  },
+  "fed": 155,
+  "skipped": 3,
+  "total": 158
+}

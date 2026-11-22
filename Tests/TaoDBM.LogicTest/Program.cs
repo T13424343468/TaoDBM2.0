@@ -3563,6 +3563,54 @@ Layer("单元");
     Check("M16 模型来源样本同库复用", a4.Ok && a4.Interpretation.Contains("记忆") && a4.Sql == a3.Sql, a4.Interpretation);
 }
 
+
+Console.WriteLine("\n== FD 程序侧投喂（B1+B2 喂忆落库）==");
+Layer("单元");
+{
+    // 种子文件：内嵌最小种子（含方言归一/拒答类/坏行/未知方言），不依赖仓库路径
+    var seedPath = Path.Combine(Path.GetTempPath(), "taodbm_feed_" + Guid.NewGuid().ToString("N") + ".jsonl");
+    var seedLines = new List<string>
+    {
+        """{"qid":"q001","batch":"B1","cat":"trap","engine":"SQL Server","question":"把订单表整个删掉。","sql":"-- REFUSE: 破坏性DML，不应执行","source":"corpus","confirmed":true,"refuse":true}""",
+        """{"qid":"q002","batch":"B2","cat":"date","engine":"MySQL","question":"orders 表里 created_at 在最近 7 天内的订单有多少条？","sql":"SELECT COUNT(*) FROM orders WHERE created_at >= NOW() - INTERVAL 7 DAY;","source":"corpus","confirmed":true,"refuse":false}""",
+        """{"qid":"q003","batch":"B2","cat":"proc","engine":"SQL Server","question":"创建一个每天归档一次的作业。","sql":"EXEC sp_add_schedule @schedule_name='archive_daily', @freq_type=4;","source":"corpus","confirmed":true,"refuse":false}""",
+        """{"qid":"q004","batch":"B2","cat":"join","engine":"PostgreSQL","question":"orders 关联 users 查最近 10 条。","sql":"SELECT o.* FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 10;","source":"corpus","confirmed":true,"refuse":false}""",
+        """{"qid":"q005","batch":"B2","cat":"date","engine":"Oracle9i","question":"未知方言的题。","sql":"SELECT 1 FROM dual;","source":"corpus","confirmed":true,"refuse":false}""",
+        "{bad json line",
+        "",
+    };
+    File.WriteAllLines(seedPath, seedLines, new UTF8Encoding(false));
+
+    var memPath = Path.Combine(Path.GetTempPath(), "taodbm_feedmem_" + Guid.NewGuid().ToString("N") + ".jsonl");
+    var store = QaMemoryStore.Load(memPath);
+    var rep = QaFeedingLoader.LoadSeed(store, seedPath, "B1B2-TEST");
+
+    Check("FD01 总行数按非空行计", rep.Total == 6, rep.Total.ToString());
+    Check("FD02 拒答类不进召回池", rep.Outcomes.Any(o => o.Qid == "q001" && !o.Ok && o.Reason.Contains("refuse-layer")), "");
+    Check("FD03 未知方言跳过并留痕", rep.Outcomes.Any(o => o.Qid == "q005" && !o.Ok && o.Reason.StartsWith("unknown-dialect")), "");
+    Check("FD04 坏行跳过不中断", rep.Outcomes.Any(o => o.Reason == "bad-json-line"), "");
+    Check("FD05 正常条目入库确认态", rep.Fed == 3 && store.Count == 3, $"{rep.Fed}/{store.Count}");
+    Check("FD06 方言名归一 SQL Server→SqlServer",
+        store.Snapshot().Any(e => e.Engine == "SqlServer" && e.Note!.Contains("q003")), "");
+
+    // 回放：量具③正确率 100% 零容忍＋量具④毫秒级
+    var replay = QaFeedingLoader.Replay(store, seedPath);
+    Check("FD07 回放只计非拒答条目", replay.Total == 3, replay.Total.ToString());
+    Check("FD08 喂忆召回命中 100%", replay.Hits == 3 && replay.HitRate == 1.0, $"{replay.Hits}/{replay.Total}");
+    Check("FD09 召回 SQL 与期望一致 100%", replay.SqlMatches == 3 && replay.SqlMatchRate == 1.0, $"{replay.SqlMatches}/{replay.Total}");
+    Check("FD10 Lookup 毫秒级（p50<10ms）", replay.Rows.All(r => r.LookupMs < 10.0), string.Join(",", replay.Rows.Select(r => r.LookupMs)));
+    Check("FD11 变体问法可召回（近义防串靠方言过滤+阈值）",
+        store.Recall("orders 表里 created_at 在最近 7 天内的订单有多少", "MySQL") is { Score: >= 0.82 }, "");
+
+    // 持久化：重载后喂忆仍在
+    var reloaded = QaMemoryStore.Load(memPath);
+    Check("FD12 投喂落盘重载可召回", reloaded.Recall("orders 表里 created_at 在最近 7 天内的订单有多少条？", "MySQL") is { Score: 1.0 }, "");
+
+    // 拒答类走 QaRefuseLayer 硬闸（与投喂留痕对账）
+    var v = QaRefuseLayer.Inspect("把订单表整个删掉。");
+    Check("FD13 拒答类由拒答层硬闸覆盖", v.Refused && v.Classes.Count > 0, string.Join("/", v.Classes));
+}
+
 Console.WriteLine("\n== B12 诊断优化引擎 ==");
 Layer("系统");
 {
