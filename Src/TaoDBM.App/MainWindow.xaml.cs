@@ -462,6 +462,7 @@ public partial class MainWindow : Window
         switch (info.Kind)
         {
             case NodeKind.Connection:
+                Item("刷新", (_, _) => RefreshNode(node));   // D-10 修红：连接节点补刷新入口（此前仅左上角图标菜单）
                 Item("展开连接", (_, _) => { if (!node.IsExpanded) node.IsExpanded = true; });
                 Item("编辑连接", async (_, _) => await EditConnection(info));
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
@@ -632,6 +633,8 @@ public partial class MainWindow : Window
                             Profile = info.Profile, Provider = prov, Name = c, Db = info.Db,
                         };
                         var cNode = new TreeViewNode { Content = (prov.IsNoSql ? "🗂️ " : "📋 ") + c };
+                        // D-10 修红（2026-11-22 老板令）：关系库表节点下挂列子节点占位，展开即见字段（对齐 Navicat/DBeaver）
+                        if (!prov.IsNoSql) cNode.Children.Add(new TreeViewNode { Content = "…" });
                         _nodeMap[cNode] = cInfo;
                         node.Children.Add(cNode);
                     }
@@ -682,6 +685,38 @@ public partial class MainWindow : Window
                         }
                     if (objCount == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Db} · {info.Name}：{objCount} 项");
+                    break;
+
+                case NodeKind.Table when info.Provider is { IsNoSql: false }:
+                    // D-10 修红（2026-11-22 老板令）：表展开即列清单（列名＋类型），SQLite PRAGMA 列序特殊（cid,name,type）
+                    {
+                        var colProv = info.Provider;
+                        var colSql = ObjectTreeCatalog.ListColumns(info.Profile.Engine, info.Db, info.Name);
+                        var colRs = await colProv.Execute(info.Db, colSql);
+                        bool isSqlite = info.Profile.Engine == DbEngine.SQLite;
+                        int colCount = 0;
+                        if (colRs.Count > 0)
+                            foreach (var row in colRs[0].Rows)
+                            {
+                                int nameIdx = isSqlite ? 1 : 0;
+                                int typeIdx = isSqlite ? 2 : 1;
+                                var colName = row.Length > nameIdx ? row[nameIdx]?.ToString() ?? "" : "";
+                                if (colName.Length == 0) continue;
+                                var colType = row.Length > typeIdx ? row[typeIdx]?.ToString() ?? "" : "";
+                                colCount++;
+                                var colInfo = new NodeInfo
+                                {
+                                    Kind = NodeKind.ObjectDef, Category = "columns",
+                                    Profile = info.Profile, Provider = colProv, Name = colName, Db = info.Db,
+                                    RowText = colType,
+                                };
+                                var colNode = new TreeViewNode { Content = "▪ " + colName + (colType.Length > 0 ? "  " + colType : "") };
+                                _nodeMap[colNode] = colInfo;
+                                node.Children.Add(colNode);
+                            }
+                        if (colCount == 0) node.Children.Add(new TreeViewNode { Content = "（无列）" });
+                        SetStatus($"{info.Db} · {info.Name}：{colCount} 列");
+                    }
                     break;
             }
             MetaRetryBar.IsOpen = false;   // s2：装载成功收重试条

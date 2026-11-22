@@ -25,6 +25,17 @@ public static class ObjectTreeCatalog
         _ => throw new NotSupportedException("该引擎不支持视图查询"),
     };
 
+    /// <summary>D-10（2026-11-22 老板令）：表节点下挂列子节点——按引擎生成列清单查询。</summary>
+    public static string ListColumns(DbEngine e, string db, string table) => e switch
+    {
+        DbEngine.MySQL => $"SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{Esc(db)}' AND TABLE_NAME = '{Esc(table)}' ORDER BY ORDINAL_POSITION",
+        DbEngine.PostgreSQL => $"SELECT column_name AS name, data_type AS type FROM information_schema.COLUMNS WHERE table_schema = '{Esc(db)}' AND table_name = '{Esc(table)}' ORDER BY ordinal_position",
+        DbEngine.SqlServer => $"SELECT COLUMN_NAME AS name, DATA_TYPE AS type FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{Esc(table)}' ORDER BY ORDINAL_POSITION",
+        DbEngine.SQLite => $"PRAGMA table_info('{Esc(table)}')",
+        DbEngine.Oracle => $"SELECT COLUMN_NAME AS name, DATA_TYPE AS type FROM USER_TAB_COLUMNS WHERE TABLE_NAME = '{Esc(table)}' ORDER BY COLUMN_ID",
+        _ => throw new NotSupportedException("该引擎不支持列查询"),
+    };
+
     /// <summary>索引列表。</summary>
     public static string ListIndexes(DbEngine e, string db) => e switch
     {
