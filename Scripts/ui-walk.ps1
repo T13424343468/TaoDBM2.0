@@ -241,6 +241,20 @@ function Read-EditorTextSafe([System.Windows.Automation.AutomationElement]$el, [
   }
   return $null
 }
+function Open-FreshQueryTab([System.Windows.Automation.AutomationElement]$root) {
+  # #245 追修：第二查询步起 ^a 清空竞态实锤（DEL 吃旧句首字母→粘贴叠罗汉）——编辑器有内容时直接开新查询页签，绕开清空按键
+  try {
+    $btn = Find-ElWait @{ automationId = 'BtnLogo' } 6 $root
+    if ($null -eq $btn) { return $null }
+    Invoke-El $btn
+    $item = Find-ElWait @{ name = '新建查询' } 6 $root
+    if ($null -eq $item) { $item = Find-ElWait @{ name = '新建查询' } 4 $null }
+    if ($null -eq $item) { return $null }
+    Invoke-El $item
+    Start-Sleep -Seconds 3
+    return Find-ElWait @{ automationId = 'work-editor' } 15 $root
+  } catch { return $null }
+}
 function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [string]$itemName) {
   try { ($combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand() } catch { }
   Start-Sleep -Milliseconds 1200
@@ -585,6 +599,13 @@ foreach ($s in $plan.steps) {
       'query' {
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
         if ($null -eq $ed) { throw "work-editor not found" }
+        # #245 追修：编辑器已有内容（第二查询步起）先开新查询页签，杜绝 ^a/DEL 清空竞态叠罗汉
+        $curContent = Read-EditorTextSafe $ed $mainRoot
+        if ($null -ne $curContent -and $curContent.Trim().Length -gt 0) {
+          Push-Evidence "$id editor-dirty, fresh tab"
+          $fresh = Open-FreshQueryTab $mainRoot
+          if ($null -ne $fresh) { $ed = $fresh }
+        }
         try { $ed.SetFocus() } catch { }
         Start-Sleep -Milliseconds 400
         # S12/N12 定谳修复（2026-11-22）：逐字 SendKeys 打字不可靠（#241 两步同型红 expected 5000 not found in ledger）——
@@ -599,6 +620,8 @@ foreach ($s in $plan.steps) {
           if ($null -eq $got) {
             # 读不回：脚本不可验证，不硬判产品红，交账本对账裁决；仍补剪贴板整段粘贴提高设值成功率
             Log "$id editor-verify retry $attempt unreadable (defer to ledger)"
+            $fresh = Open-FreshQueryTab $mainRoot
+            if ($null -ne $fresh) { $ed = $fresh }
             try {
               Set-Clipboard -Value $sqlText
               $ed.SetFocus()
@@ -613,6 +636,9 @@ foreach ($s in $plan.steps) {
             continue
           }
           Log "$id editor-verify retry $attempt got=$got"
+          # 读到错内容＝编辑器脏了，开新空页签再设值，不再用 ^a/DEL 清空（#245 叠罗汉实锤）
+          $fresh = Open-FreshQueryTab $mainRoot
+          if ($null -ne $fresh) { $ed = $fresh }
           try {
             Set-Clipboard -Value $sqlText
             $ed.SetFocus()
