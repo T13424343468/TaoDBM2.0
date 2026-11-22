@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,31 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT name FROM users WHERE name LIKE '%a%'
 
-[Start thinking]
-
-好的，我需要解决用户的问题：“查找姓名中 a 的位置”。首先，用户提到的表结构中有users表，其中包含name字段。问题是要查找姓名中包含字母a的位置，但这里的“位置”可能指的是名字中出现字母a的位置，比如在名字中的某个字符的位置。
-
-不过，用户可能的意思是查找名字中包含字母a的记录，或者可能是指名字中a的位置，比如在名字中的某个位置出现a。但根据问题描述，可能用户想查询的是名字中包含a的用户信息。
-
-首先，我需要确定用户的问题具体是什么。问题中的“查找姓名中 a 的位置”可能有两种理解：一种是查找名字中包含a的记录，另一种是查找名字中a的位置，比如在名字中的第几个字母是a。但根据常见的数据库查询需求，可能用户想查找名字中包含a的用户。
-
-因此，正确的SQL应该是查询users表中name字段包含'a'的记录。使用LIKE语句来匹配包含a的字符串。例如，SELECT * FROM users WHERE name LIKE '%a%';
-
-但需要确认是否需要考虑大小写。如果用户的数据中存在大小写不同的情况，可能需要使用LOWER或UPPER函数，但问题中没有提到，所以默认情况下使用%通配符匹配任意字符。
-
-因此，最终的SQL应该是SELECT * FROM users WHERE name LIKE '%a%';
-[End thinking]
-
-SELECT * FROM users WHERE name LIKE '%a%';
-
-[ Prompt: 20.0 t/s | Generation: 6.9 t/s ]
+[ Prompt: 77.1 t/s | Generation: 15.2 t/s ]
 
 
 Exiting...

@@ -411,23 +411,16 @@ public class WorkTab : Grid
         if (_last.Count == 0) { _messageBox.Text = "没有可导出的结果，请先执行。"; return; }
         try
         {
-            var picker = new FileSavePicker
+            // #216: WinUI FileSavePicker natively crashes on Windows Server sessions (walk 4/4 app-death);
+            // use WinForms save dialog (classic #32770, same on Server/client), failures go to managed catch
+            using var dlg = new System.Windows.Forms.SaveFileDialog
             {
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                Title = csv ? "导出 CSV" : "导出 SQL",
+                Filter = csv ? "CSV 文件 (*.csv)|*.csv" : "SQL 文件 (*.sql)|*.sql",
+                FileName = csv ? "taodbm_export.csv" : "taodbm_insert.sql",
             };
-            if (csv)
-            {
-                picker.SuggestedFileName = "taodbm_export";
-                picker.FileTypeChoices.Add("CSV 文件", new List<string> { ".csv" });
-            }
-            else
-            {
-                picker.SuggestedFileName = "taodbm_insert";
-                picker.FileTypeChoices.Add("SQL 文件", new List<string> { ".sql" });
-            }
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
-            var file = await picker.PickSaveFileAsync();
-            if (file == null) return;
+            if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            var savePath = dlg.FileName;
             // 批次F：懒加载结果导出全列——先把所有列拉齐再物化（列按需通道下导出=显式全量动作）
             QueryResult exportSrc = _last[0];
             if (exportSrc is LazyQueryResult lz)
@@ -436,8 +429,8 @@ public class WorkTab : Grid
                 exportSrc = lz.Materialize(Enumerable.Range(0, lz.Store.TotalColumns).ToList());
             }
             var content = csv ? Exporter.Csv(exportSrc) : Exporter.InsertSql(exportSrc, _child.Length > 0 ? _child : "table");
-            await Windows.Storage.FileIO.WriteTextAsync(file, content);
-            _messageBox.Text = $"已导出到 {file.Path}";
+            System.IO.File.WriteAllText(savePath, content, new System.Text.UTF8Encoding(false));
+            _messageBox.Text = $"已导出到 {savePath}";
         }
         catch (Exception ex)
         {

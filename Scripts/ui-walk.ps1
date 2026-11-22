@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern IntPtr SendMessageW(IntPtr hWnd, uint msg, IntPtr wp, IntPtr lp); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -624,19 +624,28 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds 2
         if ($sw17.Elapsed.TotalSeconds -gt 100) { throw "S17 guard exceeded before dialog scan" }
         $picked = $false
+        $script:s17logged = @()
         try {
           Push-Evidence "S17c dialog-scan-start"
-          $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-          Push-Evidence "S17c dialog-scan-count=$($wins.Count)"
-          foreach ($w in $wins) {
+          # run 202 定谳：UIA 桌面 FindAll 扫描是多轮走查暴毙统一死亡点（COM 崩溃无红账）；
+          # 改纯 user32 EnumWindows 枚举顶层可见窗口，热点路径零 UIA
+          # run 204: EnumWindows scriptblock delegate threw inside callback (S17c scan-err);
+          # iterate top-level dialogs via FindWindowExW class walk instead - zero callback, zero UIA
+          $dlgHwnds = New-Object System.Collections.Generic.List[IntPtr]
+          $hScan = [IntPtr]::Zero
+          do {
+            $hScan = [WinNative]::FindWindowExW([IntPtr]::Zero, $hScan, '#32770', $null)
+            if ($hScan -ne [IntPtr]::Zero -and [WinNative]::IsWindowVisible($hScan)) { $dlgHwnds.Add($hScan) | Out-Null }
+          } while ($hScan -ne [IntPtr]::Zero)
+          Push-Evidence "S17c dlg-count=$($dlgHwnds.Count)"
+          foreach ($h in $dlgHwnds) {
             if ($sw17.Elapsed.TotalSeconds -gt 100) { Push-Evidence "S17c guard-break"; break }
-            $h = $w.Current.NativeWindowHandle
-            if ($h -eq $handle -or $h -eq 0) { continue }
+            if ($h -eq $handle -or $h -eq [IntPtr]::Zero) { continue }
             try {
               $cn = New-Object System.Text.StringBuilder 256
               [WinNative]::GetClassNameW($h, $cn, 256) | Out-Null
               $cls = $cn.ToString()
-              Push-Evidence "S17c class=$cls"
+              if ($script:s17logged -notcontains $cls) { $script:s17logged += $cls; Push-Evidence "S17c class=$cls" }
               if ($cls -notmatch '32770|Picker') { continue }
               # 句柄直取：经典 #32770 文件名编辑框直挂 Edit；Explorer 风格走 ComboBox 内 Edit
               $edit = [WinNative]::FindWindowExW($h, [IntPtr]::Zero, 'Edit', $null)
@@ -677,16 +686,18 @@ foreach ($s in $plan.steps) {
               } catch { Push-Evidence "S17d kbd-nav-err" }
             } catch { Push-Evidence "S17d iter-err" }
           }
-        } catch { Push-Evidence "S17c scan-err" }
+        } catch { Push-Evidence ("S17c scan-err " + $_.Exception.GetType().Name + ": " + (($_.Exception.Message -replace '\s+','_')) + "@" + $_.InvocationInfo.ScriptLineNumber) }
+        Push-Evidence "S17d-resolved picked=$picked"
+        Assert-AppAlive "S17c-after-scan"
         if (-not $picked) { throw "save picker not handled" }
         $csvPath = Join-Path $PWD "ui-export-orders.csv"
         $fileOk = $false
-        for ($i = 0; $i -lt 15; $i++) {
+        for ($i = 0; $i -lt 6; $i++) {
           if (Test-Path $csvPath) { $fileOk = $true; break }
           Start-Sleep -Seconds 1
         }
         Push-Evidence "S17e file=$fileOk"
-        if (-not $fileOk) { Log "S17 export file missing after 15s: $csvPath" }
+        if (-not $fileOk) { Log "S17 export file missing after 6s: $csvPath" }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {

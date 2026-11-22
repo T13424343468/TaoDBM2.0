@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,36 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT LEFT(name, 1) AS first_char FROM users;
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构生成一个SQL Server查询语句。用户的问题是“名字第一个字符编码”，但这里可能有翻译或表述上的问题。首先，我需要理解用户的需求。
-
-用户可能想获取用户表中名字的第一个字符，或者可能是指某个字段的编码，比如字符集。但根据表结构，用户表有name字段，类型是VARCHAR(50)。所以可能用户想查询name字段的第一个字符，或者可能有其他意图。
-
-但问题中的“名字第一个字符编码”可能是指name字段的第一个字符的编码，比如ASCII码。或者可能用户想获取name字段的第一个字符，然后进行某种处理，比如显示或统计。
-
-不过用户要求只输出SQL，不解释，所以需要确定正确的SQL语句。假设用户想查询name字段的第一个字符，那么可以使用SUBSTRING函数。例如，SELECT SUBSTRING(name, 1, 1) FROM users; 但需要确认是否需要考虑NULL值，比如如果name为空的话。不过根据表结构，name是VARCHAR(50)，可能允许空值，但可能用户希望处理这种情况。
-
-但用户的问题可能更简单，比如获取name的第一个字符，所以正确的SQL应该是SELECT SUBSTRING(name, 1, 1) FROM users; 或者如果用户想获取所有用户的第一个字符，可能需要聚合函数，比如GROUP BY，但问题没有说明，所以可能只是单个查询。
-
-不过用户可能希望得到name的第一个字符的编码，比如ASCII码，所以可能需要使用ASCII函数。例如，SELECT ASCII(SUBSTRING(name, 1, 1)) FROM users; 但需要确认是否正确。
-
-但问题中的“编码”可能指的是字符集，比如使用UTF-8或GBK，但SQL Server的字符集通常由数据库设置决定，而用户可能想获取name字段的第一个字符的编码，比如ASCII码。或者可能用户想获取name字段的第一个字符的编码，比如使用ASCII函数。
-
-但根据问题描述，用户可能希望得到name字段的第一个字符的ASCII码，所以正确的SQL可能是SELECT ASCII(SUBSTRING(name, 1, 1)) FROM users; 但需要确认是否正确。
-
-不过用户的问题可能有误，比如“名字第一个字符编码”可能是指name字段的第一个字符的编码，所以需要根据可能的意图生成SQL。但如果没有更多上下文，可能需要假设用户想获取name的第一个字符的ASCII码。
-
-因此，最终的SQL可能是
-
-[ Prompt: 20.3 t/s | Generation: 6.8 t/s ]
+[ Prompt: 70.0 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

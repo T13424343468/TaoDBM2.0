@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+CREATE TABLE order_items (id IN ... (truncated)
+SELECT DATE(CURRENT_DATE);
 
-[Start thinking]
-
-好的，用户问的是“今天日期是多少？”，我需要根据提供的表结构来写一个SQL查询。首先，问题是要获取今天的日期，所以应该用当前日期时间函数。
-
-在SQLite中，获取当前日期时间的函数是CURRENT_TIMESTAMP或者NOW()。不过，用户可能希望得到一个具体的日期值，比如2023-10-05，但具体日期取决于系统时间。不过，用户可能只需要当前日期，所以用CURRENT_TIMESTAMP应该可以。
-
-不过，问题可能需要一个具体的日期值，比如今天是2023-10-05，但用户可能希望查询当前的日期。所以正确的SQL应该是SELECT CURRENT_TIMESTAMP; 或者SELECT NOW(); 但根据表结构，可能需要检查是否有其他相关表，但问题里没有提到需要关联表，所以直接获取当前日期。
-
-所以最终的SQL应该是SELECT CURRENT_TIMESTAMP; 或者SELECT NOW(); 但可能需要确认哪个更合适。不过通常CURRENT_TIMESTAMP更常用。所以最终输出SELECT CURRENT_TIMESTAMP;
-[End thinking]
-
-SELECT CURRENT_TIMESTAMP;
-
-[ Prompt: 19.4 t/s | Generation: 7.1 t/s ]
+[ Prompt: 70.2 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

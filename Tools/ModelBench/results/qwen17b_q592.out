@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,33 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT category FROM products WHERE price / stock > 100;
 
-[Start thinking]
-
-好的，我需要解决用户的问题：找出平均单价超过100的分类。首先，我得理解问题的要求。用户想要知道哪些分类的平均单价高于100。这里的平均单价应该是指每个分类下所有产品的平均价格，对吧？
-
-那我需要先看看相关的表结构。products表里有category和price字段。每个分类下的产品价格可能不同，所以需要计算每个分类的平均价格。然后比较这个平均值是否超过100。
-
-接下来，我需要构造一个SQL查询。首先，需要从products表中获取每个分类的平均价格。这里可能需要用GROUP BY分组，按category分组，然后计算平均price。然后，将这个平均值与100比较，筛选出大于100的分类。
-
-不过，用户的问题是“平均单价超过100的分类有哪些”，所以最终的查询结果应该返回这些分类的名字。因此，正确的SQL应该是选择category列，其中平均price大于100的那些。
-
-具体来说，查询语句应该是这样的：SELECT category FROM products GROUP BY category HAVING AVG(price) > 100;
-
-不过，我需要确认是否正确。比如，是否需要考虑每个分类是否有产品，比如如果某个分类没有产品，那平均值可能无法计算。但题目中没有提到需要处理这种情况，所以可能不需要考虑，直接按GROUP BY分组即可。
-
-所以最终的SQL应该是SELECT category FROM products GROUP BY category HAVING AVG(price) > 100;
-[End thinking]
-
-SELECT category FROM products GROUP BY category HAVING AVG(price) > 100;
-
-[ Prompt: 19.3 t/s | Generation: 6.8 t/s ]
+[ Prompt: 64.3 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

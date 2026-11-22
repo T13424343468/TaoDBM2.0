@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,37 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT created_at + INTERVAL '1 month' FROM users;
 
-[Start thinking]
-
-好的，我需要解决用户的问题，即计算created_at加上一个月的日期。首先，用户提到的表结构中有四个表：users、products、orders、order_items和payments。问题是要对orders表中的created_at字段加上一个月。
-
-首先，我需要确定用户的需求是什么。用户可能希望将orders表中的created_at字段加上一个月的时间，可能用于更新或计算某个时间点。但问题中提到的是“created_at 加 1 个月”，这可能是指在查询中对created_at进行时间上的加法操作。
-
-接下来，我需要考虑如何在PostgreSQL中实现这个操作。PostgreSQL支持日期函数，比如CURRENT_DATE加上一个月，或者使用DATE_ADD函数。不过，用户可能希望直接对created_at字段进行加法操作，但需要注意的是，created_at是DATETIME类型，所以需要处理时区问题。
-
-不过，用户的问题可能更倾向于在查询中对created_at进行日期加法，比如将created_at加上一个月。例如，如果created_at是2023-10-05，那么加上一个月后是2023-11-05。但需要确认是否需要考虑时区，或者是否直接进行日期加法。
-
-在PostgreSQL中，可以使用DATE_ADD函数，但需要注意的是，DATE_ADD的参数是日期和时间，所以可能需要使用DATE函数来处理。例如，DATE_ADD(created_at, INTERVAL '1 month')。但需要确保created_at是DATE类型，而用户表中的created_at是DATETIME，所以可能需要转换为DATE。
-
-不过，用户的问题可能只是需要将created_at加上一个月，不管具体时间，所以可能需要使用DATE函数来处理。例如，将created_at转换为DATE类型，然后加上一个月，再转换回DATETIME类型。或者直接使用DATE_ADD。
-
-但用户的问题可能更简单，只需要在查询中对created_at加上一个月。例如，如果用户希望在查询中计算某个时间点，比如在orders表中，将created_at加上一个月，可能需要使用一个子查询或者在WHERE子句中进行计算。
-
-不过，用户的问题可能只是要求生成一个SQL语句，将created_at加上一个月，可能需要使用DATE_ADD函数。例如：
-
-SELECT * FROM orders
-WHERE created_at + INTERVAL '1 month' = some_value;
-
-但这里可能需要更具体的条件，但用户的问题可能只是要求生成一个SQL语句，将created_at加上一个月，可能不需要具体
-
-[ Prompt: 19.2 t/s | Generation: 6.6 t/s ]
+[ Prompt: 66.8 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

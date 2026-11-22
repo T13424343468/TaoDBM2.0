@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,39 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT o.id
+FROM orders o
+WHERE o.created_at > CURRENT_DATE;
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构写出一个MySQL查询语句。用户的问题是“今天之后的订单（边界：应为空）”，也就是要找出今天之后的订单，而今天的时间点可能需要考虑是否包含当前时间。
-
-首先，我需要确定“今天”指的是当前日期的当天，还是包括当前时间。根据问题中的边界说明，边界应为空，所以可能需要排除当前时间点的订单。不过，通常“今天之后”可能指的是当天的日期，但具体要看数据库的时区和时间处理方式。
-
-接下来，我需要查看相关的表结构。订单表orders有created_at字段，存储的是日期时间类型。所以需要查询orders表中created_at大于当前日期的记录。
-
-但要注意，如果当前时间是某个时间点，比如今天12:00，那么created_at必须大于当前时间，或者等于当前时间？根据问题中的边界说明，边界应为空，所以可能需要排除当前时间点的订单。例如，如果今天是2023-10-05，那么created_at必须大于2023-10-05 00:00:00，这样就不会包括今天的时间点。
-
-不过，MySQL的NOW()函数返回的是当前时间，所以可能需要使用CURRENT_TIMESTAMP来获取当前时间。因此，正确的条件应该是orders.created_at > CURRENT_TIMESTAMP。
-
-不过，可能需要考虑时区的问题，但用户可能希望使用本地时间，所以使用CURRENT_TIMESTAMP是合适的。
-
-因此，查询语句应该是SELECT * FROM orders WHERE created_at > CURRENT_TIMESTAMP;
-
-但需要确认是否要排除当前时间点的订单。例如，如果用户希望的是“今天之后”，那么可能需要created_at > CURRENT_TIMESTAMP，这样就不会包括今天的时间点。而如果用户希望的是“今天之后的订单”，可能需要created_at >= CURRENT_TIMESTAMP，但根据边界说明，边界应为空，所以可能需要排除当前时间点。
-
-不过，可能用户的意思是“今天之后”，即今天之后的订单，所以created_at > CURRENT_TIMESTAMP。这样就能排除今天的时间点。
-
-所以最终的SQL应该是SELECT * FROM orders WHERE created_at > CURRENT_TIMESTAMP;
-[End thinking]
-
-SELECT * FROM orders WHERE created_at > CURRENT_TIMESTAMP;
-
-[ Prompt: 19.4 t/s | Generation: 6.8 t/s ]
+[ Prompt: 69.2 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

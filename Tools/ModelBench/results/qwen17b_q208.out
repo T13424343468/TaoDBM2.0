@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,30 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT TRIM(name) FROM users;
 
-[Start thinking]
-
-好的，我现在需要解决用户的问题，即去掉姓名左边的空格。首先，我得仔细看看用户提供的表结构。用户提到的表是users，其中有一个name字段，类型是VARCHAR(50)。问题是要去掉name字段左边的空格。
-
-那问题来了，用户希望修改数据，但根据提供的表结构，没有看到有更新数据的字段或触发器。通常，修改数据需要使用UPDATE语句，但用户可能希望用某种方式处理数据，比如在查询时处理。不过，用户的问题描述可能有误，因为根据表结构，没有字段是存储姓名的，或者没有相关的字段来处理空格。
-
-不过，用户可能误解了表结构。仔细看表结构，users表中的name字段是VARCHAR(50)，可能存储的是姓名，比如“John Doe”这样的字符串。如果用户想要去掉左边的空格，可能需要在查询时处理，比如使用SUBSTRING或者TRIM函数。但问题在于，用户要求只输出一条SQL，而根据表结构，没有对应的字段来存储姓名，或者没有相关的操作。
-
-或者，用户可能误以为name字段是存储姓名的，但实际上可能有其他字段，比如可能有其他表，但根据提供的表结构，只有users表有name字段。所以，可能用户的问题存在误解，或者需要进一步澄清。但根据用户给出的表结构，我需要根据现有的信息来回答。
-
-假设用户确实需要处理users表中的name字段，去掉左边的空格，那么可能需要使用UPDATE语句。例如，UPDATE users SET name = TRIM(name) WHERE name LIKE '% '; 但这样可能不准确，因为TRIM会去掉两边的空格，而用户想要去掉左边的空格。或者，可能需要使用SUBSTRING函数，比如SUBSTRING(name, 2)。但这样可能无法处理所有情况，比如name字段中有多个空格的情况。
-
-不过，用户的问题可能需要更精确的处理。例如，如果name字段中左边有空格，比如“ John”，那么需要去掉左边的空格，变成“John”。这时候，可以使用SUBSTRING(name, 2)来去掉左边的空格。但需要注意，如果name字段中没有左边空格，或者空格在中间，可能需要不同的处理方式。但根据问题描述，用户可能希望简单地去掉左边的空格，所以可能使用SUBSTRING。
-
-但根据用户的要求，只输出SQL，
-
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 74.0 t/s | Generation: 15.3 t/s ]
 
 
 Exiting...

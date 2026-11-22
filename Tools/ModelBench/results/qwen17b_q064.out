@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,23 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
-
-[Start thinking]
-
-Okay, let's see. The user is asking how many rows are in the users table. The table is called users, and the primary key is id. The question is straightforward, just need to count the number of rows.
-
-So the SQL command to count the rows in a table is SELECT COUNT(*) FROM table_name. Here, the table name is users. So the query should be SELECT COUNT(*) FROM users; That should give the number of rows. I need to make sure there's no other columns involved, just the count. No need for any joins or other tables since the question is just about the users table itself. Alright, that's the correct SQL statement.
-[End thinking]
-
+CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM users;
 
-[ Prompt: 19.4 t/s | Generation: 7.2 t/s ]
+[ Prompt: 66.3 t/s | Generation: 14.6 t/s ]
 
 
 Exiting...

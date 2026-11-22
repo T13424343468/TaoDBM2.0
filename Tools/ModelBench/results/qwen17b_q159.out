@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,35 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+CREATE TABLE order_items (id IN ... (truncated)
+SELECT name || '-' || city FROM users;
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，生成一个SQLite的查询语句，要求用-连接姓名和城市。首先，我得确定需要哪些表的数据。问题涉及到users表的name和city字段，所以需要从users表中获取这些数据。
-
-用户的问题是要将姓名和城市用-连接，所以需要从users表中选出每个用户的name和city，然后将它们组合起来。这里需要注意，可能有多个用户，但问题没有指定特定的用户，所以可能需要使用所有用户的记录。
-
-接下来，我需要构造一个SQL查询。SELECT语句需要选择name和city列，然后用CONCAT或者STRING函数将它们连接起来。在SQLite中，可以使用CONCAT函数或者字符串拼接操作符。例如，CONCAT(name, '-', city)。
-
-然后，我需要确定是否需要分组。如果用户可能有多个条目，但问题可能需要每个用户的姓名和城市组合，所以应该使用GROUP BY，但问题中没有提到分组，可能只需要简单的SELECT。不过，如果用户可能有多个记录，但问题可能需要每个用户的组合，可能需要GROUP BY。但问题中的例子可能只是单个用户，所以可能不需要分组。
-
-不过，问题中的例子可能没有明确说明，所以可能需要使用SELECT name, city，然后用CONCAT连接。例如，SELECT CONCAT(name, '-', city) FROM users; 这样就能得到每个用户的姓名和城市用-连接的结果。
-
-但用户的问题可能希望得到每个用户的姓名和城市组合，所以可能需要将name和city连接起来。因此，正确的SQL应该是SELECT CONCAT(name, '-', city) FROM users; 这样就能满足要求。
-
-检查表结构，users表有id、name、city、created_at，所以没有问题。不需要JOIN其他表，因为问题只涉及users表。
-
-所以最终的SQL应该是SELECT CONCAT(name, '-', city) FROM users;
-[End thinking]
-
-SELECT CONCAT(name, '-', city) FROM users;
-
-[ Prompt: 20.4 t/s | Generation: 6.8 t/s ]
+[ Prompt: 76.5 t/s | Generation: 18.1 t/s ]
 
 
 Exiting...

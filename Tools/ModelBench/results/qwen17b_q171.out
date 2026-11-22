@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,30 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQLite 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY  ... (truncated)
+CREATE TABLE order_items (id IN ... (truncated)
+SELECT name FROM users WHERE name LIKE '%%';
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构生成一个SQLite查询语句。用户的问题是“名字前缀 3 字符”，也就是要查找名字以三个字符开头的用户。表结构中有users表，其中name字段是VARCHAR(50)类型。
-
-首先，我需要确定正确的SQL语法。SELECT语句需要从users表中选择name列，然后使用LIKE操作符来匹配以三个字符开头的名称。LIKE操作符的语法是LIKE 'prefix%'，其中%表示任意字符。所以，正确的查询应该是SELECT name FROM users WHERE name LIKE '___%';
-
-不过，用户要求的是名字前缀3个字符，所以应该用'%'来匹配后面的字符。例如，如果名字是'John'，那么前三个字符是'Joh'，所以正确的条件应该是name LIKE 'Joh%'。但用户的问题可能是指名字的前三个字符，不管后面是什么，所以应该用'%'来匹配后面的字符。不过，这里可能需要更准确的表达。
-
-或者，用户可能希望名字的前三个字符是固定的，比如'John'的前三个字符是'Joh'，但问题描述可能有歧义。但根据常见的理解，用户可能希望名字以三个字符开头，比如'John'，所以正确的条件应该是name LIKE 'Joh%'，但这里可能需要更准确的表达。
-
-不过，用户的问题可能是指名字的前三个字符，不管后面是什么，所以应该用'%'来匹配后面的字符。例如，name LIKE 'Joh%'，其中'Joh'是前三个字符。但如何确定前三个字符呢？可能需要使用SUBSTR函数，但用户的问题可能只是希望直接使用LIKE '___%'，其中三个下划线代表前三个字符。
-
-但根据SQLite的LIKE语法，直接使用'%'来匹配任意字符是正确的。例如，name LIKE 'Joh%'，其中'Joh'是前三个字符。但用户的问题可能希望直接使用'___%'，其中三个下划线代表前三个字符，但实际在SQL中，这可能需要使用SUBSTR函数，比如SUBSTR(name, 1, 3) LIKE '___'。不过，用户的问题可能只是希望直接使用LIKE '___%'，但这样可能无法正确匹配，因为'___%'中的三个下划线可能被解释为三个字符，但实际在SQL中，这可能需要使用SUBSTR。
-
-不过，用户
-
-[ Prompt: 19.5 t/s | Generation: 6.7 t/s ]
+[ Prompt: 64.6 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

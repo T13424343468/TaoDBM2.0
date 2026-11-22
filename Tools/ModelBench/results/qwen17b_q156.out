@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,29 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT GROUP_CONCAT(name SEPARATOR '-') FROM users WHERE city IS NOT NULL;
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，生成一个MySQL查询语句，要求用-连接姓名和城市。首先，我需要确定哪些表涉及用户的信息。用户表是users，里面有name和city字段。问题是要将name和city用-连接，所以需要从users表中获取这两个字段的值。
-
-接下来，我需要构造SQL语句。用户的问题是“用-分隔连接姓名城市”，所以需要选择users表中的name和city列，然后将它们用-连接。这可以通过字符串函数来实现，比如CONCAT函数。例如，SELECT CONCAT(name, '-', city) FROM users; 这样就能把name和city连接起来。
-
-不过，用户可能希望得到的是每个用户的name和city的组合，比如如果用户是张三，北京，那么结果应该是张三-北京。但问题中的“用-分隔连接姓名城市”可能指的是每个记录的name和city字段组合，所以直接连接这两个字段即可。
-
-另外，需要注意表的结构是否正确，比如users表是否有name和city字段，以及它们的数据类型是否匹配。根据提供的表结构，users表确实有name和city，都是VARCHAR类型，所以没问题。
-
-最后，确保只输出SQL语句，不添加任何解释。所以最终的SQL应该是SELECT CONCAT(name, '-', city) FROM users; 或者如果需要每个记录的name和city组合，可能需要使用GROUP BY或者其他，但问题中没有提到分组，所以直接连接即可。
-[End thinking]
-
-SELECT CONCAT(name, '-', city) FROM users;
-
-[ Prompt: 20.3 t/s | Generation: 6.8 t/s ]
+[ Prompt: 76.0 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

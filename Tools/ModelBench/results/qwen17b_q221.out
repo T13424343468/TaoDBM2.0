@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,26 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+DELETE FROM users WHERE name LIKE '% ';
 
-[Start thinking]
-
-好的，我现在需要解决用户的问题，即去掉姓名右边的空格。首先，我得仔细看看用户提供的表结构。用户提到的表是users，其中有一个name字段，类型是VARCHAR(50)。问题是要去掉name右边的空格，但根据表结构，name字段是存储姓名的，可能包含空格，但用户希望处理的是右边的空格，比如可能有末尾的空格。
-
-不过，用户的问题描述可能有些歧义。因为通常来说，如果name字段里有空格，比如“John Doe”，那么去掉右边的空格可能需要使用字符串函数，比如TRIM(RIGHT(name, 1))，但这里可能需要更准确的处理。但根据问题描述，用户可能希望将name字段中的右边空格去掉，比如如果name是“John   Doe”，那么需要去掉末尾的空格。
-
-但问题中提到的是“去掉姓名右边的空格”，而用户可能希望将name字段中的末尾空格删除。这时候，我需要考虑如何用SQL来实现这一点。在PostgreSQL中，TRIM函数可以去掉前导或尾随空格。例如，TRIM(RIGHT(name, 1))可能不太适用，因为TRIM的参数是长度，比如TRIM(RIGHT(name, 1))会去掉右边的1个字符，但如果是末尾的空格，可能需要使用TRIM()来去掉所有空格，或者使用SUBSTRING函数。
-
-不过，用户的问题可能更简单，比如如果name字段中末尾有空格，那么使用TRIM()函数可以去掉所有空格，包括右边的。但问题中说“右边的空格”，可能是指只去掉右边的空格，但TRIM(RIGHT(name, 1))可能不太准确，因为TRIM的参数是长度，比如TRIM(RIGHT(name, 1))会去掉右边的1个字符，如果那个字符是空格的话。但如果是末尾的空格，可能需要使用TRIM()来去掉所有空格，或者使用SUBSTRING。
-
-不过，可能用户的问题更简单，比如直接使用TRIM()来处理name字段，这样可以去掉所有空格，包括右边的。但问题中明确说“右边的空格”，所以可能需要更精确的处理。例如，如果name是“John   Doe”，那么TRIM()会去掉所有空格，包括右边的。
-
-[ Prompt: 19.6 t/s | Generation: 6.7 t/s ]
+[ Prompt: 59.2 t/s | Generation: 16.3 t/s ]
 
 
 Exiting...

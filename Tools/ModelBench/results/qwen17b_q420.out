@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,33 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT NOW();
 
-[Start thinking]
-
-好的，用户问的是“当前时间是什么？”，我需要根据提供的表结构来写一个MySQL查询语句。首先，问题是要获取当前时间，但表结构里没有直接存储时间的字段。不过，用户可能希望得到当前系统的实时时间，而不是数据库中的某个特定时间。
-
-表结构中的created_at是DATETIME类型，但用户的问题是关于当前时间，而不是某个特定记录的创建时间。所以直接查询created_at可能不适用。不过，用户可能希望得到系统当前的时间，而不是某个表中的时间。
-
-但根据问题，用户可能只是想获取当前时间，而不需要任何表数据。这时候，可能需要使用CURRENT_TIMESTAMP或者CURRENT_DATE函数。不过，表结构中没有相关的字段，所以直接查询当前时间可能不需要涉及表数据。
-
-不过，用户要求只输出一条SQL，所以可能需要使用系统函数。例如，SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW(); 这两个函数都可以返回当前时间。但需要确认哪个更合适。通常，NOW()可能更常用，但两者都正确。
-
-不过，用户可能希望得到一个具体的查询语句，所以正确的SQL应该是SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW();。但需要确定哪个更准确。根据MySQL的文档，CURRENT_TIMESTAMP和NOW()是等效的，所以都可以使用。
-
-但用户的问题可能只需要当前时间，而不需要任何表数据，所以直接使用系统函数即可。因此，正确的SQL应该是SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW();。但根据用户的要求，只输出SQL，不需要解释，所以直接写SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW();。不过，可能需要确认哪个更合适。例如，如果用户需要的是当前时间的某个部分，比如日期或时间，但问题只是问当前时间，所以两者都可以。
-
-最终，正确的SQL应该是SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW();。但根据MySQL的语法，两者都可以。不过，可能需要选择其中一个。例如，SELECT NOW(); 更明确，但两者都正确。所以最终输出SELECT CURRENT_TIMESTAMP; 或者 SELECT NOW();。但用户可能希望得到一个具体的查询，所以可能选择其中一个。这里可能需要根据常见用法选择，比如SELECT NOW(); 更常见。
-[End thinking]
-
-SELECT CURRENT_TIMESTAMP;
-
-[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 67.3 t/s | Generation: 14.8 t/s ]
 
 
 Exiting...

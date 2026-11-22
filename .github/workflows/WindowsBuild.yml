@@ -403,8 +403,10 @@ jobs:
             Journal "port-dynamic-cleared"
             Set-ItemProperty -Path $tcp -Name Enabled -Value 1
             Journal "port-enabled-set"
-            Restart-Service -Name 'MSSQL$SQLEXPRESS' -Force
-            Journal "service-restarted"
+            # run 193/194/196 定因链：云机上 SQL 服务重启极慢（380s-20min+ 不等），停起循环三次全败；
+            # 而装完的实例本就 Running 且 /TCPENABLED=1 已生效——决定性旁路：完全不停服务，
+            # 保留静态 1433 注册表配置（下次重启才生效，不影响本次），连通直接走 ERRORLOG 动态端口兜底
+            Journal "skip-restart: use running instance + dynamic-port fallback"
           } catch {
             Journal "port-config-exception: $($_.Exception.GetType().FullName): $($_.Exception.Message)"
             if ($_.InvocationInfo) { Journal "at $($_.InvocationInfo.PositionMessage)" }
@@ -412,32 +414,33 @@ jobs:
           }
           Start-Sleep -Seconds 10
           Write-Host "[MSSQL] static TCP 1433 configured; service restarted"
-          # 连通自愈：先试 1433；不通则从 ERRORLOG 解析动态端口重试，最终端口落 GITHUB_ENV 供矩阵步骤用
+          # run 197 定因：SQL 服务状态 Running 后仍需 10-20min 才真正监听（master 恢复极慢）
+          # 连通环改为长等待：每 10s 试连一次，失败即重解析 ERRORLOG 动态端口，总预算约 22min
           $mssqlPort = 1433
           $okConn = $false
           $connErr = ''
-          for ($round = 0; $round -lt 2 -and -not $okConn; $round++) {
+          $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+          for ($ci = 0; $ci -lt 132 -and -not $okConn; $ci++) {
             $cs = "Server=localhost,$mssqlPort;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
-            for ($ci = 0; $ci -lt 24; $ci++) {
-              try {
-                $cc = New-Object System.Data.SqlClient.SqlConnection $cs
-                $cc.Open()
-                $cVer = $cc.CreateCommand()
-                $cVer.CommandText = 'SELECT @@VERSION'
-                Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
-                $cc.Close()
-                $okConn = $true
-                break
-              } catch { $connErr = $_.Exception.Message; if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }; Start-Sleep -Seconds 5 }
-            }
-            if (-not $okConn -and $round -eq 0) {
-              # 从 ERRORLOG 解析实际监听端口（动态端口兜底）
-              $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+            try {
+              $cc = New-Object System.Data.SqlClient.SqlConnection $cs
+              $cc.Open()
+              $cVer = $cc.CreateCommand()
+              $cVer.CommandText = 'SELECT @@VERSION'
+              Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
+              $cc.Close()
+              $okConn = $true
+              break
+            } catch {
+              $connErr = $_.Exception.Message
+              if ($ci -eq 0) { Journal "connect-first-fail port=$mssqlPort : $connErr" }
+              Start-Sleep -Seconds 10
               if ($logDir) {
-                $listen = Select-String -Path $logDir.FullName -Pattern "'(\d{4,5})'" -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Where-Object { $_ -ne '1433' } | Select-Object -First 1
-                if ($listen) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
-                else { Journal "errorlog-no-port; first lines:"; Get-Content $logDir.FullName -TotalCount 40 -ErrorAction SilentlyContinue | Add-Content "$env:GITHUB_WORKSPACE\mssql-phases.txt" }
-              } else { Journal "errorlog-not-found" }
+                # run 198 fix: old regex required quoted digits, but ERRORLOG format is [ 'any' <ipv4> port ] - quoted group is 'any', fallback never matched
+                $listen = Select-String -Path $logDir.FullName -Pattern 'Server is listening on.*?(\d{4,5})' -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -Last 1
+                if ($listen -and [int]$listen -ne $mssqlPort) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
+              }
+              if ($ci % 12 -eq 0) { Journal "connect-poll: attempt=$ci port=$mssqlPort" }
             }
           }
           if (-not $okConn) { Journal "tcp-connect-failed: $connErr"; Write-Host "::error::sqlserver tcp connectivity failed: $connErr"; exit 1 }
@@ -451,7 +454,9 @@ jobs:
           python Scripts/gen-testdb.py --out-dir testdb --engine mssql --db-name taodbmui
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mssql failed"; exit 1 }
           # 免 sqlcmd：.NET SqlClient 按 GO 分批执行（ui-smoke-servers 已验证口径）
-          $csLoad = "Server=localhost,1433;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
+          # run 199 fix: connect loop may fall back to dynamic port (MSSQL_PORT env); load step must not hardcode 1433
+          $loadPort = if ($env:MSSQL_PORT) { [int]$env:MSSQL_PORT } else { 1433 }
+          $csLoad = "Server=localhost,$loadPort;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
           $connL = New-Object System.Data.SqlClient.SqlConnection $csLoad
           $connL.Open()
           $cmdL = $connL.CreateCommand()
@@ -737,8 +742,13 @@ jobs:
       matrix:
         seg:
           - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
-          - { name: seg2, skip: "S06,S07,S08,S09,S17,S18,S19" }              # S01-S05 前缀 + S10-S16 SQL真执行
-          - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S15,S16" }          # S01-S05+S10-S12 前缀 + S17-S19 导出与尾页
+          - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
+          - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }        # S01-S05+S10-S12 前缀 + S15-S16
+          # #213 定谳: 导出步依赖查询后的编辑器状态, 独立段必须带 S10-S12 前置, 否则 work-csv 按钮不存在
+          # #219 定谳: seg4 十一步走查超免费 runner ~6min 回收窗, S18 起步即被掐;
+          # 拆 seg4a(导出)/seg4b(尾页), 每段压回窗口内; S18/S19 为 soft-page 不依赖编辑器状态
+          - { name: seg4a, skip: "S06,S07,S08,S09,S13,S14,S15,S16,S18,S19" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出
+          - { name: seg4b, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17" }  # S01-S05 前缀 + S18-S19 尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -875,292 +885,6 @@ jobs:
             ui-smoke.png
             install-smoke.log
 
-  ui-smoke-retry:
-    # 走查自动重试：#79/#80 连续遭零红机器回收（步 6 被 cancel、always 收尾步全 skipped=机器进程死亡），
-    # 同一修复代码需在新鲜机器上完整走查定谳；ui-smoke 失败或被取消时本作业原样重跑一遍
-    needs: [msi, ui-smoke]
-    if: failure() || cancelled()
-    # 真机实况截图：装 MSI -> 真启动 TaoDBM -> 截真实窗口 -> 推公开分支供查看
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout (walk script from source)
-        uses: actions/checkout@v4
-
-      - name: Download MSI artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: taodbm-phase2-msi
-
-      - name: Silent install
-        shell: pwsh
-        run: |
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { Write-Host "[TREE] $($_.FullName)" }
-          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
-          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
-          $msi = $found.FullName
-          Write-Host "[MSI] $msi size=$($found.Length) bytes"
-          $ok = $false
-          for ($try = 1; $try -le 3; $try++) {
-            try {
-              $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
-            } catch {
-              Write-Host "::error::try$try Start-Process msiexec threw: $($_.Exception.Message)"
-              "### install try$try threw: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
-              if ($try -lt 3) { Start-Sleep -Seconds 20 }
-              continue
-            }
-            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
-            if ($p.ExitCode -eq 0) { $ok = $true; break }
-            # 失败现场双通道：注解 + 匿名可读摘要（含退出码与日志尾）
-            "### install try$try exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 80 -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { $t="try$try $_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
-            if ($try -lt 3) { Start-Sleep -Seconds 20 }
-          }
-          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
-          # 程序文件定位三路兜底：卸载表 DisplayIcon(去 ,0) -> 注册表 InstallDir -> 常规安装位置递归搜
-          $exe = $null
-          $cand = @()
-          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
-          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
-          $regdir = $null
-          try { $regdir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/') } catch { $regdir = $null }
-          if ($regdir) { $cand += (Join-Path $regdir 'TaoDBM.exe') }
-          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
-          }
-          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
-          $diag = "regdir=$regdir`ncandidates=$($cand -join '; ')"
-          if (-not $exe) {
-            "### exe missing after install" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $diag | Add-Content $env:GITHUB_STEP_SUMMARY
-            foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-              if (Test-Path $root) {
-                "#### tree $root" | Add-Content $env:GITHUB_STEP_SUMMARY
-                Get-ChildItem -Recurse -Depth 1 $root -ErrorAction SilentlyContinue | Select-Object -First 60 | ForEach-Object { $_.FullName | Add-Content $env:GITHUB_STEP_SUMMARY }
-              } else { "root absent: $root" | Add-Content $env:GITHUB_STEP_SUMMARY }
-            }
-            Write-Host "::error::TaoDBM.exe not found; diag=$diag"
-            exit 1
-          }
-          Write-Host "[OK] exe at $exe"
-          "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
-
-      - name: Generate real SQLite test DB (dirty data + expected values)
-        shell: pwsh
-        run: |
-          python Scripts/gen-testdb.py --out-dir testdb
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb failed"; exit 1 }
-          "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
-          "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
-
-      - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (retry)
-        shell: pwsh
-        env:
-          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-retry
-        run: |
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
-
-      - name: Uninstall (restore clean state)
-        if: always()
-        shell: pwsh
-        run: |
-          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
-          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
-          if ($arp) {
-            $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru
-            Write-Host "[UNINSTALL] exit=$($p.ExitCode)"
-          }
-
-      - name: Push screenshot to public branch
-        if: always()
-        shell: pwsh
-        run: |
-          git config --global user.email "ci@taodbm.local"
-          git config --global user.name "TaoDBM CI"
-          New-Item -ItemType Directory -Force ui-repo | Out-Null
-          Set-Location ui-repo
-          git init | Out-Null
-          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git fetch --depth 1 origin ui-smoke-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
-          if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
-          git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
-          git push origin ui-smoke-latest --force
-          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
-
-      - name: Upload UI smoke files (always, 供无凭据侧读取现场)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: taodbm-ui-smoke-retry
-          path: |
-            shot-01-start.png
-            shot-02-connect.png
-            shot-03-theme.png
-            shot-04-about.png
-            ui-coverage.txt
-            ui-walk-report.txt
-            ui-walk-log.txt
-            ui-smoke.png
-            install-smoke.log
-
-  ui-smoke-retry2:
-    # 走查自动重试：#79/#80 连续遭零红机器回收（步 6 被 cancel、always 收尾步全 skipped=机器进程死亡），
-    # 同一修复代码需在新鲜机器上完整走查定谳；ui-smoke 失败或被取消时本作业原样重跑一遍
-    needs: [msi, ui-smoke-retry]
-    if: failure() || cancelled()
-    # 真机实况截图：装 MSI -> 真启动 TaoDBM -> 截真实窗口 -> 推公开分支供查看
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout (walk script from source)
-        uses: actions/checkout@v4
-
-      - name: Download MSI artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: taodbm-phase2-msi
-
-      - name: Silent install
-        shell: pwsh
-        run: |
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { Write-Host "[TREE] $($_.FullName)" }
-          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
-          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
-          $msi = $found.FullName
-          Write-Host "[MSI] $msi size=$($found.Length) bytes"
-          $ok = $false
-          for ($try = 1; $try -le 3; $try++) {
-            try {
-              $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
-            } catch {
-              Write-Host "::error::try$try Start-Process msiexec threw: $($_.Exception.Message)"
-              "### install try$try threw: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
-              if ($try -lt 3) { Start-Sleep -Seconds 20 }
-              continue
-            }
-            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
-            if ($p.ExitCode -eq 0) { $ok = $true; break }
-            # 失败现场双通道：注解 + 匿名可读摘要（含退出码与日志尾）
-            "### install try$try exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 80 -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { $t="try$try $_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
-            if ($try -lt 3) { Start-Sleep -Seconds 20 }
-          }
-          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
-          # 程序文件定位三路兜底：卸载表 DisplayIcon(去 ,0) -> 注册表 InstallDir -> 常规安装位置递归搜
-          $exe = $null
-          $cand = @()
-          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
-          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
-          $regdir = $null
-          try { $regdir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/') } catch { $regdir = $null }
-          if ($regdir) { $cand += (Join-Path $regdir 'TaoDBM.exe') }
-          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
-          }
-          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
-          $diag = "regdir=$regdir`ncandidates=$($cand -join '; ')"
-          if (-not $exe) {
-            "### exe missing after install" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $diag | Add-Content $env:GITHUB_STEP_SUMMARY
-            foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-              if (Test-Path $root) {
-                "#### tree $root" | Add-Content $env:GITHUB_STEP_SUMMARY
-                Get-ChildItem -Recurse -Depth 1 $root -ErrorAction SilentlyContinue | Select-Object -First 60 | ForEach-Object { $_.FullName | Add-Content $env:GITHUB_STEP_SUMMARY }
-              } else { "root absent: $root" | Add-Content $env:GITHUB_STEP_SUMMARY }
-            }
-            Write-Host "::error::TaoDBM.exe not found; diag=$diag"
-            exit 1
-          }
-          Write-Host "[OK] exe at $exe"
-          "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
-
-      - name: Generate real SQLite test DB (dirty data + expected values)
-        shell: pwsh
-        run: |
-          python Scripts/gen-testdb.py --out-dir testdb
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb failed"; exit 1 }
-          "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
-          "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
-
-      - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (retry2)
-        shell: pwsh
-        env:
-          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-retry2
-        run: |
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
-
-      - name: Uninstall (restore clean state)
-        if: always()
-        shell: pwsh
-        run: |
-          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
-          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
-          if ($arp) {
-            $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru
-            Write-Host "[UNINSTALL] exit=$($p.ExitCode)"
-          }
-
-      - name: Push screenshot to public branch
-        if: always()
-        shell: pwsh
-        run: |
-          git config --global user.email "ci@taodbm.local"
-          git config --global user.name "TaoDBM CI"
-          New-Item -ItemType Directory -Force ui-repo | Out-Null
-          Set-Location ui-repo
-          git init | Out-Null
-          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git fetch --depth 1 origin ui-smoke-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
-          if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
-          git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
-          git push origin ui-smoke-latest --force
-          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
-
-      - name: Upload UI smoke files (always, 供无凭据侧读取现场)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: taodbm-ui-smoke-retry2
-          path: |
-            shot-01-start.png
-            shot-02-connect.png
-            shot-03-theme.png
-            shot-04-about.png
-            ui-coverage.txt
-            ui-walk-report.txt
-            ui-walk-log.txt
-            ui-smoke.png
-            install-smoke.log
-
   ui-smoke-servers:
     # 真库并行走查·服务器双库（2026-11-19 老板令：抓紧真库测试）：MySQL/SQL Server 各占一台免费 runner，
     # 同一份 SQLite 数据口径（同 5000/1200 行同期望值），各库本机装机、真连接真执行真对比；
@@ -1172,6 +896,13 @@ jobs:
       fail-fast: false
       matrix:
         db: [mysql, mssql]
+        seg:
+          - { name: a, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
+          - { name: b, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }      # S01-S05 前缀 + S10-S14 SQL真执行
+          - { name: c1, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }     # S01-S05+S10-S12 前缀 + S15-S16
+          # #219 定谳: c2 十一步走查超 ~6min 回收窗, 双库同死; 拆 c2a(导出)/c2b(尾页)
+          - { name: c2a, skip: "S06,S07,S08,S09,S13,S14,S15,S16,S18,S19" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出
+          - { name: c2b, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17" }  # S01-S05 前缀 + S18-S19 尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1329,25 +1060,50 @@ jobs:
           Write-Host "[MSSQL] service running; connectivity check (.NET SqlClient, sqlcmd-free)"
           # #124 定谳：安装 Passed、服务 Running，但 SQLENGINE 特性不含 Client Tools，sqlcmd 大概率缺失；
           # 连库改走 .NET SqlClient（Shared Memory，无外部依赖），失败时把真实异常与 sqlcmd 有无一并落证据
-          $csInst = "Server=.\SQLEXPRESS;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
+          # run 200 定因：shared memory sa 登录连续多轮 18456 Login failed（矩阵作业同安装参数走 TCP 动态端口全绿）
+          # 连通检查改矩阵同款：ERRORLOG 动态端口 + TCP 直连；仍 18456 时用 trusted connection 自愈 sa
+          $logDir = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\MSSQL*.SQLEXPRESS\MSSQL\Log\ERRORLOG' -ErrorAction SilentlyContinue | Select-Object -First 1
+          $mssqlPort = 1433
           $okConn = $false
           $connErr = ''
-          for ($ci = 0; $ci -lt 36; $ci++) {
+          for ($ci = 0; $ci -lt 36 -and -not $okConn; $ci++) {
+            $csInst = "Server=localhost,$mssqlPort;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
             try {
               $cc = New-Object System.Data.SqlClient.SqlConnection $csInst
               $cc.Open()
               $cVer = $cc.CreateCommand()
               $cVer.CommandText = 'SELECT @@VERSION'
-              Write-Host ("[MSSQL] connected: " + $cVer.ExecuteScalar())
+              Write-Host ("[MSSQL] connected on port ${mssqlPort}: " + $cVer.ExecuteScalar())
               $cc.Close()
               $okConn = $true
               break
             } catch {
               $connErr = $_.Exception.Message
-              Write-Host "[MSSQL] connect attempt $ci failed: $connErr"
+              Write-Host "[MSSQL] tcp attempt $ci port=$mssqlPort failed: $connErr"
               Start-Sleep -Seconds 5
+              if ($logDir) {
+                $listen = Select-String -Path $logDir.FullName -Pattern 'Server is listening on.*?(\d{4,5})' -ErrorAction SilentlyContinue | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -Last 1
+                if ($listen -and [int]$listen -ne $mssqlPort) { $mssqlPort = [int]$listen; Journal "dynamic-port-detected=$mssqlPort" }
+              }
             }
           }
+          if (-not $okConn) {
+            # 18456 自愈：trusted connection（/ADDCURRENTUSERASSQLADMIN=1 已授本机用户 sysadmin）重置 sa
+            try {
+              $cTr = New-Object System.Data.SqlClient.SqlConnection "Server=.\SQLEXPRESS;Integrated Security=True;Connect Timeout=5"
+              $cTr.Open()
+              $ca = $cTr.CreateCommand()
+              $ca.CommandText = "ALTER LOGIN sa ENABLE; ALTER LOGIN sa WITH PASSWORD = '$saPass';"
+              $ca.ExecuteNonQuery() | Out-Null
+              $cTr.Close()
+              Journal "sa-reset-via-trusted-connection"
+              $cc2 = New-Object System.Data.SqlClient.SqlConnection "Server=.\SQLEXPRESS;User ID=sa;Password=$saPass;Connect Timeout=5;Encrypt=False;TrustServerCertificate=True"
+              $cc2.Open(); $cc2.Close()
+              $okConn = $true
+              Write-Host "[MSSQL] sa login healed via trusted connection"
+            } catch { $connErr = "$connErr | trusted-reset: $($_.Exception.Message)" }
+          }
+          "MSSQL_PORT=$mssqlPort" | Add-Content $env:GITHUB_ENV
           if (-not $okConn) {
             $evConn = "$env:GITHUB_WORKSPACE\mssql-evidence.txt"
             Add-Content $evConn -Value "sqlclient-connect-failed: $connErr"
@@ -1412,6 +1168,8 @@ jobs:
           git commit --allow-empty -m "mssql postmortem run ${{ github.run_id }}" | Out-Null
           git push origin ui-walk-mssql-latest --force
           Write-Host "[POST-MORTEM] pushed to ui-walk-mssql-latest"
+          # 取证步无闸门权（#206 定因：push 竞争失败把后续走查步全带 skip）
+          exit 0
 
       - name: Silent install
         shell: pwsh
@@ -1472,7 +1230,9 @@ jobs:
           python Scripts/gen-testdb.py --out-dir testdb --engine mssql --db-name taodbmui
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb mssql failed"; exit 1 }
           # 免 sqlcmd：.NET SqlClient 按 GO 分批执行（sqlcmd 属 Client Tools，SQLENGINE 不带）
-          $csLoad = "Server=.\SQLEXPRESS;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
+          # run 200 fix: connect over TCP with dynamic port (same as matrix), shared memory sa path unreliable
+          $loadPort = if ($env:MSSQL_PORT) { [int]$env:MSSQL_PORT } else { 1433 }
+          $csLoad = "Server=localhost,$loadPort;User ID=sa;Password=$env:SAPASS;Connect Timeout=10;Encrypt=False;TrustServerCertificate=True"
           $connL = New-Object System.Data.SqlClient.SqlConnection $csLoad
           $connL.Open()
           $cmdL = $connL.CreateCommand()
@@ -1495,14 +1255,18 @@ jobs:
         shell: pwsh
         env:
           # #154 定谳：mysql/mssql 并行走查共用取证分支会互相覆盖 MSSQL 现场，按库独立分支
-          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.db }}
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-${{ matrix.db }}-${{ matrix.seg.name }}
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
           $engine = "${{ matrix.db }}" -eq 'mysql' ? 'MySQL' : 'SQL Server'
           $dbuser = "${{ matrix.db }}" -eq 'mysql' ? 'root' : 'sa'
           $dbpass = "${{ matrix.db }}" -eq 'mysql' ? '' : $env:SAPASS
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName localhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui
+          # run 201 定因：SQLEXPRESS 无静态 1433，App 用裸 localhost 拨 1433 超时；实例实际监听动态端口（MSSQL_PORT）
+          # host 字段自由文本直进连接串，"localhost,<port>" 由 SqlClient 原生解析，免服务重启
+          $dbhost = "${{ matrix.db }}" -eq 'mysql' ? 'localhost' : "localhost,$($env:MSSQL_PORT)"
+          Write-Host "[WALK] dbhost=$dbhost"
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-${{ matrix.db }}.json -HostName $dbhost -DbUser $dbuser -DbPass $dbpass -DbName taodbmui -SkipIds "${{ matrix.seg.skip }}"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed (${{ matrix.db }})"; exit 1 }
 
       - name: Push evidence to public branch
@@ -1515,7 +1279,7 @@ jobs:
           Set-Location ui-repo
           git init | Out-Null
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          $branch = "ui-walk-${{ matrix.db }}-latest"
+          $branch = "ui-walk-${{ matrix.db }}-${{ matrix.seg.name }}-latest"
           git fetch --depth 1 origin $branch 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B $branch FETCH_HEAD | Out-Null } else { git checkout --orphan $branch | Out-Null; git rm -rf . | Out-Null }
           Copy-Item mssql-evidence.txt -Force -ErrorAction SilentlyContinue
@@ -1527,28 +1291,61 @@ jobs:
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
           git add -A 2>$null
           git commit --allow-empty -m "ui-walk ${{ matrix.db }} run ${{ github.run_id }}" | Out-Null
-          git push origin $branch --force
+          git push origin $branch --force 2>&1 | Out-Host
           Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/$branch/ui-walk-log.txt"
+          # 取证推送失败不回传红（走查步才是硬闸）
+          exit 0
 
       - name: Upload UI smoke files (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: taodbm-ui-smoke-${{ matrix.db }}
+          name: taodbm-ui-smoke-${{ matrix.db }}-${{ matrix.seg.name }}
           path: |
             ui-coverage.txt
             ui-walk-report.txt
             ui-walk-log.txt
             install-smoke.log
 
-  ui-smoke-tail:
-    # 走查自动重试：#79/#80 连续遭零红机器回收（步 6 被 cancel、always 收尾步全 skipped=机器进程死亡），
-    # 同一修复代码需在新鲜机器上完整走查定谳；ui-smoke 失败或被取消时本作业原样重跑一遍
-    needs: [msi, ui-smoke-retry2]
-    if: failure() || cancelled()
-    # 真机实况截图：装 MSI -> 真启动 TaoDBM -> 截真实窗口 -> 推公开分支供查看
+  kill-restart-drill:
+    # R2 进程级 kill/重启演练（2026-11-21 盲区补齐令）：seed 进程落状态后强杀，verify 新进程回读对账。
+    # 独立短作业（Linux 便宜快），不占 Windows 真机额度；全量 LogicTest 里同批新增 INJ-* 引擎侧半场。
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build LogicTest
+        run: dotnet build Tests/TaoDBM.LogicTest -c Release -warnaserror --no-incremental
+
+      - name: Run kill/restart drill
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          pwsh -NoProfile -File Scripts/kill-restart-drill.ps1
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::kill/restart drill failed"; exit $LASTEXITCODE }
+
+  ui-smoke-newuser:
+    # R10 新用户全流程走查（2026-11-21 盲区补齐令）：清空用户配置模拟全新安装，
+    # 走 ui-walk-plan-newuser.json（首次启动→建连接→浏览→查询→导出），三段拆分压进免费 runner 回收窗口。
     runs-on: windows-latest
     timeout-minutes: 20
+    needs: msi
+    strategy:
+      fail-fast: false
+      matrix:
+        seg:
+          - { name: seg1, skip: "N09,N10,N11,N12,N13,N14,N15" }   # N01-N08 全新安装+建连接+对象树
+          # #213 定谳：seg2 跳过 N07/N08（展开连接/库）却跑 N09 查表——依赖链断，表永不渲染（treetxt 证据：树里只有连接节点）。
+          # 重拆为四段，每段自含前置（N01-N06 建连接必跑），段内步数≤10 与已绿段同量级：
+          - { name: seg2, skip: "N10,N11,N12,N13,N14,N15" }       # N01-N09 建连接+展开+真实表清单
+          - { name: seg3, skip: "N07,N08,N09,N14,N15" }           # N01-N06 前缀 + N10-N13 查询链
+          - { name: seg4, skip: "N07,N08,N09,N13,N15" }           # N01-N06 前缀 + N10-N12 编辑器 + N14-N15 导出与尾页
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4
@@ -1562,60 +1359,20 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName | ForEach-Object { Write-Host "[TREE] $($_.FullName)" }
           $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
           if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
-          $msi = $found.FullName
-          Write-Host "[MSI] $msi size=$($found.Length) bytes"
-          $ok = $false
-          for ($try = 1; $try -le 3; $try++) {
-            try {
-              $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-smoke.log" -Wait -PassThru
-            } catch {
-              Write-Host "::error::try$try Start-Process msiexec threw: $($_.Exception.Message)"
-              "### install try$try threw: $($_.Exception.Message)" | Add-Content $env:GITHUB_STEP_SUMMARY
-              if ($try -lt 3) { Start-Sleep -Seconds 20 }
-              continue
-            }
-            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
-            if ($p.ExitCode -eq 0) { $ok = $true; break }
-            # 失败现场双通道：注解 + 匿名可读摘要（含退出码与日志尾）
-            "### install try$try exit=$($p.ExitCode)" | Add-Content $env:GITHUB_STEP_SUMMARY
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 80 -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content install-smoke.log -Tail 40 -ErrorAction SilentlyContinue | ForEach-Object { $t="try$try $_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
-            if ($try -lt 3) { Start-Sleep -Seconds 20 }
+          $p = Start-Process msiexec -ArgumentList "/i","`"$($found.FullName)`"","/qn","/norestart" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::silent install failed exit=$($p.ExitCode)"; exit 1 }
+
+      - name: Wipe user profile (simulate brand-new install)
+        shell: pwsh
+        run: |
+          # R10 前提：新用户视角。两处 Tao 数据目录全清（D 盘探测位 + LOCALAPPDATA 回退位），
+          # 连接/收藏/标签页/主题/历史/窗口状态全部从零开始。
+          foreach ($root in @('D:\TaoDBMData\TaoDBM', (Join-Path $env:LOCALAPPDATA 'TaoDBM'))) {
+            if (Test-Path $root) { Remove-Item -Recurse -Force $root; Write-Host "[WIPE] $root" }
           }
-          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
-          # 程序文件定位三路兜底：卸载表 DisplayIcon(去 ,0) -> 注册表 InstallDir -> 常规安装位置递归搜
-          $exe = $null
-          $cand = @()
-          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
-          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
-          $regdir = $null
-          try { $regdir = ((Get-ItemProperty HKLM:\Software\TaoDBM -ErrorAction Stop).InstallDir).TrimEnd('\','/') } catch { $regdir = $null }
-          if ($regdir) { $cand += (Join-Path $regdir 'TaoDBM.exe') }
-          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
-          }
-          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
-          $diag = "regdir=$regdir`ncandidates=$($cand -join '; ')"
-          if (-not $exe) {
-            "### exe missing after install" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $diag | Add-Content $env:GITHUB_STEP_SUMMARY
-            foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
-              if (Test-Path $root) {
-                "#### tree $root" | Add-Content $env:GITHUB_STEP_SUMMARY
-                Get-ChildItem -Recurse -Depth 1 $root -ErrorAction SilentlyContinue | Select-Object -First 60 | ForEach-Object { $_.FullName | Add-Content $env:GITHUB_STEP_SUMMARY }
-              } else { "root absent: $root" | Add-Content $env:GITHUB_STEP_SUMMARY }
-            }
-            Write-Host "::error::TaoDBM.exe not found; diag=$diag"
-            exit 1
-          }
-          Write-Host "[OK] exe at $exe"
-          "exe found: $exe`n$diag" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
+          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
 
       - name: Generate real SQLite test DB (dirty data + expected values)
         shell: pwsh
@@ -1625,15 +1382,20 @@ jobs:
           "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
           "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
 
-      - name: Launch and walk real UI (v3.13 real-db, checklist-driven) (tail, skip verdicted S12-S16)
+      - name: Launch and walk as first-time user
         shell: pwsh
         env:
-          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-tail
+          WALK_EVIDENCE_BRANCH: ui-smoke-evidence-newuser-${{ matrix.seg.name }}
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
-          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-sqlite.json -SkipIds "S12,S13,S14,S15,S16"
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::ui-walk hard gate failed"; exit 1 }
+          $exe = $null
+          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+            if (Test-Path $root) { $exe = Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1; break }
+          }
+          if (-not $exe) { Write-Host "::error::TaoDBM.exe not found after install"; exit 1 }
+          Write-Host "[OK] exe at $exe"
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-newuser.json -SkipIds "${{ matrix.seg.skip }}"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::newuser walk hard gate failed"; exit 1 }
 
       - name: Uninstall (restore clean state)
         if: always()
@@ -1641,45 +1403,15 @@ jobs:
         run: |
           Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
           $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
-          if ($arp) {
-            $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru
-            Write-Host "[UNINSTALL] exit=$($p.ExitCode)"
-          }
+          if ($arp) { $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru; Write-Host "[UNINSTALL] exit=$($p.ExitCode)" }
 
-      - name: Push screenshot to public branch
-        if: always()
-        shell: pwsh
-        run: |
-          git config --global user.email "ci@taodbm.local"
-          git config --global user.name "TaoDBM CI"
-          New-Item -ItemType Directory -Force ui-repo | Out-Null
-          Set-Location ui-repo
-          git init | Out-Null
-          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git fetch --depth 1 origin ui-smoke-latest 2>$null
-          if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
-          git add shot-*.png ui-coverage.txt ui-walk-report.txt ui-walk-log.txt 2>$null
-          if (Test-Path ..\ui-smoke.png) { Copy-Item ..\ui-smoke.png -Force; git add ui-smoke.png }
-          git commit -m "ui-smoke walk shots run ${{ github.run_id }}" | Out-Null
-          git push origin ui-smoke-latest --force
-          Write-Host "[PUSHED] raw URL: https://raw.githubusercontent.com/${{ github.repository }}/ui-smoke-latest/ui-smoke.png"
-
-      - name: Upload UI smoke files (always, 供无凭据侧读取现场)
+      - name: Upload newuser walk files (always, 供无凭据侧读取现场)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: taodbm-ui-smoke-tail
+          name: taodbm-newuser-walk-${{ matrix.seg.name }}
           path: |
-            shot-01-start.png
-            shot-02-connect.png
-            shot-03-theme.png
-            shot-04-about.png
+            shot-n*.png
             ui-coverage.txt
             ui-walk-report.txt
             ui-walk-log.txt
-            ui-smoke.png
-            install-smoke.log

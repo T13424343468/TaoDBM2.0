@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,34 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT jsonb_typeof(product.name) AS json_type FROM products;
 
-[Start thinking]
-
-好的，用户的问题是关于如何从PostgreSQL的JSONB字段中提取值，并且只输出一条SQL语句。首先，我需要理解用户的需求。他们可能有一个表包含JSONB字段，比如在orders表中，可能有一个jsonb字段叫做details，里面存储了各种信息。用户想要查询这个字段中的某个特定值，比如name或者city。
-
-接下来，我需要确定表结构。根据提供的表结构，orders表有一个details字段，但用户提到的是JSON字段取值，可能是指从某个表的JSONB字段中提取数据。不过用户没有具体说明是哪个表，所以可能需要假设一个例子。
-
-假设用户有一个orders表，其中有一个jsonb字段，比如details，里面包含city和name等字段。他们想查询这些字段的值。这时候，正确的SQL应该是SELECT jsonb_field FROM orders WHERE ...，但具体字段名需要根据实际表结构来定。
-
-不过用户的问题中没有给出具体的表名和字段名，所以可能需要使用占位符或者假设。例如，假设有一个orders表，其中有一个jsonb字段叫details，用户想查询其中的city值。这时候SQL应该是SELECT details::text FROM orders WHERE ...，但用户可能希望直接提取JSONB字段的某个键值，比如name。
-
-但用户的问题中提到的是“JSON 字段取值”，可能是指从某个表的JSONB字段中提取特定的值，比如name或者city。因此，正确的SQL应该是SELECT jsonb_field FROM table_name WHERE ...，但需要具体字段名。不过用户可能希望有一个通用的查询，比如从orders表的details字段中提取name。
-
-不过用户可能没有给出具体的表和字段，所以可能需要使用占位符，比如SELECT * FROM orders.jsonb_field WHERE ...，但根据问题描述，用户可能希望有一个具体的SQL语句，比如SELECT name FROM orders.jsonb_field WHERE ...。
-
-不过根据用户的问题，可能他们有一个具体的表和字段，但问题中没有给出，所以可能需要假设一个例子。例如，假设有一个orders表，其中有一个jsonb字段叫details，里面包含city和name。用户想查询city的值，那么SQL应该是SELECT details->'city' FROM orders WHERE ...。
-
-但用户的问题可能更简单，比如直接查询JSONB字段的某个键值，比如name。因此，正确的SQL可能是SELECT name FROM orders.jsonb_field WHERE ...，但需要确认字段名是否正确。
-
-不过用户可能
-
-[ Prompt: 19.6 t/s | Generation: 6.6 t/s ]
+[ Prompt: 69.3 t/s | Generation: 14.4 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,29 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT power(price, 3) AS powered_price FROM products;
 
-[Start thinking]
-
-好的，我需要根据用户的问题和表结构写出一个PostgreSQL的SQL查询，要求是计算价格的三次方。首先，用户提到的“价格求幂3次方”应该是指产品表中的price列，对每个产品的价格进行三次方运算。
-
-首先，我需要确定数据的位置。价格在products表的price列，所以需要从products表中获取price值。然后，需要计算这个值的三次方。在PostgreSQL中，可以使用POWER函数，即POWER(price, 3)。
-
-接下来，我需要构造SQL语句。SELECT POWER(price, 3) FROM products; 这样就能得到每个产品的价格三次方。不过，用户可能希望得到结果，但问题中没有提到需要将结果存储到某个表中，所以可能只需要查询即可。
-
-但要注意，用户的问题可能希望将结果用于其他操作，比如插入到另一个表中，但根据问题描述，只输出一条SQL，所以不需要考虑其他部分。因此，正确的SQL应该是选择products表中的price列，计算三次方。
-
-检查表结构，确认price是DECIMAL(10,2)，所以没有问题。POWER函数在PostgreSQL中是可用的，所以没有问题。因此，最终的SQL应该是SELECT POWER(price, 3) FROM products;
-[End thinking]
-
-SELECT POWER(price, 3) FROM products;
-
-[ Prompt: 19.5 t/s | Generation: 6.5 t/s ]
+[ Prompt: 66.0 t/s | Generation: 13.0 t/s ]
 
 
 Exiting...

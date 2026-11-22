@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,42 +24,20 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+CREATE OR REPLACE FUNCTION get_users_by_city(city VARCHAR(50)) RETURNS SETOF RECORDS AS $$
+SELECT id, name, city, created_at
+FROM users
+WHERE city = $1;
+$$ LANGUAGE sql;
 
-[Start thinking]
-
-好的，我需要帮用户创建一个返回表的函数，按城市查用户。首先，用户提到的表结构有users表，里面有id、name、city和created_at。问题是要按城市查询用户，返回的结果应该是一个表，所以需要创建一个函数，返回一个表。
-
-首先，我得确定函数的名称和参数。用户可能希望函数名是get_users_by_city，参数是city。然后，函数需要从users表中筛选出city等于传入参数的记录，并返回这些记录作为表。
-
-接下来，PostgreSQL的函数创建语法是CREATE OR FUNCTION，然后是函数名，参数类型，然后是RETURN类型。这里用户要求返回表，所以RETURN类型应该是users表的类型。不过PostgreSQL中函数返回表的语法可能需要使用RETURNING子句，或者使用CTE（Common Table Expression）来返回结果。
-
-不过根据用户的要求，只需要输出SQL，不需要解释。所以需要构造一个CREATE FUNCTION的语句，返回一个表。正确的语法应该是CREATE OR FUNCTION get_users_by_city(city VARCHAR) RETURNS TABLE (id INT, name VARCHAR, city VARCHAR) AS $$ SELECT * FROM users WHERE city = $1; $$ LANGUAGE SQL;
-
-不过可能需要使用RETURNING子句，因为返回的是一个表。所以正确的SQL应该是：
-
-CREATE OR FUNCTION get_users_by_city(city VARCHAR) RETURNS TABLE (id INT, name VARCHAR, city VARCHAR) AS $$
-SELECT id, name, city FROM users WHERE city = $1;
-$$ LANGUAGE SQL;
-
-这样函数就会返回符合条件的用户记录，作为表。需要确认是否正确使用了RETURNING子句，或者是否需要使用CTE。不过根据PostgreSQL的文档，当使用RETURNING子句时，必须在函数中使用它，但在这个例子中，可能不需要，因为函数直接返回SELECT的结果。不过可能用户希望返回一个表，所以可能需要使用RETURNING。
-
-不过可能用户只是需要一个函数，返回一个表，所以正确的做法是使用RETURNING子句。因此，正确的SQL应该是：
-
-CREATE OR FUNCTION get_users_by_city(city VARCHAR) RETURNS TABLE (id INT, name VARCHAR, city VARCHAR) AS $$
-SELECT id, name, city FROM users WHERE city = $1;
-$$ LANGUAGE SQL;
-
-或者可能需要使用RETURNING，但根据PostgreSQL的语法，如果函数返回的是一个表，那么需要使用RETURNING。例如：
-
-CREATE OR FUNCTION get_users_by_city(city VARCHAR) RETURNS TABLE (id INT
-
-[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
+[ Prompt: 63.2 t/s | Generation: 14.2 t/s ]
 
 
 Exiting...

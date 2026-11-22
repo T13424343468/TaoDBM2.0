@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,37 +24,19 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
-
-[Start thinking]
-
-好的，我需要解决用户的问题：“用户注册的月份分布？”根据提供的表结构，用户注册的信息应该是在users表中，因为users表有created_at字段，而orders表中的created_at可能用于其他用途，但用户注册的月份可能指的是用户首次注册的月份。不过问题中的“用户注册”可能指的是用户创建账户的月份，所以需要从users表的created_at字段来获取月份信息。
-
-首先，我需要确定如何从created_at字段中提取月份。PostgreSQL的日期函数中，EXTRACT(MONTH FROM created_at)可以获取月份，然后可以使用GROUP BY按月份分组，并统计用户数量。但问题是要显示月份分布，可能需要按月份分组并统计每个月份的注册用户数。
-
-不过问题中的“月份分布”可能指的是每个月份有多少用户注册，所以需要查询每个月份的注册用户数。因此，正确的SQL应该是选择created_at字段，提取月份，然后按月份分组，统计数量。
-
-但用户可能希望看到每个月份的注册用户数，所以需要使用GROUP BY和COUNT。例如：
-
-SELECT EXTRACT(MONTH FROM created_at) AS month, COUNT(*) AS user_count
+CREATE TABLE order_items (i ... (truncated)
+SELECT strftime('%Y-%m', created_at) AS month, COUNT(*) AS count
 FROM users
-GROUP BY month;
+GROUP BY month
+ORDER BY month;
 
-不过需要注意，created_at的日期类型是DATETIME，所以EXTRACT是可行的。但需要确认是否正确处理月份，比如是否需要考虑不同的年份，但问题中没有提到年份，所以可能只需要按月份分组。
-
-因此，最终的SQL应该是这样的。
-[End thinking]
-
-SELECT EXTRACT(MONTH FROM created_at) AS month, COUNT(*) AS user_count
-FROM users
-GROUP BY month;
-
-[ Prompt: 17.5 t/s | Generation: 6.9 t/s ]
+[ Prompt: 70.1 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

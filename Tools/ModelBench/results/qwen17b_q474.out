@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,45 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT ABS(DATEDIFF(DAY, created_at, GETDATE())) AS days_since_order FROM orders;
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，写出一个SQL Server查询语句，计算每笔订单距今天数。问题是要找出每笔订单距今天数，也就是订单创建时间到当前日期的天数差。
-
-首先，我需要确定哪些表涉及订单。根据表结构，orders表有created_at字段，而payments表也有paid_at字段。但问题中提到的是“每笔订单距今天数”，可能指的是订单创建时间，而不是支付时间。不过需要仔细看问题描述。
-
-问题中的“每笔订单”可能指的是orders表中的订单，所以可能只需要计算orders表中的created_at字段与当前日期的天数差。但用户可能希望计算的是订单创建时间到当前日期的天数，或者支付时间到创建时间的天数？不过问题描述中没有明确说明，但通常“距今天数”可能指的是订单创建时间，所以可能只需要计算orders表的created_at字段。
-
-不过，可能需要考虑是否需要结合payments表，比如如果订单是支付后的，但问题可能只是针对订单创建时间。因此，我需要确定是否需要使用orders表的created_at字段。
-
-假设问题中的“每笔订单”指的是orders表中的订单，那么查询应该是计算orders表中每个订单的created_at字段与当前日期的天数差。因此，可以使用DATEDIFF函数来计算天数。
-
-SQL语句的大致结构应该是：
-
-SELECT id, DATEDIFF(DAY, created_at, GETDATE()) AS days_since FROM orders;
-
-但需要确认是否需要考虑时间的时区问题，不过SQL Server默认使用本地时间，所以可能没问题。
-
-不过，用户可能希望得到每笔订单的天数，可能需要将created_at和当前日期进行比较。因此，正确的SQL应该是计算每个订单的created_at与当前日期的天数差。
-
-所以最终的SQL应该是：
-
-SELECT id, DATEDIFF(DAY, created_at, GETDATE()) AS days_since FROM orders;
-
-但需要确认是否需要考虑订单的创建时间是否在过去的日期，比如如果created_at是未来的时间，那么DATEDIFF会返回负数，但问题可能只是计算距离当前日期的天数，不管是否过去。
-
-因此，最终的SQL应该是这样的。
-[End thinking]
-
-SELECT id, DATEDIFF(DAY, created_at, GETDATE()) AS days_since FROM orders;
-
-[ Prompt: 19.4 t/s | Generation: 6.7 t/s ]
+[ Prompt: 64.2 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

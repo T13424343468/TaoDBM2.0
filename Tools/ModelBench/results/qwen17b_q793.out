@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,33 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
-
-[Start thinking]
-
-好的，我需要解决用户的问题，即找出注册时间是闰年2月29日的用户。首先，我需要理解问题的要求。用户提到的“闰年2月29日”指的是日期为2020年、2024年等，这些日期是闰年中的2月29日。但问题在于，用户可能指的是在数据库中存在这样的日期，或者需要查询出这样的记录。
-
-首先，我需要确定表结构。用户表是users，其中created_at是DATETIME类型。所以，我需要查询users表中created_at字段等于某个闰年2月29日的日期。
-
-接下来，我需要考虑如何将闰年2月29日转换为MySQL的日期格式。例如，2020-02-29是一个有效的日期，但需要确认是否在数据库中存在这样的记录。如果用户表中存在这样的记录，那么查询条件应该是created_at = '2020-02-29'，但需要考虑是否允许日期为2月29日的情况，比如是否允许在闰年中存在这样的日期。
-
-不过，MySQL的DATETIME类型允许存储日期为2000-01-01到2999-12-31，但不包括2月29日，除非在闰年。但根据问题描述，用户可能希望查询的是实际存在的日期，即2020-02-29这样的日期。因此，正确的做法是直接使用该日期作为条件。
-
-但需要注意，如果用户表中没有这样的记录，那么查询结果可能为空。但根据问题描述，用户可能希望找到这样的记录，所以需要构造正确的SQL语句。
-
-因此，正确的SQL应该是SELECT * FROM users WHERE created_at = '2020-02-29'。但需要确认是否允许这样的日期存在。不过，根据问题描述，用户可能希望查询的是存在这样的日期的记录，所以直接使用该日期即可。
-
-另外，需要注意的是，如果用户表中存在闰年2月29日的记录，那么查询结果会返回对应的用户信息。如果不存在，结果为空。但问题可能只是要求构造查询语句，不管是否存在，所以直接写SQL即可。
-[End thinking]
-
+CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM users WHERE created_at = '2020-02-29';
 
-[ Prompt: 19.3 t/s | Generation: 6.7 t/s ]
+[ Prompt: 76.2 t/s | Generation: 15.5 t/s ]
 
 
 Exiting...

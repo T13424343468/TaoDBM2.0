@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,31 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT TO_DATE('2026-01-01', 'YYYY-MM-DD') as date_value;
 
-[Start thinking]
-
-好的，用户的问题是把字符串'2026-01-01'转成日期，但根据提供的表结构，似乎没有直接涉及日期转换的字段。不过用户可能希望将这个字符串作为日期值插入到某个表中，比如orders或者payments表的created_at或paid_at字段。
-
-首先，我需要确认用户的需求。他们可能想将这个日期字符串插入到某个日期字段中。但表结构中的created_at和paid_at字段是DATETIME类型，而用户提供的字符串是YYYY-MM-DD格式，可以直接用字符串转换为日期类型。
-
-不过，PostgreSQL的DATETIME类型是timestamp，而字符串转换需要使用TO_DATE函数。例如，TO_DATE('2026-01-01', 'YYYY-MM-DD')。但用户的问题可能只是想将字符串转成日期，而不需要实际插入到表中。但根据问题描述，用户可能希望生成一个SQL语句来转换这个字符串。
-
-不过，表结构中没有日期字段需要转换，所以可能用户有误解。或者他们可能希望将这个日期作为某个字段的值，比如orders的created_at。但根据问题描述，用户可能只是想展示如何转换字符串为日期，而实际表中可能没有对应的字段。但根据问题，用户可能希望生成一个SQL语句，将字符串转换为日期，可能用于插入到某个表中。
-
-因此，正确的SQL应该是将字符串'2026-01-01'转换为日期类型，例如使用TO_DATE函数。但需要确认用户是否需要将这个日期插入到某个表的字段中。如果用户只是想展示转换过程，可能不需要实际插入，但根据问题要求，必须输出一条SQL，所以可能需要使用TO_DATE函数。
-
-所以最终的SQL应该是SELECT TO_DATE('2026-01-01', 'YYYY-MM-DD') AS date_value FROM dual; 或者类似的语句，但用户可能希望直接转换，所以可能需要使用TO_DATE函数。
-[End thinking]
-
-SELECT TO_DATE('2026-01-01', 'YYYY-MM-DD') AS date_value;
-
-[ Prompt: 20.7 t/s | Generation: 6.6 t/s ]
+[ Prompt: 62.0 t/s | Generation: 16.5 t/s ]
 
 
 Exiting...

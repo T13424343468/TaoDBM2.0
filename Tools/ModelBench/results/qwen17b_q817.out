@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,40 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+INSERT INTO users (id, name, city, created_at) SELECT id, name, city, created_at FROM users WHERE id = 1 ON CONFLICT (id) DO UPDATE SET name = 'New Name', city = 'New City';
 
-[Start thinking]
-
-好的，我需要帮用户实现插入冲突时更新。首先，用户提到的“插入冲突时更新”应该是指在插入数据时，如果遇到冲突（比如主键或唯一约束冲突），就进行更新而不是插入。这通常需要使用数据库的触发器或者在应用层处理，但用户可能希望用SQL来实现。
-
-不过，PostgreSQL本身没有直接的“插入冲突时更新”的语法，但可以通过触发器来实现。比如，当插入操作发生时，如果检测到冲突，就触发更新操作。但用户可能希望用一个SQL语句来完成，这可能不太容易，因为触发器是数据库级别的。
-
-不过，用户可能希望用一个SQL语句来处理这种情况，比如使用ON CONFLICT的语法，但PostgreSQL的ON CONFLICT不支持直接更新，除非在插入时指定条件。例如，使用INSERT INTO ... ON CONFLICT (column) DO UPDATE。但需要确认是否可行。
-
-比如，如果用户想在插入用户时，如果id已存在，就更新。但用户的问题可能是指多个表的插入冲突，比如订单或订单项。但用户没有具体说明冲突的表，所以可能需要假设一个例子。
-
-假设用户想插入用户，如果id冲突就更新。那么SQL语句可能是：
-
-INSERT INTO users (id, name, city) VALUES (1, 'Alice', 'New York') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, city = EXCLUDED.city;
-
-但用户的问题可能更复杂，比如多个表的冲突。但用户没有给出具体表，所以可能需要假设一个例子。
-
-或者，用户可能希望用一个SQL语句来处理多个表的插入冲突，比如订单或订单项。但如果没有具体表结构，可能需要假设。
-
-不过，用户的问题可能更倾向于使用触发器，但用户要求只输出SQL，所以可能需要使用触发器的语法。例如，创建一个触发器，在插入时检查冲突并更新。
-
-但用户可能希望用一个SQL语句，比如使用ON CONFLICT，但可能需要多个条件。例如，插入订单时，如果order_id冲突，更新。但PostgreSQL的ON CONFLICT不支持多个条件，除非使用多个ON CONFLICT子句。
-
-不过，用户可能希望用一个SQL语句来处理这种情况，可能需要使用多个条件，或者使用其他方法。
-
-但根据用户的问题，可能需要使用触发器，所以最终的SQL可能包括创建
-
-[ Prompt: 19.1 t/s | Generation: 6.6 t/s ]
+[ Prompt: 78.3 t/s | Generation: 15.5 t/s ]
 
 
 Exiting...

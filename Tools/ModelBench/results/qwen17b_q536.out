@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,34 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT FROM_UNIXTIME(created_at) as formatted_date FROM users;
 
-[Start thinking]
-
-好的，用户的问题是关于将Unix时间戳转换为日期，但根据提供的表结构，似乎没有直接涉及时间戳转换的字段或函数。表中有一个created_at字段是DATETIME类型，但用户可能希望将某个Unix时间戳转换为日期格式。
-
-不过，用户要求只输出一条SQL，且不解释。可能需要检查是否需要将某个时间戳转换为日期格式。例如，如果有一个Unix时间戳存储在某个字段中，比如order_id或created_at，但表结构中并没有这样的字段。用户可能误解了表结构，或者需要将某个时间戳转换为日期格式。
-
-但根据提供的表结构，没有Unix时间戳的字段。因此，可能需要确认用户的问题是否有误，或者是否有其他隐含的表结构。但根据现有信息，无法直接进行转换。因此，可能需要返回一个错误或提示，但用户要求只输出SQL，所以可能需要假设存在某个字段，比如created_at，然后转换为日期格式。
-
-例如，如果用户想将created_at字段转换为日期格式，可以使用CONVERT函数，但用户的问题可能需要更具体的指导。但根据问题描述，用户可能希望将Unix时间戳转换为日期，但表中没有这样的字段，所以可能需要返回一个错误，但根据要求只能输出SQL，所以可能需要假设存在某个字段，比如order_id，然后转换。
-
-不过，可能用户的问题有误，或者需要进一步澄清。但根据现有信息，无法生成有效的SQL，因此可能需要返回一个错误，但用户要求只输出SQL，所以可能需要假设存在某个字段，比如created_at，并使用CONVERT函数转换。例如：
-
-SELECT CONVERT(STR_TO_DATE('1234567890', '%Y%m%d%H%i%s'), '%Y-%m-%d %H:%i:%s') AS date FROM some_table;
-
-但用户的问题中没有提到具体的表或字段，所以可能需要假设存在某个表和字段，但根据问题描述，可能用户希望将某个Unix时间戳转换为日期，但表中没有这样的字段，因此无法生成有效的SQL。因此，可能需要返回一个错误，但根据要求只能输出SQL，所以可能需要假设存在某个字段，比如created_at，并转换为日期格式。
-
-最终，可能需要生成一个示例SQL，假设存在某个字段，例如：
-
-SELECT STR_TO_DATE('1234567890', '%Y%m%d
-
-[ Prompt: 20.1 t/s | Generation: 6.7 t/s ]
+[ Prompt: 66.1 t/s | Generation: 14.1 t/s ]
 
 
 Exiting...

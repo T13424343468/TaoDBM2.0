@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,27 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIMARY K ... (truncated)
-
-[Start thinking]
-
-好的，我需要解决用户的问题：“最便宜的商品价格？”根据表结构，商品表是products，里面有一个price字段。用户想要的是最便宜的那个商品的价格，也就是price列的最小值。
-
-首先，我需要确定哪个表存储了价格信息。根据提供的表结构，products表有price字段，所以应该查询这个表的price列的最小值。
-
-然后，问题中的“最便宜”指的是最小值，所以使用MIN函数来获取最小值。SQL语句应该是SELECT MIN(price) FROM products;。这样就能得到所有商品中价格的最小值，也就是最便宜的那个价格。
-
-需要注意的是，用户要求只输出SQL，不要任何解释，所以直接写出查询语句即可。不需要考虑其他表，因为问题只涉及商品价格。
-[End thinking]
-
+CREATE TABLE order_items (id INT ... (truncated)
 SELECT MIN(price) FROM products;
 
-[ Prompt: 19.6 t/s | Generation: 7.2 t/s ]
+[ Prompt: 62.7 t/s | Generation: 14.7 t/s ]
 
 
 Exiting...

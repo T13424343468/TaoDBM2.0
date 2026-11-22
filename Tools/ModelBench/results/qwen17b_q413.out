@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,25 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT unit_price AS ln_unit_price FROM order_items;
 
-[Start thinking]
-
-好的，我需要根据用户的问题生成一个PostgreSQL的SQL查询。用户的问题是“单价的自然对数”，而提供的表结构中有products表，其中包含price字段。所以，我需要从products表中选取price列，然后计算其自然对数。
-
-首先，确认表结构。products表有price字段，类型是DECIMAL(10,2)，所以可以使用LOG函数来计算自然对数。PostgreSQL中的LOG函数是LOG(n)，其中n是数值参数。因此，查询语句应该是SELECT LOG(price) FROM products;。
-
-需要确保没有其他表被涉及，因为问题只涉及单价的自然对数，而没有提到其他表的关联。所以直接从products表中获取price值，计算其自然对数即可。不需要JOIN或者其他操作。因此，最终的SQL就是SELECT LOG(price) FROM products;
-[End thinking]
-
-SELECT LOG(price) FROM products;
-
-[ Prompt: 19.8 t/s | Generation: 6.8 t/s ]
+[ Prompt: 73.0 t/s | Generation: 16.3 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,40 +24,16 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT EXTRACT(DOW FROM created_at) AS day_of_week FROM orders;
 
-[Start thinking]
-
-好的，用户的问题是“订单是星期几？”，但根据提供的表结构，没有直接记录订单日期的字段。表中的orders表有created_at字段，但需要确定这个日期对应的星期几。不过，PostgreSQL没有内置的函数来直接获取星期几，比如星期一到星期日。用户可能希望根据created_at字段的日期计算星期几，但需要明确如何处理。
-
-首先，我需要确认用户的需求。问题可能是指订单创建的日期是星期几，但表中没有直接的星期几字段。可能需要使用EXTRACT函数来获取星期几，但需要知道具体的星期几的枚举值。例如，EXTRACT(WEEKDAY FROM created_at)会返回1到7，对应周一到周日，但需要将数字转换为对应的星期几名称。
-
-不过，用户的问题可能有误，或者需要进一步澄清。但根据现有表结构，无法直接获取星期几的信息。因此，可能需要假设用户希望根据created_at字段的日期计算星期几，但需要使用EXTRACT函数，并将结果转换为对应的名称。例如，使用EXTRACT(WEEKDAY FROM created_at)来获取星期几的数字，然后用CASE语句转换为名称。
-
-但用户要求只输出一条SQL，所以需要构造一个查询，可能使用EXTRACT和CASE。例如：
-
-SELECT CASE EXTRACT(WEEKDAY FROM created_at) WHEN 1 THEN '周一' WHEN 2 THEN '周二' ... END AS weekday FROM orders;
-
-但用户可能希望得到具体的星期几名称，但表中没有对应的字段。因此，可能需要假设用户希望根据created_at字段的日期计算星期几，但需要使用EXTRACT函数，并将结果转换为名称。不过，PostgreSQL的EXTRACT函数返回的是整数，需要转换为字符串。
-
-因此，正确的SQL应该是：
-
-SELECT EXTRACT(WEEKDAY FROM created_at) AS weekday_num FROM orders;
-
-但用户的问题可能需要具体的星期几名称，所以可能需要使用CASE语句。但用户要求只输出一条SQL，所以可能需要构造一个查询，但可能无法直接得到星期几的名称，除非有预定义的映射。
-
-不过，根据问题描述，用户可能希望得到订单的星期几，但表中没有直接的字段，所以可能需要使用EXTRACT函数，并假设用户希望得到星期几的名称。因此，正确的SQL可能是：
-
-SELECT EXTRACT(WEEKDAY FROM created_at) AS weekday_num FROM orders;
-
-但
-
-[ Prompt: 19.6 t/s | Generation: 6.4 t/s ]
+[ Prompt: 62.4 t/s | Generation: 18.0 t/s ]
 
 
 Exiting...

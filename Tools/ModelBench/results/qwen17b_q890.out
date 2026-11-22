@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,39 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT * FROM orders
+WHERE created_at = CURRENT_TIME
+AND status = 'completed';
 
-[Start thinking]
-
-好的，我需要根据用户提供的表结构和问题，生成一个PostgreSQL的SQL查询语句。用户的问题是用pg_cron安排每小时整点执行归档查询。首先，我需要理解用户的需求。
-
-用户提到的“归档查询”可能是指需要定期处理某些数据，比如清理过期的订单、计算库存、生成报表等。但问题中没有具体说明归档的条件或操作，所以可能需要假设一个常见的归档任务，比如清理过期的订单。
-
-接下来，表结构中有orders表，其中包含order_id、user_id、status、created_at等字段。可能的归档任务包括删除已过期的订单，或者更新订单状态。假设归档任务是删除所有created_at超过某个时间的订单，比如超过24小时的订单。
-
-然后，用户需要使用pg_cron来安排这个任务，每小时整点执行。因此，SQL查询需要能够触发这个任务。通常，pg_cron的执行需要一个定时任务，比如使用cron表达式，但用户可能只需要生成一个SQL语句来触发这个任务，或者直接执行查询。
-
-不过问题中用户要求只输出一条SQL，所以可能需要生成一个触发器，或者直接执行一个定时任务。但PostgreSQL本身没有内置的定时任务功能，通常需要使用pg_cron或者cron job来安排。但用户可能希望生成一个SQL语句来执行归档操作，或者创建一个触发器来自动执行。
-
-假设用户希望执行一个归档查询，比如删除过期订单，那么SQL语句可能是一个DELETE语句。例如，删除orders表中created_at超过当前时间减去1小时的记录。
-
-但需要确保这个查询是正确的，比如使用WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '1 hour'。同时，可能需要考虑是否需要事务，或者是否需要在特定时间执行。
-
-另外，用户提到用pg_cron安排，所以可能需要生成一个cron表达式，但问题中用户要求只输出SQL，所以可能需要生成一个触发器，或者直接执行一个定时任务。但PostgreSQL的触发器可能无法直接用于定时执行，所以可能需要使用cron job。
-
-不过用户可能希望生成一个SQL语句，比如一个定时任务，但PostgreSQL本身没有这样的功能，所以可能需要使用pg_cron的命令，比如：
-
-crontab -e
-0 * * * * /path/to/script.sh
-
-但用户可能
-
-[ Prompt: 19.3 t/s | Generation: 6.6 t/s ]
+[ Prompt: 86.1 t/s | Generation: 18.1 t/s ]
 
 
 Exiting...

@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,38 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
-
-[Start thinking]
-
-好的，我需要解决用户的问题，即按周截断统计订单。首先，我得理解用户的需求。他们想要按周统计订单的数量，可能是指每个周的订单数量，或者每个周的订单总金额之类的？不过问题里提到的是“按周截断统计订单”，可能是指按周分组统计，比如每个周的订单数量。
-
-首先，我需要确定如何将订单按周分组。订单表是orders，里面有created_at字段，是DATETIME类型。所以需要将created_at转换为周的开始时间，比如每周的周一，然后按周分组。
-
-步骤可能是这样的：首先，将orders表中的created_at字段转换为周的开始时间，比如用DATE_TRUNC('week', created_at)来获取每周的开始时间。然后按这个时间分组，统计每个周的订单数量。
-
-不过用户可能需要的是每个周的订单数量，所以需要计算每个周的订单数。例如，如果订单的created_at是2023-10-05，那么对应的周是2023-10-01到2023-10-07，或者可能根据数据库的日期处理方式不同。但通常DATE_TRUNC('week', created_at)会返回每周的开始时间，比如每周的周一。
-
-然后，需要将这些周的开始时间作为分组键，统计每个周的订单数量。所以SQL语句应该是SELECT DATE_TRUNC('week', created_at) AS week_start, COUNT(*) AS order_count FROM orders GROUP BY week_start;
-
-不过用户可能需要的是按周统计，比如每个周的订单数量，可能需要将结果按周排序。但问题里没有提到排序，所以可能只需要分组统计。
-
-另外，用户可能希望得到每个周的订单数量，所以最终的SQL应该是这样的。但需要确认是否需要考虑周的开始时间，比如如果created_at是某周的某天，那么周的开始时间是该周的周一。所以用DATE_TRUNC('week', created_at)是正确的。
-
-所以最终的SQL应该是：
-
-SELECT DATE_TRUNC('week', created_at) AS week_start, COUNT(*) AS order_count
+CREATE TABLE order_items (i ... (truncated)
+SELECT COUNT(*) AS order_count
 FROM orders
-GROUP BY week_start;
+WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '7 days' AND CURRENT_DATE;
 
-不过用户可能希望按周统计，比如每个周的订单数量，可能需要将结果按周排序，但问题里没有说明，所以可能不需要。但可能需要考虑周的开始时间，比如如果created_at是
-
-[ Prompt: 19.5 t/s | Generation: 6.6 t/s ]
+[ Prompt: 72.8 t/s | Generation: 16.0 t/s ]
 
 
 Exiting...

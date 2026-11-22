@@ -10,7 +10,7 @@ Loading model...
                                     ██    ██
                                     ▀▀    ▀▀
 
-build      : b12532-08c252e22
+build      : b12559-7e960f40f
 model      : models/Qwen3-1.7B-Q4_K_M.gguf
 ftype      : Q4_K - Medium
 modalities : text
@@ -24,40 +24,18 @@ available commands:
 
 
 
-> 你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 SQL Server 查询语句，只输出一条 SQL，不要任何解释。
 表结构：
 CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
-CREATE TABLE order_items (id INT PRIM ... (truncated)
+CREATE TABLE order_items (i ... (truncated)
+SELECT HOUR(created_at) AS hour, COUNT(*) AS count
+FROM orders
+GROUP BY HOUR(created_at)
 
-[Start thinking]
-
-好的，用户的问题是“订单的小时分布？”，需要根据提供的表结构写出SQL Server查询语句，只输出一条SQL，不要解释。首先，我需要理解问题的意思。订单的小时分布应该是指每个小时有多少订单，可能需要统计每个小时的订单数量或者总金额之类的。
-
-首先看表结构，订单表orders有created_at字段，类型是DATETIME。所以需要按小时分组统计。可能需要使用GROUP BY和DATEADD函数来按小时分组。比如，使用DATEADD(HOUR, 0, created_at)来获取每个小时的开始时间，然后按这个时间分组。
-
-但要注意，DATETIME的小时部分可能有变化，比如如果created_at是2023-10-05 15:30:00，那么DATEADD(HOUR, 0, created_at)会得到2023-10-05 00:00:00，这样每个小时的分组是正确的。不过，可能需要考虑时间的处理，比如如果created_at是某个时间点，如何正确分组。
-
-另外，用户可能需要每个小时的订单数量，或者总金额，但问题里没有明确说明，所以可能需要假设是订单数量。但问题中的“小时分布”可能指的是每个小时的订单数量，所以需要统计每个小时的订单数。
-
-所以，查询的思路是：从orders表中获取created_at时间，按小时分组，统计每个小时的订单数量。使用GROUP BY和DATEADD函数。
-
-具体SQL语句应该是：
-
-SELECT 
-    DATEADD(HOUR, 0, created_at) AS hour_start,
-    COUNT(*) AS order_count
-FROM 
-    orders
-GROUP BY 
-    DATEADD(HOUR, 0, created_at);
-
-不过，需要注意的是，DATEADD函数在SQL Server中是可用的，但可能需要处理时间的精度。例如，如果created_at是2023-10-05 15:30:00，那么DATEADD(HOUR, 0, created_at)会得到2023-10-05 00:00:00，这样每个小时的分组是正确的。但可能需要考虑时间的处理，比如如果created_at是某个时间点，如何正确分组。
-
-另外，可能需要考虑时间的格式，比如是否需要将created_at转换为
-
-[ Prompt: 17.8 t/s | Generation: 6.6 t/s ]
+[ Prompt: 67.1 t/s | Generation: 14.8 t/s ]
 
 
 Exiting...
