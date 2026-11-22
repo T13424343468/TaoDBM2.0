@@ -9,7 +9,8 @@ namespace TaoDBM.UI;
 /// <summary>把 QueryResult 渲染成表格（纯代码构建，Ant 风格表头）。</summary>
 public static class GridBuilder
 {
-    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null)
+    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
+        Dictionary<string, double>? colWidths = null, string? widthKey = null)
     {
         // 批次F：宽表懒加载结果（列数超虚拟阈值）走等宽占位网格，横向滚动增量拉列
         if (r is LazyQueryResult lz && lz.Store.TotalColumns > 64)
@@ -37,10 +38,16 @@ public static class GridBuilder
         }
 
         // 整改二批 #03（2026-11-23）：表头点击循环排序（内存序，不回库）＋表头冻结（滚动时钉在视口顶部）
+        // 整改二批格9（2026-11-23）：列宽拖拽可调——用户宽度优先，无记录回退自动宽公式
         var grid = new Grid { RowSpacing = 0 };
         int nCols = Math.Min(r.Columns.Count, 64);
+        string WKey(int i) => $"{widthKey ?? sourceSql ?? ""}|{r.Columns[i]}";
+        double[] widths = new double[nCols];
         for (int i = 0; i < nCols; i++)
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Clamp(80 + r.Columns[i].Length * 8, 120, 280)) });
+        {
+            widths[i] = colWidths != null && colWidths.TryGetValue(WKey(i), out double uw) ? uw : AutoWidth(r.Columns[i]);
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(widths[i]) });
+        }
 
         int sortCol = -1, sortMode = ResultGridOps.SortOriginal;
         var order = Enumerable.Range(0, r.Rows.Count).ToArray();
@@ -51,6 +58,8 @@ public static class GridBuilder
         var headerTt = new TranslateTransform();
         header.RenderTransform = headerTt;
         var arrows = new TextBlock[nCols];
+        for (int i = 0; i < nCols; i++)
+            header.ColumnDefinitions.Add(ColDef(r, i, widths[i]));
         for (int i = 0; i < nCols; i++)
         {
             var arrow = new TextBlock { Foreground = Ant.Primary, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -65,7 +74,21 @@ public static class GridBuilder
                 TextTrimming = TextTrimming.CharacterEllipsis,
             });
             headPanel.Children.Add(arrow);
-            var cell = new Border { Child = headPanel, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1), Background = Ant.HeadBg };
+            // 格9：表头右缘 6px 拖拽分隔条（Pointer 捕获拖拽，双击恢复自动宽；与 Tapped 排序互不触发）
+            var cellHost = new Grid();
+            cellHost.Children.Add(headPanel);
+            var splitter = new Border
+            {
+                Width = 6,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Cursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast),
+            };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(splitter, $"ColSplitter_{r.Columns[i]}");
+            cellHost.Children.Add(splitter);
+            var cell = new Border { Child = cellHost, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1), Background = Ant.HeadBg };
+            AttachSplitter(splitter, i, r, grid, header, rowsHost, widths, colWidths, WKey);
             ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 列头右键 → 分析/钉住
             int colIdx = i;
             cell.Tapped += (_, _) => CycleSort(colIdx);
@@ -73,12 +96,14 @@ public static class GridBuilder
             header.Children.Add(cell);
         }
         Grid.SetRow(header, grid.RowDefinitions.Count);
+        Grid.SetColumnSpan(header, nCols);
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(header);
         Canvas.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
 
         // 数据行（排序后按显示序物化；小结果集直渲染，虚拟阈值之上走 VirtualizedResultGrid）
         Grid.SetRow(rowsHost, grid.RowDefinitions.Count);
+        Grid.SetColumnSpan(rowsHost, nCols);   // 修红 2026-11-22 同批：行宿主跨全列，避免被首列宽度裁切
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(rowsHost);
 
@@ -87,7 +112,7 @@ public static class GridBuilder
             rowsHost.Children.Clear();
             int shown = Math.Min(r.Rows.Count, 1000);
             for (int d = 0; d < shown; d++)
-                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine));
+                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine, widths: widths));
         }
         PopulateRows();
 
@@ -144,14 +169,16 @@ public static class GridBuilder
     /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。
     /// 整改二批 #03：单元格一律挂右键菜单（复制该行/单元格/全部＋分析）；displayIdx 提供时按显示位次取隔行底色（排序后斑马纹不乱）。</summary>
     public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null,
-        string? sourceSql = null, string? engine = null, int? displayIdx = null)
+        string? sourceSql = null, string? engine = null, int? displayIdx = null, double[]? widths = null)
     {
         var row = r.Rows[rowIdx];
         var rowGrid = new Grid { Background = (displayIdx ?? rowIdx) % 2 == 1 ? Ant.AltRow : null };
         if (fixedHeight is double h) rowGrid.Height = h;
         for (int i = 0; i < nCols; i++)
+            rowGrid.ColumnDefinitions.Add(ColDef(r, i, widths is null ? double.NaN : widths[i]));   // 修红 2026-11-22：行 Grid 补列定义；格9 沿用用户宽度
+        for (int i = 0; i < nCols; i++)
         {
-            string text = Exporter.Format(i < row.Length ? row[i] : null);
+            string text = Exporter.DisplayFormat(i < row.Length ? row[i] : null);   // 格8：网格显示口径（NULL→(NULL)、大 BLOB 显体积）；CSV/INSERT 导出仍走 Format
             var tb = new TextBlock
             {
                 Text = text,
@@ -171,5 +198,69 @@ public static class GridBuilder
             rowGrid.Tapped += (_, _) => onRowTap(idx);
         }
         return rowGrid;
+    }
+
+    /// <summary>列宽规则唯一出口：外层网格、表头、数据行共用，保证三处列宽一致；width 非 NaN 时用指定宽度（格9 用户宽度）。</summary>
+    internal static ColumnDefinition ColDef(QueryResult r, int i, double width = double.NaN) =>
+        new() { Width = new GridLength(double.IsNaN(width) ? AutoWidth(r.Columns[i]) : width) };
+
+    /// <summary>自动宽公式（格9 回退口径）：按列样例长度估算，夹在 120-280。</summary>
+    internal static double AutoWidth(string col) => Math.Clamp(80 + col.Length * 8, 120, 280);
+
+    /// <summary>格9：列宽拖拽——PointerPressed 捕获拖拽改三处列宽（外层/表头/行），位移阈值 4px 与排序 Tapped 互不触发；
+    /// 双击恢复自动宽并清除用户记录；拖拽结束记 AppLog [列宽]。</summary>
+    private static void AttachSplitter(Border splitter, int i, QueryResult r, Grid outer, Grid header, StackPanel rowsHost,
+        double[] widths, Dictionary<string, double>? colWidths, Func<int, string> wkey)
+    {
+        bool dragging = false;
+        double startX = 0, startW = 0, moved = 0;
+
+        void ApplyWidth(double w)
+        {
+            widths[i] = w;
+            outer.ColumnDefinitions[i].Width = new GridLength(w);
+            header.ColumnDefinitions[i].Width = new GridLength(w);
+            foreach (var child in rowsHost.Children)
+                if (child is Grid rowGrid && i < rowGrid.ColumnDefinitions.Count)
+                    rowGrid.ColumnDefinitions[i].Width = new GridLength(w);
+        }
+
+        splitter.PointerPressed += (_, e) =>
+        {
+            dragging = true;
+            moved = 0;
+            startX = e.GetCurrentPoint(splitter).Position.X;
+            startW = widths[i];
+            splitter.CapturePointer(e.Pointer);
+            e.Handled = true;   // 拦下指针，避免触发表头 Tapped 排序
+        };
+        splitter.PointerMoved += (_, e) =>
+        {
+            if (!dragging) return;
+            double dx = e.GetCurrentPoint(splitter).Position.X - startX;
+            moved = Math.Abs(dx);
+            if (moved < 4) return;
+            ApplyWidth(Math.Clamp(startW + dx, 60, 800));
+            e.Handled = true;
+        };
+        splitter.PointerReleased += (_, e) =>
+        {
+            if (!dragging) return;
+            dragging = false;
+            splitter.ReleasePointerCapture(e.Pointer);
+            if (moved >= 4)
+            {
+                if (colWidths != null) colWidths[wkey(i)] = widths[i];
+                AppLog.Write($"[列宽] col={r.Columns[i]} width={widths[i]:F0}");   // 走查 S76 实效断言锚点
+            }
+            e.Handled = true;
+        };
+        splitter.DoubleTapped += (_, e) =>
+        {
+            ApplyWidth(AutoWidth(r.Columns[i]));
+            colWidths?.Remove(wkey(i));
+            AppLog.Write($"[列宽] col={r.Columns[i]} 自动");
+            e.Handled = true;
+        };
     }
 }

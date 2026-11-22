@@ -40,7 +40,10 @@ public static class VirtualizedResultGrid
         };
 
         // 表头：与数据行同列宽规则、同行高（虚拟位移以一个行高为偏移基准）；含排序指示与点击循环
+        // 修红 2026-11-22：表头 Grid 此前未定义列，所有列头叠在第 0 列——真机截图实锤，与 GridBuilder 同批修
         var header = new Grid { Background = Ant.HeadBg };
+        for (int i = 0; i < nCols; i++)
+            header.ColumnDefinitions.Add(GridBuilder.ColDef(r, i));
         var headerTt = new TranslateTransform();
         header.RenderTransform = headerTt;
         var arrows = new TextBlock[nCols];
