@@ -68,6 +68,13 @@ public class WorkTab : Grid
     private int _offset;
     private const int PageSize = 200;
     private bool _busy;
+
+    // D-12 修红（2026-11-22 老板令）：实时补全浮层——竞品口径「输入即提示」，Ctrl+Space 对话框保留为手动唤起
+    private readonly Popup _completePopup = new() { IsLightDismissEnabled = true };
+    private readonly ListView _completeList = new() { SelectionMode = ListViewSelectionMode.Single, MaxHeight = 220, MinWidth = 240 };
+    private List<string> _tables = new();
+    private bool _tablesLoading;
+    private int _completeStart;
     private bool _isRelational => _provider is RelationalProvider;
 
     public WorkTab(MainWindow owner, IDbProvider provider, string db, string child, WorkMode mode, string? initialSql)
@@ -83,17 +90,30 @@ public class WorkTab : Grid
         _hlTimer.Tick += (_, _) => { _hlTimer.Stop(); ApplyHighlight(); };
         if (mode == WorkMode.Query)
         {
-            _editor.TextChanged += (_, _) => { if (!_applying) { _hlTimer.Stop(); _hlTimer.Start(); } };
+            _editor.TextChanged += (_, _) => { if (!_applying) { _hlTimer.Stop(); _hlTimer.Start(); UpdateComplete(); } };
             _editor.Loaded += (_, _) => SetEditorFont();
             Ant.ThemeApplied += OnThemeApplied;
             Unloaded += (_, _) => Ant.ThemeApplied -= OnThemeApplied;
+            // D-12：补全浮层挂主题底色与描边，Esc 关闭
+            _completePopup.Child = new Border
+            {
+                Background = Ant.Bg,
+                BorderBrush = Ant.Border,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Child = _completeList,
+            };
+            _completePopup.XamlRoot = _owner.Content.XamlRoot;
+            _completeList.ItemClick += CompletePick;
+            AddAccelerator(Windows.System.VirtualKey.Escape, Windows.System.VirtualKeyModifiers.None, () => _completePopup.IsOpen = false);
         }
 
         // 层色底定律：标签页根板显式挂主题底色，中间内容靠网格自带层色与描边，不依赖系统纯黑
         Background = Ant.Bg;
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = mode == WorkMode.Query ? GridLength.Auto : new GridLength(0) });
-        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // D-8 修红（2026-11-22 老板令）：结果区此前挂 Auto 行随内容缩成小条、下方空 Star 行整片留白——
+        // 对齐 Navicat/DBeaver 口径：结果区撑满剩余空间，数据多时出滚动条
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
@@ -140,7 +160,7 @@ public class WorkTab : Grid
             CornerRadius = new CornerRadius(6),
         };
         Children.Add(msgBorder);
-        SetRow(msgBorder, 4);
+        SetRow(msgBorder, 3);   // D-8 修红：消息区随结果区上移一行
 
         // UIA 自动化标识（界面自动化走查定位用）
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
@@ -949,6 +969,83 @@ public class WorkTab : Grid
     }
 
     // ---------- SQL 补全（Ctrl+Space） ----------
+
+    /// <summary>D-12：输入即浮出补全候选（关键字＋表名＋列名），不弹对话框打断输入。</summary>
+    private void UpdateComplete()
+    {
+        try
+        {
+            string word = CurrentWord();
+            if (word.Length == 0) { _completePopup.IsOpen = false; return; }
+            EnsureTables();
+            var cands = Keywords.Concat(_tables).Concat(_cols.Select(c => c.Name))
+                .Where(k => k.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
+                            !k.Equals(word, StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase).Take(12).ToList();
+            if (cands.Count == 0) { _completePopup.IsOpen = false; return; }
+            _completeList.Items.Clear();
+            foreach (var k in cands)
+                _completeList.Items.Add(new TextBlock { Text = k, FontFamily = (FontFamily)Application.Current.Resources["AntMono"] });
+            if (!_completePopup.IsOpen)
+            {
+                try
+                {
+                    var t = _editor.TransformToVisual(null);
+                    var p = t.TransformPoint(new Windows.Foundation.Point(0, 0));
+                    _completePopup.VerticalOffset = p.Y + _editor.ActualHeight + 2;
+                    _completePopup.HorizontalOffset = p.X + 12;
+                }
+                catch { _completePopup.VerticalOffset = 260; _completePopup.HorizontalOffset = 240; }
+                _completePopup.IsOpen = true;
+            }
+        }
+        catch { /* 补全浮层绝不干扰输入 */ }
+    }
+
+    /// <summary>取光标前的当前词，并记下词起点供插入替换。</summary>
+    private string CurrentWord()
+    {
+        int caret = _editor.Document?.Selection?.StartPosition ?? 0;
+        string text = EditorText;
+        int start = caret;
+        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
+        _completeStart = start;
+        return text[start..caret];
+    }
+
+    /// <summary>表名候选懒加载：一次取当前库子对象清单后缓存。</summary>
+    private void EnsureTables()
+    {
+        if (_tables.Count > 0 || _tablesLoading) return;
+        _tablesLoading = true;
+        _ = EnsureTablesAsync();
+    }
+
+    private async Task EnsureTablesAsync()
+    {
+        try { var kids = await _provider.GetChildren(_db); _tables = kids.ToList(); }
+        catch { /* 元数据取不到就只用关键字＋列 */ }
+        finally { _tablesLoading = false; }
+    }
+
+    private void CompletePick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is TextBlock tb) InsertComplete(tb.Text);
+    }
+
+    private void InsertComplete(string pick)
+    {
+        try
+        {
+            int caret = _editor.Document?.Selection?.StartPosition ?? 0;
+            string text = EditorText;
+            EditorText = text[.._completeStart] + pick + text[caret..];
+            _editor.Document?.Selection?.SetRange(_completeStart + pick.Length, _completeStart + pick.Length);
+            _completePopup.IsOpen = false;
+            _editor.Focus(FocusState.Programmatic);
+        }
+        catch { /* 插入失败静默，不打断输入 */ }
+    }
 
     private static readonly string[] Keywords =
     {
