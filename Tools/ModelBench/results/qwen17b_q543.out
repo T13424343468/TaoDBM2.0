@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT created_at_UNIX FROM users WHERE created_at = '2023-10-01 12:34:56';
+
+[ Prompt: 73.3 t/s | Generation: 16.0 t/s ]
+
+
+Exiting...

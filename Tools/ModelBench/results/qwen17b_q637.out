@@ -36,3 +36,8 @@ FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN payments p ON o.id = p.order_id
 GROUP BY u.id, u.name;
+
+[ Prompt: 62.5 t/s | Generation: 15.9 t/s ]
+
+
+Exiting...

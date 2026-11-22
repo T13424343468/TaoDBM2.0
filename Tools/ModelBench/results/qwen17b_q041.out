@@ -31,7 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT SUM(p.amount) AS total_paid
-FROM payments p
-WHERE p.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-AND p.paid_at < CURDATE();
+SELECT COUNT(*) FROM orders
+WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+AND status = 'completed';
+
+[ Prompt: 69.9 t/s | Generation: 14.4 t/s ]
+
+
+Exiting...

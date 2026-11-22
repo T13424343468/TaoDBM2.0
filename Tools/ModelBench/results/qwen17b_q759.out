@@ -31,11 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT o1.user_id, o2.user_id
-FROM orders o1
-JOIN orders o2 ON o1.id = o2.id
-WHERE o1.city = o2.city
-AND o1.created_at < o2.created_at
-AND o1.status = 'paid'
-AND o2.status = 'paid'
-AND o1.id < o2.id;
+SELECT u1.name, u2.name
+FROM users u1
+JOIN users u2 ON u1.id = u2.id
+WHERE u1.city = u2.city
+AND u1.id < u2.id;
+
+[ Prompt: 63.7 t/s | Generation: 12.7 t/s ]
+
+
+Exiting...

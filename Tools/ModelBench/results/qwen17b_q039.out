@@ -35,3 +35,8 @@ SELECT p.name
 FROM products p
 JOIN order_items oi ON p.id = oi.product_id
 WHERE p.stock < 10;
+
+[ Prompt: 71.5 t/s | Generation: 15.1 t/s ]
+
+
+Exiting...

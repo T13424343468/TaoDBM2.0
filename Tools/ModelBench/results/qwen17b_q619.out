@@ -31,10 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.id, p.name, p.category, p.price, p.stock
-FROM products p
-JOIN order_items o ON p.id = o.product_id
-JOIN payments pa ON o.order_id = pa.order_id
-WHERE pa.paid_at = (SELECT MAX(paid_at) FROM payments)
-ORDER BY pa.amount DESC
+SELECT p.id, p.name, p.category, p.price, p.stock, p.amount, p.method, p.paid_at
+FROM payments p
+JOIN orders o ON p.order_id = o.id
+JOIN users u ON o.user_id = u.id
+WHERE p.amount = (SELECT MAX(amount) FROM payments)
+ORDER BY p.amount DESC
 LIMIT 2;
+
+[ Prompt: 64.4 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

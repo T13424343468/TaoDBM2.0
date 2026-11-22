@@ -36,3 +36,8 @@ FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 LEFT JOIN payments p ON o.id = p.order_id
 WHERE p.id IS NULL;
+
+[ Prompt: 67.3 t/s | Generation: 13.4 t/s ]
+
+
+Exiting...

@@ -35,3 +35,8 @@ SELECT order_id, product_id, quantity, unit_price
 FROM order_items
 WINDOW window1 AS (ORDER BY order_id)
 WINDOW window2 AS (ORDER BY product_id)
+
+[ Prompt: 68.7 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

@@ -31,7 +31,10 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.name, p.price, (COUNT(DISTINCT o.id) * 100.0) / (SELECT COUNT(*) FROM products) AS percentile_rank
-FROM products p
-JOIN order_items o ON p.id = o.product_id
-GROUP BY p.id, p.name, p.price;
+SELECT product_id, AVG(price) OVER (ORDER BY price ASC) AS percentile_rank
+FROM products;
+
+[ Prompt: 61.2 t/s | Generation: 16.1 t/s ]
+
+
+Exiting...

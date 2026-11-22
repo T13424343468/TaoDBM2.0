@@ -36,3 +36,8 @@ SELECT id, name, city, created_at
 FROM users
 WHERE city = $1;
 $$ LANGUAGE sql;
+
+[ Prompt: 65.6 t/s | Generation: 14.4 t/s ]
+
+
+Exiting...

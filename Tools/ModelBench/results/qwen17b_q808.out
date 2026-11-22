@@ -39,3 +39,8 @@ WHERE oi.order_id IN (
     FROM payments
     WHERE method = 'credit_card'
 );
+
+[ Prompt: 66.8 t/s | Generation: 15.3 t/s ]
+
+
+Exiting...

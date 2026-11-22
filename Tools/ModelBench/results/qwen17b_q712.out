@@ -33,6 +33,11 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT u.id, u.name, u.city, u.created_at
 FROM users u
-LEFT JOIN payments p ON u.id = p.order_id
 LEFT JOIN orders o ON u.id = o.user_id
-WHERE p.id IS NULL OR o.id IS NULL;
+LEFT JOIN payments p ON o.id = p.order_id
+WHERE o.id IS NULL OR p.id IS NULL;
+
+[ Prompt: 61.7 t/s | Generation: 14.1 t/s ]
+
+
+Exiting...

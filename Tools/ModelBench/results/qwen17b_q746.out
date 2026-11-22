@@ -34,5 +34,10 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT p.name, oi.quantity
 FROM order_items oi
 JOIN products p ON oi.product_id = p.id
-JOIN orders o ON o.id = oi.order_id
+JOIN orders o ON oi.order_id = o.id
 WHERE o.id = 1;
+
+[ Prompt: 68.1 t/s | Generation: 12.6 t/s ]
+
+
+Exiting...

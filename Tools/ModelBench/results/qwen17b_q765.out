@@ -37,3 +37,8 @@ WHERE o.id NOT IN (
     SELECT order_id
     FROM payments
 )
+
+[ Prompt: 63.3 t/s | Generation: 15.5 t/s ]
+
+
+Exiting...

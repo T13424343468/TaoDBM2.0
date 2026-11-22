@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT SUM(p.amount) AS total_payment_amount
 FROM payments p
 WHERE YEAR(p.paid_at) = 2023;
+
+[ Prompt: 72.1 t/s | Generation: 14.8 t/s ]
+
+
+Exiting...

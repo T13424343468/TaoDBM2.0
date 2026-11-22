@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 WHERE o.created_at = (SELECT MAX(created_at) FROM orders)
+
+[ Prompt: 56.4 t/s | Generation: 13.1 t/s ]
+
+
+Exiting...

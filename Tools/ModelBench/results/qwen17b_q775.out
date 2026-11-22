@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT o.id FROM orders o JOIN payments p ON o.id = p.order_id WHERE o.id = p.order_id;
+
+[ Prompt: 69.9 t/s | Generation: 13.0 t/s ]
+
+
+Exiting...

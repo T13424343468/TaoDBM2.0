@@ -31,8 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.name, p.price, p.stock, o.status, o.created_at
-FROM products p
-JOIN orders o ON p.id = o.user_id
-JOIN order_items oi ON oi.order_id = o.id
-WHERE p.price > 0;
+SELECT order_items.product_id, order_items.quantity, order_items.unit_price, products.name, products.category, products.price
+FROM order_items
+JOIN products ON order_items.product_id = products.id
+WHERE order_items.unit_price > 100;
+
+[ Prompt: 67.4 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

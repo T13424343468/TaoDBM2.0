@@ -31,4 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT created_at FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY);
+SELECT created_at FROM users WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY)
+
+[ Prompt: 69.5 t/s | Generation: 14.4 t/s ]
+
+
+Exiting...

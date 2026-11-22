@@ -35,3 +35,8 @@ SELECT o.id, o.user_id, o.status, o.created_at, p.id, p.name, p.category, p.pric
 FROM orders o
 FULL JOIN order_items oi ON o.id = oi.order_id
 FULL JOIN products p ON o.id = p.id;
+
+[ Prompt: 57.9 t/s | Generation: 12.0 t/s ]
+
+
+Exiting...

@@ -31,4 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT name FROM users WHERE name LIKE '%%' RTRIM(name) '%';
+SELECT name
+FROM users
+WHERE name LIKE '%%' -- 这里需要替换为实际的 rtrim 处理逻辑，但根据问题描述，可能只是需要处理姓名，所以直接使用 rtrim 函数
+
+-- 正确的 SQL 查询（使用 rtrim 处理姓名）
+SELECT rtrim(name, ' ') AS processed_name
+FROM users;
+
+[ Prompt: 66.4 t/s | Generation: 14.7 t/s ]
+
+
+Exiting...

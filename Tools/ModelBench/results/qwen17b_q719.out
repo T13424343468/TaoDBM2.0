@@ -35,3 +35,8 @@ SELECT o.id, o.user_id, o.status, p.name, p.category, p.price, p.stock, pa.amoun
 FROM orders o
 LEFT JOIN payments pa ON o.id = pa.order_id
 LEFT JOIN products p ON o.id = p.id;
+
+[ Prompt: 53.2 t/s | Generation: 16.2 t/s ]
+
+
+Exiting...

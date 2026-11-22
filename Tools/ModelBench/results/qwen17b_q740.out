@@ -35,3 +35,8 @@ SELECT p.id, p.name, p.category, p.price, p.stock
 FROM products p
 LEFT JOIN order_items oi ON p.id = oi.product_id
 WHERE oi.product_id IS NULL;
+
+[ Prompt: 59.3 t/s | Generation: 16.4 t/s ]
+
+
+Exiting...

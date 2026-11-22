@@ -39,3 +39,8 @@ FROM
     orders o
 JOIN 
     payments p ON o.id = p.order_id;
+
+[ Prompt: 61.0 t/s | Generation: 14.7 t/s ]
+
+
+Exiting...

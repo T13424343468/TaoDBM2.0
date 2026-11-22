@@ -37,3 +37,8 @@ WHERE u.id NOT IN (
     SELECT order_id
     FROM orders
 );
+
+[ Prompt: 66.4 t/s | Generation: 14.9 t/s ]
+
+
+Exiting...

@@ -33,3 +33,8 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM payments
 WHERE amount > 1000;
+
+[ Prompt: 60.9 t/s | Generation: 19.5 t/s ]
+
+
+Exiting...

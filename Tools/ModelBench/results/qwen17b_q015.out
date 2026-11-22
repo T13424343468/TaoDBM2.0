@@ -33,7 +33,12 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT p.name, COUNT(*) as count
 FROM products p
-JOIN order_items o ON p.id = o.product_id
+JOIN order_items oi ON p.id = oi.product_id
 GROUP BY p.id
 ORDER BY count DESC
 LIMIT 1;
+
+[ Prompt: 63.8 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

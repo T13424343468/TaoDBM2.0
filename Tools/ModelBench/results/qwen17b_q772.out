@@ -35,4 +35,9 @@ SELECT DISTINCT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON o.id = p.order_id
-WHERE o.created_at BETWEEN '2023-01-01' AND '2023-12-31'
+WHERE o.created_at > '2023-01-01';
+
+[ Prompt: 74.9 t/s | Generation: 14.5 t/s ]
+
+
+Exiting...

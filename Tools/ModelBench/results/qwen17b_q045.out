@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM orders WHERE city = '门店';
+
+[ Prompt: 70.1 t/s | Generation: 15.5 t/s ]
+
+
+Exiting...

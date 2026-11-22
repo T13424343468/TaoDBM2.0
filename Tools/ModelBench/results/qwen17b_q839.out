@@ -31,12 +31,16 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-CREATE OR REPLACE FUNCTION get_stock_out() RETURNS SETOF RECORD AS $$
+CREATE OR REPLACE FUNCTION get_stock_out() RETURNS DECIMAL AS $$
 DECLARE
-    v_stock RECORD;
+    stock DECIMAL;
 BEGIN
-    RETURN QUERY SELECT p.id, p.name, p.stock
-    FROM products p
-    WHERE p.stock > 0;
+    SELECT stock INTO stock FROM products WHERE id = 1;
+    RETURN stock;
 END;
 $$ LANGUAGE plpgsql;
+
+[ Prompt: 67.5 t/s | Generation: 15.8 t/s ]
+
+
+Exiting...

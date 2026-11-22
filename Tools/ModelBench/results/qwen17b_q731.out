@@ -35,3 +35,8 @@ SELECT o.id, o.user_id, o.status, o.created_at, oi.product_id, oi.quantity, oi.u
 FROM orders o
 RIGHT JOIN order_items oi ON o.id = oi.order_id
 WHERE o.id = 1;
+
+[ Prompt: 58.3 t/s | Generation: 12.5 t/s ]
+
+
+Exiting...

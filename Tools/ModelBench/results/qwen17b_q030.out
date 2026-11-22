@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT SUM(quantity) AS total_items_sold
 FROM order_items
 WHERE created_at BETWEEN DATE_SUB(NOW(), INTERVAL 1 DAY) AND NOW();
+
+[ Prompt: 68.5 t/s | Generation: 14.5 t/s ]
+
+
+Exiting...

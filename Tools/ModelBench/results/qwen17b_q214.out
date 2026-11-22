@@ -31,8 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT o.id, o.user_id, o.status, o.created_at
-FROM orders o
-LEFT JOIN order_items oi ON o.id = oi.order_id
-LEFT JOIN payments p ON o.id = p.order_id
-WHERE o.created_at > '2023-01-01';
+SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price
+FROM order_items
+LEFT JOIN orders ON order_items.order_id = orders.id
+LEFT JOIN users ON orders.user_id = users.id;
+
+[ Prompt: 64.3 t/s | Generation: 15.0 t/s ]
+
+
+Exiting...

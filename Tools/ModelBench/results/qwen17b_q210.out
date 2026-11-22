@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT REPLACE(name, ' ', '') AS name FROM users;
+
+[ Prompt: 69.7 t/s | Generation: 14.7 t/s ]
+
+
+Exiting...

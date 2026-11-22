@@ -37,3 +37,8 @@ WHERE order_id IN (
     SELECT order_id FROM payments
     WHERE method = 'credit_card'
 );
+
+[ Prompt: 65.3 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

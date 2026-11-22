@@ -36,5 +36,10 @@ FROM order_items o
 JOIN products p ON o.product_id = p.id
 JOIN payments p2 ON o.order_id = p2.order_id
 WHERE p2.paid_at = (SELECT MAX(paid_at) FROM payments)
-ORDER BY total_amount DESC
+ORDER BY p2.amount DESC
 LIMIT 2;
+
+[ Prompt: 73.2 t/s | Generation: 14.5 t/s ]
+
+
+Exiting...

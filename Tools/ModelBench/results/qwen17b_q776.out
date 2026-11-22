@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT id FROM orders WHERE id NOT IN (SELECT order_id FROM payments)
+
+[ Prompt: 61.6 t/s | Generation: 12.4 t/s ]
+
+
+Exiting...

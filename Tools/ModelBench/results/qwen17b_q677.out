@@ -35,13 +35,24 @@ SELECT u.name
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
-JOIN payments p ON oi.id = p.id
-WHERE o.status = 'completed'
-AND u.city = 'Beijing'
-AND u.name IN (
-    SELECT name
-    FROM users
-    WHERE city = 'Beijing'
-    ORDER BY SUM(oi.quantity * oi.unit_price) DESC
-    LIMIT 1
+JOIN payments p ON o.id = p.order_id
+WHERE u.id IN (
+    SELECT user_id
+    FROM orders
+    WHERE status = 'completed'
+    GROUP BY user_id
+    HAVING AVG(oi.unit_price * oi.quantity) > (
+        SELECT AVG(p.amount)
+        FROM payments p
+        WHERE p.order_id IN (
+            SELECT order_id
+            FROM orders
+            WHERE status = 'completed'
+        )
+    )
 );
+
+[ Prompt: 52.5 t/s | Generation: 13.2 t/s ]
+
+
+Exiting...

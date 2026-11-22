@@ -35,4 +35,9 @@ SELECT o.id, o.user_id, o.status, o.created_at, oi.product_id, oi.quantity, oi.u
 FROM orders o
 FULL JOIN order_items oi ON o.id = oi.order_id
 FULL JOIN payments p ON o.id = p.order_id
-FULL JOIN users u ON o.user_id = u.id;
+WHERE o.id IS NULL OR oi.id IS NULL;
+
+[ Prompt: 59.3 t/s | Generation: 11.7 t/s ]
+
+
+Exiting...

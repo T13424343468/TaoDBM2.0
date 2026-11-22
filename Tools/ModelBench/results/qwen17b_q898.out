@@ -36,5 +36,10 @@ ON SCHEDULE EVERY 10 MINUTE
 DO
 BEGIN
   DELETE FROM orders
-  WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 DAY;
+  WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
 END;
+
+[ Prompt: 89.0 t/s | Generation: 16.9 t/s ]
+
+
+Exiting...

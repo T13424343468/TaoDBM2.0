@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT id % 3 FROM users;
+
+[ Prompt: 67.3 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

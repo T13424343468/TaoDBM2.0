@@ -31,7 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT DATE(created_at) AS date, COUNT(*) AS order_count
+SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS date, COUNT(*) AS order_count
 FROM orders
 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 1 month)
-GROUP BY DATE(created_at)
+GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d');
+
+[ Prompt: 60.4 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

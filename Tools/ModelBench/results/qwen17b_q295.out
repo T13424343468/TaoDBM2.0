@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT name FROM users WHERE ASCII(left(name, 1)) = ASCII('A')
+
+[ Prompt: 57.5 t/s | Generation: 11.0 t/s ]
+
+
+Exiting...

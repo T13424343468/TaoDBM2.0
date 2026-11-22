@@ -40,3 +40,8 @@ BEGIN
   SELECT * FROM orders
   WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '30' DAY;
 END;
+
+[ Prompt: 83.6 t/s | Generation: 16.6 t/s ]
+
+
+Exiting...

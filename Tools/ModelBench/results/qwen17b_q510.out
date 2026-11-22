@@ -34,3 +34,8 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT YEAR(created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
 GROUP BY YEAR(created_at)
+
+[ Prompt: 64.0 t/s | Generation: 15.4 t/s ]
+
+
+Exiting...

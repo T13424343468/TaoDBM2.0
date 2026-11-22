@@ -35,3 +35,8 @@ SELECT YEAR(created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
 WHERE created_at BETWEEN DATEADD(QQ, -1, created_at) AND created_at
 GROUP BY YEAR(created_at)
+
+[ Prompt: 70.8 t/s | Generation: 15.9 t/s ]
+
+
+Exiting...

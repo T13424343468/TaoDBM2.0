@@ -36,3 +36,8 @@ FROM orders
 GROUP BY created_at
 ORDER BY order_count DESC
 LIMIT 1;
+
+[ Prompt: 66.4 t/s | Generation: 13.4 t/s ]
+
+
+Exiting...

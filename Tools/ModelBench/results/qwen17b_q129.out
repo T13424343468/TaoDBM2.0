@@ -48,3 +48,8 @@ FROM (
     SELECT LENGTH(name) AS length
     FROM payments
 ) AS subquery;
+
+[ Prompt: 68.4 t/s | Generation: 14.8 t/s ]
+
+
+Exiting...

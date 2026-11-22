@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT DISTINCT MONTH(created_at) AS registration_month FROM users;
+
+[ Prompt: 66.0 t/s | Generation: 17.7 t/s ]
+
+
+Exiting...

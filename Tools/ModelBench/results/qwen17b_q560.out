@@ -37,3 +37,8 @@ FROM
     payments
 WHERE 
     paid_at > created_at;
+
+[ Prompt: 70.7 t/s | Generation: 13.8 t/s ]
+
+
+Exiting...

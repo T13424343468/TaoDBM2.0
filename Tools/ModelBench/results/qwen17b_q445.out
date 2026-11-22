@@ -35,3 +35,8 @@ SELECT strftime('%Y-%m', created_at) AS month, COUNT(*) AS count
 FROM users
 GROUP BY month
 ORDER BY month;
+
+[ Prompt: 70.5 t/s | Generation: 15.3 t/s ]
+
+
+Exiting...

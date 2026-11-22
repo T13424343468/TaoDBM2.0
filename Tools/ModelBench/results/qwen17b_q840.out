@@ -31,4 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT stock FROM products WHERE id = (SELECT id FROM order_items WHERE order_id = (SELECT id FROM payments WHERE order_id = (SELECT id FROM orders WHERE user_id = (SELECT id FROM users WHERE name = 'John Doe'))))
+CREATE PROCEDURE GetStock @out INT OUTPUT
+AS
+BEGIN
+    SELECT @out = stock FROM products WHERE id = 1;
+END;
+
+[ Prompt: 61.1 t/s | Generation: 14.4 t/s ]
+
+
+Exiting...

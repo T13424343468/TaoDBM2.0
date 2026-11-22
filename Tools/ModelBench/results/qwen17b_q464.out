@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT HOUR(created_at) AS hour, COUNT(*) AS order_count
 FROM orders
 GROUP BY HOUR(created_at)
+
+[ Prompt: 73.1 t/s | Generation: 14.6 t/s ]
+
+
+Exiting...

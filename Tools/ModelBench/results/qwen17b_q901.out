@@ -35,19 +35,13 @@ CREATE EVENT archive_orders
 ON SCHEDULE EVERY 1 MINUTE
 DO
 BEGIN
-    DECLARE order_id INT;
-    DECLARE order_date DATETIME;
-    DECLARE today DATETIME;
-
-    SET today = CURRENT_TIMESTAMP;
-
-    WHILE TRUE DO
-        SET order_date = DATE_SUB(today, INTERVAL 30 DAY);
-        SELECT id INTO order_id FROM orders WHERE created_at < order_date;
-        IF order_id IS NULL THEN
-            LEAVE;
-        END IF;
-        INSERT INTO archive_orders (id) VALUES (order_id);
-        SET today = DATE_ADD(today, INTERVAL 1 MINUTE);
-    END WHILE;
+    INSERT INTO archive_orders
+    SELECT *
+    FROM orders
+    WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 MINUTE;
 END;
+
+[ Prompt: 62.8 t/s | Generation: 15.6 t/s ]
+
+
+Exiting...

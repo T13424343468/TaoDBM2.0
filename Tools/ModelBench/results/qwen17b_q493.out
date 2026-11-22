@@ -34,3 +34,8 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT YEAR(created_at) AS year, MONTH(created_at) AS month, COUNT(*) AS order_count
 FROM orders
 GROUP BY year, month;
+
+[ Prompt: 68.3 t/s | Generation: 15.3 t/s ]
+
+
+Exiting...

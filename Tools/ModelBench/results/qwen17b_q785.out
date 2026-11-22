@@ -35,4 +35,9 @@ SELECT u.name
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN payments p ON o.id = p.order_id
-WHERE p.amount * p.quantity > 10000;
+WHERE p.amount > 10000;
+
+[ Prompt: 51.1 t/s | Generation: 17.4 t/s ]
+
+
+Exiting...

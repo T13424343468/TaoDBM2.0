@@ -35,6 +35,9 @@ SELECT u.id, u.name, u.city
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
-JOIN payments p ON oi.id = p.id
-WHERE p.paid_at >= CURRENT_DATE
-ORDER BY u.id;
+WHERE oi.quantity > 0;
+
+[ Prompt: 62.7 t/s | Generation: 15.6 t/s ]
+
+
+Exiting...

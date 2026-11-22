@@ -31,8 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT DISTINCT u.id, u.name, u.city
-FROM users u
-JOIN orders o ON u.id = o.user_id
+SELECT DISTINCT o.id, o.user_id, o.status, o.created_at
+FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
-WHERE oi.quantity > 0;
+JOIN payments p ON o.id = p.order_id
+WHERE o.created_at > '2023-01-01';
+
+[ Prompt: 60.5 t/s | Generation: 15.9 t/s ]
+
+
+Exiting...

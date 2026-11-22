@@ -31,9 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT u.id, u.name, u.city, u.created_at, COUNT(*) OVER (PARTITION BY u.id) AS rank
+SELECT u.id, u.name, u.city, o.created_at, ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY o.created_at DESC) AS rank
 FROM users u
-JOIN orders o ON u.id = o.user_id
-JOIN order_items oi ON o.id = oi.order_id
-WHERE oi.quantity > 0
-ORDER BY u.created_at;
+JOIN orders o ON u.id = o.user_id;
+
+[ Prompt: 59.0 t/s | Generation: 12.3 t/s ]
+
+
+Exiting...

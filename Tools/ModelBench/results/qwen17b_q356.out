@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT unit_price
 FROM order_items
 WHERE unit_price >= FLOOR(unit_price);
+
+[ Prompt: 66.2 t/s | Generation: 15.9 t/s ]
+
+
+Exiting...

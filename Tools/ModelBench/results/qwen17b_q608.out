@@ -34,3 +34,8 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT user_id, created_at, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) as rank
 FROM orders
 WHERE user_id IN (SELECT user_id FROM orders)
+
+[ Prompt: 73.1 t/s | Generation: 15.2 t/s ]
+
+
+Exiting...

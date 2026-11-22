@@ -32,3 +32,8 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT generated_at FROM generate_series( CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE ) as generated_at;
+
+[ Prompt: 72.1 t/s | Generation: 14.7 t/s ]
+
+
+Exiting...

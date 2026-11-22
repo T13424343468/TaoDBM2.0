@@ -38,4 +38,10 @@ UNION ALL
 SELECT * FROM orders
 UNION ALL
 SELECT * FROM payments
-ORDER BY id;
+UNION ALL
+SELECT * FROM users;
+
+[ Prompt: 66.2 t/s | Generation: 13.5 t/s ]
+
+
+Exiting...

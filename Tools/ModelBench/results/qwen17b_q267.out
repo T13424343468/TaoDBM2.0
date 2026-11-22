@@ -34,3 +34,8 @@ CREATE TABLE order_items (id IN ... (truncated)
 SELECT name, INSTR(name, 'a') AS pos
 FROM users
 WHERE INSTR(name, 'a') > 0;
+
+[ Prompt: 65.4 t/s | Generation: 12.8 t/s ]
+
+
+Exiting...

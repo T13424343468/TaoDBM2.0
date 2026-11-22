@@ -34,3 +34,8 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM orders
 UNION ALL
 SELECT * FROM payments;
+
+[ Prompt: 66.4 t/s | Generation: 14.7 t/s ]
+
+
+Exiting...

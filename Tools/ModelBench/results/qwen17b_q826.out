@@ -35,3 +35,8 @@ CREATE PROCEDURE get_user_count AS BEGIN
     SELECT COUNT(*) INTO @user_count FROM users;
     SELECT @user_count;
 END;
+
+[ Prompt: 61.4 t/s | Generation: 15.3 t/s ]
+
+
+Exiting...

@@ -35,5 +35,9 @@ SELECT u.id, u.name, u.city, u.created_at
 FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
 LEFT JOIN order_items oi ON o.id = oi.order_id
-LEFT JOIN payments p ON o.id = p.order_id
-WHERE 1=1;
+LEFT JOIN payments p ON o.id = p.order_id;
+
+[ Prompt: 66.3 t/s | Generation: 13.4 t/s ]
+
+
+Exiting...

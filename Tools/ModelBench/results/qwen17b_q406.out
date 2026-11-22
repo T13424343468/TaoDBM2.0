@@ -34,3 +34,8 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT unit_price
 FROM order_items
 WHERE e^price = unit_price;
+
+[ Prompt: 78.5 t/s | Generation: 15.1 t/s ]
+
+
+Exiting...
