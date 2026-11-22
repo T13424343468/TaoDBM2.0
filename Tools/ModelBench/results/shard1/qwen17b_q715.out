@@ -1,0 +1,43 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12559-7e960f40f
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 MySQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (id INT ... (truncated)
+SELECT u.id, u.name, p.name, p.category, p.price, p.stock, o.id, o.status, o.created_at, pi.id, pi.order_id, pi.product_id, pi.quantity, pi.unit_price, pa.id, pa.order_id, pa.amount, pa.method, pa.paid_at
+FROM users u
+ CROSS JOIN payments pa
+ CROSS JOIN orders o
+ CROSS JOIN order_items pi;
+
+[ Prompt: 33.9 t/s | Generation: 9.2 t/s ]
+
+
+Exiting...
