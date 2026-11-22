@@ -176,7 +176,7 @@ public class WorkTab : Grid
         _structBtn.Click += (_, _) => _ = ShowStructure();
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
         _importBtn.Click += (_, _) => _ = ImportCsv();
-        _designBtn.Click += (_, _) => _ = UI.TableDesignerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);
+        _designBtn.Click += (_, _) => _owner.OpenDesignerTab(_provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);
         _fakerBtn.Click += (_, _) => _ = UI.FakerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : "main");
         _histBtn.Click += (_, _) => ShowHistory();
         _favBtn.Click += (_, _) => ShowFavorites();

@@ -459,30 +459,49 @@ public partial class MainWindow : Window
             mi.Click += h;
             fly.Items.Add(mi);
         }
+        void Sep() => fly.Items.Add(new MenuFlyoutSeparator());
+        // U2 树-4：长尾功能收进二级子菜单，对齐 Navicat 层级（常用项平铺，工具类归组）
+        void Sub(string text, Action<MenuFlyoutSubItem> fill)
+        {
+            var sub = new MenuFlyoutSubItem { Text = text };
+            void SubItem(string t, RoutedEventHandler h)
+            {
+                var mi = new MenuFlyoutItem { Text = t };
+                mi.Click += h;
+                sub.Items.Add(mi);
+            }
+            fill(sub);
+            if (sub.Items.Count > 0) fly.Items.Add(sub);
+        }
         switch (info.Kind)
         {
             case NodeKind.Connection:
                 Item("刷新", (_, _) => RefreshNode(node));   // D-10 修红：连接节点补刷新入口（此前仅左上角图标菜单）
                 Item("展开连接", (_, _) => { if (!node.IsExpanded) node.IsExpanded = true; });
                 Item("编辑连接", async (_, _) => await EditConnection(info));
-                Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
-                Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
-                Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
-                Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
-                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
-                Item("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info));
-                Item("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info));
-                Item("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info));
-                Item("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
-                Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
-                Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
-                Item("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
-                Item("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
-                Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
-                Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
-                Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
-                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
+                Sep();
+                Sub("工具与向导", sub =>
+                {
+                    SubItem("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
+                    SubItem("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
+                    SubItem("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
+                    SubItem("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
+                    SubItem("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                    SubItem("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
+                    SubItem("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info));
+                    SubItem("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info));
+                    SubItem("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info));
+                    SubItem("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
+                    SubItem("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
+                    SubItem("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
+                    SubItem("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
+                    SubItem("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
+                    SubItem("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
+                    SubItem("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
+                    SubItem("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
+                    SubItem("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
+                });
+                Sep();
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
                 break;
@@ -492,26 +511,32 @@ public partial class MainWindow : Window
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
-                Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
-                Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
-                Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
-                Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
-                Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
-                Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
-                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
-                Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
-                Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
-                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
-                Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
-                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
+                Sep();
+                Sub("库工具", sub =>
+                {
+                    SubItem("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
+                    SubItem("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
+                    SubItem("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
+                    SubItem("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
+                    SubItem("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
+                    SubItem("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
+                    SubItem("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
+                    SubItem("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
+                    SubItem("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
+                    SubItem("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
+                    SubItem("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
+                    SubItem("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
+                    SubItem("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
+                });
                 break;
             case NodeKind.Table:
-                Item("刷新", (_, _) => RefreshNode(node));
-                Item("新建查询", (_, _) => OpenQueryTab(info));
+                // 树-4 验收口径：菜单次序对齐 Navicat——查看数据 / 设计表 / 新建查询 / 刷新
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
+                Item("新建查询", (_, _) => OpenQueryTab(info));
+                Item("刷新", (_, _) => RefreshNode(node));
+                Sep();
                 Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
                 Item("拟真数据", (_, _) => OpenFaker(info));
                 break;
@@ -784,7 +809,7 @@ public partial class MainWindow : Window
 
     private void OnBrowseSel(object sender, RoutedEventArgs e) => OpenTableTab(SelectedInfo());
 
-    /// <summary>选中表 → 改表结构；选中库 → 新建表；其他提示。</summary>
+    /// <summary>选中表 → 改表结构；选中库 → 新建表；其他提示。U2 D-13：设计器内嵌主窗口页签（Navicat 口径），不再弹框。</summary>
     private async void OnDesignSel(object sender, RoutedEventArgs e)
     {
         var info = SelectedInfo();
@@ -795,13 +820,23 @@ public partial class MainWindow : Window
             List<ColumnSpec> cols;
             try { cols = await info.Provider.GetColumns(info.Db, info.Name); }
             catch (Exception ex) { await InfoAsync("读取表结构失败：" + ex.Message); return; }
-            _ = UI.TableDesignerDialog.Show(this, info.Provider, info.Db, info.Name, cols);
+            OpenDesignerTab(info.Provider, info.Db, info.Name, cols);
         }
         else if (info.Kind == NodeKind.Database)
         {
-            _ = UI.TableDesignerDialog.Show(this, info.Provider, info.Name, null, null);
+            OpenDesignerTab(info.Provider, info.Name, null, null);
         }
         else await InfoAsync("请选中库或表后再设计表结构。");
+    }
+
+    /// <summary>U2 D-13：打开内嵌表设计器页签（列 / 索引 / 外键分区 + SQL 预览实时刷新）。</summary>
+    public void OpenDesignerTab(IDbProvider prov, string db, string? table, List<ColumnSpec>? existing)
+    {
+        var tab = new TabViewItem { Header = table == null ? $"新建表 · {db}" : $"设计 · {table}" };
+        tab.Content = new UI.TableDesignerTab(this, prov, db, table, existing);
+        WorkTabs.TabItems.Add(tab);
+        SaveSession();
+        WorkTabs.SelectedItem = tab;
     }
 
     /// <summary>备份 / 还原：MySQL/PG 走官方 CLI，SQL Server 走 T-SQL，SQLite 文件复制。</summary>
