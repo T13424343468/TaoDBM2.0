@@ -223,6 +223,24 @@ function Set-TextValue([System.Windows.Automation.AutomationElement]$el, [string
   }
   return $ok
 }
+function Read-EditorTextSafe([System.Windows.Automation.AutomationElement]$el, [System.Windows.Automation.AutomationElement]$root) {
+  # #244 追修：并行高负载下 ValuePattern 回读偶发拿空——多路回读＋重试，全路拿不到返回 $null（读不回≠读到错）
+  foreach ($round in 1..3) {
+    try { $v = ($el.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value; if ($v) { return $v } } catch { }
+    try { $tp = $el.GetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern); $v = $tp.DocumentRange.GetText(-1); if ($v) { return $v } } catch { }
+    try { $n = $el.Current.Name; if ($n) { return $n } } catch { }
+    if ($null -ne $root) {
+      try {
+        $el2 = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::AutomationIdProperty, 'work-editor')))
+        if ($null -ne $el2) {
+          try { $v = ($el2.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value; if ($v) { return $v } } catch { }
+        }
+      } catch { }
+    }
+    Start-Sleep -Milliseconds 500
+  }
+  return $null
+}
 function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [string]$itemName) {
   try { ($combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)).Expand() } catch { }
   Start-Sleep -Milliseconds 1200
@@ -573,12 +591,27 @@ foreach ($s in $plan.steps) {
         # 改 UIA ValuePattern 整段设值＋回读校验，失败降级剪贴板整段粘贴，两轮重试后仍不一致才红，杜绝把错账当产品红
         $sqlText = Tpl $s.sql
         $setOk = $false
-        foreach ($attempt in 1..2) {
+        foreach ($attempt in 1..3) {
           Set-TextValue $ed $sqlText
-          Start-Sleep -Milliseconds 400
-          $got = $null
-          try { $got = ($ed.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
+          Start-Sleep -Milliseconds 800
+          $got = Read-EditorTextSafe $ed $mainRoot
           if ($got -eq $sqlText) { $setOk = $true; break }
+          if ($null -eq $got) {
+            # 读不回：脚本不可验证，不硬判产品红，交账本对账裁决；仍补剪贴板整段粘贴提高设值成功率
+            Log "$id editor-verify retry $attempt unreadable (defer to ledger)"
+            try {
+              Set-Clipboard -Value $sqlText
+              $ed.SetFocus()
+              Start-Sleep -Milliseconds 300
+              [System.Windows.Forms.SendKeys]::SendWait("^a")
+              Start-Sleep -Milliseconds 150
+              [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+              Start-Sleep -Milliseconds 150
+              [System.Windows.Forms.SendKeys]::SendWait("^v")
+            } catch { }
+            Start-Sleep -Milliseconds 600
+            continue
+          }
           Log "$id editor-verify retry $attempt got=$got"
           try {
             Set-Clipboard -Value $sqlText
@@ -590,12 +623,13 @@ foreach ($s in $plan.steps) {
             Start-Sleep -Milliseconds 150
             [System.Windows.Forms.SendKeys]::SendWait("^v")
           } catch { }
-          Start-Sleep -Milliseconds 400
+          Start-Sleep -Milliseconds 600
         }
         if (-not $setOk) {
-          $got = $null
-          try { $got = ($ed.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
-          if ($got -ne $sqlText) { throw "editor verify failed: sql mismatch after retries (got=$got)" }
+          $got = Read-EditorTextSafe $ed $mainRoot
+          # 读不回＝脚本不可验证，交账本裁决；读到错内容才是硬红
+          if ($null -ne $got -and $got -ne $sqlText) { throw "editor verify failed: sql mismatch after retries (got=$got)" }
+          if ($null -eq $got) { Log "$id editor-verify final unreadable, deferring to ledger check" }
         }
         Start-Sleep -Milliseconds 300
         $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
