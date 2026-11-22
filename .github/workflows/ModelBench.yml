@@ -12,6 +12,15 @@ jobs:
   bench:
     runs-on: windows-latest
     timeout-minutes: 360
+    # MATRIX x3 (2026-11-22, boss order "1"): kernel-class census showed the
+    # comparability key is the runner CPU kernel class (zen4/icelake vs haswell
+    # vs sapphirerapids), and sapphirerapids appears at ~1/7 per throw. Three
+    # parallel shards triple the sampling rate (expected C-class hits 0.43/throw).
+    # First matrix throw re-opens the baseline series.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +67,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## ModelBench (windows-latest 4vCPU/16GB)"
+            echo "## ModelBench shard ${{ matrix.shard }} (windows-latest 4vCPU/16GB)"
             echo '### llama-bench'
             echo '```'
             cat Tools/ModelBench/out/bench_qwen17b.txt 2>/dev/null
@@ -76,8 +85,7 @@ jobs:
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
-
-      - name: Publish results to public branch
+      - name: Publish results to public branch (per-shard)
         if: always()
         shell: bash
         env:
@@ -86,10 +94,10 @@ jobs:
           mkdir -p publish && cp -r Tools/ModelBench/out publish/ 2>/dev/null || true
           cd publish
           git init -q
-          git checkout -q -b model-bench-latest
+          git checkout -q -b model-bench-shard${{ matrix.shard }}
           git add -A
-          git -c user.name=model-bench-bot -c user.email=actions@users.noreply.github.com commit -qm "ModelBench results $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" model-bench-latest
+          git -c user.name=model-bench-bot -c user.email=actions@users.noreply.github.com commit -qm "ModelBench shard ${{ matrix.shard }} results $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" model-bench-shard${{ matrix.shard }}
 
       - name: Commit results to main
         if: always()
@@ -101,17 +109,53 @@ jobs:
           git config user.name "model-bench-bot"
           git config user.email "actions@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git pull origin main
-          mkdir -p Tools/ModelBench/results
-          cp Tools/ModelBench/out/run.log "Tools/ModelBench/results/run-$(date -u +%Y%m%d-%H%M%S).log" || true
-          cp Tools/ModelBench/out/bench_*.txt Tools/ModelBench/results/ 2>/dev/null || true
-          cp Tools/ModelBench/out/*_q*.out Tools/ModelBench/results/ 2>/dev/null || true
-          git add Tools/ModelBench/results
-          git commit -qm "bench: results $(date -u +%Y-%m-%dT%H%M%SZ)"
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p "Tools/ModelBench/results/shard${{ matrix.shard }}"
+            cp Tools/ModelBench/out/run.log "Tools/ModelBench/results/shard${{ matrix.shard }}/run-$(date -u +%Y%m%d-%H%M%S).log" || true
+            cp Tools/ModelBench/out/bench_*.txt "Tools/ModelBench/results/shard${{ matrix.shard }}/" 2>/dev/null || true
+            cp Tools/ModelBench/out/*_q*.out "Tools/ModelBench/results/shard${{ matrix.shard }}/" 2>/dev/null || true
+            git add Tools/ModelBench/results
+            git commit -qm "bench: shard${{ matrix.shard }} results $(date -u +%Y-%m-%dT%H%M%SZ)"
+            if git push origin HEAD:main; then break; fi
+            echo "push attempt $attempt failed, retrying after backoff"
+            sleep $((attempt * 20))
+          done
       - name: Upload raw outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: model-bench-results
+          name: model-bench-results-shard${{ matrix.shard }}
           path: Tools/ModelBench/out/
+
+  aggregate:
+    # Merged view for the monitor line: all shards land on model-bench-latest
+    # under out/shard<N>/ so existing watchers keep a single branch to poll.
+    needs: bench
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: model-bench-results-shard*
+          path: artifacts
+      - name: Merge shards and publish to model-bench-latest
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p publish
+          for d in artifacts/model-bench-results-shard*; do
+            s=$(basename "$d" | sed 's/model-bench-results-shard//')
+            mkdir -p "publish/out/shard$s"
+            cp -r "$d"/* "publish/out/shard$s/" 2>/dev/null || true
+          done
+          cd publish
+          git init -q
+          git checkout -q -b model-bench-latest
+          git add -A
+          git -c user.name=model-bench-bot -c user.email=actions@users.noreply.github.com commit -qm "ModelBench matrix results $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" model-bench-latest
