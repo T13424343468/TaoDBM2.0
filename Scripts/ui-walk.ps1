@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); }'
 Add-Type -TypeDefinition $src
 
 $shots = New-Object System.Collections.Generic.List[string]
@@ -175,9 +175,25 @@ function Get-WalkDiagnostics {
   return $out
 }
 function Close-ExtraWindows($mainHwnd) {
-  # #226 定谿: 桌面级 UIA 窗口扫描+WindowPattern.Close 杀 runner 显示会话 - S18 六探针证明主题应用/截图全过,
-  # 会话死在 SP shot-done 与 SP closed 之间(即本函数的全桌面 FindAll 扫描), 与 Expand-TreeItem 注释的
-  # 「全桌面 UIA 扫描是机器死亡头号嫌疑」同源。改为纯 ESC 收场: 弹层由焦点 ESC 关闭, 不再全桌面扫描。
+  # #250 定谳: 桌面级 UIA FindAll 是进程级 COM 崩溃点(#201 同类), seg4b/c2b x2 软页步同点死亡(#222/#248/#249/#250 四轮);
+  # 热点路径零 UIA: 纯 user32 FindWindowExW 顶层游走 + WM_CLOSE 关外来窗口, 切记跳过自身进程窗口
+  try {
+    $hScan = [IntPtr]::Zero
+    do {
+      $hScan = [WinNative]::FindWindowExW([IntPtr]::Zero, $hScan, $null, $null)
+      if ($hScan -ne [IntPtr]::Zero -and $hScan -ne $mainHwnd -and [WinNative]::IsWindowVisible($hScan)) {
+        $cls = New-Object System.Text.StringBuilder 256
+        [void][WinNative]::GetClassNameW($hScan, $cls, 256)
+        $cn = $cls.ToString()
+        $wpid = [uint32]0
+        [void][WinNative]::GetWindowThreadProcessId($hScan, [ref]$wpid)
+        if ($cn -notmatch 'Progman|WorkerW|Shell_TrayWnd|CoreWindow|ApplicationFrameWindow' -and $wpid -ne $PID) {
+          $res = [IntPtr]::Zero
+          [void][WinNative]::SendMessageTimeoutW($hScan, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero, 0x0002, 1000, [ref]$res)
+        }
+      }
+    } while ($hScan -ne [IntPtr]::Zero)
+  } catch { }
   Start-Sleep -Milliseconds 800
   [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
   Start-Sleep -Milliseconds 500
@@ -795,7 +811,7 @@ foreach ($s in $plan.steps) {
           Start-Sleep -Seconds 2
         }
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
-        Push-Evidence "SP shot-done"
+        Push-Evidence "$id pre-close"
         Close-ExtraWindows $handle
         Push-Evidence "SP closed"
       }
