@@ -18,6 +18,26 @@ public static class VirtualizedResultGrid
         double rowH = VirtualWindowMath.RowHeight;
 
         var order = Enumerable.Range(0, total).ToArray();
+        int sortCol = -1, sortMode = ResultGridOps.SortOriginal;
+        var rowsHost = new Grid { VerticalAlignment = VerticalAlignment.Top };
+        var viewport = new Border
+        {
+            Height = VirtualWindowMath.TotalHeight(total),
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, rowH, 0, 0),
+            Child = rowsHost,
+        };
+        var root = new Grid
+        {
+            Height = rowH + VirtualWindowMath.TotalHeight(total),
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+        var scroll = new ScrollViewer
+        {
+            Content = root,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
 
         // 表头：与数据行同列宽规则、同行高（虚拟位移以一个行高为偏移基准）；含排序指示与点击循环
         var header = new Grid { Background = Ant.HeadBg };
@@ -26,7 +46,7 @@ public static class VirtualizedResultGrid
         var arrows = new TextBlock[nCols];
         for (int i = 0; i < nCols; i++)
         {
-            var arrow = new TextBlock { Foreground = Ant.Accent, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var arrow = new TextBlock { Foreground = Ant.Primary, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             arrows[i] = arrow;
             var headPanel = new StackPanel { Orientation = Orientation.Horizontal };
             headPanel.Children.Add(new TextBlock
@@ -47,34 +67,12 @@ public static class VirtualizedResultGrid
             header.Children.Add(cell);
         }
         header.Height = rowH;
-        Grid.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
-
-        var rowsHost = new Grid { VerticalAlignment = VerticalAlignment.Top };
-        var viewport = new Border
-        {
-            Height = VirtualWindowMath.TotalHeight(total),
-            VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(0, rowH, 0, 0),
-            Child = rowsHost,
-        };
-        var root = new Grid
-        {
-            Height = rowH + VirtualWindowMath.TotalHeight(total),
-            VerticalAlignment = VerticalAlignment.Top,
-        };
+        Canvas.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
         root.Children.Add(header);
         root.Children.Add(viewport);
 
-        var scroll = new ScrollViewer
-        {
-            Content = root,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        };
-
         double lastTop = double.NaN;
         int lastFirst = int.MinValue, lastLast = int.MinValue;
-        int sortCol = -1, sortMode = ResultGridOps.SortOriginal;
 
         // 只重画窗口变化：滚动/尺寸变化高频触发，窗口未动时零重建。
         // 表头已冻结钉在视口顶部：可见数据区 = 内容 y [V+rowH, V+Vh] → 数据偏移 top=V、高度 Vh-rowH

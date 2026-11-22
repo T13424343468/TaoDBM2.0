@@ -44,6 +44,7 @@ public static class GridBuilder
 
         int sortCol = -1, sortMode = ResultGridOps.SortOriginal;
         var order = Enumerable.Range(0, r.Rows.Count).ToArray();
+        var rowsHost = new StackPanel { Orientation = Orientation.Vertical };
 
         // 表头（含排序指示与点击循环）
         var header = new Grid { Background = Ant.HeadBg };
@@ -52,7 +53,7 @@ public static class GridBuilder
         var arrows = new TextBlock[nCols];
         for (int i = 0; i < nCols; i++)
         {
-            var arrow = new TextBlock { Foreground = Ant.Accent, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var arrow = new TextBlock { Foreground = Ant.Primary, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             arrows[i] = arrow;
             var headPanel = new StackPanel { Orientation = Orientation.Horizontal };
             headPanel.Children.Add(new TextBlock
@@ -74,10 +75,9 @@ public static class GridBuilder
         Grid.SetRow(header, grid.RowDefinitions.Count);
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(header);
-        Grid.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
+        Canvas.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
 
         // 数据行（排序后按显示序物化；小结果集直渲染，虚拟阈值之上走 VirtualizedResultGrid）
-        var rowsHost = new StackPanel { Orientation = Orientation.Vertical };
         Grid.SetRow(rowsHost, grid.RowDefinitions.Count);
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(rowsHost);
