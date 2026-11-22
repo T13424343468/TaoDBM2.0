@@ -535,6 +535,15 @@ public partial class MainWindow : Window
         fly.ShowAt(e.OriginalSource as FrameworkElement ?? ConnTree);
     }
 
+    /// <summary>树节点双击：表节点直接打开数据浏览（欢迎页与手册承诺的行为，P0 整改 02）。</summary>
+    private void OnTreeDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        var node = (e.OriginalSource as FrameworkElement)?.DataContext as TreeViewNode;
+        if (node is null || !_nodeMap.TryGetValue(node, out var info)) return;
+        ConnTree.SelectedItem = node;   // 双击即选中，动作与选中态一致
+        if (info.Kind == NodeKind.Table) OpenTableTab(info);
+    }
+
     private void RefreshNode(TreeViewNode node)
     {
         node.Children.Clear();

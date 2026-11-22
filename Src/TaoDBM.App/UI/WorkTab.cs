@@ -31,6 +31,8 @@ public class WorkTab : Grid
     private readonly DispatcherQueueTimer _hlTimer;
     private bool _applying;
     private readonly Button _runBtn = new() { Content = "▶ 执行", Background = Ant.Primary, Foreground = Ant.OnPrimary, BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(4), Padding = new Thickness(14, 5, 14, 5) };
+    private readonly Button _stopBtn = new() { Content = "■ 停止", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4), IsEnabled = false };
+    private CancellationTokenSource? _runCts;
     private readonly Button _csvBtn = new() { Content = "导出 CSV", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _insBtn = new() { Content = "导出 INSERT", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _structBtn = new() { Content = "结构", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
@@ -101,6 +103,7 @@ public class WorkTab : Grid
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(10, 8, 10, 8) };
         bar.Children.Add(_dbBox);
         bar.Children.Add(_runBtn);
+        bar.Children.Add(_stopBtn);
         bar.Children.Add(_csvBtn);
         if (provider is not (MongoProvider or RedisProvider)) bar.Children.Add(_insBtn);
         if (mode == WorkMode.TableData && provider.SupportsBrowse && provider.IsNoSql == false)
@@ -145,12 +148,14 @@ public class WorkTab : Grid
         // UIA 自动化标识（界面自动化走查定位用）
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_runBtn, "work-run");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_stopBtn, "work-stop");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_csvBtn, "work-csv");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_messageBox, "work-message");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_pageInfo, "work-pageinfo");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_resultsHost, "work-results");
 
         _runBtn.Click += (_, _) => _ = RunOrRefresh();
+        _stopBtn.Click += (_, _) => _runCts?.Cancel();
         _csvBtn.Click += (_, _) => _ = ExportAsync(true);
         _insBtn.Click += (_, _) => _ = ExportAsync(false);
         _structBtn.Click += (_, _) => _ = ShowStructure();
@@ -260,6 +265,8 @@ public class WorkTab : Grid
         if (_busy) return;
         _busy = true;
         _runBtn.IsEnabled = false;
+        _runCts = new CancellationTokenSource();
+        _stopBtn.IsEnabled = true;
         try
         {
             QueryResult r;
@@ -309,7 +316,7 @@ public class WorkTab : Grid
                 // 批次F：关系库走流式底座列懒加载通道（宽表首屏只物化可见列，横向滚动增量拉取）；流式关闭或非关系引擎回旧整包
                 List<QueryResult> list;
                 if (StreamingSwitch.Enabled && _provider is RelationalProvider lazyProv)
-                    list = await QueryRouter.ExecuteLazyAsync(lazyProv, _db, sql, 64, CancellationToken.None);
+                    list = await QueryRouter.ExecuteLazyAsync(lazyProv, _db, sql, 64, _runCts.Token);
                 else
                     list = await _provider.Execute(_db, sql);
                 QueryHistory.Add(_provider.EngineName, _db, sql);
@@ -337,6 +344,12 @@ public class WorkTab : Grid
             }
             _owner.SetStatus($"{_provider.EngineName} · {_db}{(string.IsNullOrEmpty(_child) ? "" : " · " + _child)} 执行完成");
         }
+        catch (OperationCanceledException)
+        {
+            _messageBox.Text = "已取消：执行被手动停止。";
+            _owner.SetStatus("执行已停止");
+            AppLog.Write("[执行账] cancelled=1");
+        }
         catch (Exception ex)
         {
             _messageBox.Text = "错误：" + ex.Message;
@@ -347,6 +360,9 @@ public class WorkTab : Grid
         {
             _busy = false;
             _runBtn.IsEnabled = true;
+            _stopBtn.IsEnabled = false;
+            _runCts?.Dispose();
+            _runCts = null;
         }
     }
 
@@ -477,22 +493,33 @@ public class WorkTab : Grid
         }
 
         var inputs = new List<TextBox>();
+        var nullChecks = new List<CheckBox>();
         var panel = new StackPanel { Spacing = 10, MinWidth = 380, Margin = new Thickness(0, 0, 12, 0) };
+        panel.Children.Add(new TextBlock { Text = "勾选 NULL＝存 NULL；留空＝存空字符串（数字列留空仍按 NULL）。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
         for (int i = 0; i < _cols.Count; i++)
         {
+            var nullCheck = new CheckBox { Content = "NULL", HorizontalAlignment = HorizontalAlignment.Right, FontSize = AntTokens.FontMinor };
             var box = new TextBox
             {
                 Header = $"{_cols[i].Name}（{_cols[i].DataType}{(_cols[i].IsKey ? " · 🔑" : "")}）",
-                PlaceholderText = "留空表示 NULL",
+                PlaceholderText = "留空＝空字符串；勾选左侧 NULL 存 NULL",
             };
+            nullCheck.Checked += (_, _) => box.IsEnabled = false;
+            nullCheck.Unchecked += (_, _) => box.IsEnabled = true;
             if (existing != null && i < existing.Length)
             {
                 var v = existing[i];
-                box.Text = (v == null || v is DBNull) ? "" : Exporter.Format(v);
+                bool isNull = v == null || v is DBNull;
+                box.Text = isNull ? "" : Exporter.Format(v);
+                nullCheck.IsChecked = isNull;
                 if (_cols[i].IsKey) box.IsReadOnly = true;
             }
             inputs.Add(box);
-            panel.Children.Add(box);
+            nullChecks.Add(nullCheck);
+            var fieldRow = new StackPanel { Spacing = 4 };
+            fieldRow.Children.Add(box);
+            fieldRow.Children.Add(nullCheck);
+            panel.Children.Add(fieldRow);
         }
 
         var dlg = new ContentDialog
@@ -532,16 +559,32 @@ public class WorkTab : Grid
             return;
         }
 
-        // 保存：UPDATE 或 INSERT
+        // 保存：UPDATE 或 INSERT。NULL 勾选语义：勾选＝存 NULL；未勾选＋留空＝数字列存 NULL、文本列存空字符串。
         var sets = new List<string>();
         var insCols = new List<string>();
         var insVals = new List<string>();
         for (int i = 0; i < _cols.Count; i++)
         {
-            string val = Exporter.Literal(_cols[i], inputs[i].Text);
+            bool isNull = nullChecks[i].IsChecked == true;
+            bool empty = inputs[i].Text.Length == 0;
+            string val;
+            if (isNull)
+            {
+                val = "NULL";
+            }
+            else if (empty)
+            {
+                val = CsvImporter.IsNumeric(_cols[i].DataType) ? "NULL" : "''";
+            }
+            else
+            {
+                val = Exporter.Literal(_cols[i], inputs[i].Text);
+            }
+
             if (existing == null)
             {
-                if (inputs[i].Text.Length > 0) { insCols.Add(_provider.Quote(_cols[i].Name)); insVals.Add(val); }
+                // 新增：勾选 NULL 或填了值才纳入列；未勾选且留空省略，保留列默认值语义。
+                if (isNull || !empty) { insCols.Add(_provider.Quote(_cols[i].Name)); insVals.Add(val); }
             }
             else if (!_cols[i].IsKey)
             {
@@ -571,8 +614,13 @@ public class WorkTab : Grid
             var qr = list.LastOrDefault();
             _messageBox.Text = qr is { Message.Length: > 0 } ? qr.Message : okMsg;
             _owner.SetStatus(okMsg);
-            _offset = 0;
             await RunOrRefresh();
+            // 空页守卫：删除后当前页可能变空，回退一页再刷，避免停在空页。
+            if (_browseResult is { Rows.Count: 0 } && _offset > 0)
+            {
+                _offset = Math.Max(0, _offset - PageSize);
+                await RunOrRefresh();
+            }
         }
         catch (Exception ex)
         {

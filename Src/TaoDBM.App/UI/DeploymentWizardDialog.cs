@@ -6,12 +6,15 @@ using TaoDBM.Core;
 
 namespace TaoDBM.UI;
 
-/// <summary>一键分布式部署向导（设计稿 §19）：铺部署五步 账号→播种→复制→探活→上线。
+/// <summary>一键分布式部署向导（设计稿 §19）：铺部署五步 账号→从库→播种→探活→上线。
 /// MySQL 先行（P-2：能翻的翻、翻不了的报）；SSH/DB 凭据仅授权会话使用、不落盘明文；
-/// 每步失败即停并给可执行排查项，不静默越权。</summary>
+/// 每步失败即停并给可执行排查项，不静默越权。
+/// P0 整改 06（2026-11-22）：①导航按钮每步新建，来回切换不再重复挂事件（修「点一次跳多步」）；
+/// ②步骤顺序改为 账号→配置从库（填信息＋验连，不启动复制）→备份播种→探活（启动复制＋读状态）→上线，
+/// 从库信息先于播种填写，消除顺序错乱；③写主库/写从库的动作执行前统一走草稿预览确认，与全局安全口径一致。</summary>
 public static class DeploymentWizardDialog
 {
-    private static readonly string[] StepNames = { "复制账号", "备份播种", "配置从库", "探活", "上线" };
+    private static readonly string[] StepNames = { "复制账号", "配置从库", "备份播种", "探活", "上线" };
 
     public static async Task Show(MainWindow owner, NodeInfo info)
     {
@@ -39,6 +42,21 @@ public static class DeploymentWizardDialog
 
         void Fail(string step, Exception ex) =>
             status.Text = $"【{step}】失败，已停止：{ex.Message}\n排查项：确认账号有 REPLICATION SLAVE/CLIENT 权限；确认主从网络互相可达（ping/端口）；确认 mysqldump 在 PATH；密码含特殊字符时检查转义。";
+
+        // 草稿预览确认（P0 整改 06）：写库动作执行前统一过一遍，与全局安全口径一致
+        static async Task<bool> ConfirmDraft(Window owner, string title, string detail)
+        {
+            var confirm = new ContentDialog
+            {
+                Title = $"草稿预览 · {title}",
+                Content = new TextBlock { Text = detail, TextWrapping = TextWrapping.Wrap, FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), FontSize = AntTokens.FontMinor },
+                PrimaryButtonText = "确认执行",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            return await confirm.ShowThemedAsync() == ContentDialogResult.Primary;
+        }
 
         // ---- 从库连接（步骤②③④共用；凭据仅会话内使用，不落盘） ----
         var srcDb = new TextBox { Header = "要播种的库（主库）", Text = primary.Profile.Database };
@@ -74,6 +92,8 @@ public static class DeploymentWizardDialog
             {
                 string u = replUser.Text.Trim();
                 if (u.Length == 0 || replPwd.Password.Length == 0) { status.Text = "请填写账号名与密码。"; return; }
+                string detail = $"在主库 {primary.Profile.Host}:{primary.Profile.Port} 执行：\nCREATE USER IF NOT EXISTS '{u}'@'%';\nGRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '{u}'@'%';\nFLUSH PRIVILEGES;";
+                if (!await ConfirmDraft(owner, "复制账号", detail)) { status.Text = "已取消，未做任何改动。"; return; }
                 string pwd = replPwd.Password.Replace("'", "''");
                 await primary.Execute(info.Db.Length > 0 ? info.Db : primary.Profile.Database,
                     $"CREATE USER IF NOT EXISTS '{u}'@'%' IDENTIFIED BY '{pwd}'; GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO '{u}'@'%'; FLUSH PRIVILEGES;");
@@ -84,40 +104,62 @@ public static class DeploymentWizardDialog
         };
         step1.Children.Add(btn1);
 
-        // ---- 步骤 ②：备份播种 ----
-        var dumpFile = new TextBox { Header = "备份文件（本机路径）", Text = Path.Combine(Path.GetTempPath(), "taodbm-seed.sql") };
+        // ---- 步骤 ②：配置从库（先填信息＋验连，不启动复制；启动挪到步骤④探活） ----
         var step2 = new StackPanel { Spacing = 8 };
-        step2.Children.Add(srcDb);
-        step2.Children.Add(dumpFile);
-        var btn2 = new Button { Content = "执行播种（主库导出 → 从库导入）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        step2.Children.Add(repHost);
+        step2.Children.Add(repPort);
+        step2.Children.Add(repUser);
+        step2.Children.Add(repPwd);
+        var btn2 = new Button { Content = "验证从库连接", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         btn2.Click += async (_, _) =>
         {
             try
             {
+                var rep = ReplicaProfile();
+                if (rep is null) { status.Text = "请填写从库连接信息。"; return; }
+                var prov = ProviderFactory.Create(rep);
+                await prov.Execute(rep.Database, "SELECT 1");
+                AppLog.Write($"[部署向导] 步骤②从库连接验证通过 replica={rep.Host}:{rep.Port}");
+                done[1] = true; UpdateStepBar(); status.Text = "从库连接验证通过。";
+            }
+            catch (Exception ex) { Fail("配置从库", ex); }
+        };
+        step2.Children.Add(btn2);
+
+        // ---- 步骤 ③：备份播种（从库信息已在步骤②填写） ----
+        var dumpFile = new TextBox { Header = "备份文件（本机路径）", Text = Path.Combine(Path.GetTempPath(), "taodbm-seed.sql") };
+        var step3 = new StackPanel { Spacing = 8 };
+        step3.Children.Add(srcDb);
+        step3.Children.Add(dumpFile);
+        var btn3 = new Button { Content = "执行播种（主库导出 → 从库导入）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        btn3.Click += async (_, _) =>
+        {
+            try
+            {
+                var rep = ReplicaProfile();
+                if (rep is null) { status.Text = "请先在步骤②填写从库连接信息。"; return; }
+                string detail = $"将主库 {primary.Profile.Host}:{primary.Profile.Port} 的「{srcDb.Text}」导出到 {dumpFile.Text}，" +
+                    $"再导入从库 {rep.Host}:{rep.Port} 的同名库（覆盖式恢复）。";
+                if (!await ConfirmDraft(owner, "备份播种", detail)) { status.Text = "已取消，未做任何改动。"; return; }
                 var p = primary.Profile;
                 var dump = BackupTools.MysqlDump(p.Host, p.Port, p.User, p.Password, srcDb.Text, dumpFile.Text);
                 var (code, output) = await RunTool(dump);
                 if (code != 0) { status.Text = $"【备份播种】主库导出失败（exit {code}），已停止。\n排查项：确认 mysqldump 在 PATH；确认账号有 SELECT/LOCK TABLES 权限。\n{output}"; return; }
-                var rep = ReplicaProfile();
-                if (rep is null) { status.Text = "请先在步骤③填写从库连接信息（本步需要从库地址导入）。"; return; }
                 var restore = BackupTools.MysqlRestore(rep.Host, rep.Port, rep.User, rep.Password, srcDb.Text, dumpFile.Text);
                 (code, output) = await RunTool(restore);
                 if (code != 0) { status.Text = $"【备份播种】从库导入失败（exit {code}），已停止。\n排查项：确认从库可连、目标库已建、mysql 客户端在 PATH。\n{output}"; return; }
-                AppLog.Write($"[部署向导] 步骤②播种完成 db={srcDb.Text} file={dumpFile.Text}");
-                done[1] = true; UpdateStepBar(); status.Text = "播种完成。";
+                AppLog.Write($"[部署向导] 步骤③播种完成 db={srcDb.Text} file={dumpFile.Text}");
+                done[2] = true; UpdateStepBar(); status.Text = "播种完成。";
             }
             catch (Exception ex) { Fail("备份播种", ex); }
         };
-        step2.Children.Add(btn2);
+        step3.Children.Add(btn3);
 
-        // ---- 步骤 ③：配置从库 ----
-        var step3 = new StackPanel { Spacing = 8 };
-        step3.Children.Add(repHost);
-        step3.Children.Add(repPort);
-        step3.Children.Add(repUser);
-        step3.Children.Add(repPwd);
-        var btn3 = new Button { Content = "配置从库并启动复制", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        btn3.Click += async (_, _) =>
+        // ---- 步骤 ④：探活（启动复制＋读复制状态） ----
+        var probeText = new TextBlock { FontSize = AntTokens.FontMinor, FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
+        var step4 = new StackPanel { Spacing = 8 };
+        var btn4 = new Button { Content = "启动复制并探活（读从库复制状态）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        btn4.Click += async (_, _) =>
         {
             try
             {
@@ -125,27 +167,12 @@ public static class DeploymentWizardDialog
                 if (rep is null) { status.Text = "请填写从库连接信息。"; return; }
                 string u = replUser.Text.Trim().Replace("'", "''");
                 string pwd = replPwd.Password.Replace("'", "''");
+                string detail = $"在从库 {rep.Host}:{rep.Port} 执行：\nCHANGE REPLICATION SOURCE TO SOURCE_HOST='{primary.Profile.Host}', SOURCE_PORT={primary.Profile.Port}, SOURCE_USER='{u}', SOURCE_PASSWORD='***';\nSTART REPLICA;\n随后读取 SHOW REPLICA STATUS。";
+                if (!await ConfirmDraft(owner, "启动复制", detail)) { status.Text = "已取消，未做任何改动。"; return; }
                 var prov = ProviderFactory.Create(rep);
                 string sql = $"CHANGE REPLICATION SOURCE TO SOURCE_HOST='{primary.Profile.Host}', SOURCE_PORT={primary.Profile.Port}, SOURCE_USER='{u}', SOURCE_PASSWORD='{pwd}'; START REPLICA;";
                 await prov.Execute(rep.Database, sql);
-                AppLog.Write($"[部署向导] 步骤③从库已配置并启动复制 replica={rep.Host}:{rep.Port}（凭据不落盘）");
-                done[2] = true; UpdateStepBar(); status.Text = "从库已配置，复制已启动。";
-            }
-            catch (Exception ex) { Fail("配置从库", ex); }
-        };
-        step3.Children.Add(btn3);
-
-        // ---- 步骤 ④：探活 ----
-        var probeText = new TextBlock { FontSize = AntTokens.FontMinor, FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
-        var step4 = new StackPanel { Spacing = 8 };
-        var btn4 = new Button { Content = "探活（读从库复制状态）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        btn4.Click += async (_, _) =>
-        {
-            try
-            {
-                var rep = ReplicaProfile();
-                if (rep is null) { status.Text = "请填写从库连接信息。"; return; }
-                var prov = ProviderFactory.Create(rep);
+                AppLog.Write($"[部署向导] 步骤④从库已配置并启动复制 replica={rep.Host}:{rep.Port}（凭据不落盘）");
                 var r = (await prov.Execute(rep.Database, "SHOW REPLICA STATUS")).LastOrDefault();
                 if (r is null || r.Rows.Count == 0) { probeText.Text = "✗ 未读到复制状态：从库可能尚未 START REPLICA。"; probeText.Foreground = Ant.Error; return; }
                 var cols = r.Columns;
@@ -176,7 +203,6 @@ public static class DeploymentWizardDialog
         step5.Children.Add(btn5);
 
         var panels = new[] { step1, step2, step3, step4, step5 };
-        var nextBtn = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         void ShowStep(int i)
         {
             body.Children.Clear();
@@ -194,8 +220,10 @@ public static class DeploymentWizardDialog
             }
             if (i < 4)
             {
-                nextBtn.Click += (_, _) => ShowStep(i + 1);
-                nav.Children.Add(nextBtn);
+                // P0 整改 06：导航按钮每步新建，不再往同一实例上重复挂事件（修「点一次跳多步」）
+                var next = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+                next.Click += (_, _) => ShowStep(i + 1);
+                nav.Children.Add(next);
             }
             body.Children.Add(nav);
         }
@@ -204,7 +232,7 @@ public static class DeploymentWizardDialog
         ShowStep(0);
         dlg = new ContentDialog
         {
-            Title = "部署向导 — 账号 → 播种 → 复制 → 探活 → 上线",
+            Title = "部署向导 — 账号 → 从库 → 播种 → 探活 → 上线",
             Content = new ScrollViewer { Content = body, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
             CloseButtonText = "关闭",
             XamlRoot = owner.Content.XamlRoot,

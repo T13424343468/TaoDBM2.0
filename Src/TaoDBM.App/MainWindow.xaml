@@ -83,7 +83,8 @@
                     <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
                               Expanding="OnNodeExpanding"
                               SelectionChanged="OnTreeSelection"
-                              RightTapped="OnTreeRightTapped"/>
+                              RightTapped="OnTreeRightTapped"
+                              DoubleTapped="OnTreeDoubleTapped"/>
                 </StackPanel>
             </Border>
 
