@@ -246,13 +246,16 @@ function Open-FreshQueryTab([System.Windows.Automation.AutomationElement]$root) 
   try {
     $btn = Find-ElWait @{ automationId = 'BtnLogo' } 6 $root
     if ($null -eq $btn) { return $null }
-    Invoke-El $btn
+    $null = Invoke-El $btn
     $item = Find-ElWait @{ name = '新建查询' } 6 $root
     if ($null -eq $item) { $item = Find-ElWait @{ name = '新建查询' } 4 $null }
     if ($null -eq $item) { return $null }
-    Invoke-El $item
+    $null = Invoke-El $item
     Start-Sleep -Seconds 3
-    return Find-ElWait @{ automationId = 'work-editor' } 15 $root
+    $ed2 = Find-ElWait @{ automationId = 'work-editor' } 15 $root
+    # #246 定谳：Invoke-El 布尔返回值未吸收→函数输出成 Object[]，下游单元素参数类型转换崩（S12/N12 全红段同型）；数组取末个（最新页签）
+    if ($ed2 -is [System.Array]) { $ed2 = $ed2[-1] }
+    return $ed2
   } catch { return $null }
 }
 function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [string]$itemName) {
