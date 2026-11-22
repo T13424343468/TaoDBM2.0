@@ -1386,8 +1386,17 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          pwsh -NoProfile -File Scripts/kill-restart-drill.ps1
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::kill/restart drill failed"; exit $LASTEXITCODE }
+          pwsh -NoProfile -File Scripts/kill-restart-drill.ps1 2>&1 | Tee-Object -FilePath kill-drill-console.log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { Write-Host "::error::kill/restart drill failed"; exit $code }
+
+      - name: Upload drill evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-kill-drill-log
+          path: kill-drill-console.log
+          if-no-files-found: ignore
 
   ui-smoke-newuser:
     # R10 新用户全流程走查（2026-11-21 盲区补齐令）：清空用户配置模拟全新安装，
