@@ -41,8 +41,10 @@ public static class GridBuilder
         for (int i = 0; i < nCols; i++)
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Clamp(80 + r.Columns[i].Length * 8, 120, 280)) });
 
-        // 表头
+        // 表头（修红 2026-11-22：表头 Grid 此前未定义列，所有列头叠在第 0 列——真机截图实锤）
         var header = new Grid { Background = Ant.HeadBg };
+        for (int i = 0; i < nCols; i++)
+            header.ColumnDefinitions.Add(ColDef(r, i));
         for (int i = 0; i < nCols; i++)
         {
             var tb = new TextBlock
@@ -59,6 +61,7 @@ public static class GridBuilder
             header.Children.Add(cell);
         }
         Grid.SetRow(header, grid.RowDefinitions.Count);
+        Grid.SetColumnSpan(header, nCols);
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(header);
 
@@ -68,6 +71,7 @@ public static class GridBuilder
         {
             var rowGrid = BuildRow(r, rowIdx, nCols, onRowTap);
             Grid.SetRow(rowGrid, grid.RowDefinitions.Count);
+            Grid.SetColumnSpan(rowGrid, nCols);
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.Children.Add(rowGrid);
         }
@@ -112,6 +116,8 @@ public static class GridBuilder
         var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null };
         if (fixedHeight is double h) rowGrid.Height = h;
         for (int i = 0; i < nCols; i++)
+            rowGrid.ColumnDefinitions.Add(ColDef(r, i));   // 修红 2026-11-22：行 Grid 此前未定义列，单元格全部叠在第 0 列
+        for (int i = 0; i < nCols; i++)
         {
             string text = Exporter.Format(i < row.Length ? row[i] : null);
             var tb = new TextBlock
@@ -134,4 +140,8 @@ public static class GridBuilder
         }
         return rowGrid;
     }
+
+    /// <summary>列宽规则唯一出口：外层网格、表头、数据行共用，保证三处列宽一致。</summary>
+    internal static ColumnDefinition ColDef(QueryResult r, int i) =>
+        new() { Width = new GridLength(Math.Clamp(80 + r.Columns[i].Length * 8, 120, 280)) };
 }
