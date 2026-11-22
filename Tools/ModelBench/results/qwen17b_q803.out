@@ -33,19 +33,9 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT 
     CAST(
-        (
-            SELECT name
-            FROM products
-            WHERE products.id = order_items.product_id
-            FOR XML PATH(''), TYPE
-        ) AS XML
+        '<products>' +
+        CAST(CAST(name AS XML) AS XML) +
+        '</products>' AS XML
     ) AS product_xml
 FROM 
-    order_items
-WHERE 
-    order_items.order_id = 1;
-
-[ Prompt: 68.5 t/s | Generation: 15.5 t/s ]
-
-
-Exiting...
+    products;

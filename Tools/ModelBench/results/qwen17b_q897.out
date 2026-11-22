@@ -31,11 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-EXECUTE AS OWNER = 'dbo';
-EXEC sp_add_job @name = 'Archive Storage Procedure', @job_id = 'ArchiveJob', @enabled = 1, @schedule_id = 'Monthly 1st 00:00';
-EXEC sp_add_job_schedule @name = 'ArchiveJob', @job_id = 'ArchiveJob', @enabled = 1, @schedule_type = 1, @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @active = 1;
-
-[ Prompt: 58.4 t/s | Generation: 13.0 t/s ]
-
-
-Exiting...
+EXECUTE AS DB_OWNER;
+EXEC sp_configure 'show advanced options', 1;
+GO
+RECONFIGURE;
+GO
+EXEC sp_add_job @job_name = 'Archive Storage Procedure', @job_id = 'JOB1', @enabled = 1, @description = 'Monthly archive job';
+EXEC sp_add_jobstep @job_name = 'Archive Storage Procedure', @step_id = 1, @step_name = 'Archive Data', @subsystem = 'TSQL', @command = 'EXEC dbo.ArchiveStorageProc'; -- Replace with actual stored procedure name
+EXEC sp_add_schedule @schedule_name = 'Archive Schedule', @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @freq_interval_type = 1, @active_start_time = 0, @active_end_time = 23598; -- Monthly on 1st
+GO
+EXEC sp_add_job_schedule @job_name = 'Archive Schedule', @schedule_name = 'Archive Schedule', @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @freq_interval_type = 1, @active_start_time = 0, @active_end_time = 23598; -- Monthly on 1st
+GO
+EXEC sp_add_job_schedule @job_name = 'Archive Storage Procedure', @schedule_name = 'Archive Schedule', @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @freq_interval_type = 1, @active_start_time = 0, @active_end_time = 23598; -- Monthly on 1st

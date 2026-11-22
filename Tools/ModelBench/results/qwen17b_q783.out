@@ -35,8 +35,3 @@ SELECT u.id, u.name, MAX(o.created_at) AS latest_order_date
 FROM users u
 JOIN orders o ON u.id = o.user_id
 GROUP BY u.id, u.name;
-
-[ Prompt: 63.5 t/s | Generation: 10.7 t/s ]
-
-
-Exiting...

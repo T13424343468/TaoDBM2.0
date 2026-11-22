@@ -39,8 +39,3 @@ BEGIN
     RETURN stock;
 END;
 $$ LANGUAGE plpgsql;
-
-[ Prompt: 71.3 t/s | Generation: 15.7 t/s ]
-
-
-Exiting...

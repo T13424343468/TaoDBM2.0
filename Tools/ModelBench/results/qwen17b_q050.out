@@ -31,9 +31,4 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT u.phone FROM users u JOIN order_items oi ON u.id = oi.user_id JOIN orders o ON oi.order_id = o.id JOIN payments p ON o.id = p.order_id WHERE p.method = 'credit_card' ORDER BY SUM(p.amount) DESC LIMIT 1;
-
-[ Prompt: 69.5 t/s | Generation: 15.6 t/s ]
-
-
-Exiting...
+SELECT u.name, u.phone FROM users u JOIN order_items o ON u.id = o.user_id JOIN payments p ON o.order_id = p.order_id JOIN orders o2 ON o.order_id = o2.id WHERE o2.status = 'paid' ORDER BY SUM(p.amount) DESC LIMIT 1;

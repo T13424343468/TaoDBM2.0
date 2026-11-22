@@ -31,11 +31,6 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT YEAR(created_at) AS quarter, COUNT(*) AS order_count
+SELECT strftime('%Q', created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
 GROUP BY quarter;
-
-[ Prompt: 67.5 t/s | Generation: 17.5 t/s ]
-
-
-Exiting...

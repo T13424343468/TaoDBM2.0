@@ -33,10 +33,5 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 CREATE FUNCTION GetUsersByCity @city VARCHAR(50) AS
 BEGIN
-    RETURN (SELECT id, name, city FROM users WHERE city = @city)
+    RETURN SELECT id, name, city FROM users WHERE city = @city
 END
-
-[ Prompt: 70.2 t/s | Generation: 13.8 t/s ]
-
-
-Exiting...

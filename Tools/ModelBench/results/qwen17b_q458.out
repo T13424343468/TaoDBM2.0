@@ -31,10 +31,6 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT DATEPART(year, created_at) AS year, DATEPART(month, created_at) AS month, DATEPART(day, created_at) AS day
+SELECT DATEPART(YEAR, created_at) AS year, DATEPART(MONTH, created_at) AS month, DATEPART(DAY, created_at) AS day
 FROM users
-
-[ Prompt: 62.5 t/s | Generation: 13.8 t/s ]
-
-
-Exiting...
+WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31'

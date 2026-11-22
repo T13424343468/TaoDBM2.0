@@ -34,9 +34,6 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT orders.id, orders.user_id, orders.status, orders.created_at, order_items.product_id, order_items.quantity, order_items.unit_price
 FROM orders
 LEFT JOIN order_items ON orders.id = order_items.order_id
-WHERE LEFT(orders.created_at, 3) = '2021';
-
-[ Prompt: 78.7 t/s | Generation: 16.0 t/s ]
-
-
-Exiting...
+LEFT JOIN payments ON orders.id = payments.order_id
+LEFT JOIN users ON orders.user_id = users.id
+WHERE LEFT(users.name, 3) = 'John';

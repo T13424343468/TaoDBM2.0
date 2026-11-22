@@ -34,8 +34,3 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT unit_price
 FROM order_items
 WHERE unit_price = SQRT(unit_price);
-
-[ Prompt: 72.2 t/s | Generation: 15.8 t/s ]
-
-
-Exiting...

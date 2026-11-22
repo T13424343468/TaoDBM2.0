@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.id, u.name, o.id, o.status, o.created_at
 FROM users u
 JOIN orders o ON u.id = o.user_id;
-
-[ Prompt: 69.5 t/s | Generation: 15.8 t/s ]
-
-
-Exiting...

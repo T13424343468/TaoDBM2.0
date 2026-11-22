@@ -35,8 +35,3 @@ SELECT p.stock + p.price * p.quantity AS total_stock
 FROM products p
 JOIN order_items o ON p.id = o.product_id
 WHERE o.order_id = 1;
-
-[ Prompt: 72.7 t/s | Generation: 15.5 t/s ]
-
-
-Exiting...

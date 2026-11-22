@@ -35,12 +35,7 @@ SELECT city, SUM(unit_price * quantity) AS total_sales
 FROM order_items
 JOIN orders ON order_items.order_id = orders.id
 JOIN users ON orders.user_id = users.id
-JOIN products ON order_items.product_id = products.id
+JOIN payments ON orders.id = payments.order_id
 WHERE created_at >= CURDATE() - INTERVAL 30 DAY
 GROUP BY city
 ORDER BY total_sales DESC;
-
-[ Prompt: 67.5 t/s | Generation: 15.4 t/s ]
-
-
-Exiting...

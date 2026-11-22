@@ -38,8 +38,3 @@ JOIN users ON orders.user_id = users.id
 GROUP BY users.id
 ORDER BY total_amount DESC
 LIMIT 4;
-
-[ Prompt: 64.3 t/s | Generation: 12.5 t/s ]
-
-
-Exiting...

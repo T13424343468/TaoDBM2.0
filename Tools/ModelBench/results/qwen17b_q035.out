@@ -34,12 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.name
 FROM users u
 WHERE u.id NOT IN (
-    SELECT order_id.user_id
-    FROM orders
-    WHERE orders.status = 'completed'
+    SELECT o.user_id
+    FROM orders o
+    WHERE o.status = 'completed'
 );
-
-[ Prompt: 60.9 t/s | Generation: 14.7 t/s ]
-
-
-Exiting...

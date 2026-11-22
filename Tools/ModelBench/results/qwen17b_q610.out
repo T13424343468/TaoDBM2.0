@@ -33,8 +33,3 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT category, price, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price ASC) as rank
 FROM products;
-
-[ Prompt: 64.7 t/s | Generation: 14.7 t/s ]
-
-
-Exiting...

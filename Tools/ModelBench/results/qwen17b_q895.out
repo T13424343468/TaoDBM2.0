@@ -39,8 +39,3 @@ BEGIN
   DELETE FROM orders
   WHERE created_at < CURRENT_DATE - INTERVAL 30 DAY;
 END;
-
-[ Prompt: 59.6 t/s | Generation: 13.9 t/s ]
-
-
-Exiting...

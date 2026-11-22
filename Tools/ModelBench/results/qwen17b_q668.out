@@ -42,9 +42,4 @@ FROM
 JOIN 
     payments p ON o.id = p.order_id
 WHERE 
-    o.status = 'completed';
-
-[ Prompt: 57.3 t/s | Generation: 14.2 t/s ]
-
-
-Exiting...
+    o.status = 'paid';

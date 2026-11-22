@@ -33,9 +33,4 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT unit_price
 FROM order_items
-WHERE e^price = unit_price;
-
-[ Prompt: 67.9 t/s | Generation: 16.5 t/s ]
-
-
-Exiting...
+WHERE price = (SELECT e^price FROM products);

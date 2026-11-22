@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT id, name, city, created_at FROM users
 UNION
 SELECT id, name, city, created_at FROM users
-
-[ Prompt: 60.5 t/s | Generation: 14.5 t/s ]
-
-
-Exiting...

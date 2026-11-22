@@ -32,8 +32,3 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT name FROM products WHERE stock < 10;
-
-[ Prompt: 67.9 t/s | Generation: 12.2 t/s ]
-
-
-Exiting...

@@ -32,14 +32,10 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT p.id, p.name, p.category, p.price, p.stock, p.amount, p.method, p.paid_at
-FROM order_items p
-JOIN orders o ON p.order_id = o.id
-JOIN payments pa ON p.order_id = pa.order_id
-WHERE o.user_id = 1
-ORDER BY pa.amount DESC
+FROM payments p
+JOIN order_items o ON p.order_id = o.id
+JOIN orders o2 ON o.order_id = o2.id
+JOIN users u ON o2.user_id = u.id
+WHERE p.method = 'credit_card'
+ORDER BY p.amount DESC
 LIMIT 2;
-
-[ Prompt: 65.7 t/s | Generation: 14.8 t/s ]
-
-
-Exiting...

@@ -35,8 +35,3 @@ SELECT orders.id, orders.user_id, orders.status, orders.created_at, order_items.
 FROM orders
 LEFT JOIN order_items ON orders.id = order_items.order_id
 WHERE orders.status = 'completed';
-
-[ Prompt: 74.1 t/s | Generation: 15.8 t/s ]
-
-
-Exiting...

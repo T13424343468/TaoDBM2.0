@@ -31,14 +31,7 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT p.category, COUNT(*) AS count
-FROM products p
-JOIN order_items o ON p.id = o.product_id
-GROUP BY p.category
-HAVING COUNT(*) > 1
-ORDER BY count DESC;
-
-[ Prompt: 83.6 t/s | Generation: 18.4 t/s ]
-
-
-Exiting...
+SELECT order_id, SUM(quantity) AS total_quantity
+FROM order_items
+GROUP BY order_id
+HAVING order_id = (SELECT order_id FROM orders WHERE status = 'completed')

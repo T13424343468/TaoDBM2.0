@@ -31,9 +31,25 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-DELETE FROM products WHERE stock > 0 AND id = 1;
-
-[ Prompt: 72.4 t/s | Generation: 13.6 t/s ]
-
-
-Exiting...
+SELECT 
+    o.id AS order_id,
+    o.user_id,
+    o.status,
+    o.created_at,
+    p.id AS product_id,
+    p.name,
+    p.category,
+    p.price,
+    p.stock,
+    oi.quantity,
+    oi.unit_price,
+    p.stock - oi.quantity AS updated_stock
+FROM 
+    orders o
+JOIN 
+    order_items oi ON o.id = oi.order_id
+JOIN 
+    products p ON oi.product_id = p.id
+WHERE 
+    o.created_at >= NOW() - INTERVAL 1 DAY
+LIMIT 10;

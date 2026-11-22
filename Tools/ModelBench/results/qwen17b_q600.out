@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT category, SUM(stock) AS total_stock
 FROM products
 GROUP BY category;
-
-[ Prompt: 64.7 t/s | Generation: 14.9 t/s ]
-
-
-Exiting...

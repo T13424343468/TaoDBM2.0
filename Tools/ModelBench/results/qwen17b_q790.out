@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity
 FROM order_items
 WHERE order_items.quantity = 0;
-
-[ Prompt: 64.9 t/s | Generation: 17.3 t/s ]
-
-
-Exiting...

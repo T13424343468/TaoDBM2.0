@@ -33,9 +33,4 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT product.name, product.price / COALESCE(product.stock, 1) AS price_per_unit
 FROM products
-WHERE products.stock > 0;
-
-[ Prompt: 109.6 t/s | Generation: 23.6 t/s ]
-
-
-Exiting...
+WHERE product.stock > 0;

@@ -31,12 +31,6 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT ABS(SUM(CASE WHEN product.stock < product.stock THEN product.stock ELSE 0 END - product.stock) ) AS abs_stock_change
-FROM products
-JOIN order_items ON products.id = order_items.product_id
-WHERE order_items.created_at >= DATEADD(DAY, -7, GETDATE());
-
-[ Prompt: 63.5 t/s | Generation: 15.1 t/s ]
-
-
-Exiting...
+SELECT ABS(SUM(CASE WHEN stock > 0 THEN stock ELSE 0 END - CASE WHEN stock < 0 THEN stock ELSE 0 END) ) AS inventory_change_abs
+FROM order_items
+WHERE order_id IN (SELECT order_id FROM payments);

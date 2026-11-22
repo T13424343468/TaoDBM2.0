@@ -33,8 +33,3 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT p.price - AVG(p.price) FROM products p
 WHERE p.category = 'electronics';
-
-[ Prompt: 64.9 t/s | Generation: 14.9 t/s ]
-
-
-Exiting...

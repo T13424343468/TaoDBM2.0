@@ -31,9 +31,6 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT * FROM users WHERE city = 'New York';
-
-[ Prompt: 62.4 t/s | Generation: 14.7 t/s ]
-
-
-Exiting...
+SELECT * FROM orders
+WHERE created_at BETWEEN '2023-04-01 09:00:00' AND '2023-04-01 17:00:00'
+AND status = 'completed';

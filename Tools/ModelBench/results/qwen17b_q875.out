@@ -33,12 +33,5 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 CREATE FUNCTION get_users_by_city(city VARCHAR(50)) RETURNS SETOF RECORD
 BEGIN
-  RETURN SELECT id, name, city, created_at
-  FROM users
-  WHERE city = city;
+  RETURN SELECT id, name, city FROM users WHERE city = city;
 END;
-
-[ Prompt: 73.5 t/s | Generation: 15.5 t/s ]
-
-
-Exiting...

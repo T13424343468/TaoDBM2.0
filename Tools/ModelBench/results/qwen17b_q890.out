@@ -34,8 +34,3 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM orders
 WHERE created_at = CURRENT_TIME
 AND status = 'completed';
-
-[ Prompt: 86.1 t/s | Generation: 18.1 t/s ]
-
-
-Exiting...

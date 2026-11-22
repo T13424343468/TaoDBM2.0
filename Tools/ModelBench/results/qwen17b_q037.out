@@ -36,8 +36,3 @@ FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN payments p ON o.id = p.order_id
 WHERE p.method = '支付宝';
-
-[ Prompt: 67.9 t/s | Generation: 12.9 t/s ]
-
-
-Exiting...

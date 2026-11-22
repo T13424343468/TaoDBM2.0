@@ -31,14 +31,7 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT products.name, products.price, products.category, orders.status, payments.amount
+SELECT product.name, product.price, product.stock, order_items.quantity, order_items.unit_price
 FROM products
 JOIN order_items ON products.id = order_items.product_id
-JOIN orders ON order_items.order_id = orders.id
-JOIN payments ON orders.id = payments.order_id
-WHERE products.id = 1;
-
-[ Prompt: 63.5 t/s | Generation: 16.3 t/s ]
-
-
-Exiting...
+WHERE products.category = 'Electronics';

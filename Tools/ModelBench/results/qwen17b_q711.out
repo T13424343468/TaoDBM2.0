@@ -34,10 +34,6 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.name, p.name, p.category, p.price, p.stock, p.id
 FROM users u
 RIGHT JOIN payments p ON u.id = p.user_id
-RIGHT JOIN order_items o ON p.id = o.id
-RIGHT JOIN orders o2 ON o.order_id = o2.id;
-
-[ Prompt: 74.9 t/s | Generation: 14.5 t/s ]
-
-
-Exiting...
+RIGHT JOIN orders o ON u.id = o.user_id
+RIGHT JOIN order_items oi ON oi.order_id = o.id
+WHERE u.id = 1;

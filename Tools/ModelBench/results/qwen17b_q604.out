@@ -33,9 +33,4 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT user_id, created_at, ROW_NUMBER() OVER (ORDER BY created_at) AS rank
 FROM orders
-WHERE user_id IN (SELECT id FROM users)
-
-[ Prompt: 57.9 t/s | Generation: 17.0 t/s ]
-
-
-Exiting...
+WHERE user_id IN (SELECT user_id FROM orders)

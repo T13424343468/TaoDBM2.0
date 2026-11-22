@@ -34,8 +34,3 @@ CREATE TABLE order_items (i ... (truncated)
 CREATE OR REPLACE FUNCTION get_user_count() RETURNS INT AS $$
 SELECT COUNT(*) FROM users;
 $$ LANGUAGE sql;
-
-[ Prompt: 71.3 t/s | Generation: 15.3 t/s ]
-
-
-Exiting...

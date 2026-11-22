@@ -34,8 +34,3 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT city, COUNT(*) AS user_count
 FROM users
 GROUP BY city;
-
-[ Prompt: 66.0 t/s | Generation: 17.2 t/s ]
-
-
-Exiting...

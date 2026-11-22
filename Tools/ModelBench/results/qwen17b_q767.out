@@ -38,8 +38,3 @@ WHERE u.id NOT IN (
     FROM orders o
     WHERE o.status = 'completed'
 );
-
-[ Prompt: 79.1 t/s | Generation: 14.3 t/s ]
-
-
-Exiting...

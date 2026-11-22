@@ -33,16 +33,12 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT 
     CAST(
-        '<products>' +
-        '<product>' +
-        '<name>' + products.name + '</name>' +
-        '</product>' +
-        '</products>' AS XML
+        (
+            SELECT product.name
+            FROM products AS product
+            WHERE product.id = order_items.product_id
+        ) AS XML
     ) AS xml_fragment
-FROM 
-    products;
-
-[ Prompt: 70.4 t/s | Generation: 15.9 t/s ]
-
-
-Exiting...
+FROM order_items
+WHERE order_items.order_id = orders.id
+AND orders.status = 'completed'

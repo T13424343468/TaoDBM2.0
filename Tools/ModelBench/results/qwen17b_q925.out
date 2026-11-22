@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT method, COUNT(*) AS count
 FROM payments
 GROUP BY method;
-
-[ Prompt: 91.6 t/s | Generation: 18.7 t/s ]
-
-
-Exiting...

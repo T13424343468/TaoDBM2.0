@@ -33,9 +33,5 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT SUM(unit_price * quantity) AS total_revenue
 FROM order_items
-WHERE order_id IN (SELECT order_id FROM payments WHERE method = 'credit_card');
-
-[ Prompt: 79.2 t/s | Generation: 16.0 t/s ]
-
-
-Exiting...
+WHERE order_id IN (SELECT order_id FROM payments
+                  WHERE method = 'credit_card');

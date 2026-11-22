@@ -31,16 +31,16 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-BEGIN TRANSACTION;
+START TRANSACTION;
 
--- 假设需要操作的表和操作
--- 示例：更新订单状态和支付信息
-UPDATE orders SET status = 'paid', paid_at = NOW() WHERE id = 1;
-UPDATE payments SET amount = 100.00, method = 'credit_card' WHERE order_id = 1;
+INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', NOW());
+
+INSERT INTO products (id, name, category, price, stock) VALUES (1, 'Laptop', 'Electronics', 999.99, 100);
+
+INSERT INTO orders (id, user_id, status, created_at) VALUES (1, 1, 'Processing', NOW());
+
+INSERT INTO order_items (id, order_id, product_id, quantity, unit_price) VALUES (1, 1, 1, 2, 999.99);
+
+INSERT INTO payments (id, order_id, amount, method, paid_at) VALUES (1, 1, 1999.98, 'Credit Card', NOW());
 
 COMMIT;
-
-[ Prompt: 79.2 t/s | Generation: 14.1 t/s ]
-
-
-Exiting...

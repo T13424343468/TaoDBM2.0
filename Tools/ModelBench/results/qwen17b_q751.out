@@ -32,12 +32,7 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT o.items, p.name, oi.quantity
-FROM order_items oi
-JOIN orders o ON oi.order_id = o.id
+FROM orders o
+JOIN order_items oi ON o.id = oi.order_id
 JOIN products p ON oi.product_id = p.id
 WHERE o.user_id = (SELECT id FROM users WHERE name = '用户名');
-
-[ Prompt: 65.3 t/s | Generation: 14.9 t/s ]
-
-
-Exiting...

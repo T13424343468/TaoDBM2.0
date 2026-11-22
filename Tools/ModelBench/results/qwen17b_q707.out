@@ -37,8 +37,3 @@ JOIN orders o ON u.id = o.user_id
 JOIN order_items pi ON o.id = pi.order_id
 JOIN products p ON pi.product_id = p.id
 JOIN payments pa ON o.id = pa.order_id;
-
-[ Prompt: 64.0 t/s | Generation: 15.2 t/s ]
-
-
-Exiting...

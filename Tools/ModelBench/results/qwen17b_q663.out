@@ -35,10 +35,5 @@ SELECT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON o.id = p.order_id
-WHERE p.paid_at = (SELECT MIN(paid_at) FROM payments WHERE order_id = o.id)
-ORDER BY o.created_at;
-
-[ Prompt: 76.8 t/s | Generation: 13.3 t/s ]
-
-
-Exiting...
+WHERE o.created_at = (SELECT MIN(payed_at) FROM payments WHERE order_id = o.id)
+ORDER BY o.id;

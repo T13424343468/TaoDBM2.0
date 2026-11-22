@@ -36,8 +36,3 @@ FROM (
     SELECT DATALENGTH(name) AS length
     FROM users
 ) AS subquery;
-
-[ Prompt: 73.0 t/s | Generation: 15.7 t/s ]
-
-
-Exiting...

@@ -35,8 +35,3 @@ SELECT created_at, COUNT(*) AS order_count
 FROM orders
 GROUP BY created_at
 ORDER BY created_at;
-
-[ Prompt: 72.5 t/s | Generation: 14.8 t/s ]
-
-
-Exiting...

@@ -32,8 +32,3 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM orders WHERE user_id IN (SELECT id FROM users);
-
-[ Prompt: 66.8 t/s | Generation: 15.3 t/s ]
-
-
-Exiting...

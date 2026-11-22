@@ -34,8 +34,3 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT p.stock
 FROM products p
 WHERE p.stock < 0;
-
-[ Prompt: 60.4 t/s | Generation: 14.0 t/s ]
-
-
-Exiting...

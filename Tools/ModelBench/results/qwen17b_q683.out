@@ -37,11 +37,6 @@ JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON oi.id = p.id
 WHERE p.paid_at > '2023-01-01'
-GROUP BY u.id, u.name
+GROUP BY u.name
 ORDER BY COUNT(*) DESC
 LIMIT 5;
-
-[ Prompt: 71.6 t/s | Generation: 15.5 t/s ]
-
-
-Exiting...

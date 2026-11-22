@@ -34,8 +34,3 @@ CREATE TABLE order_items (id IN ... (truncated)
 SELECT YEAR(created_at) AS year, COUNT(*) AS user_count
 FROM users
 GROUP BY YEAR(created_at)
-
-[ Prompt: 70.5 t/s | Generation: 15.6 t/s ]
-
-
-Exiting...

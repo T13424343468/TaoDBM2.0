@@ -31,11 +31,6 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT SUM(amount) AS total_amount
-FROM payments
-WHERE method = '微信';
-
-[ Prompt: 56.7 t/s | Generation: 14.9 t/s ]
-
-
-Exiting...
+SELECT SUM(p.amount) AS total_amount
+FROM payments p
+WHERE p.method = '微信';

@@ -35,8 +35,3 @@ SELECT SUM(p.amount) AS total_revenue
 FROM payments p
 JOIN orders o ON p.order_id = o.id
 WHERE YEAR(o.created_at) = 2023;
-
-[ Prompt: 62.8 t/s | Generation: 15.8 t/s ]
-
-
-Exiting...

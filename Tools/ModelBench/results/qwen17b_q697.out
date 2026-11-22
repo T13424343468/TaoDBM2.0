@@ -35,8 +35,3 @@ SELECT u.id, u.name, u.city, o.id as order_id, o.status, o.created_at, oi.id as 
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id;
-
-[ Prompt: 79.9 t/s | Generation: 15.3 t/s ]
-
-
-Exiting...
