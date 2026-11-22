@@ -42,6 +42,11 @@ def answer_region(text):
     m = re.search(r'\(truncated\)\s*\n(.*?)\n\s*' + re.escape(PROMPT_MARK), text, re.S)
     if m:
         return m.group(1)
+    # EOF 回退（2026-11-22）：c9b3f348 轮起输出缺 [ Prompt: 统计行，
+    # 答案直接到文件尾；无该行时按文件尾取答案，避免整轮误判 TRUNCATED。
+    m2 = re.search(r'\(truncated\)\s*\n(.*)', text, re.S)
+    if m2:
+        return m2.group(1)
     return None  # 思考链截断：模型未产出任何答案
 
 def extract_sql(text):
