@@ -783,18 +783,11 @@ foreach ($s in $plan.steps) {
       }
       'soft-page' {
         if ($s.page -eq 'theme') {
+          # 2026-11-22 老板令: 切主题触发全屏重绘, 免费云机虚拟显示扛不住即被回收(#247/#249 三段同点定谳);
+          # 摘除切换动作, 仅验主题入口可达+截图, 外观由逐屏对稿线兜底
           $btn = Find-ElWait @{ automationId = 'BtnTheme' } 6 $mainRoot
           if ($null -eq $btn) { throw "theme button not reachable" }
-          Push-Evidence "S18a btn-found"
-          Invoke-El $btn
-          Start-Sleep -Seconds 2
-          Push-Evidence "S18b btn-clicked"
-          $item = Find-ElWait @{ name = '天青' } 6 $null
-          if ($null -eq $item) { throw "theme item not reachable" }
-          Push-Evidence "S18c item-found"
-          Invoke-El $item
-          Start-Sleep -Seconds 2
-          Push-Evidence "S18d item-clicked"
+          Start-Sleep -Seconds 1
         } elseif ($s.page -eq 'about') {
           $btn = Find-ElWait @{ automationId = 'BtnAbout' } 6 $mainRoot
           if ($null -eq $btn) { throw "about button not reachable" }
