@@ -9,6 +9,10 @@ public sealed class TaskSpec
     public string Title { get; init; } = "";
     public string Db { get; init; } = "";
     public string Sql { get; init; } = "";
+    /// <summary>执行体（整改二批 #05 真实执行）：提交方携带连接提供方，Runner 据此真跑 SQL。
+    /// 不参与快照序列化（连接对象不落盘）。</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IDbProvider? Provider { get; init; }
 }
 
 /// <summary>任务句柄：取消与查询快照的唯一凭据。</summary>
@@ -161,8 +165,8 @@ public sealed class TaskCenter
             if (snapshot is null || snapshot.State != "running") { h.Cts.Dispose(); continue; }
             try
             {
-                await RunAsync(h);
-                Complete(h.TaskId, "done", "");
+                var msg = await RunAsync(h);
+                Complete(h.TaskId, "done", msg ?? "");
             }
             catch (OperationCanceledException)
             {
@@ -176,7 +180,8 @@ public sealed class TaskCenter
         }
     }
 
-    /// <summary>执行体由宿主注入：把 TaskHandle 变成实际工作（查询/导出/同步/导入）。</summary>
-    public Func<TaskHandle, Task>? Runner { get; set; }
-    private Task RunAsync(TaskHandle h) => Runner is null ? Task.CompletedTask : Runner(h);
+    /// <summary>执行体由宿主注入：把 TaskHandle 变成实际工作（查询/导出/同步/导入）；
+    /// 返回值作为完成摘要写入任务快照（整改二批 #05：真实执行带行数/耗时账）。</summary>
+    public Func<TaskHandle, Task<string?>>? Runner { get; set; }
+    private Task<string?> RunAsync(TaskHandle h) => Runner is null ? Task.FromResult<string?>(null) : Runner(h);
 }

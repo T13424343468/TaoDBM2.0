@@ -36,40 +36,70 @@ public static class GridBuilder
             return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine);
         }
 
+        // 整改二批 #03（2026-11-23）：表头点击循环排序（内存序，不回库）＋表头冻结（滚动时钉在视口顶部）
         var grid = new Grid { RowSpacing = 0 };
         int nCols = Math.Min(r.Columns.Count, 64);
         for (int i = 0; i < nCols; i++)
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Clamp(80 + r.Columns[i].Length * 8, 120, 280)) });
 
-        // 表头
+        int sortCol = -1, sortMode = ResultGridOps.SortOriginal;
+        var order = Enumerable.Range(0, r.Rows.Count).ToArray();
+
+        // 表头（含排序指示与点击循环）
         var header = new Grid { Background = Ant.HeadBg };
+        var headerTt = new TranslateTransform();
+        header.RenderTransform = headerTt;
+        var arrows = new TextBlock[nCols];
         for (int i = 0; i < nCols; i++)
         {
-            var tb = new TextBlock
+            var arrow = new TextBlock { Foreground = Ant.Accent, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            arrows[i] = arrow;
+            var headPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            headPanel.Children.Add(new TextBlock
             {
                 Text = r.Columns[i],
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 Foreground = Ant.Text,
-                Margin = new Thickness(10, 8, 10, 8),
+                Margin = new Thickness(10, 8, 0, 8),
                 TextTrimming = TextTrimming.CharacterEllipsis,
-            };
-            var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
-            ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 批次E：列头右键 → 分析/钉住
+            });
+            headPanel.Children.Add(arrow);
+            var cell = new Border { Child = headPanel, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1), Background = Ant.HeadBg };
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 列头右键 → 分析/钉住
+            int colIdx = i;
+            cell.Tapped += (_, _) => CycleSort(colIdx);
             Grid.SetColumn(cell, i);
             header.Children.Add(cell);
         }
         Grid.SetRow(header, grid.RowDefinitions.Count);
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.Children.Add(header);
+        Grid.SetZIndex(header, 10);   // 冻结：数据行从表头下滚过
 
-        // 数据行（小结果集直渲染；虚拟阈值之上走 VirtualizedResultGrid）
-        int shown = Math.Min(r.Rows.Count, 1000);
-        for (int rowIdx = 0; rowIdx < shown; rowIdx++)
+        // 数据行（排序后按显示序物化；小结果集直渲染，虚拟阈值之上走 VirtualizedResultGrid）
+        var rowsHost = new StackPanel { Orientation = Orientation.Vertical };
+        Grid.SetRow(rowsHost, grid.RowDefinitions.Count);
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.Children.Add(rowsHost);
+
+        void PopulateRows()
         {
-            var rowGrid = BuildRow(r, rowIdx, nCols, onRowTap);
-            Grid.SetRow(rowGrid, grid.RowDefinitions.Count);
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.Children.Add(rowGrid);
+            rowsHost.Children.Clear();
+            int shown = Math.Min(r.Rows.Count, 1000);
+            for (int d = 0; d < shown; d++)
+                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine));
+        }
+        PopulateRows();
+
+        void CycleSort(int colIdx)
+        {
+            if (sortCol != colIdx) { sortCol = colIdx; sortMode = ResultGridOps.SortAsc; }
+            else if (sortMode == ResultGridOps.SortAsc) sortMode = ResultGridOps.SortDesc;
+            else { sortCol = -1; sortMode = ResultGridOps.SortOriginal; }
+            order = ResultGridOps.SortOrder(r.Rows, colIdx, sortMode);
+            for (int i = 0; i < nCols; i++)
+                arrows[i].Text = i == colIdx && sortMode != ResultGridOps.SortOriginal ? (sortMode == ResultGridOps.SortAsc ? "▲" : "▼") : "";
+            PopulateRows();
         }
 
         var outer = new Grid();
@@ -79,13 +109,19 @@ public static class GridBuilder
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
+        // 表头冻结：滚动时表头平移钉在视口左上角（内容随滚动上移 V，表头补回 +V 抵消），数据行从其下滚过
+        scroll.ViewChanged += (s, e) =>
+        {
+            headerTt.X = scroll.HorizontalOffset;
+            headerTt.Y = scroll.VerticalOffset;
+        };
         outer.Children.Add(scroll);
 
-        if (r.Rows.Count > shown)
+        if (r.Rows.Count > 1000)
         {
             var note = new TextBlock
             {
-                Text = $"共 {r.Rows.Count} 行，界面渲染前 {shown} 行（导出不受影响）。",
+                Text = $"共 {r.Rows.Count} 行，界面渲染前 1000 行（导出不受影响）。",
                 Margin = new Thickness(12, 4, 4, 4),
                 Foreground = Ant.TextSub,
                 FontSize = 12,
@@ -104,12 +140,13 @@ public static class GridBuilder
 
     /// <summary>单行物化（普通渲染与虚拟渲染共用）：nCols 列单元格 + 隔行底色 + 可选行点选。
     /// fixedHeight 供虚拟渲染锁行高（位移映射需要统一行高）；null 保持原自适应高度。
-    /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。</summary>
+    /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。
+    /// 整改二批 #03：单元格一律挂右键菜单（复制该行/单元格/全部＋分析）；displayIdx 提供时按显示位次取隔行底色（排序后斑马纹不乱）。</summary>
     public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null,
-        string? sourceSql = null, string? engine = null)
+        string? sourceSql = null, string? engine = null, int? displayIdx = null)
     {
         var row = r.Rows[rowIdx];
-        var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null };
+        var rowGrid = new Grid { Background = (displayIdx ?? rowIdx) % 2 == 1 ? Ant.AltRow : null };
         if (fixedHeight is double h) rowGrid.Height = h;
         for (int i = 0; i < nCols; i++)
         {
@@ -123,7 +160,7 @@ public static class GridBuilder
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
-            if (sourceSql != null) ResultGridMenu.Attach(cell, r, i, sourceSql, engine);
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, rowIdx);   // #03：复制该行/单元格/全部 ＋ 分析/钉住
             Grid.SetColumn(cell, i);
             rowGrid.Children.Add(cell);
         }

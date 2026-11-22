@@ -32,12 +32,25 @@ public static class TaskCenterDialog
 
     private static readonly TaskCenter Shared = new()
     {
-        // 宿主执行体：演示任务为一次轻量计数查询；真实长活在各业务模块提交。
-        // 优化回访复测（retest）为轻量等待口径：结论已在登记时算定，这里只走任务流水。
+        // 整改二批 #05（2026-11-23）：Runner 接真执行体——query/export 按规格真跑 SQL，
+        // 取消令牌全链路传递（出队前取消即跳过，执行前检查即中断排队任务）；
+        // 完成摘要（行数/影响行数/耗时）回写任务快照。retest 为轻量等待口径：结论已在登记时算定，这里只走任务流水。
         Runner = async h =>
         {
-            await Task.Delay(300, h.Token);
-            if (h.Spec.Sql.Length == 0 || h.Spec.Kind != "retest") return;
+            var spec = h.Spec;
+            if (spec.Kind == "retest") { await Task.Delay(300, h.Token); return null; }
+            if (spec.Sql.Length == 0) return "空 SQL，未执行。";
+            var prov = spec.Provider ?? throw new InvalidOperationException("任务未携带连接执行体，无法执行。");
+            h.Token.ThrowIfCancellationRequested();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var rs = await prov.Execute(spec.Db, spec.Sql);
+            sw.Stop();
+            var affected = rs.LastOrDefault(r => r.Affected >= 0);
+            if (affected is not null) return $"影响 {affected.Affected} 行 · {sw.Elapsed.TotalMilliseconds:N0} ms";
+            long? total = rs.FirstOrDefault(r => r.TotalRows is not null)?.TotalRows;
+            if (total is long t) return $"共 {t:N0} 行 · {sw.Elapsed.TotalMilliseconds:N0} ms";
+            int rows = rs.Sum(r => r.Rows.Count);
+            return $"{rows:N0} 行 · {sw.Elapsed.TotalMilliseconds:N0} ms";
         },
     };
 
@@ -68,6 +81,7 @@ public static class TaskCenterDialog
                 Title = ((titleBox.Text ?? "").Trim().Length == 0 ? "查询任务" : (titleBox.Text ?? "").Trim()),
                 Db = db,
                 Sql = sql,
+                Provider = prov,   // #05 真实执行：携带连接执行体
             });
             status.Text = $"已提交 {h.TaskId}，队列按序执行。";
             Refresh(list, status);

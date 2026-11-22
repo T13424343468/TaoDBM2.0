@@ -142,6 +142,76 @@ Console.WriteLine("== Exporter ==");
     Check("流式导出取消后恢复", recovered == 3, $"recovered={recovered}");
 }
 
+Console.WriteLine("== ResultGridOps（TSV 复制与内存排序，整改二批 #03）==");
+{
+    var cols = new[] { "id", "name", "note" };
+    var rows = new List<object?[]>
+    {
+        new object?[] { 1, "张三", "带\n换行" },
+        new object?[] { 2, "李四", "带\t制表符" },
+        new object?[] { 3, null, DBNull.Value },
+    };
+    var tsv = ResultGridOps.ToTsv(cols, rows, Enumerable.Range(0, rows.Count));
+    Check("TSV 表头与行", tsv == "id\tname\tnote\n1\t张三\t带 换行\n2\t李四\t带    制表符\n3\t\t\n", tsv.Replace("\n", "\\n").Replace("\t", "\\t"));
+    var noHeader = ResultGridOps.ToTsv(cols, rows, new[] { 0 }, includeHeader: false);
+    Check("TSV 不带表头", noHeader == "1\t张三\t带 换行\n", noHeader.Replace("\n", "\\n"));
+    var outOfRange = ResultGridOps.ToTsv(cols, rows, new[] { -1, 0, 99 });
+    Check("TSV 越界行跳过", outOfRange.Count(c => c == '\n') == 2, outOfRange.Replace("\n", "\\n"));
+    var many = ResultGridOps.ToTsv(cols, rows, Enumerable.Range(0, ResultGridOps.CopyRowLimit + 5).Select(_ => 0));
+    Check("TSV 上限截断", many.Count(c => c == '\n') == ResultGridOps.CopyRowLimit + 1, $"lines={many.Count(c => c == '\n')}");
+    Check("CellText 空值", ResultGridOps.CellText(null) == "" && ResultGridOps.CellText(DBNull.Value) == "");
+    Check("CellText 二进制", ResultGridOps.CellText(new byte[] { 0xAB, 0x01 }) == "0xAB01");
+    Check("CellText 布尔与时间", ResultGridOps.CellText(true) == "TRUE" && ResultGridOps.CellText(false) == "FALSE"
+        && ResultGridOps.CellText(new DateTime(2026, 11, 23, 8, 5, 3)) == "2026-11-23 08:05:03");
+
+    var srows = new List<object?[]>
+    {
+        new object?[] { "3", "banana" },
+        new object?[] { "10", "Apple" },
+        new object?[] { null, "cherry" },
+        new object?[] { "2", "" },
+    };
+    var asc = ResultGridOps.SortOrder(srows, 0, ResultGridOps.SortAsc);
+    Check("数值列升序", string.Join(",", asc) == "3,0,1,2", string.Join(",", asc));
+    var desc = ResultGridOps.SortOrder(srows, 0, ResultGridOps.SortDesc);
+    Check("数值列降序", string.Join(",", desc) == "2,1,0,3", string.Join(",", desc));
+    var txt = ResultGridOps.SortOrder(srows, 1, ResultGridOps.SortAsc);
+    Check("字符串列升序不区分大小写", string.Join(",", txt) == "1,0,2,3", string.Join(",", txt));
+    var orig = ResultGridOps.SortOrder(srows, 0, ResultGridOps.SortOriginal);
+    Check("原序还原", string.Join(",", orig) == "0,1,2,3", string.Join(",", orig));
+    var emptyFirst = ResultGridOps.SortOrder(srows, 1, ResultGridOps.SortAsc);
+    Check("空值排最后", emptyFirst[^1] == 3, string.Join(",", emptyFirst));
+    var mixed = ResultGridOps.SortOrder(new List<object?[]> { new object?[] { "x" }, new object?[] { "5" } }, 0, ResultGridOps.SortAsc);
+    Check("混合列按字符串序", string.Join(",", mixed) == "1,0", string.Join(",", mixed));
+}
+
+Console.WriteLine("== FollowupLedger（回访账落盘，整改二批 #07）==");
+{
+    var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"taodbm-followup-{Guid.NewGuid():N}.json");
+    try
+    {
+        FollowupLedger.UseFile(path);
+        Check("缺失文件回落空账", FollowupLedger.Load().Count == 0);
+        var t1 = OptimizationFollowup.Register("orders 改写", "SELECT * FROM orders", "SQLite",
+            new List<string> { "S001" }, new List<string>(), 12.5, 1);
+        FollowupLedger.Save(new List<OptimizationFollowup.FollowupTask> { t1 });
+        var loaded = FollowupLedger.Load();
+        Check("Save 后 Load 往返", loaded.Count == 1 && loaded[0].TaskId == t1.TaskId && loaded[0].BaselineMs == 12.5,
+            loaded.Count == 0 ? "空" : loaded[0].TaskId);
+        var done = OptimizationFollowup.Retest(t1, 10.0, new List<string> { "S001" });
+        FollowupLedger.Save(new List<OptimizationFollowup.FollowupTask> { done });
+        var reloaded = FollowupLedger.Load();
+        Check("复测结论落盘", reloaded.Count == 1 && reloaded[0].Verdict == "passed", reloaded.Count == 0 ? "空" : reloaded[0].Verdict);
+        System.IO.File.WriteAllText(path, "{ 损坏的 JSON");
+        Check("损坏账回落空账", FollowupLedger.Load().Count == 0);
+    }
+    finally
+    {
+        try { if (System.IO.File.Exists(path)) System.IO.File.Delete(path); } catch { }
+        FollowupLedger.UseFile("");
+    }
+}
+
 Console.WriteLine("== EngineInfo ==");
 {
     Check("默认端口", EngineInfo.DefaultPort(DbEngine.MySQL) == 3306 && EngineInfo.DefaultPort(DbEngine.Redis) == 6379);
@@ -835,7 +905,7 @@ Layer("集成");
         var tc = new TaoDBM.Core.Streaming.TaskCenter();
         var ran = new TaskCompletionSource();
         // 「占位」任务挂起直至被取消：原先同步完成，消费循环可能在 Cancel 前跑完，断言成竞态
-        tc.Runner = h => { ran.TrySetResult(); return h.Spec.Title == "占位" ? Task.Delay(Timeout.Infinite, h.Token) : Task.CompletedTask; };
+        tc.Runner = async h => { ran.TrySetResult(); if (h.Spec.Title == "占位") await Task.Delay(Timeout.Infinite, h.Token); return (string?)null; };
         var h1 = tc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Kind = "query", Title = "冒烟查询" });
         await ran.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var t0 = DateTime.UtcNow;
@@ -946,7 +1016,7 @@ Layer("集成");
 {
     var tc = new TaoDBM.Core.Streaming.TaskCenter();
     var ranCount = 0;
-    tc.Runner = _ => { Interlocked.Increment(ref ranCount); return Task.CompletedTask; };
+    tc.Runner = _ => { Interlocked.Increment(ref ranCount); return Task.FromResult<string?>(null); };
 
     Check("暂停首次生效", tc.Pause());
     Check("重复暂停返回false", !tc.Pause());
@@ -3716,7 +3786,7 @@ Console.WriteLine("== NotificationDispatcher ==");
     {
         var tc = new TaoDBM.Core.Streaming.TaskCenter
         {
-            Runner = async h => { await Task.Delay(30, h.Token); },
+            Runner = async h => { await Task.Delay(30, h.Token); return (string?)null; },
         };
         var doneSrc = new TaskCompletionSource<TaoDBM.Core.Streaming.TaskSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
         tc.TaskCompleted += s => { if (s.State == "done") doneSrc.TrySetResult(s); };
@@ -3737,13 +3807,33 @@ Console.WriteLine("== NotificationDispatcher ==");
         var cancelSrc = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var slowTc = new TaoDBM.Core.Streaming.TaskCenter
         {
-            Runner = async h => { await Task.Delay(5000, h.Token); },
+            Runner = async h => { await Task.Delay(5000, h.Token); return (string?)null; },
         };
         slowTc.TaskCompleted += s => { if (s.State == "canceled") cancelSrc.TrySetResult(s.TaskId); };
         var slow = slowTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "取消测试", Sql = "SELECT 1" });
         Check("N32 运行中可取消", slowTc.Cancel(slow.TaskId));
         var cancelId = await cancelSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
         Check("N33 任务取消事件派发", cancelId == slow.TaskId);
+
+        // 整改二批 #05：Runner 返回值作为完成摘要写入任务快照
+        var sumSrc = new TaskCompletionSource<TaoDBM.Core.Streaming.TaskSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sumTc = new TaoDBM.Core.Streaming.TaskCenter
+        {
+            Runner = _ => Task.FromResult<string?>("共 42 行 · 耗时 7 ms"),
+        };
+        sumTc.TaskCompleted += s => { if (s.State == "done") sumSrc.TrySetResult(s); };
+        var sumH = sumTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "摘要测试", Sql = "SELECT 1" });
+        var sumDone = await sumSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Check("N39 Runner 摘要回写快照", sumDone.TaskId == sumH.TaskId && sumDone.Message.Contains("共 42 行"), sumDone.Message);
+        var nullTc = new TaoDBM.Core.Streaming.TaskCenter
+        {
+            Runner = _ => Task.FromResult<string?>(null),
+        };
+        TaskCompletionSource<TaoDBM.Core.Streaming.TaskSnapshot> nullSrc = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        nullTc.TaskCompleted += s => { if (s.State == "done") nullSrc.TrySetResult(s); };
+        var nullH = nullTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "空摘要测试", Sql = "SELECT 1" });
+        var nullDone = await nullSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Check("N40 Runner 空摘要不报错", nullDone.TaskId == nullH.TaskId && nullDone.State == "done", nullDone.Message);
 
         // P-3 问库规则修复回归：聚合优先级 / 时间条件 / Top-N
         static TaoDBM.Core.NLQueryResult AskNL(string q, string table, params (string Name, string Type, bool Key)[] cols)
@@ -4318,7 +4408,7 @@ Layer("集成");
     var tc = new TaskCenter();
     var doneEvents = new List<string>();
     tc.TaskCompleted += s => { lock (doneEvents) doneEvents.Add(s.TaskId + ":" + s.State); };
-    tc.Runner = h => { Thread.Sleep(30); return Task.CompletedTask; };
+    tc.Runner = h => { Thread.Sleep(30); return Task.FromResult<string?>(null); };
     var handles = Enumerable.Range(0, 12)
         .Select(i => tc.Submit(new TaskSpec { Kind = "query", Title = "并发" + i, Sql = "SELECT 1" }))
         .ToList();

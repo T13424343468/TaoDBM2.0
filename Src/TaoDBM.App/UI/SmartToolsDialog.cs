@@ -71,10 +71,10 @@ public static class SmartToolsDialog
         var followDueBtn = new Button { Content = "查到期", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var followRetestBtn = new Button { Content = "复测并出对比卡", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var followCenterBtn = new Button { Content = "并入任务中心", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        followRegisterBtn.Click += (_, _) =>
+        followRegisterBtn.Click += async (_, _) =>
         {
             var sql = afterBox.Text.Length > 0 ? afterBox.Text : beforeBox.Text;
-            RegisterFollowup(followTitleBox.Text, sql, info, followIntervalBox.Text, report, status);
+            await RegisterFollowupAsync(followTitleBox.Text, sql, info, followIntervalBox.Text, report, status, followRegisterBtn);
         };
         followDueBtn.Click += (_, _) => ShowDueFollowups(report, status);
         followRetestBtn.Click += async (_, _) => await RunFollowupRetest(owner, info, followTitleBox.Text, report, status);
@@ -328,14 +328,14 @@ public static class SmartToolsDialog
     }
 
     // ── 优化回访（闭环）：登记 / 到期 / 复测对比卡 / 并入任务中心 ──
-    // 会话内登记账（对话框为静态工具口，账随进程；引擎层支持快照落盘）。
-    private static readonly List<OptimizationFollowup.FollowupTask> Followups = new();
+    // 登记账落盘（FollowupLedger，重启不丢；对话框为静态工具口）。
+    private static readonly List<OptimizationFollowup.FollowupTask> Followups = FollowupLedger.Load();
 
     private static OptimizationFollowup.FollowupTask? FindFollowup(string title) =>
         Followups.LastOrDefault(f => f.Title == title.Trim());
 
-    private static void RegisterFollowup(string title, string sql, NodeInfo info, string intervalText,
-        StackPanel report, TextBlock status)
+    private static async Task RegisterFollowupAsync(string title, string sql, NodeInfo info, string intervalText,
+        StackPanel report, TextBlock status, Button registerBtn)
     {
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(sql))
         {
@@ -353,19 +353,26 @@ public static class SmartToolsDialog
         // 基准 = 登记瞬间的静态诊断 +（SQLite 引擎时顺带计划体检）+ 中位耗时（真执行，走重测口径）
         var baselineCodes = SlowQueryDiagnoser.Analyze(sql).Select(x => x.Code).ToList();
         double? baselineMs = null;
+        registerBtn.IsEnabled = false;
+        status.Text = "基准计时中…（5 轮取中位）";
         try
         {
             var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
             Task Exec(string s, CancellationToken ct) => prov.Execute(CurrentDb(info), s).ContinueWith(_ => Task.CompletedTask).Unwrap();
-            baselineMs = QueryRetest.MedianMsAsync(Exec, sql).GetAwaiter().GetResult();
+            baselineMs = await QueryRetest.MedianMsAsync(Exec, sql);
         }
         catch (Exception ex)
         {
             status.Text = "登记时基准计时失败（不影响登记）：" + ex.Message;
         }
+        finally
+        {
+            registerBtn.IsEnabled = true;
+        }
         var task = OptimizationFollowup.Register(title, sql, "SQLite", baselineCodes,
             new List<string>(), baselineMs, interval);
         Followups.Add(task);
+        FollowupLedger.Save(Followups);
         AddSection(report, "回访已登记");
         foreach (var line in OptimizationFollowup.CompareCard(task)) AddLine(report, line);
         status.Text = $"已登记，{interval} 天后到期可复测。";
@@ -415,6 +422,7 @@ public static class SmartToolsDialog
             var codes = SlowQueryDiagnoser.Analyze(t.Sql).Select(x => x.Code).ToList();
             var done = OptimizationFollowup.Retest(t, ms, codes);
             Followups[Followups.FindIndex(f => f.TaskId == t.TaskId)] = done;
+            FollowupLedger.Save(Followups);
             AddSection(report, "回访前后对比卡");
             foreach (var line in OptimizationFollowup.CompareCard(done)) AddLine(report, line);
             status.Text = done.Verdict == "passed" ? "复测通过。" : "复测未通过，建议回看优化动作。";
