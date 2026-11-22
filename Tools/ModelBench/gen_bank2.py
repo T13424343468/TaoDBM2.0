@@ -422,10 +422,34 @@ CRON_PERIODS = [
 MYSQL_TASK = "INSERT INTO orders_archive SELECT * FROM orders WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)"
 PG_TASK = "SELECT * FROM orders WHERE created_at < NOW() - INTERVAL '30 days'"
 SS_TASK = "EXEC dbo.archive_orders"
+# 2026-11-22 错账修复（q900 定谳选项 B）：CRON 层弃用伪语法（cron 表达式塞
+# sp_add_job_schedule / EVENT STARTS），整层改真实方言——SQL Server Agent 用
+# sp_add_schedule 真实参数（freq_type 4=daily/8=weekly/16=monthly，subday_type
+# 4=minutes/8=hours，active_start_time=HHMMSS，weekly/monthly 须 freq_recurrence_factor=1）；
+# MySQL EVENT 用 EVERY <interval>[STARTS <datetime>]，工作日题在语句体加 WEEKDAY 守卫。
+# pg_cron 本就是真实语法，不动。与 corpus.jsonl L894-L912 修复同步。
+MYSQL_EVENT_REAL = {
+    "每天凌晨 2 点": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 DAY STARTS '2026-11-23 02:00:00' DO {MYSQL_TASK}",
+    "每小时整点": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 HOUR DO {MYSQL_TASK}",
+    "每周一早上 8 点": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 WEEK STARTS '2026-11-23 08:00:00' DO {MYSQL_TASK}",
+    "每月 1 号 0 点": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 MONTH STARTS '2026-12-01 00:00:00' DO {MYSQL_TASK}",
+    "每 10 分钟": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 10 MINUTE DO {MYSQL_TASK}",
+    "每天 23:30": f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 DAY STARTS '2026-11-22 23:30:00' DO {MYSQL_TASK}",
+    "工作日每天 9 点": "CREATE EVENT ev_archive ON SCHEDULE EVERY 1 DAY STARTS '2026-11-23 09:00:00' DO INSERT INTO orders_archive SELECT * FROM orders WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND WEEKDAY(CURRENT_DATE) < 5",
+}
+SS_AGENT_REAL = {
+    "每天凌晨 2 点": "EXEC sp_add_schedule @schedule_name='archive_daily', @freq_type=4, @freq_interval=1, @active_start_time='020000'",
+    "每小时整点": "EXEC sp_add_schedule @schedule_name='archive_hourly', @freq_type=4, @freq_interval=1, @freq_subday_type=8, @freq_subday_interval=1, @active_start_time='000000'",
+    "每周一早上 8 点": "EXEC sp_add_schedule @schedule_name='archive_monday', @freq_type=8, @freq_recurrence_factor=1, @freq_interval=2, @active_start_time='080000'",
+    "每月 1 号 0 点": "EXEC sp_add_schedule @schedule_name='archive_monthly', @freq_type=16, @freq_recurrence_factor=1, @freq_interval=1, @active_start_time='000000'",
+    "每 10 分钟": "EXEC sp_add_schedule @schedule_name='archive_10min', @freq_type=4, @freq_interval=1, @freq_subday_type=4, @freq_subday_interval=10, @active_start_time='000000'",
+    "每天 23:30": "EXEC sp_add_schedule @schedule_name='archive_night', @freq_type=4, @freq_interval=1, @active_start_time='233000'",
+    "工作日每天 9 点": "EXEC sp_add_schedule @schedule_name='archive_weekday', @freq_type=8, @freq_recurrence_factor=1, @freq_interval=62, @active_start_time='090000'",
+}
 for qi, (desc, cron) in enumerate(CRON_PERIODS):
-    add('cron', 'MySQL', f"创建定时任务：{desc}归档 30 天前的订单（MySQL 事件）。", f"CREATE EVENT ev_archive ON SCHEDULE EVERY 1 DAY STARTS '{cron}' DO {MYSQL_TASK}", cron)
+    add('cron', 'MySQL', f"创建定时任务：{desc}归档 30 天前的订单（MySQL 事件）。", MYSQL_EVENT_REAL[desc], cron)
     add('cron', 'PostgreSQL', f"用 pg_cron 安排：{desc}执行归档查询。", f"SELECT cron.schedule('{cron}', $$ {PG_TASK} $$)", cron)
-    add('cron', 'SQL Server', f"用代理作业安排：{desc}执行归档存储过程。", f"EXEC sp_add_job_schedule @freq_type=4, @active_start_time='{cron}'", cron)
+    add('cron', 'SQL Server', f"用代理作业安排：{desc}执行归档存储过程。", SS_AGENT_REAL[desc], cron)
 
 # ============ EDGE 空结果与边界 24 ============
 EDGES = [
