@@ -197,7 +197,7 @@
   },
   {
    "id": "S18",
-   "feature": "主题切换",
+   "feature": "主题入口可达（切换摘除）",
    "action": "soft-page",
    "page": "theme",
    "allowMiss": true,
