@@ -461,16 +461,22 @@ public partial class MainWindow : Window
         }
         void Sep() => fly.Items.Add(new MenuFlyoutSeparator());
         // U2 树-4：长尾功能收进二级子菜单，对齐 Navicat 层级（常用项平铺，工具类归组）
+        // SubItem 挂外层作用域（#240 定谳：内嵌在 Sub 里时 lambda 词法域看不到，CS0103）；
+        // 目标子菜单经 _curSub 传递，Sub 进入时置位、退出时清空，调用点零改动。
+        MenuFlyoutSubItem? _curSub = null;
+        void SubItem(string t, RoutedEventHandler h)
+        {
+            if (_curSub is null) return;
+            var mi = new MenuFlyoutItem { Text = t };
+            mi.Click += h;
+            _curSub.Items.Add(mi);
+        }
         void Sub(string text, Action<MenuFlyoutSubItem> fill)
         {
             var sub = new MenuFlyoutSubItem { Text = text };
-            void SubItem(string t, RoutedEventHandler h)
-            {
-                var mi = new MenuFlyoutItem { Text = t };
-                mi.Click += h;
-                sub.Items.Add(mi);
-            }
+            _curSub = sub;
             fill(sub);
+            _curSub = null;
             if (sub.Items.Count > 0) fly.Items.Add(sub);
         }
         switch (info.Kind)
