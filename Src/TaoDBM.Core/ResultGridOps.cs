@@ -14,7 +14,7 @@ public static class ResultGridOps
     {
         var sb = new System.Text.StringBuilder();
         if (includeHeader && columns.Count > 0)
-            sb.AppendLine(string.Join("\t", columns.Select(EscapeCell)));
+            sb.Append(string.Join("\t", columns.Select(EscapeCell))).Append('\n');
         int n = 0;
         foreach (var i in rowIndices)
         {
@@ -23,7 +23,7 @@ public static class ResultGridOps
             var cells = new string[columns.Count];
             for (int c = 0; c < columns.Count; c++)
                 cells[c] = EscapeCell(CellText(c < row.Length ? row[c] : null));
-            sb.AppendLine(string.Join("\t", cells));
+            sb.Append(string.Join("\t", cells)).Append('\n');
             n++;
             if (n >= CopyRowLimit) break;
         }
