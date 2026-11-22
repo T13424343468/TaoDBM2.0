@@ -574,12 +574,35 @@ foreach ($s in $plan.steps) {
         if ($null -eq $ed) { throw "work-editor not found" }
         try { $ed.SetFocus() } catch { }
         Start-Sleep -Milliseconds 400
-        [System.Windows.Forms.SendKeys]::SendWait("^a")
-        Start-Sleep -Milliseconds 150
-        [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
-        Start-Sleep -Milliseconds 150
-        [System.Windows.Forms.SendKeys]::SendWait((Escape-SendKeys (Tpl $s.sql)))
-        Start-Sleep -Milliseconds 500
+        # S12/N12 定谳修复（2026-11-22）：逐字 SendKeys 打字不可靠（#241 两步同型红 expected 5000 not found in ledger）——
+        # 改 UIA ValuePattern 整段设值＋回读校验，失败降级剪贴板整段粘贴，两轮重试后仍不一致才红，杜绝把错账当产品红
+        $sqlText = Tpl $s.sql
+        $setOk = $false
+        foreach ($attempt in 1..2) {
+          Set-TextValue $ed $sqlText
+          Start-Sleep -Milliseconds 400
+          $got = $null
+          try { $got = ($ed.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
+          if ($got -eq $sqlText) { $setOk = $true; break }
+          Log "$id editor-verify retry $attempt got=$got"
+          try {
+            Set-Clipboard -Value $sqlText
+            $ed.SetFocus()
+            Start-Sleep -Milliseconds 300
+            [System.Windows.Forms.SendKeys]::SendWait("^a")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("^v")
+          } catch { }
+          Start-Sleep -Milliseconds 400
+        }
+        if (-not $setOk) {
+          $got = $null
+          try { $got = ($ed.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
+          if ($got -ne $sqlText) { throw "editor verify failed: sql mismatch after retries (got=$got)" }
+        }
+        Start-Sleep -Milliseconds 300
         $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
         if ($null -eq $run) { throw "work-run not found" }
         Invoke-El $run
