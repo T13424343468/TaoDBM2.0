@@ -38,7 +38,7 @@ JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON oi.id = p.id
 WHERE p.amount > (SELECT AVG(amount) FROM payments);
 
-[ Prompt: 39.0 t/s | Generation: 8.9 t/s ]
+[ Prompt: 28.8 t/s | Generation: 4.5 t/s ]
 
 
 Exiting...

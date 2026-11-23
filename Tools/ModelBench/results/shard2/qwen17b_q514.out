@@ -36,7 +36,7 @@ FROM orders
 WHERE created_at BETWEEN DATEADD(QQ, -1, created_at) AND created_at
 GROUP BY YEAR(created_at)
 
-[ Prompt: 34.5 t/s | Generation: 9.6 t/s ]
+[ Prompt: 27.0 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ SELECT SUM(p.amount) AS total_amount, SUM(p.amount) * 100.0 / SUM(p.amount + p2.
 FROM payments p
 JOIN orders p2 ON p.order_id = p2.id;
 
-[ Prompt: 37.2 t/s | Generation: 8.8 t/s ]
+[ Prompt: 27.6 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

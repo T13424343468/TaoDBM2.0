@@ -35,7 +35,7 @@ EXECUTE AS OWNER = 'dbo';
 EXEC sp_add_job @name = 'Archive Storage Procedure', @job_id = 'ArchiveJob', @enabled = 1, @schedule_id = 'Monthly 1st 00:00';
 EXEC sp_add_job_schedule @name = 'ArchiveJob', @job_id = 'ArchiveJob', @enabled = 1, @schedule_type = 1, @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @active = 1;
 
-[ Prompt: 35.1 t/s | Generation: 9.2 t/s ]
+[ Prompt: 28.5 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM orders WHERE created_at BETWEEN '2023-03-01' AND '2023-03-31' AND status = 'cancelled';
 
-[ Prompt: 34.2 t/s | Generation: 10.1 t/s ]
+[ Prompt: 28.1 t/s | Generation: 4.5 t/s ]
 
 
 Exiting...

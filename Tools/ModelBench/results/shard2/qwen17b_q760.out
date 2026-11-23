@@ -36,7 +36,7 @@ FROM users u1
 JOIN users u2 ON u1.id = u2.id
 WHERE u1.name = u2.name;
 
-[ Prompt: 34.6 t/s | Generation: 9.4 t/s ]
+[ Prompt: 25.2 t/s | Generation: 3.6 t/s ]
 
 
 Exiting...

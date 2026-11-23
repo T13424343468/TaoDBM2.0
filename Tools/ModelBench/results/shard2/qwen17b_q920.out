@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT name FROM users WHERE created_at < '2000-01-01';
 
-[ Prompt: 57.3 t/s | Generation: 16.6 t/s ]
+[ Prompt: 46.6 t/s | Generation: 5.6 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT NULL IS NULL, '' IS NULL FROM dual;
 
-[ Prompt: 35.6 t/s | Generation: 10.4 t/s ]
+[ Prompt: 27.0 t/s | Generation: 5.1 t/s ]
 
 
 Exiting...

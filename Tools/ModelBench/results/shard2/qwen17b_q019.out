@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM payments
 WHERE amount > 1000;
 
-[ Prompt: 34.3 t/s | Generation: 11.6 t/s ]
+[ Prompt: 28.8 t/s | Generation: 4.7 t/s ]
 
 
 Exiting...

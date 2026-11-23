@@ -36,7 +36,7 @@ FROM products p
 JOIN order_items ON p.id = order_items.product_id
 GROUP BY p.category;
 
-[ Prompt: 38.5 t/s | Generation: 8.6 t/s ]
+[ Prompt: 28.1 t/s | Generation: 4.5 t/s ]
 
 
 Exiting...

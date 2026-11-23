@@ -38,7 +38,7 @@ INSERT INTO orders (user_id, status, created_at) VALUES (1, 'pending', CURRENT_T
 
 COMMIT;
 
-[ Prompt: 36.3 t/s | Generation: 8.8 t/s ]
+[ Prompt: 29.2 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...
