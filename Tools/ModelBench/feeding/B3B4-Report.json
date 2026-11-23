@@ -1,0 +1,12 @@
+{
+  "batch_id": "B3B4-20261123",
+  "timestamp": "2026-11-23T11:50:20.809271+08:00",
+  "corpus_rev": "4f6061bd",
+  "note": "program-side seed prepared by AI-version line (2191209): cron 21 first-insert (wiring prerequisite), then win/proc/cte/trap/dia (B3) + rest incl edge (B4); engine from eval-prompt dialect (B1B2 rule, 0 mismatch audited); python Recall-replica full-pool exact-hit 386/386 (B1B2 155 + B3B4 231), zero conflict, zero dup",
+  "gauge2_note": "in-program runtime pending phase-1",
+  "rows_total": 231,
+  "b3": 124,
+  "b4": 107,
+  "cron_first_insert": 21,
+  "refuse_rows": 0
+}
