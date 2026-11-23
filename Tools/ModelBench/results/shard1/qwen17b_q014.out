@@ -35,7 +35,7 @@ SELECT category, COUNT(*) AS count
 FROM products
 GROUP BY category;
 
-[ Prompt: 18.3 t/s | Generation: 7.1 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

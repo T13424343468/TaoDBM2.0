@@ -38,7 +38,7 @@ SELECT DISTINCT p.id, p.user_id, p.status, p.created_at
 FROM payments p
 WHERE p.status = 'paid';
 
-[ Prompt: 21.1 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.0 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT ABS(SUM(CASE WHEN stock > 0 THEN 1 ELSE -1 END) * (SELECT COUNT(*) FROM order_items)) FROM products;
 
-[ Prompt: 20.9 t/s | Generation: 7.6 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

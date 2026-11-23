@@ -38,7 +38,7 @@ WHERE order_id IN (
     WHERE method = 'credit_card'
 );
 
-[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
+[ Prompt: 16.9 t/s | Generation: 5.7 t/s ]
 
 
 Exiting...

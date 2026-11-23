@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT name FROM users WHERE name LIKE CONCAT(substring(name, 1, 3), '...')
 
-[ Prompt: 21.1 t/s | Generation: 7.4 t/s ]
+[ Prompt: 19.0 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

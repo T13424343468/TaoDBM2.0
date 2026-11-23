@@ -35,7 +35,7 @@ SELECT SUM(len(name)) AS total_name_length
 FROM users
 WHERE len(name) > 0;
 
-[ Prompt: 15.9 t/s | Generation: 5.6 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

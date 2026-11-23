@@ -37,7 +37,7 @@ JOIN orders ON order_items.order_id = orders.id
 JOIN payments ON orders.id = payments.order_id
 WHERE orders.status = 'completed';
 
-[ Prompt: 20.6 t/s | Generation: 7.1 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

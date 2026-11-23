@@ -36,7 +36,7 @@ FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
 JOIN products p ON oi.product_id = p.id;
 
-[ Prompt: 20.4 t/s | Generation: 7.5 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
