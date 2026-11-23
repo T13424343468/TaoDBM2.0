@@ -1,5 +1,5 @@
 {
-  "version": "v3.15-real-db-p1b",
+  "version": "v3.16-real-db-p1b-editor-reopen",
   "steps": [
     {
       "id": "S01",
@@ -210,6 +210,14 @@
       "page": "about",
       "allowMiss": true,
       "shot": "shot-15-about.png"
+    },
+    {
+      "id": "S54",
+      "feature": "批次一-前置-重开查询页签",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "新建查询",
+      "critical": true
     },
     {
       "id": "S55",
