@@ -73,7 +73,7 @@ public static class BlobEditorDialog
             {
                 var tmp = Path.Combine(Path.GetTempPath(), $"taodbm-blob-{Guid.NewGuid():N}.bin");
                 await File.WriteAllBytesAsync(tmp, initialBytes);
-                img.Children.Add(new Image { Source = new BitmapImage(new Uri(tmp)), MaxHeight = 320, Stretch = Stretch.Uniform });
+                img.Children.Add(new Image { Source = new BitmapImage(new Uri(tmp)), MaxHeight = 320, Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform });
                 img.Children.Add(new TextBlock { Text = $"图像 {initialBytes.Length:N0} 字节（临时文件 {Path.GetFileName(tmp)}）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
             }
             catch (Exception ex)

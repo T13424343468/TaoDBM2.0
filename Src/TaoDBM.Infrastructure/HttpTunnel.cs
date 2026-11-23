@@ -173,4 +173,18 @@ public static class TunnelResolver
             return HttpTunnel.Resolve(p, host, port);
         return (host, port);
     }
+
+    /// <summary>关闭指定连接的隧道（SSH 与 HTTP 双通道一并收口，入口收敛一处）。</summary>
+    public static void StopProfile(string id)
+    {
+        SshTunnel.StopProfile(id);
+        HttpTunnel.StopProfile(id);
+    }
+
+    /// <summary>关闭全部隧道（连接删除或程序退出时调用）。</summary>
+    public static void StopAll()
+    {
+        SshTunnel.StopAll();
+        HttpTunnel.StopAll();
+    }
 }

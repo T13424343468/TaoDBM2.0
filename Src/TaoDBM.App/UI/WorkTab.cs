@@ -706,14 +706,14 @@ public partial class WorkTab : Grid
             case ExportKind.Xml:
             {
                 using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
-                long rows = XmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.ToArray(), HasMore = false } }, src0.Columns, w);
+                long rows = XmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.Select(r => (object[])r).ToArray(), HasMore = false } }, src0.Columns, w);
                 AppLog.Write($"[导出] xml rows={rows}");   // 批次四格2 验收锚点
                 break;
             }
             default:   // Html
             {
                 using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
-                long rows = HtmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.ToArray(), HasMore = false } }, src0.Columns, src0.Title, w);
+                long rows = HtmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.Select(r => (object[])r).ToArray(), HasMore = false } }, src0.Columns, src0.Title, w);
                 AppLog.Write($"[导出] html rows={rows}");   // 批次四格2 验收锚点
                 break;
             }

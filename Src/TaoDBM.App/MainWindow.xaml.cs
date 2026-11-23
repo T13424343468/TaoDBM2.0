@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
 using TaoDBM.Core;
+using TaoDBM.Infrastructure;
 using TaoDBM.UI;
 
 namespace TaoDBM;
