@@ -37,7 +37,7 @@ UPDATE users SET city = 'New York' WHERE id = 1;
 
 COMMIT;
 
-[ Prompt: 35.5 t/s | Generation: 9.2 t/s ]
+[ Prompt: 32.9 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

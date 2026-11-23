@@ -37,7 +37,7 @@ BEGIN
     SELECT @out = stock FROM products WHERE id = 1;
 END;
 
-[ Prompt: 32.8 t/s | Generation: 9.9 t/s ]
+[ Prompt: 35.1 t/s | Generation: 9.2 t/s ]
 
 
 Exiting...

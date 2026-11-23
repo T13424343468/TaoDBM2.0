@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT generated_at FROM generate_series( CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE ) as generated_at;
 
-[ Prompt: 39.3 t/s | Generation: 8.4 t/s ]
+[ Prompt: 37.5 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

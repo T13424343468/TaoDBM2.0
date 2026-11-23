@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT ABS(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN (order_items.quantity * order_items.unit_price) ELSE 0 END) - (SELECT SUM(stock) FROM products)) AS abs_stock_change FROM products;
 
-[ Prompt: 37.9 t/s | Generation: 9.1 t/s ]
+[ Prompt: 40.1 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

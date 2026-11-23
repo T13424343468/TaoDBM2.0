@@ -40,7 +40,7 @@ UPDATE payments SET amount = 100.00, method = 'credit_card' WHERE order_id = 1;
 
 COMMIT;
 
-[ Prompt: 33.9 t/s | Generation: 9.1 t/s ]
+[ Prompt: 38.7 t/s | Generation: 8.9 t/s ]
 
 
 Exiting...

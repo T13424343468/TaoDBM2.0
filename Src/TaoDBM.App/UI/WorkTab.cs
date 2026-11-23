@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
 using Windows.UI.Text;
@@ -79,6 +80,11 @@ public partial class WorkTab : Grid
     private int _offset;
     private const int PageSize = 200;
     private bool _busy;
+
+    // 表名候选预载（融合远端 D-12 能力：补全候选含当前库表名；弹层本体用格1 键盘化实现）
+    private List<string> _tables = new();
+    private bool _tablesLoading;
+    private int _completeStart;
     private bool _isRelational => _provider is RelationalProvider;
     private readonly Dictionary<string, double> _colWidths = new();   // 格9：用户拖拽列宽（键=查询文本|列名 或 browse:库.表|列名）
 
@@ -155,13 +161,15 @@ public partial class WorkTab : Grid
             Ant.ThemeApplied += OnThemeApplied;
             Unloaded += (_, _) => Ant.ThemeApplied -= OnThemeApplied;
             AttachEditorOps();   // 批次一：编辑器右键菜单＋快捷键操作集
+            EnsureTables();   // 融合远端 D-12：补全候选预载当前库表名（弹层本体用格1 键盘化实现）
         }
 
         // 层色底定律：标签页根板显式挂主题底色，中间内容靠网格自带层色与描边，不依赖系统纯黑
         Background = Ant.Bg;
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = mode == WorkMode.Query ? GridLength.Auto : new GridLength(0) });
-        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // D-8 修红（2026-11-22 老板令）：结果区此前挂 Auto 行随内容缩成小条、下方空 Star 行整片留白——
+        // 对齐 Navicat/DBeaver 口径：结果区撑满剩余空间，数据多时出滚动条
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
@@ -237,7 +245,7 @@ public partial class WorkTab : Grid
         msgArea.Children.Add(_errorBanner);
         msgArea.Children.Add(msgBorder);
         Children.Add(msgArea);
-        SetRow(msgArea, 4);
+        SetRow(msgArea, 3);   // D-8 修红：消息区随结果区上移一行
 
         // UIA 自动化标识（界面自动化走查定位用）
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
@@ -270,6 +278,7 @@ public partial class WorkTab : Grid
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_importBtn, "ImportXlsx");   // 批次四格1：导入入口锚点
         _importBtn.Click += (_, _) => _ = ImportCsv();
+        _pasteBtn.Click += (_, _) => _ = UI.PastePreviewDialog.Show(_owner, this, _provider, _db, _child.Length > 0 ? _child : "main");   // 批次二格4
         _formBtn.Click += (_, _) =>   // 批次二格1：网格/表单双视图切换
         {
             _formMode = !_formMode;
@@ -287,8 +296,7 @@ public partial class WorkTab : Grid
                 else ShowResult(_browseResult, editable: true);
             }
         };
-        _pasteBtn.Click += (_, _) => _ = UI.PastePreviewDialog.Show(_owner, this, _provider, _db, _child.Length > 0 ? _child : "main");   // 批次二格4
-        _designBtn.Click += (_, _) => _ = UI.TableDesignerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);
+        _designBtn.Click += (_, _) => _owner.OpenDesignerTab(_provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);   // U2：表设计器内嵌页签（格5 增强随 Tab 迁移）
         _fakerBtn.Click += (_, _) => _ = UI.FakerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : "main");
         _histBtn.Click += (_, _) => ShowHistory();
         _favBtn.Click += (_, _) => ShowFavorites();
@@ -1599,6 +1607,21 @@ public partial class WorkTab : Grid
 
     // ---------- SQL 补全（Ctrl+Space，格1：非模态浮层，键盘直达） ----------
 
+    /// <summary>表名候选懒加载：一次取当前库子对象清单后缓存（融合远端 D-12 能力）。</summary>
+    private void EnsureTables()
+    {
+        if (_tables.Count > 0 || _tablesLoading) return;
+        _tablesLoading = true;
+        _ = EnsureTablesAsync();
+    }
+
+    private async Task EnsureTablesAsync()
+    {
+        try { var kids = await _provider.GetChildren(_db); _tables = kids.ToList(); }
+        catch { /* 元数据取不到就只用关键字＋列 */ }
+        finally { _tablesLoading = false; }
+    }
+
     private static readonly string[] Keywords =
     {
         "SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE",
@@ -1635,9 +1658,11 @@ public partial class WorkTab : Grid
     }
 
     private List<string> CompleteCandidates(string word) => Keywords
+        .Concat(_tables)   // 融合远端 D-12：候选含当前库表名
         .Concat(_cols.Select(c => c.Name))
         .Where(k => k.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
                     !k.Equals(word, StringComparison.OrdinalIgnoreCase))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
         .Take(30).ToList();
 
     private void OpenCompletePopup()

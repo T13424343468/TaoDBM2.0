@@ -31,9 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT DISTINCT * FROM users;
+SELECT * FROM orders
+WHERE id NOT IN (
+    SELECT id FROM orders
+    GROUP BY order_id
+    HAVING COUNT(DISTINCT user_id) > 1
+);
 
-[ Prompt: 30.7 t/s | Generation: 5.3 t/s ]
+[ Prompt: 27.7 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

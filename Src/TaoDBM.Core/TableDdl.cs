@@ -15,11 +15,33 @@ public class TableColumnDesign
     public bool SameNameAs(string? other) => Name.Equals(other, StringComparison.OrdinalIgnoreCase);
 }
 
+/// <summary>表设计器里的一条索引定义（U2：设计器索引分区）。</summary>
+public class TableIndexDesign
+{
+    public string Name { get; set; } = "";
+    public List<string> Columns { get; set; } = new();
+    public bool IsUnique { get; set; }
+}
+
+/// <summary>表设计器里的一条外键定义（U2：设计器外键分区）。</summary>
+public class TableForeignKeyDesign
+{
+    public string Name { get; set; } = "";
+    public List<string> Columns { get; set; } = new();
+    public string RefTable { get; set; } = "";
+    public List<string> RefColumns { get; set; } = new();
+    /// <summary>CASCADE / SET NULL / RESTRICT，空表示不指定。</summary>
+    public string OnDelete { get; set; } = "";
+    public string OnUpdate { get; set; } = "";
+}
+
 /// <summary>一张表的列定义集合（新建或改表）。</summary>
 public class TableDesign
 {
     public string TableName { get; set; } = "";
     public List<TableColumnDesign> Columns { get; set; } = new();
+    public List<TableIndexDesign> Indexes { get; set; } = new();
+    public List<TableForeignKeyDesign> ForeignKeys { get; set; } = new();
 
     public static TableDesign FromSpecs(string table, IEnumerable<ColumnSpec> specs) => new()
     {
@@ -43,7 +65,7 @@ public static class TableDdl
         _ => "VARCHAR(100)",
     };
 
-    /// <summary>生成 CREATE TABLE 语句；autoIncrement 列按方言落到对应位置。</summary>
+    /// <summary>生成 CREATE TABLE 语句；autoIncrement 列按方言落到对应位置，外键以表级子句内联（SQLite 建表也支持）。</summary>
     public static string BuildCreate(TableDesign t, DbEngine engine, Func<string, string> quote)
     {
         var pks = t.Columns.Where(c => c.IsPrimaryKey).Select(c => quote(c.Name)).ToList();
@@ -53,7 +75,54 @@ public static class TableDdl
             lines.Add("  " + ColumnDef(c, engine, quote, tableLevelPk));
         if (tableLevelPk)
             lines.Add("  PRIMARY KEY (" + string.Join(", ", pks) + ")");
+        foreach (var fk in t.ForeignKeys.Where(FkValid))
+            lines.Add("  " + FkClause(fk, quote));
         return $"CREATE TABLE {quote(t.TableName)} (\n{string.Join(",\n", lines)}\n)";
+    }
+
+    /// <summary>生成索引 DDL（CREATE INDEX，全引擎通用；空名/空列跳过）。</summary>
+    public static List<string> BuildIndexes(TableDesign t, Func<string, string> quote)
+    {
+        var stmts = new List<string>();
+        var table = quote(t.TableName);
+        foreach (var ix in t.Indexes)
+        {
+            var cols = ix.Columns.Where(c => c.Trim().Length > 0).Select(quote).ToList();
+            if (ix.Name.Trim().Length == 0 || cols.Count == 0) continue;
+            stmts.Add($"CREATE {(ix.IsUnique ? "UNIQUE " : "")}INDEX {quote(ix.Name.Trim())} ON {table} ({string.Join(", ", cols)})");
+        }
+        return stmts;
+    }
+
+    /// <summary>生成对已有表加外键的 DDL；SQLite 不支持 ADD CONSTRAINT 外键，记入 skipped。</summary>
+    public static (List<string> Statements, List<string> Skipped) BuildForeignKeys(TableDesign t, DbEngine engine, Func<string, string> quote)
+    {
+        var stmts = new List<string>();
+        var skipped = new List<string>();
+        if (engine == DbEngine.SQLite)
+        {
+            if (t.ForeignKeys.Any(FkValid))
+                skipped.Add("SQLite: 不支持对已有表 ADD CONSTRAINT 外键（官方限制），外键需在新建表时定义。");
+            return (stmts, skipped);
+        }
+        var table = quote(t.TableName);
+        foreach (var fk in t.ForeignKeys.Where(FkValid))
+            stmts.Add($"ALTER TABLE {table} ADD CONSTRAINT {quote(fk.Name.Trim())} {FkClause(fk, quote)}");
+        return (stmts, skipped);
+    }
+
+    private static bool FkValid(TableForeignKeyDesign fk) =>
+        fk.Name.Trim().Length > 0 && fk.RefTable.Trim().Length > 0
+        && fk.Columns.Any(c => c.Trim().Length > 0) && fk.RefColumns.Any(c => c.Trim().Length > 0);
+
+    private static string FkClause(TableForeignKeyDesign fk, Func<string, string> quote)
+    {
+        var cols = string.Join(", ", fk.Columns.Where(c => c.Trim().Length > 0).Select(quote));
+        var refs = string.Join(", ", fk.RefColumns.Where(c => c.Trim().Length > 0).Select(quote));
+        var acts = "";
+        if (fk.OnDelete.Trim().Length > 0) acts += $" ON DELETE {fk.OnDelete.Trim()}";
+        if (fk.OnUpdate.Trim().Length > 0) acts += $" ON UPDATE {fk.OnUpdate.Trim()}";
+        return $"FOREIGN KEY ({cols}) REFERENCES {quote(fk.RefTable.Trim())} ({refs}){acts}";
     }
 
     /// <summary>生成 ALTER 语句：新增列 / 修改列 / 删除列（与 existingNames 对比）。

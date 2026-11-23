@@ -37,7 +37,7 @@ WHERE created_at BETWEEN DATEADD(WEEK, -1, created_at) AND created_at
 ORDER BY created_at
 LIMIT 1;
 
-[ Prompt: 34.2 t/s | Generation: 10.1 t/s ]
+[ Prompt: 35.4 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

@@ -38,7 +38,7 @@ WHERE u.id NOT IN (
     FROM orders
 );
 
-[ Prompt: 35.8 t/s | Generation: 9.2 t/s ]
+[ Prompt: 34.3 t/s | Generation: 9.2 t/s ]
 
 
 Exiting...

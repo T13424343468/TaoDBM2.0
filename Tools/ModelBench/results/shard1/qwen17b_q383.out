@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT unit_price ** 3 FROM order_items;
 
-[ Prompt: 34.8 t/s | Generation: 8.3 t/s ]
+[ Prompt: 35.0 t/s | Generation: 10.9 t/s ]
 
 
 Exiting...

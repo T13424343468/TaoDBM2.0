@@ -35,7 +35,7 @@ SELECT unit_price
 FROM order_items
 WHERE unit_price = EXP(price);
 
-[ Prompt: 34.2 t/s | Generation: 8.1 t/s ]
+[ Prompt: 38.1 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

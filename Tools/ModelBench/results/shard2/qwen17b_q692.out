@@ -33,18 +33,23 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 WITH ranked_orders AS (
     SELECT 
-        o.id,
-        o.user_id,
-        o.status,
-        o.created_at,
+        o.id, 
+        o.user_id, 
+        o.status, 
+        o.created_at, 
         ROW_NUMBER() OVER (PARTITION BY o.user_id ORDER BY o.created_at DESC) as rn
     FROM orders o
 )
-SELECT *
-FROM ranked_orders
-WHERE rn <= 3;
+SELECT 
+    ro.id, 
+    ro.user_id, 
+    ro.status, 
+    ro.created_at, 
+    ro.rn
+FROM ranked_orders ro
+WHERE ro.rn <= 3;
 
-[ Prompt: 34.9 t/s | Generation: 9.5 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

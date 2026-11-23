@@ -45,7 +45,7 @@ INSERT INTO payments (id, order_id, amount, method, paid_at) VALUES (1, 1, 199.9
 
 COMMIT TRANSACTION;
 
-[ Prompt: 34.9 t/s | Generation: 8.3 t/s ]
+[ Prompt: 32.3 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

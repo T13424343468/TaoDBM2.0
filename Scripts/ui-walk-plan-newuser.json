@@ -16,6 +16,6 @@
     { "id": "N12", "feature": "新用户-首条查询出数", "action": "query", "sql": "SELECT COUNT(*) AS c FROM orders;", "expectContains": ["__ORDERS_COUNT__"], "critical": true, "shot": "shot-n12-count.png" },
     { "id": "N13", "feature": "新用户-取值比对", "action": "query", "sql": "SELECT name FROM products WHERE id = 7;", "expectContains": ["__NAME7__"], "critical": true, "shot": "shot-n13-cell.png" },
     { "id": "N14", "feature": "新用户-导出CSV", "action": "export-csv", "allowMiss": true, "shot": "shot-n14-export.png" },
-    { "id": "N15", "feature": "新用户-主题切换尾页", "action": "soft-page", "page": "theme", "allowMiss": true, "shot": "shot-n15-theme.png" }
+    { "id": "N15", "feature": "新用户-主题入口可达（切换摘除）", "action": "soft-page", "page": "theme", "allowMiss": true, "shot": "shot-n15-theme.png" }
   ]
 }

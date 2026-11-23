@@ -38,7 +38,7 @@ LEFT JOIN payments ON orders.id = payments.order_id
 LEFT JOIN users ON orders.user_id = users.id
 WHERE 1=1;
 
-[ Prompt: 37.6 t/s | Generation: 8.6 t/s ]
+[ Prompt: 35.6 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

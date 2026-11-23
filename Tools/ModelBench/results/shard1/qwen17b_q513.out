@@ -35,7 +35,7 @@ SELECT COUNT(*) AS quarter_order_count
 FROM orders
 WHERE EXTRACT(QQ FROM created_at) = EXTRACT(QQ FROM CURRENT_DATE);
 
-[ Prompt: 37.2 t/s | Generation: 9.0 t/s ]
+[ Prompt: 32.0 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

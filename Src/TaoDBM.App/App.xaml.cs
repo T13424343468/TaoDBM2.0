@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using System.IO;
+using TaoDBM.Core;
 
 namespace TaoDBM;
 
@@ -17,6 +18,14 @@ public partial class App : Application
         {
             CrashLog.Write($"UnhandledException: {e.Message}\n{e.Exception}");
             e.Handled = true;
+        };
+        // v3.22 崩溃日志随包落盘令：非 UI 线程崩溃与未观察任务异常同样留痕（进程级兜底，不拖垮启动）
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            CrashLog.Write($"AppDomain.UnhandledException (Terminating={e.IsTerminating}): {e.ExceptionObject}");
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            CrashLog.Write($"TaskScheduler.UnobservedTaskException: {e.Exception}");
+            e.SetObserved();
         };
     }
 
@@ -78,10 +87,12 @@ public static class CrashLog
         {
             var dir = Core.TaoPaths.Root;   // Tao 系列存储默认 D 盘
             Directory.CreateDirectory(dir);
+            // v3.22：每条崩溃记录带版本号，异常类型与堆栈由调用方传入的 Exception.ToString() 承载
+            var version = typeof(CrashLog).Assembly.GetName().Version?.ToString() ?? "unknown";
             lock (Gate)
             {
                 File.AppendAllText(Path.Combine(dir, "crash.log"),
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {text}{Environment.NewLine}{Environment.NewLine}");
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [v{version}] {text}{Environment.NewLine}{Environment.NewLine}");
             }
         }
         catch

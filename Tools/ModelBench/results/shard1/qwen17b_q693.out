@@ -44,7 +44,7 @@ SELECT *
 FROM ranked_orders
 WHERE rank = 1;
 
-[ Prompt: 36.2 t/s | Generation: 8.9 t/s ]
+[ Prompt: 37.2 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

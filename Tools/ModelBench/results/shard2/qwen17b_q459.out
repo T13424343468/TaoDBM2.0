@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT DATE(created_at) FROM users WHERE created_at BETWEEN DATE('2023-01-01') AND DATE('2023-01-31');
+SELECT created_at FROM users WHERE created_at = CURRENT_DATE;
 
-[ Prompt: 35.3 t/s | Generation: 10.2 t/s ]
+[ Prompt: 21.1 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT GROUP_CONCAT(name SEPARATOR ', ') FROM products GROUP BY category;
 
-[ Prompt: 34.9 t/s | Generation: 11.4 t/s ]
+[ Prompt: 37.8 t/s | Generation: 8.6 t/s ]
 
 
 Exiting...

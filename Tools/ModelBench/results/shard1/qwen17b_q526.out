@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT CAST(DATEADD(MONTH, -1, CAST(DATEADD(MONTH, 1, GETDATE()) AS DATE)) AS DATE)
 
-[ Prompt: 33.8 t/s | Generation: 10.9 t/s ]
+[ Prompt: 39.7 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...

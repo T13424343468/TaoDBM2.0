@@ -40,7 +40,7 @@ WHERE o.created_at >= (SELECT AVG(p.price * p.quantity) FROM products p
                       WHERE oi.order_id = o.id)
 ORDER BY o.created_at DESC;
 
-[ Prompt: 36.1 t/s | Generation: 8.9 t/s ]
+[ Prompt: 38.2 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

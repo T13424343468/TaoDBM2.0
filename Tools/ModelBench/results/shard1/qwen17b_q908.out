@@ -35,7 +35,7 @@ SELECT product.name, product.price / COALESCE(product.stock, 1) AS price_per_uni
 FROM products
 WHERE products.stock > 0;
 
-[ Prompt: 53.5 t/s | Generation: 15.6 t/s ]
+[ Prompt: 55.2 t/s | Generation: 16.4 t/s ]
 
 
 Exiting...

@@ -39,7 +39,7 @@ GROUP BY name
 ORDER BY total_amount DESC
 LIMIT 4;
 
-[ Prompt: 34.0 t/s | Generation: 8.7 t/s ]
+[ Prompt: 38.2 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

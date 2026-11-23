@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT RIGHT(id, 5) AS right_filled_id FROM users;
 
-[ Prompt: 38.5 t/s | Generation: 9.9 t/s ]
+[ Prompt: 39.3 t/s | Generation: 8.9 t/s ]
 
 
 Exiting...

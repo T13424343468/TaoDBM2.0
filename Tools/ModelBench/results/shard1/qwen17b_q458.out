@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT DATEPART(year, created_at) AS year, DATEPART(month, created_at) AS month, DATEPART(day, created_at) AS day
 FROM users
 
-[ Prompt: 36.6 t/s | Generation: 9.0 t/s ]
+[ Prompt: 34.3 t/s | Generation: 10.1 t/s ]
 
 
 Exiting...

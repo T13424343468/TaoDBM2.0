@@ -31,25 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT SUM(length) AS total_length
-FROM (
-    SELECT LENGTH(name) AS length
-    FROM users
-    UNION ALL
-    SELECT LENGTH(name) AS length
-    FROM products
-    UNION ALL
-    SELECT LENGTH(name) AS length
-    FROM orders
-    UNION ALL
-    SELECT LENGTH(name) AS length
-    FROM order_items
-    UNION ALL
-    SELECT LENGTH(name) AS length
-    FROM payments
-) AS subquery;
+SELECT LENGTH(name) AS name_length FROM users;
 
-[ Prompt: 26.9 t/s | Generation: 4.8 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

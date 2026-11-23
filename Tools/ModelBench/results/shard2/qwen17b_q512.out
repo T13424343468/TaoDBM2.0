@@ -33,9 +33,10 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT YEAR(created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
-WHERE created_at BETWEEN DATE_ADD(CURDATE(), INTERVAL -3 QUARTER) AND CURDATE()
+WHERE created_at BETWEEN DATE_ADD(CURDATE(), INTERVAL -3 MONTH) AND CURDATE()
+GROUP BY YEAR(created_at);
 
-[ Prompt: 35.3 t/s | Generation: 9.8 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

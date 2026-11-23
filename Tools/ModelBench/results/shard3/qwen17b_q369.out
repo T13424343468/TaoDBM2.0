@@ -33,10 +33,10 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT p.stock + p.price * p.quantity AS total_stock
 FROM products p
-JOIN order_items o ON p.id = o.product_id
-WHERE o.order_id = 1;
+JOIN order_items oi ON p.id = oi.product_id
+WHERE oi.order_id = 1;
 
-[ Prompt: 30.4 t/s | Generation: 4.7 t/s ]
+[ Prompt: 21.5 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

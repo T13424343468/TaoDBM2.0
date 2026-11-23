@@ -36,7 +36,7 @@ BEGIN
     SELECT stock INTO OUT stock FROM products WHERE id = user_id;
 END;
 
-[ Prompt: 37.7 t/s | Generation: 9.3 t/s ]
+[ Prompt: 33.1 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

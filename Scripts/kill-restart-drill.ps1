@@ -27,23 +27,12 @@ Write-Host "[DRILL] workdir=$WorkDir"
 function Start-Drill([string]$Phase, [string]$OutFile) {
     # Windows：Start-Process -Environment（pwsh 7.4+）；其余：env 包装。绝不能不带环境变量起进程，
     # 否则会落进常规全量测试路径（约 5.5 分钟），演练语义全失。
-    # 输出重定向落盘：失败时把尾行打回 ::error:: 注解，CI 红无登录也能定位（#278 演练红无 DRILL 注解教训）。
+    # #251 立案：云上连红时逐项账只在锁定日志里，输出落盘，红时把具体 FAIL 项写进公开注解
     if ($IsWindows) {
         return Start-Process -FilePath "dotnet" -ArgumentList @($dll, $WorkDir) -PassThru -NoNewWindow `
             -Environment @{ TAODBM_DRILL = $Phase } -RedirectStandardOutput $OutFile -RedirectStandardError "$OutFile.err"
     }
-    return Start-Process -FilePath "env" -ArgumentList @("TAODBM_DRILL=$Phase", "dotnet", $dll, $WorkDir) -PassThru -NoNewWindow `
-        -RedirectStandardOutput $OutFile -RedirectStandardError "$OutFile.err"
-}
-
-function Show-Tail([string]$File, [string]$Tag) {
-    if (Test-Path $File) {
-        Get-Content $File -Tail 8 | ForEach-Object { if ($_.Trim()) { Write-Host "::error::$Tag $_" } }
-    }
-    $err = "$File.err"
-    if (Test-Path $err) {
-        Get-Content $err -Tail 4 | ForEach-Object { if ($_.Trim()) { Write-Host "::error::$Tag-err $_" } }
-    }
+    return Start-Process -FilePath "env" -ArgumentList @("TAODBM_DRILL=$Phase", "dotnet", $dll, $WorkDir) -PassThru -NoNewWindow -RedirectStandardOutput $OutFile -RedirectStandardError "$OutFile.err"
 }
 
 # ---- 阶段一：seed（落状态后驻留，等强杀）----
@@ -58,9 +47,6 @@ if (-not (Test-Path $registry)) {
 }
 Write-Host "[DRILL] seed registered after ${waited}s, killing pid=$($seed.Id)"
 Stop-Process -Id $seed.Id -Force   # 强杀 = 模拟崩溃，无任何清理机会
-# 显式收尸后再起 verify：Linux 下父进程未及时 reap 时强杀进程留僵尸态（/proc 仍在），
-# verify 侧存活判定有竞态窗口（CI 偶发红的头号嫌疑）；先 Wait+ExitCode 逼 pwsh waitpid 收尸。
-try { Wait-Process -Id $seed.Id -ErrorAction SilentlyContinue; $null = $seed.ExitCode } catch { }
 Start-Sleep -Seconds 2
 
 # ---- 阶段二：verify（新进程回读对账）----
@@ -69,6 +55,11 @@ $verify = Start-Drill "verify" $verifyOut
 Wait-Process -Id $verify.Id -ErrorAction SilentlyContinue
 $code = $verify.ExitCode
 Write-Host "[DRILL] verify exit=$code"
-if ($code -eq 0) { Write-Host "[DRILL] kill/restart recovery PASS" }
-else { Show-Tail $verifyOut "DRILL-verify"; Write-Host "::error::kill/restart recovery FAILED" }
+if (Test-Path $verifyOut) { Get-Content $verifyOut | ForEach-Object { Write-Host "[DRILL] $_" } }
+if ($code -eq 0) { Write-Host "[DRILL] kill/restart recovery PASS" } else {
+    Write-Host "::error::kill/restart recovery FAILED (exit=$code)"
+    if (Test-Path $verifyOut) { Get-Content $verifyOut | ForEach-Object { if ($_ -match 'FAIL|error') { Write-Host "::error::$_" } } }
+    $errFile = "$verifyOut.err"
+    if (Test-Path $errFile) { Get-Content $errFile | Select-Object -First 10 | ForEach-Object { Write-Host "::error::stderr $_" } }
+}
 exit $code

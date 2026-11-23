@@ -45,7 +45,7 @@ FROM
 WHERE 
     order_items.order_id = 1;
 
-[ Prompt: 36.9 t/s | Generation: 8.8 t/s ]
+[ Prompt: 36.1 t/s | Generation: 9.2 t/s ]
 
 
 Exiting...

@@ -33,10 +33,9 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT SUM(p.amount) AS total_amount
 FROM payments p
-WHERE p.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-AND p.paid_at < CURDATE();
+WHERE p.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND p.paid_at < CURDATE();
 
-[ Prompt: 34.7 t/s | Generation: 9.7 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

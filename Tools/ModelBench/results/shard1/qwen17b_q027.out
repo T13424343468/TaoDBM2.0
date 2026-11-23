@@ -36,7 +36,7 @@ FROM orders
 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 1 month)
 GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d');
 
-[ Prompt: 32.4 t/s | Generation: 9.4 t/s ]
+[ Prompt: 33.3 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

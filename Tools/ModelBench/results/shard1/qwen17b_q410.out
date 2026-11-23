@@ -35,7 +35,7 @@ SELECT p.price
 FROM products p
 WHERE p.price POWER(2, p.id);
 
-[ Prompt: 34.3 t/s | Generation: 10.4 t/s ]
+[ Prompt: 38.5 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

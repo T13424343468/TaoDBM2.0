@@ -36,7 +36,7 @@ FROM orders
 LEFT JOIN order_items ON orders.id = order_items.order_id
 WHERE LEFT(orders.created_at, 3) = '2021';
 
-[ Prompt: 29.7 t/s | Generation: 7.7 t/s ]
+[ Prompt: 35.4 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

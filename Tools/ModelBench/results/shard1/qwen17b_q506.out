@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT CONVERT(DATETIME, '2023-10-05')
 
-[ Prompt: 39.7 t/s | Generation: 8.1 t/s ]
+[ Prompt: 33.3 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

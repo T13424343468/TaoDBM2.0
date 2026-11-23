@@ -41,11 +41,11 @@ INSERT INTO orders (id, user_id, status, created_at) VALUES (1, 1, 'Shipped', GE
 
 INSERT INTO order_items (id, order_id, product_id, quantity, unit_price) VALUES (1, 1, 1, 2, 999.99);
 
-INSERT INTO payments (id, order_id, amount, method, paid_at) VALUES (1, 1, 199.99, 'Credit Card', GETDATE());
+INSERT INTO payments (id, order_id, amount, method, paid_at) VALUES (1, 1, 1999.98, 'Credit Card', GETDATE());
 
 COMMIT TRANSACTION;
 
-[ Prompt: 34.8 t/s | Generation: 9.0 t/s ]
+[ Prompt: 20.7 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

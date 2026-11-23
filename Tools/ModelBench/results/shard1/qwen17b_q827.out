@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION get_user_count() RETURNS INT AS $$
 SELECT COUNT(*) FROM users;
 $$ LANGUAGE plpgsql;
 
-[ Prompt: 35.0 t/s | Generation: 11.1 t/s ]
+[ Prompt: 37.8 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

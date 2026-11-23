@@ -31,10 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT u.id, u.name, u.city, u.created_at, ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY u.created_at DESC) AS rank
-FROM users u;
+SELECT u.id, u.name, u.city, u.created_at, COUNT(*) OVER (PARTITION BY u.id) AS rank
+FROM users u
+ORDER BY u.created_at;
 
-[ Prompt: 38.6 t/s | Generation: 8.8 t/s ]
+[ Prompt: 20.2 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

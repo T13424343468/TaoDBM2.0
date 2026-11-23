@@ -35,7 +35,7 @@ SELECT user_id, COUNT(*) AS order_count
 FROM orders
 GROUP BY user_id;
 
-[ Prompt: 56.3 t/s | Generation: 18.3 t/s ]
+[ Prompt: 57.4 t/s | Generation: 16.8 t/s ]
 
 
 Exiting...

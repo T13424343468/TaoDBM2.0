@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 ALTER TABLE products MODIFY name VARCHAR(10);
 
-[ Prompt: 37.8 t/s | Generation: 8.3 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ SELECT SUM(amount) AS total_amount
 FROM payments
 WHERE method = '微信';
 
-[ Prompt: 38.4 t/s | Generation: 8.5 t/s ]
+[ Prompt: 38.1 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

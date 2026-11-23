@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT unit_price AS ln_price FROM order_items;
 
-[ Prompt: 32.6 t/s | Generation: 8.8 t/s ]
+[ Prompt: 36.1 t/s | Generation: 8.6 t/s ]
 
 
 Exiting...

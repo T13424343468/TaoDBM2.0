@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT id FROM orders WHERE id NOT IN (SELECT order_id FROM payments)
 
-[ Prompt: 36.6 t/s | Generation: 9.6 t/s ]
+[ Prompt: 36.0 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT DATEDIFF(created_at, DATEADD(day, -1, created_at)) AS days_since FROM orders;
 
-[ Prompt: 36.8 t/s | Generation: 9.4 t/s ]
+[ Prompt: 38.0 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT HOUR(created_at) AS hour, COUNT(*) AS count
+SELECT HOUR(created_at) AS hour, COUNT(*) AS order_count
 FROM orders
 GROUP BY HOUR(created_at)
 
-[ Prompt: 27.2 t/s | Generation: 5.0 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

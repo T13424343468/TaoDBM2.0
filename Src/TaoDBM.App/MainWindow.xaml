@@ -55,6 +55,8 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+                    <Button x:Name="BtnRefresh" Content="刷新" Click="OnRefreshSel" AutomationProperties.AutomationId="BtnRefresh"
+                            Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                     <Button x:Name="BtnManual" Content="手册" Click="OnManual" AutomationProperties.AutomationId="BtnManual"
                             Background="Transparent" Foreground="{ThemeResource AntOnPrimary}" BorderBrush="#66FFFFFF" CornerRadius="4" Padding="10,5"/>
                     <Button x:Name="BtnAbout" Content="关于" Click="OnAbout" ClickMode="Press" AutomationProperties.AutomationId="BtnAbout"

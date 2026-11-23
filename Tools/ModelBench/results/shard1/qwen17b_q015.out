@@ -38,7 +38,7 @@ GROUP BY p.id
 ORDER BY count DESC
 LIMIT 1;
 
-[ Prompt: 32.3 t/s | Generation: 9.9 t/s ]
+[ Prompt: 30.0 t/s | Generation: 9.8 t/s ]
 
 
 Exiting...

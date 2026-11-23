@@ -33,13 +33,14 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT p.id, p.name, p.category, p.price, p.stock, p.amount, p.method, p.paid_at
 FROM payments p
-JOIN orders o ON p.order_id = o.id
-JOIN users u ON o.user_id = u.id
-WHERE p.amount > (SELECT MIN(p2.amount) FROM payments p2 WHERE p2.order_id = p.order_id)
+JOIN order_items o ON p.order_id = o.id
+JOIN orders o1 ON o.order_id = o1.id
+JOIN users u ON o1.user_id = u.id
+WHERE p.method = 'credit_card'
 ORDER BY p.amount DESC
 LIMIT 2;
 
-[ Prompt: 34.6 t/s | Generation: 9.0 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

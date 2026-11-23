@@ -31,12 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price
-FROM order_items
-LEFT JOIN orders ON order_items.order_id = orders.id
-LEFT JOIN users ON orders.user_id = users.id;
+SELECT o.id, o.user_id, o.status, o.created_at, p.name, p.category, p.price, p.stock, oi.quantity, oi.unit_price
+FROM orders o
+LEFT JOIN order_items oi ON o.id = oi.order_id
+LEFT JOIN products p ON oi.product_id = p.id;
 
-[ Prompt: 28.3 t/s | Generation: 4.3 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

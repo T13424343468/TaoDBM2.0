@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT TO_TIMESTAMP(1700000000, 'UNIXTIME') FROM dual;
 
-[ Prompt: 35.8 t/s | Generation: 9.4 t/s ]
+[ Prompt: 34.8 t/s | Generation: 11.2 t/s ]
 
 
 Exiting...

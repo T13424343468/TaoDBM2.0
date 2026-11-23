@@ -37,7 +37,7 @@ RIGHT JOIN payments p ON o.id = p.order_id
 RIGHT JOIN users u ON o.user_id = u.id
 RIGHT JOIN products p2 ON p.product_id = p2.id;
 
-[ Prompt: 36.0 t/s | Generation: 8.5 t/s ]
+[ Prompt: 36.7 t/s | Generation: 9.2 t/s ]
 
 
 Exiting...
