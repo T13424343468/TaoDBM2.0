@@ -33,12 +33,11 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT DISTINCT o.id, o.user_id, o.status, o.created_at
 FROM orders o
-UNION
-SELECT DISTINCT p.id, p.user_id, p.status, p.created_at
-FROM payments p
-WHERE p.status = 'paid';
+JOIN order_items oi ON o.id = oi.order_id
+JOIN payments p ON o.id = p.order_id
+WHERE o.created_at > '2023-01-01';
 
-[ Prompt: 21.6 t/s | Generation: 7.5 t/s ]
+[ Prompt: 33.5 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

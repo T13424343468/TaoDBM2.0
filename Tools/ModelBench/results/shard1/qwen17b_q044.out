@@ -36,7 +36,7 @@ FROM payments p
 JOIN orders o ON p.order_id = o.id
 WHERE YEAR(o.created_at) = 2023;
 
-[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
+[ Prompt: 38.5 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

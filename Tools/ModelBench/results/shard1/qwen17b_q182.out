@@ -34,9 +34,9 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT orders.id, orders.user_id, orders.status, orders.created_at, order_items.product_id, order_items.quantity, order_items.unit_price
 FROM orders
 LEFT JOIN order_items ON orders.id = order_items.order_id
-WHERE LEFT(orders.created_at, 3) = LEFT(orders.created_at, 3)
+WHERE LEFT(orders.created_at, 3) = '2021';
 
-[ Prompt: 20.8 t/s | Generation: 7.8 t/s ]
+[ Prompt: 35.4 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

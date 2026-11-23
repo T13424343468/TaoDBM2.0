@@ -34,13 +34,12 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT p.id, p.name, p.category, p.price, p.stock
 FROM products p
 JOIN order_items o ON p.id = o.product_id
-JOIN orders o2 ON o.order_id = o2.id
-JOIN payments pa ON o2.id = pa.order_id
-WHERE o2.status = 'paid'
-ORDER BY o2.created_at DESC
-LIMIT 1;
+JOIN orders o1 ON o.order_id = o1.id
+JOIN payments pa ON o1.id = pa.order_id
+WHERE pa.paid_at = (SELECT MAX(paid_at) FROM payments)
+ORDER BY pa.paid_at DESC;
 
-[ Prompt: 20.7 t/s | Generation: 7.7 t/s ]
+[ Prompt: 36.4 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

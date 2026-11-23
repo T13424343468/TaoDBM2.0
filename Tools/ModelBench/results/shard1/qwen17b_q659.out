@@ -37,9 +37,9 @@ JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON oi.id = p.id
 WHERE o.created_at = (SELECT MIN(created_at) FROM orders)
-ORDER BY o.created_at;
+AND u.id = (SELECT user_id FROM orders WHERE created_at = (SELECT MIN(created_at) FROM orders));
 
-[ Prompt: 21.7 t/s | Generation: 7.4 t/s ]
+[ Prompt: 36.4 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

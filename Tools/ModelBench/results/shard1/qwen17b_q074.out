@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 DELETE FROM order_items;
 DELETE FROM orders;
 
-[ Prompt: 20.3 t/s | Generation: 7.3 t/s ]
+[ Prompt: 35.8 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

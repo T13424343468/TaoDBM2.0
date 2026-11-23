@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 FROM dual;
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 34.4 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

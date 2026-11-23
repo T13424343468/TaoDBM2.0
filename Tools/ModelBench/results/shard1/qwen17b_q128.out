@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM users WHERE LENGTH(name) > 5;
 
-[ Prompt: 20.4 t/s | Generation: 7.5 t/s ]
+[ Prompt: 33.1 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

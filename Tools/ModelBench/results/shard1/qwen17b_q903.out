@@ -31,10 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-EXECUTE AS OWNER = 'dbo';  
-EXEC sp_start_job 'archive_job';
+EXEC sp_rename 'archive_process', 'archive_job', 'JOB';
 
-[ Prompt: 27.0 t/s | Generation: 9.5 t/s ]
+[ Prompt: 35.3 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

@@ -31,11 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT COUNT(*) AS quarter_order_count
-FROM orders
-WHERE created_at BETWEEN DATE('2023-01-01') AND DATE('2023-12-31')
+SELECT COUNT(*) FROM orders WHERE created_at BETWEEN DATE('now') - INTERVAL '3 months' AND DATE('now')
 
-[ Prompt: 20.5 t/s | Generation: 8.0 t/s ]
+[ Prompt: 32.0 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

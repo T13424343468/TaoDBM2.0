@@ -35,7 +35,7 @@ SELECT id, name, city, created_at FROM users
 UNION
 SELECT id, name, city, created_at FROM users
 
-[ Prompt: 33.4 t/s | Generation: 11.1 t/s ]
+[ Prompt: 37.0 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

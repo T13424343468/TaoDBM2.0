@@ -35,7 +35,7 @@ SELECT city, COUNT(*) AS user_count
 FROM users
 GROUP BY city;
 
-[ Prompt: 20.5 t/s | Generation: 8.1 t/s ]
+[ Prompt: 32.1 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...
