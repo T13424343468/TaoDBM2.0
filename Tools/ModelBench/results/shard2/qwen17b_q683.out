@@ -41,7 +41,7 @@ GROUP BY u.id, u.name
 ORDER BY COUNT(*) DESC
 LIMIT 5;
 
-[ Prompt: 22.0 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

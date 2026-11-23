@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT AVG(price) FROM products;
 
-[ Prompt: 19.9 t/s | Generation: 7.2 t/s ]
+[ Prompt: 18.7 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

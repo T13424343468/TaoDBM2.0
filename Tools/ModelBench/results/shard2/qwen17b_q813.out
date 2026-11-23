@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT COUNT(*) FROM orders
 WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '1 week' AND CURRENT_DATE;
 
-[ Prompt: 21.1 t/s | Generation: 8.2 t/s ]
+[ Prompt: 16.6 t/s | Generation: 5.7 t/s ]
 
 
 Exiting...

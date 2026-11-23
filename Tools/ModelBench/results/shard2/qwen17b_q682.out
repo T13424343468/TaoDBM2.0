@@ -39,7 +39,7 @@ GROUP BY u.id, u.name
 ORDER BY total_orders DESC
 LIMIT 5;
 
-[ Prompt: 20.5 t/s | Generation: 7.9 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

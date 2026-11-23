@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT id::TEXT LEFT PAD 0 TO 5 FROM users;
 
-[ Prompt: 20.7 t/s | Generation: 8.0 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

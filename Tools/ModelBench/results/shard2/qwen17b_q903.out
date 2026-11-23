@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 EXECUTE AS OWNER = 'dbo';  
 EXEC sp_start_job 'archive_job';
 
-[ Prompt: 27.5 t/s | Generation: 8.7 t/s ]
+[ Prompt: 27.2 t/s | Generation: 7.2 t/s ]
 
 
 Exiting...

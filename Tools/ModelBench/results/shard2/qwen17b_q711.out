@@ -38,7 +38,7 @@ RIGHT JOIN orders o ON u.id = o.user_id
 RIGHT JOIN order_items oi ON oi.order_id = o.id
 WHERE u.id = 1;
 
-[ Prompt: 21.2 t/s | Generation: 7.3 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

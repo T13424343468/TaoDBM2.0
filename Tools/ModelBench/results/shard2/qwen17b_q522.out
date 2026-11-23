@@ -35,7 +35,7 @@ SELECT created_at, DATE_WEEKDAY(created_at) AS week_day
 FROM orders
 WHERE status = 'completed';
 
-[ Prompt: 21.6 t/s | Generation: 7.7 t/s ]
+[ Prompt: 21.3 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

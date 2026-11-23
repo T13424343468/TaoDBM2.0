@@ -35,7 +35,7 @@ SELECT category, SUM(stock) AS total_stock
 FROM products
 GROUP BY category;
 
-[ Prompt: 21.0 t/s | Generation: 8.4 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
