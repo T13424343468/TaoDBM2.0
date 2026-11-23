@@ -25,9 +25,10 @@ internal static class KillRestartDrill
 
         if (phase == "seed")
         {
-            SqlHandoffRegistry.Register(PipeName, Environment.ProcessId);
+            // 状态先落盘、登记最后落：演练脚本以 registry 出现为强杀信号，登记即全部状态就绪，强杀无竞态窗口
             AtomicWrite.Text(watermark, SyncCheckpoint.ToJson(new SyncWatermark { Table = "orders", BatchDone = 7, LastKey = "k-0007" }));
             File.WriteAllText(spill, "{\"H\":[\"a\"],\"R\":[[\"1\"]]}\n这行不是JSON\n", Encoding.UTF8);
+            SqlHandoffRegistry.Register(PipeName, Environment.ProcessId);
             Console.WriteLine($"[seed] pid={Environment.ProcessId} registered, watermark+spill written to {dir}");
             Console.Out.Flush();
             Thread.Sleep(Timeout.Infinite);   // 驻留等外部强杀（Stop-Process -Force / kill -9）

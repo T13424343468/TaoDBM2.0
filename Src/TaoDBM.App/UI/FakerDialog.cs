@@ -81,6 +81,15 @@ public static class FakerDialog
         };
 
         // 批次四格6（2026-11-23）：快捷预设——姓名 / 手机 / 身份证段 / 地址四类一键模板，按表名模式填行数
+        var statusText = new TextBlock
+        {
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+            Text = provider is MongoProvider
+                ? "将按拓扑顺序逐集合生成拟真文档写入。"
+                : "将按拓扑顺序逐表生成（被引用表先写入），引用列自动取已写入父表的值。",
+        };
         var presetRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         foreach (var preset in FakerPreset.All)
         {
@@ -119,15 +128,6 @@ public static class FakerDialog
             PlaceholderText = "点「生成预览」查看每表首行样例",
         };
         var progress = new ProgressBar { Minimum = 0, Maximum = 100, Visibility = Visibility.Collapsed };
-        var statusText = new TextBlock
-        {
-            FontSize = AntTokens.FontMinor,
-            Foreground = Ant.TextSub,
-            TextWrapping = TextWrapping.Wrap,
-            Text = provider is MongoProvider
-                ? "将按拓扑顺序逐集合生成拟真文档写入。"
-                : "将按拓扑顺序逐表生成（被引用表先写入），引用列自动取已写入父表的值。",
-        };
 
         var previewBtn = new Button
         {

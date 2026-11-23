@@ -21,7 +21,7 @@ public static class CommandMonitorDialog
 
     public static void Show(MainWindow owner, NodeInfo info)
     {
-        var provider = info.Provider;
+        var provider = info.Provider!;
         var kw = new TextBox { Header = "关键字过滤（本机历史）", PlaceholderText = "语句包含…" };
         var hist = new ListView { MaxHeight = 220 };
         var realtime = new ListView { MaxHeight = 220 };

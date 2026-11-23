@@ -11,12 +11,12 @@ public static class DbSearchDialog
 {
     public static async Task Show(MainWindow owner, NodeInfo info)
     {
-        var provider = info.Provider;
+        var provider = info.Provider!;
         string db = info.Db;
         var kw = new TextBox { Header = "关键词", PlaceholderText = "输入要搜的文本（区分引擎大小写口径）" };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var progress = new ProgressBar { IsIndeterminate = true, Visibility = Visibility.Collapsed };
-        var results = new ListView { MaxHeight = 360, SelectionMode = SelectionMode.Single };
+        var results = new ListView { MaxHeight = 360, SelectionMode = ListViewSelectionMode.Single };
         var cancelCts = new CancellationTokenSource();
 
         var content = new StackPanel { Spacing = 10, MinWidth = 560,

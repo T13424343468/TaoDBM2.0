@@ -299,7 +299,7 @@ public class ConnectionDialog
 
     private void Apply()
     {
-        Profile.Engine = _engine.SelectedIndex >= 0 && _engine.SelectedIndex < _engineMap.Count
+        Profile.Engine = _engine.SelectedIndex >= 0 && _engine.SelectedIndex < _engineMap!.Count
             ? _engineMap[_engine.SelectedIndex] : DbEngine.MySQL;
         Profile.DisplayName = string.IsNullOrWhiteSpace(_name.Text) ? EngineInfo.Name(Profile.Engine) : _name.Text.Trim();
         Profile.Host = _host.Text.Trim();

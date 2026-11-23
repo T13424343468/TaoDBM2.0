@@ -12,7 +12,7 @@ public static class PastePreviewDialog
     public static (List<string> Columns, List<string?[]> Rows, string Note) Parse(string clip)
     {
         var lines = clip.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (lines.Length == 0) return (new List<string>(), new List<string?>(), "剪贴板为空。");
+        if (lines.Length == 0) return (new List<string>(), new List<string?[]>(), "剪贴板为空。");
         if (lines[0].StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase))
         {
             // INSERT 端：逐条解析列名与 VALUES（自写轻量解析，值内逗号按引号保护）

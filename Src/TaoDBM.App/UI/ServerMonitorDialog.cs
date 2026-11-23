@@ -14,7 +14,7 @@ public static class ServerMonitorDialog
 {
     public static void Show(MainWindow owner, NodeInfo info)
     {
-        var provider = info.Provider;
+        var provider = info.Provider!;
         string db = info.Db;
         var engine = provider.Profile.Engine;
 
@@ -103,7 +103,7 @@ public static class ServerMonitorDialog
         double w = Math.Max(canvas.MinWidth, 1), h = canvas.Height > 0 ? canvas.Height : 120;
         var pts = new PointCollection();
         for (int i = 0; i < series.Count; i++)
-            pts.Add(new Point(i * w / Math.Max(series.Count - 1, 1), h - series[i] / max * (h - 12) - 6));
+            pts.Add(new Windows.Foundation.Point(i * w / Math.Max(series.Count - 1, 1), h - series[i] / max * (h - 12) - 6));
         var line = new Polyline { Points = pts, StrokeThickness = 2, Stroke = Ant.Primary };
         canvas.Children.Add(line);
         canvas.Children.Add(new TextBlock { Text = $"峰值 {max:N0}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub,
