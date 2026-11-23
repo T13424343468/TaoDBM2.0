@@ -39,7 +39,7 @@ JOIN payments p ON oi.id = p.id
 WHERE o.created_at = (SELECT MIN(created_at) FROM orders)
 ORDER BY o.created_at;
 
-[ Prompt: 20.7 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -49,7 +49,7 @@ SELECT
 FROM ranked_orders ro
 WHERE ro.rn <= 3;
 
-[ Prompt: 21.0 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

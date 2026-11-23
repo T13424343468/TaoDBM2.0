@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM orders WHERE user_id IN (SELECT id FROM users);
 
-[ Prompt: 15.5 t/s | Generation: 6.0 t/s ]
+[ Prompt: 16.6 t/s | Generation: 5.9 t/s ]
 
 
 Exiting...

@@ -44,7 +44,7 @@ SELECT *
 FROM ranked_orders
 WHERE rn <= 3;
 
-[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

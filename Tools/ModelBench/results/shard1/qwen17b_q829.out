@@ -36,7 +36,7 @@ CREATE PROCEDURE get_user_count() BEGIN
  SELECT @user_count;
 END;
 
-[ Prompt: 16.4 t/s | Generation: 5.8 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ SELECT unit_price
 FROM order_items
 WHERE e^price = unit_price;
 
-[ Prompt: 20.8 t/s | Generation: 8.0 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

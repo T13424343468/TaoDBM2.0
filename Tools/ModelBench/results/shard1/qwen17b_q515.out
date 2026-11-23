@@ -35,7 +35,7 @@ SELECT COUNT(*) AS quarter_order_count
 FROM orders
 WHERE created_at BETWEEN DATE('2023-01-01') AND DATE('2023-12-31')
 
-[ Prompt: 20.6 t/s | Generation: 7.8 t/s ]
+[ Prompt: 21.7 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

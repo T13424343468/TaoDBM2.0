@@ -42,7 +42,7 @@ SELECT
 FROM order_items
 WHERE order_items.order_id = 1;
 
-[ Prompt: 16.0 t/s | Generation: 5.9 t/s ]
+[ Prompt: 16.4 t/s | Generation: 5.9 t/s ]
 
 
 Exiting...

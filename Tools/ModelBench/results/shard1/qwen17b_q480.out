@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT DATE_ADD(NOW(), INTERVAL 7 DAY)
 
-[ Prompt: 21.0 t/s | Generation: 7.4 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

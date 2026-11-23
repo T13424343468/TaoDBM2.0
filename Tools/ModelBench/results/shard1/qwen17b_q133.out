@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT SUM(length(name)) AS total_length
 FROM users;
 
-[ Prompt: 21.0 t/s | Generation: 8.3 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.2 t/s ]
 
 
 Exiting...

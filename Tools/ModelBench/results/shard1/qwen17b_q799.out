@@ -35,7 +35,7 @@ SELECT GROUP_CONCAT(name) AS concatenated_names
 FROM products
 GROUP BY category;
 
-[ Prompt: 19.1 t/s | Generation: 7.0 t/s ]
+[ Prompt: 21.6 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...
