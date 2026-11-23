@@ -35,10 +35,9 @@ SELECT o.id, o.user_id, o.status, o.created_at, p.name, p.category, p.price, p.s
 FROM orders o
 JOIN order_items pi ON o.id = pi.order_id
 JOIN products p ON pi.product_id = p.id
-JOIN payments pa ON o.id = pa.order_id
-WHERE o.id = 1;
+JOIN payments pa ON o.id = pa.order_id;
 
-[ Prompt: 36.2 t/s | Generation: 9.1 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...
