@@ -30,6 +30,8 @@ public partial class MainWindow : Window
 {
     private readonly List<ConnectionProfile> _profiles = new();
     private readonly Dictionary<TreeViewNode, NodeInfo> _nodeMap = new();
+    /// <summary>#285：节点→自动化名（TreeViewItem 对等名默认取 TreeViewNode.ToString() 回退名，须在容器实现后对容器补名）。</summary>
+    private readonly Dictionary<TreeViewNode, string> _nodeAutoNames = new();
     /// <summary>打开着的工作标签（会话保存用；欢迎页不在内）。</summary>
     private readonly Dictionary<TabViewItem, UI.WorkTab> _workTabs = new();
 
@@ -299,6 +301,7 @@ public partial class MainWindow : Window
             .GroupBy(i => i.Profile.Id).ToDictionary(g => g.Key, g => g.First().ConnState);
         ConnTree.RootNodes.Clear();
         _nodeMap.Clear();
+        _nodeAutoNames.Clear();
         var filter = (ConnFilter.Text ?? "").Trim();
         int shown = 0;
         // 批次二格6：虚拟分组——组节点作顶层文件夹，成员连接嵌组内；未分组连接保持顶层。组只是视图，连接数据不动。
@@ -309,6 +312,7 @@ public partial class MainWindow : Window
             var gInfo = new NodeInfo { Kind = NodeKind.Category, Name = $"group:{name}" };
             var gNode = new TreeViewNode { IsExpanded = false, Content = NodeIconText("group", name) };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(gNode, $"ConnGroup_{name}");
+            RegisterNodeAutoName(gNode, name);
             _nodeMap[gNode] = gInfo;
             ConnTree.RootNodes.Add(gNode);
             groupNodes[name] = gNode;
@@ -334,6 +338,27 @@ public partial class MainWindow : Window
         foreach (var g in groupNodes) if (g.Value.Children.Count == 0) g.Value.Children.Add(new TreeViewNode { Content = "（空分组）" });
         SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接 · {groupNames.Count} 个分组");
         AppLog.Write($"[连接树] filter={filter} shown={shown} groups={groupNames.Count}");   // 格18：走查 S85 断言锚点
+        ApplyTreeAutomationNames();   // #285：容器实现后补树项自动化名
+    }
+
+    /// <summary>#285：登记节点自动化名。TreeViewItem 对等名默认取 Content.ToString()＝TreeViewNode 类型回退名，</summary>
+    /// <summary>Content 元素上的 AutomationProperties 传不上来，须在容器实现后对 TreeViewItem 本体补名（兼修读屏）。</summary>
+    private void RegisterNodeAutoName(TreeViewNode node, string text)
+    {
+        _nodeAutoNames[node] = text;
+        ApplyTreeAutomationNames();
+    }
+
+    private void ApplyTreeAutomationNames()
+    {
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            foreach (var kv in _nodeAutoNames)
+            {
+                if (ConnTree.ContainerFromNode(kv.Key) is Microsoft.UI.Xaml.Controls.TreeViewItem item)
+                    Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, kv.Value);
+            }
+        });
     }
 
     /// <summary>格18：筛选框输入即过滤（清空恢复全部）；XAML 解析期 TextChanged 可能早于树就绪，判空防崩。</summary>
@@ -366,9 +391,10 @@ public partial class MainWindow : Window
         return host;
     }
 
-    private static void SetNodeContent(TreeViewNode node, NodeInfo info)
+    private void SetNodeContent(TreeViewNode node, NodeInfo info)
     {
         string text = $"{info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";
+        RegisterNodeAutoName(node, text);   // #285：连接节点自动化名
         if (info.ConnState.Length == 0) { node.Content = NodeIconText("conn", text); return; }
         var host = NodeIconText("conn", text);
         var dot = new TextBlock
@@ -771,10 +797,12 @@ public partial class MainWindow : Window
                         var childNode = new TreeViewNode { Content = NodeIconText("group", db) };
                         childNode.Children.Add(new TreeViewNode { Content = "…" });
                         _nodeMap[childNode] = childInfo;
+                        RegisterNodeAutoName(childNode, db);   // #285：库节点自动化名
                         node.Children.Add(childNode);
                     }
                     if (dbs.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Profile.DisplayName}：{dbs.Count} 个库");
+                    ApplyTreeAutomationNames();   // #285：子树装载后补名
                     break;
 
                 case NodeKind.Database:
@@ -791,10 +819,12 @@ public partial class MainWindow : Window
                         };
                         var cNode = new TreeViewNode { Content = NodeIconText("table", c) };
                         _nodeMap[cNode] = cInfo;
+                        RegisterNodeAutoName(cNode, c);   // #285：表节点自动化名
                         node.Children.Add(cNode);
                     }
                     if (children.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Name}：{children.Count} 个{(prov.IsNoSql ? prov.BrowseLabel : "表")}");
+                    ApplyTreeAutomationNames();   // #285：子树装载后补名
                     // B2 对象树补齐：视图/索引/外键/例程/触发器挂树（目录引擎懒加载；七库全覆盖——Mongo 走 TAODBMCMD，Redis 走空清单 SCAN）
                     if (ObjectTreeCatalog.Supported(info.Profile.Engine))
                     {
