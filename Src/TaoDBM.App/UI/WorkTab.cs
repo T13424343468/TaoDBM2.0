@@ -1426,7 +1426,7 @@ public partial class WorkTab : Grid
         try
         {
             var origin = _editor.TransformToVisual(_owner.Content).TransformPoint(new Windows.Foundation.Point(0, 0));
-            _editor.Document!.Selection!.GetRect(PointOptions.None, out var rect, out _);
+            _editor.Document!.Selection!.GetRect(Microsoft.UI.Text.PointOptions.None, out var rect, out _);
             popup.HorizontalOffset = origin.X + rect.X;
             popup.VerticalOffset = origin.Y + rect.Y + rect.Height + 4;
         }

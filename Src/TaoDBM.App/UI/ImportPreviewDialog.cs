@@ -19,14 +19,20 @@ public static class ImportPreviewDialog
         mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mapGrid.Children.Add(new TextBlock { Text = "CSV 列", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontMinor });
-        mapGrid.Children.Add(new TextBlock { Text = "导入到表列", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontMinor, Grid.Column = 1 });
+        var hdrTo = new TextBlock { Text = "导入到表列", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontMinor };
+        mapGrid.Children.Add(hdrTo);
+        Microsoft.UI.Xaml.Controls.Grid.SetColumn(hdrTo, 1);
         var combos = new List<ComboBox>();
         for (int i = 0; i < csvHeaders.Count; i++)
         {
             int row = mapGrid.RowDefinitions.Count;
             mapGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            mapGrid.Children.Add(new TextBlock { Text = csvHeaders[i], FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, Grid.Row = row, TextTrimming = TextTrimming.CharacterEllipsis });
-            var cb = new ComboBox { MinWidth = 170, PlaceholderText = "（不导入）", HorizontalAlignment = HorizontalAlignment.Stretch, Grid.Row = row, Grid.Column = 1 };
+            var lbl = new TextBlock { Text = csvHeaders[i], FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+            mapGrid.Children.Add(lbl);
+            Microsoft.UI.Xaml.Controls.Grid.SetRow(lbl, row);
+            var cb = new ComboBox { MinWidth = 170, PlaceholderText = "（不导入）", HorizontalAlignment = HorizontalAlignment.Stretch };
+            Microsoft.UI.Xaml.Controls.Grid.SetRow(cb, row);
+            Microsoft.UI.Xaml.Controls.Grid.SetColumn(cb, 1);
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(cb, $"Map_{i}");
             cb.Items.Add("（不导入）");
             int def = 0;
