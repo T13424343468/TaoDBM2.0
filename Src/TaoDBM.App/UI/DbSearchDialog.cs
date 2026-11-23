@@ -49,8 +49,8 @@ public static class DbSearchDialog
                     try
                     {
                         var cols = await provider.GetColumns(db, t);
-                        using perTable = new CancellationTokenSource(TimeSpan.FromSeconds(10));   // 每表 10 秒超时跳过
-                        using linked = CancellationTokenSource.CreateLinkedTokenSource(cancelCts.Token, perTable.Token);
+                        using var perTable = new CancellationTokenSource(TimeSpan.FromSeconds(10));   // 每表 10 秒超时跳过
+                        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancelCts.Token, perTable.Token);
                         var hits = await DbSearch.SearchAsync(provider, db, cols, t, keyword, linked.Token);
                         foreach (var h in hits)
                         {
