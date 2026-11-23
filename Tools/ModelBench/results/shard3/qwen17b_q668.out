@@ -45,7 +45,7 @@ WHERE
     o.status = 'paid' 
     AND p.method = 'credit_card';
 
-[ Prompt: 20.1 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

@@ -36,7 +36,7 @@ FROM orders o1
 JOIN orders o2 ON o2.order_id = o1.order_id + 1
 ORDER BY o1.order_id;
 
-[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
+[ Prompt: 22.0 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

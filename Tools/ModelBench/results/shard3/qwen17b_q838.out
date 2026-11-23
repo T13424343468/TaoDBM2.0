@@ -35,7 +35,7 @@ CREATE PROCEDURE get_stock_out(IN product_id INT, OUT stock INT) BEGIN
     SELECT stock INTO stock FROM products WHERE id = product_id;
 END;
 
-[ Prompt: 16.0 t/s | Generation: 6.1 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

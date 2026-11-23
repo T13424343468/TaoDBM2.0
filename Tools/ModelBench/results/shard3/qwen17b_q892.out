@@ -41,7 +41,7 @@ BEGIN
     WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '30' DAY;
 END;
 
-[ Prompt: 20.5 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

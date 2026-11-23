@@ -35,7 +35,7 @@ SELECT COUNT(*) AS total_orders
 FROM orders
 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
 
-[ Prompt: 21.3 t/s | Generation: 8.0 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

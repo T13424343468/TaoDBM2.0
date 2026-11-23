@@ -35,7 +35,7 @@ SELECT product_id, name, price,
        ROW_NUMBER() OVER (ORDER BY price) AS rank
 FROM products;
 
-[ Prompt: 20.9 t/s | Generation: 7.8 t/s ]
+[ Prompt: 20.7 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

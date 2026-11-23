@@ -36,7 +36,7 @@ FROM orders o
 JOIN payments p ON o.id = p.order_id
 WHERE o.created_at = (SELECT MIN(payed_at) FROM payments WHERE order_id = o.id)
 
-[ Prompt: 21.0 t/s | Generation: 7.4 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

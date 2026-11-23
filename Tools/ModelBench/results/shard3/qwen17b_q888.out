@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 EXECUTE AS @proxy_name;
 EXEC sp_start_job @job_name = 'archive_job';
 
-[ Prompt: 21.7 t/s | Generation: 7.7 t/s ]
+[ Prompt: 21.6 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

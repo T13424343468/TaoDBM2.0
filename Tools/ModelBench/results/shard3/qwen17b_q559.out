@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT TIMESTAMPDIFF(HOUR, MIN(created_at), MAX(created_at)) FROM orders;
 
-[ Prompt: 20.8 t/s | Generation: 7.9 t/s ]
+[ Prompt: 21.5 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

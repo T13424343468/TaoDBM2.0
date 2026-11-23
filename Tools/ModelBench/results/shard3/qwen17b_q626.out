@@ -37,7 +37,7 @@ JOIN orders o2 ON o2.user_id = o1.user_id
 WHERE o2.created_at > o1.created_at
 ORDER BY o1.id;
 
-[ Prompt: 20.6 t/s | Generation: 7.7 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
