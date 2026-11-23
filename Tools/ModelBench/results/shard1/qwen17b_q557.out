@@ -31,12 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT EXTRACT(EPOCH FROM (paid_at - created_at)) / 3600 AS hours_between_orders
-FROM payments
-JOIN orders ON payments.order_id = orders.id
-WHERE payments.paid_at > orders.created_at;
+SELECT EXTRACT(EPOCH FROM (paid_at - created_at)) / 3600 AS hours_between_orders FROM payments JOIN orders ON payments.order_id = orders.id WHERE payments.paid_at > orders.created_at;
 
-[ Prompt: 37.6 t/s | Generation: 9.3 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

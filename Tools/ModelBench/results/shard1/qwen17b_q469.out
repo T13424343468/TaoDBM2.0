@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT EXTRACT(DAY FROM AGE(now(), created_at)) AS days_since_order FROM orders;
+SELECT EXTRACT(DAY FROM AGE(CURRENT_DATE, created_at)) AS days_since_order FROM orders;
 
-[ Prompt: 36.5 t/s | Generation: 9.8 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -34,9 +34,10 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT p1.amount, p2.amount
 FROM payments p1
 JOIN payments p2 ON p2.order_id = p1.order_id
-WHERE p2.created_at > p1.created_at;
+WHERE p1.order_id = p2.order_id
+AND p1.paid_at < p2.paid_at;
 
-[ Prompt: 32.6 t/s | Generation: 9.4 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

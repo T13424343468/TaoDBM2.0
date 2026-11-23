@@ -36,15 +36,16 @@ SELECT
     o.user_id, 
     o.status, 
     o.created_at, 
-    SUM(p.amount) OVER (PARTITION BY o.user_id ORDER BY o.created_at) AS total_amount
+    SUM(p.amount) OVER (PARTITION BY o.user_id) AS total_paid
 FROM 
     orders o
 JOIN 
     payments p ON o.id = p.order_id
 WHERE 
-    o.status = 'completed';
+    o.status = 'paid' 
+    AND p.method = 'credit_card';
 
-[ Prompt: 38.1 t/s | Generation: 9.1 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

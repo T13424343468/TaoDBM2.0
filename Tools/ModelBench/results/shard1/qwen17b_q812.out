@@ -31,11 +31,10 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT COUNT(*) AS order_count
-FROM orders
-WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '7 days' AND CURRENT_DATE;
+SELECT COUNT(*) FROM orders
+WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '1 week' AND CURRENT_DATE;
 
-[ Prompt: 33.9 t/s | Generation: 9.2 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

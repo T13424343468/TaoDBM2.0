@@ -31,24 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT 
-    order_items.product_id, 
-    order_items.quantity, 
-    order_items.unit_price, 
-    FLOOR(order_items.unit_price) AS discounted_price
-FROM 
-    order_items
-WHERE 
-    order_items.order_id IN (
-        SELECT 
-            order_id 
-        FROM 
-            payments 
-        WHERE 
-            paid_at = (SELECT MIN(paid_at) FROM payments)
-    );
+SELECT unit_price
+FROM order_items
+WHERE unit_price - FLOOR(unit_price) = 0;
 
-[ Prompt: 34.5 t/s | Generation: 9.1 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

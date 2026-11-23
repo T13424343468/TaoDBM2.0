@@ -31,13 +31,10 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT p.name, AVG(p.price) - p.price AS diff
-FROM products p
-JOIN order_items o ON p.id = o.product_id
-GROUP BY p.id
-ORDER BY diff DESC;
+SELECT p.name, p.category, AVG(p.price) OVER (PARTITION BY p.category) AS avg_price, p.price - AVG(p.price) OVER (PARTITION BY p.category) AS diff
+FROM products p;
 
-[ Prompt: 35.3 t/s | Generation: 8.9 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

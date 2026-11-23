@@ -36,7 +36,7 @@ FROM users u1
 JOIN users u2 ON u1.id = u2.id
 WHERE u1.city = u2.city;
 
-[ Prompt: 35.6 t/s | Generation: 9.4 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

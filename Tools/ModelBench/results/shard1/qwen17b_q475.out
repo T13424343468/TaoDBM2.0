@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT strftime('%s', 'now') - strftime('%s', created_at) / 86400 AS days_since FROM orders;
 
-[ Prompt: 37.8 t/s | Generation: 8.4 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
