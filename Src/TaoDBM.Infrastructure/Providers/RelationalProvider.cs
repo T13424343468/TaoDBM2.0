@@ -33,6 +33,7 @@ public static class ProviderFactory
         DbEngine.Oracle => new OracleProvider(p),
         DbEngine.MongoDB => new MongoProvider(p),
         DbEngine.Redis => new RedisProvider(p),
+        DbEngine.Odbc => new OdbcProvider(p),   // 批次四格3：ODBC（DSN）
         _ => throw new NotSupportedException("不支持的数据库类型"),
     };
 }

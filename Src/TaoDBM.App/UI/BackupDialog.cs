@@ -239,6 +239,8 @@ public static class BackupDialog
         {
             DbEngine.MySQL or DbEngine.PostgreSQL => "使用官方命令行工具（mysqldump / pg_dump + mysql / psql），需已安装并加入 PATH；密码经环境变量传递，不会出现在命令行。",
             DbEngine.SqlServer => "用 T-SQL BACKUP / RESTORE 执行；磁盘路径是数据库服务器上的路径（本机连接时即本机路径）。",
+            // 批次四格4（2026-11-23）：MongoDB 原生备份界面——mongodump / mongorestore，密码走 --config 文件
+            DbEngine.MongoDB => "使用官方 mongodump / mongorestore（输出为目录），需已安装并加入 PATH；密码经 --config 文件传递，不会出现在命令行。工具缺失时请先安装 MongoDB Database Tools。",
             _ => "直接复制 / 覆盖 .db 文件；还原会覆盖当前库文件，请确认没有其他程序占用。",
         };
         backupNote.Text = note;
@@ -337,8 +339,20 @@ public static class BackupDialog
                     // 格10：SQLite 备份后台化，取消走检查点
                     await Task.Run(() => { ct.ThrowIfCancellationRequested(); BackupTools.SqliteBackup(profile.Database, file); }, ct);
                     return $"备份完成：{profile.Database} → {file}";
+                case DbEngine.MongoDB:
+                {
+                    // 批次四格4：mongodump（--out 目录），密码走 --config 文件；输出行数落账
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 27017);
+                    var spec = BackupTools.MongoDump(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec, ct, progress);
+                    int lines = text.Length > 0 ? text.Split('\n').Length : 0;
+                    AppLog.Write($"[备份] mongo dump lines={lines}");   // 批次四格4 验收锚点
+                    return code == 0
+                        ? $"备份完成：{db} → {file}（mongodump 输出 {lines} 行）"
+                        : $"退出码 {code}\n{text}\n（mongodump 未安装或不可用时，请先安装 MongoDB Database Tools 并加入 PATH）";
+                }
                 default:
-                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
+                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite / MongoDB；其他引擎请使用恢复演练或备份计划。";
             }
         }
 
@@ -371,8 +385,20 @@ public static class BackupDialog
                 case DbEngine.SQLite:
                     await Task.Run(() => { ct.ThrowIfCancellationRequested(); BackupTools.SqliteRestore(profile.Database, file); }, ct);
                     return $"还原完成：{file} → {profile.Database}";
+                case DbEngine.MongoDB:
+                {
+                    // 批次四格4：mongorestore（--drop 先清后写），密码走 --config 文件
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 27017);
+                    var spec = BackupTools.MongoRestore(h, p, profile.User, profile.Password, db, file);
+                    var (code, text) = await RunTool(spec, ct, progress);
+                    int lines = text.Length > 0 ? text.Split('\n').Length : 0;
+                    AppLog.Write($"[备份] mongo restore lines={lines}");   // 批次四格4 验收锚点
+                    return code == 0
+                        ? $"还原完成：{file} → {db}（mongorestore 输出 {lines} 行）"
+                        : $"退出码 {code}\n{text}\n（mongorestore 未安装或不可用时，请先安装 MongoDB Database Tools 并加入 PATH）";
+                }
                 default:
-                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
+                    return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite / MongoDB；其他引擎请使用恢复演练或备份计划。";
             }
         }
 
@@ -426,6 +452,11 @@ public static class BackupDialog
                     result = await RunRestoreAsync(db, file, cts.Token, progress);
                 }
                 output.Text = result;
+                // 批次四格4：备份 / 还原落 tao_backup_history 本地账（成功失败都记，可回看）
+                bool okResult = result.StartsWith(backup ? "备份完成" : "还原完成", StringComparison.Ordinal);
+                long sizeBytes = 0;
+                try { if (okResult && File.Exists(file) && (backup ? File.GetAttributes(file) & FileAttributes.Directory : 0) == 0) sizeBytes = new FileInfo(file).Length; } catch { /* 目录口径不取大小 */ }
+                BackupHistory.Add(prov.EngineName, db, backup ? "备份" : "还原", file, okResult, sizeBytes, result.Split('\n')[0].Trim());
                 // P4：备份 / 恢复结果接通知调度（规则判定不够格就静默）；消息取结果首行，超长截断
                 var firstLine = result.Split('\n')[0].Trim();
                 if (firstLine.Length > 120) firstLine = firstLine[..120];

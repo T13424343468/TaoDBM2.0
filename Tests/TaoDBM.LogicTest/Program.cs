@@ -217,7 +217,7 @@ Console.WriteLine("== EngineInfo ==");
     Check("默认端口", EngineInfo.DefaultPort(DbEngine.MySQL) == 3306 && EngineInfo.DefaultPort(DbEngine.Redis) == 6379);
     Check("文件库判断", EngineInfo.IsFileBased(DbEngine.SQLite) && !EngineInfo.IsFileBased(DbEngine.MySQL));
     Check("NoSql 判断", EngineInfo.IsRelational(DbEngine.MongoDB) == false && EngineInfo.IsRelational(DbEngine.Oracle));
-    Check("引擎数量", EngineInfo.All.Count() == 7);
+    Check("引擎数量", EngineInfo.All.Count() == 8);   // 批次四格8：新增 Odbc（DSN）
 }
 
 Console.WriteLine("== CsvImporter ==");
@@ -4127,6 +4127,7 @@ Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");
 TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
 TaoDBM.LogicTest.KanbanAnalysis.RunAll(Check);   // 批次E：点选式分析 + 看板钉住/定时刷新（独立文件，ComboMatrix 家法）
 TaoDBM.LogicTest.BatchCheck23.RunAll(Check);   // 批次二三：库搜索/监控/INSERT 复制/计划 Kind/连接分组/隧道生命周期
+TaoDBM.LogicTest.BatchCheck45.RunAll(Check);   // 批次四五：xlsx/XML/HTML/备份SQL/账本/DdlParser/三层模型/比较/预设/ERD符号/字典/ODBC
 TaoDBM.LogicTest.ColumnLazyCheck.RunAll(Check);   // 批次F：宽表列按需加载（2026-11-20 全覆盖令）
 
 // 制度补齐层：tao-testing-standard 标准测试项与 v3.3 新增把尺逐项落测（2026-11-18 老板令「按制度全覆盖无死角补齐」）

@@ -25,6 +25,8 @@ public static class ErdDialog
     private static double _zoom = 1.0;
     private static readonly ScaleTransform _scaleTf = new() { ScaleX = 1.0, ScaleY = 1.0 };
     private static readonly object _edgeLabelTag = new();
+    // 批次五格3：端点符号图形统一 Tag，重绘时同步清理
+    private static readonly object _edgeSymbolTag = new();
 
     public static async Task Show(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
     {
@@ -386,6 +388,9 @@ public static class ErdDialog
         // 格14：同步清掉上一轮的关系标签
         foreach (var lbl in _canvas.Children.OfType<Border>().Where(b => ReferenceEquals(b.Tag, _edgeLabelTag)).ToList())
             _canvas.Children.Remove(lbl);
+        // 批次五格3：同步清掉上一轮的端点符号图形
+        foreach (var sym in _canvas.Children.OfType<Shape>().Where(s => ReferenceEquals(s.Tag, _edgeSymbolTag)).ToList())
+            _canvas.Children.Remove(sym);
         foreach (var e in _model.Edges)
         {
             if (!_boxes.TryGetValue(e.FromTable, out var from) || !_boxes.TryGetValue(e.ToTable, out var to)) continue;
@@ -400,6 +405,11 @@ public static class ErdDialog
             };
             _canvas.Children.Add(line);
             Canvas.SetZIndex(line, 1);
+            // 批次五格3：按线方向在 a/b 端附近渲染端点符号（鸦爪三叉/圆圈/双线）
+            var dirA = UnitTo(a, b);
+            var dirB = UnitTo(b, a);
+            DrawSymbol(a, dirA, e.FromSymbol);
+            DrawSymbol(b, dirB, e.ToSymbol);
             // 格14：线中点 1:N/N:1 白底小标签（from=外键侧为 N，to=主键侧为 1）
             var lbl = new Border
             {
@@ -416,10 +426,79 @@ public static class ErdDialog
                     Foreground = Ant.TextSub,
                 },
             };
+            // 批次五格3：标签点击循环切换 from 端符号（None→鸦爪→圆圈→双线），手改入口
+            lbl.Tapped += (_, _) =>
+            {
+                e.FromSymbol = e.FromSymbol switch
+                {
+                    ErdEdgeSymbol.None => ErdEdgeSymbol.CrowFoot,
+                    ErdEdgeSymbol.CrowFoot => ErdEdgeSymbol.Circle,
+                    ErdEdgeSymbol.Circle => ErdEdgeSymbol.DoubleLine,
+                    _ => ErdEdgeSymbol.None,
+                };
+                DrawEdges();
+                AppLog.Write($"[ERD] 符号={_model.Edges.Count(x => x.FromSymbol != ErdEdgeSymbol.None || x.ToSymbol != ErdEdgeSymbol.None)}");
+            };
             _canvas.Children.Add(lbl);
             Canvas.SetLeft(lbl, (a.X + b.X) / 2 - 24);
             Canvas.SetTop(lbl, (a.Y + b.Y) / 2 - 9);
             Canvas.SetZIndex(lbl, 2);
+        }
+    }
+
+    /// <summary>批次五格3：a 指向 b 的单位方向向量。</summary>
+    private static Point UnitTo(Point a, Point b)
+    {
+        double dx = b.X - a.X, dy = b.Y - a.Y;
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 0.001) return new Point(1, 0);
+        return new Point(dx / len, dy / len);
+    }
+
+    /// <summary>批次五格3：在端点 p 沿 dir（指向线另一端）渲染关系符号；None 不画。</summary>
+    private static void DrawSymbol(Point p, Point dir, ErdEdgeSymbol sym)
+    {
+        if (sym == ErdEdgeSymbol.None) return;
+        var perp = new Point(-dir.Y, dir.X);
+        void Add(Shape s)
+        {
+            s.Tag = _edgeSymbolTag;
+            s.Stroke = Ant.Primary;
+            s.StrokeThickness = 1.5;
+            _canvas.Children.Add(s);
+            Canvas.SetZIndex(s, 1);
+        }
+        Line Seg(double x1, double y1, double x2, double y2) => new() { X1 = x1, Y1 = y1, X2 = x2, Y2 = y2 };
+        switch (sym)
+        {
+            case ErdEdgeSymbol.CrowFoot:
+            {
+                // 鸦爪：从线上距端点 14px 的点向端点张开三条叉（0/±7px 垂直偏移）
+                var q = new Point(p.X - dir.X * 14, p.Y - dir.Y * 14);
+                foreach (var off in new[] { 0.0, 7.0, -7.0 })
+                    Add(Seg(q.X, q.Y, p.X + perp.X * off, p.Y + perp.Y * off));
+                break;
+            }
+            case ErdEdgeSymbol.Circle:
+            {
+                // 圆圈：端点内侧 7px 处半径 5 的空心圆
+                var c = new Point(p.X - dir.X * 7, p.Y - dir.Y * 7);
+                var el = new Ellipse { Width = 10, Height = 10 };
+                Add(el);
+                Canvas.SetLeft(el, c.X - 5);
+                Canvas.SetTop(el, c.Y - 5);
+                break;
+            }
+            case ErdEdgeSymbol.DoubleLine:
+            {
+                // 双线：端点处与端点内侧 6px 各一道垂直短笔画
+                for (var d = 0.0; d <= 6.0; d += 6.0)
+                {
+                    var c = new Point(p.X - dir.X * d, p.Y - dir.Y * d);
+                    Add(Seg(c.X - perp.X * 7, c.Y - perp.Y * 7, c.X + perp.X * 7, c.Y + perp.Y * 7));
+                }
+                break;
+            }
         }
     }
 

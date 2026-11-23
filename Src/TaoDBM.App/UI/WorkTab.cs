@@ -37,6 +37,8 @@ public partial class WorkTab : Grid
     private CancellationTokenSource? _runCts;
     private readonly Button _csvBtn = new() { Content = "导出 CSV", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _insBtn = new() { Content = "导出 INSERT", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    // 批次四格1/格2（2026-11-23）：导出格式组——Excel（xlsx）/ XML / HTML
+    private readonly Button _exportMoreBtn = new() { Content = "导出 ▾", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _structBtn = new() { Content = "结构", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _addRowBtn = new() { Content = "新增行", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _importBtn = new() { Content = "导入", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
@@ -170,6 +172,7 @@ public partial class WorkTab : Grid
         bar.Children.Add(_stopBtn);
         bar.Children.Add(_csvBtn);
         if (provider is not (MongoProvider or RedisProvider)) bar.Children.Add(_insBtn);
+        bar.Children.Add(_exportMoreBtn);   // 批次四格1/2：Excel / XML / HTML 导出
         if (mode == WorkMode.TableData && provider.SupportsBrowse && provider.IsNoSql == false)
         {
             bar.Children.Add(_structBtn);
@@ -247,10 +250,25 @@ public partial class WorkTab : Grid
 
         _runBtn.Click += (_, _) => _ = RunOrRefresh();
         _stopBtn.Click += (_, _) => _runCts?.Cancel();
-        _csvBtn.Click += (_, _) => _ = ExportAsync(true);
-        _insBtn.Click += (_, _) => _ = ExportAsync(false);
+        _csvBtn.Click += (_, _) => _ = ExportAsync(ExportKind.Csv);
+        _insBtn.Click += (_, _) => _ = ExportAsync(ExportKind.InsertSql);
+        // 批次四格1/2：导出格式组（Excel / XML / HTML），AutomationId=ExportExcel/ExportXml/ExportHtml
+        var exportMenu = new MenuFlyout();
+        MenuFlyoutItem ExportItem(string text, string id, ExportKind kind)
+        {
+            var it = new MenuFlyoutItem { Text = text };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(it, id);
+            it.Click += (_, _) => _ = ExportAsync(kind);
+            exportMenu.Items.Add(it);
+            return it;
+        }
+        ExportItem("导出 Excel（xlsx）", "ExportExcel", ExportKind.Excel);
+        ExportItem("导出 XML", "ExportXml", ExportKind.Xml);
+        ExportItem("导出 HTML", "ExportHtml", ExportKind.Html);
+        _exportMoreBtn.Flyout = exportMenu;
         _structBtn.Click += (_, _) => _ = ShowStructure();
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_importBtn, "ImportXlsx");   // 批次四格1：导入入口锚点
         _importBtn.Click += (_, _) => _ = ImportCsv();
         _formBtn.Click += (_, _) =>   // 批次二格1：网格/表单双视图切换
         {
@@ -580,18 +598,31 @@ public partial class WorkTab : Grid
         }
     }
 
-    private async Task ExportAsync(bool csv)
+    /// <summary>批次四格1/2：导出格式（CSV / INSERT / Excel xlsx / XML / HTML）。</summary>
+    internal enum ExportKind { Csv, InsertSql, Excel, Xml, Html }
+
+    private static (string Title, string Filter, string FileName) DialogOf(ExportKind k) => k switch
+    {
+        ExportKind.Csv => ("导出 CSV", "CSV 文件 (*.csv)|*.csv", "taodbm_export.csv"),
+        ExportKind.InsertSql => ("导出 SQL", "SQL 文件 (*.sql)|*.sql", "taodbm_insert.sql"),
+        ExportKind.Excel => ("导出 Excel", "Excel 工作簿 (*.xlsx)|*.xlsx", "taodbm_export.xlsx"),
+        ExportKind.Xml => ("导出 XML", "XML 文件 (*.xml)|*.xml", "taodbm_export.xml"),
+        _ => ("导出 HTML", "HTML 文件 (*.html)|*.html", "taodbm_export.html"),
+    };
+
+    private async Task ExportAsync(ExportKind kind)
     {
         if (_last.Count == 0) { _messageBox.Text = "没有可导出的结果，请先执行。"; return; }
         try
         {
             // #216: WinUI FileSavePicker natively crashes on Windows Server sessions (walk 4/4 app-death);
             // use WinForms save dialog (classic #32770, same on Server/client), failures go to managed catch
+            var d = DialogOf(kind);
             using var dlg = new System.Windows.Forms.SaveFileDialog
             {
-                Title = csv ? "导出 CSV" : "导出 SQL",
-                Filter = csv ? "CSV 文件 (*.csv)|*.csv" : "SQL 文件 (*.sql)|*.sql",
-                FileName = csv ? "taodbm_export.csv" : "taodbm_insert.sql",
+                Title = d.Title,
+                Filter = d.Filter,
+                FileName = d.FileName,
             };
             if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             var savePath = dlg.FileName;
@@ -617,7 +648,7 @@ public partial class WorkTab : Grid
                     var ext = System.IO.Path.GetExtension(savePath);
                     path = System.IO.Path.Combine(dir, $"{name}{(idx == 0 ? "" : $"_r{idx + 1}")}{ext}");
                 }
-                await ExportOneAsync(csv, _last[idx], path);
+                await ExportOneAsync(kind, _last[idx], path);
             }
         }
         catch (Exception ex)
@@ -647,7 +678,7 @@ public partial class WorkTab : Grid
         return new List<int> { combo.SelectedIndex };
     }
 
-    private async Task ExportOneAsync(bool csv, QueryResult src0, string savePath)
+    private async Task ExportOneAsync(ExportKind kind, QueryResult src0, string savePath)
     {
         // 格7：懒加载结果走流式导出（分页枚举＋非模态进度＋取消）；其余保持整包口径
         if (src0 is LazyQueryResult lz)
@@ -655,11 +686,38 @@ public partial class WorkTab : Grid
             // 批次F：懒加载结果导出全列——先把所有列拉齐再物化（列按需通道下导出=显式全量动作）
             await lz.Store.EnsureColumnsAsync(Enumerable.Range(0, lz.Store.TotalColumns));
             var progress = new Progress<long>(n => { if (_exportProgressText is not null) _exportProgressText.Text = $"已写 {n} 行…"; });
-            await StreamExportAsync(csv, EnumerateStorePages(lz.Store, progress), lz.Store.ColumnNames, savePath);
+            await StreamExportAsync(kind, EnumerateStorePages(lz.Store, progress), lz.Store.ColumnNames, savePath);
             return;
         }
-        var content = csv ? Exporter.Csv(src0) : Exporter.InsertSql(src0, _child.Length > 0 ? _child : "table");
-        System.IO.File.WriteAllText(savePath, content, new System.Text.UTF8Encoding(false));
+        switch (kind)
+        {
+            case ExportKind.Csv:
+                System.IO.File.WriteAllText(savePath, Exporter.Csv(src0), new System.Text.UTF8Encoding(false));
+                break;
+            case ExportKind.InsertSql:
+                System.IO.File.WriteAllText(savePath, Exporter.InsertSql(src0, _child.Length > 0 ? _child : "table"), new System.Text.UTF8Encoding(false));
+                break;
+            case ExportKind.Excel:
+            {
+                long rows = ExcelWriter.Write(savePath, src0.Columns, src0.Rows.OfType<object?[]>());
+                AppLog.Write($"[导出] xlsx rows={rows}");   // 批次四格1 验收锚点
+                break;
+            }
+            case ExportKind.Xml:
+            {
+                using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
+                long rows = XmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.ToArray(), HasMore = false } }, src0.Columns, w);
+                AppLog.Write($"[导出] xml rows={rows}");   // 批次四格2 验收锚点
+                break;
+            }
+            default:   // Html
+            {
+                using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
+                long rows = HtmlExporter.WriteStream(new[] { new Core.Streaming.QueryPage { Rows = src0.Rows.ToArray(), HasMore = false } }, src0.Columns, src0.Title, w);
+                AppLog.Write($"[导出] html rows={rows}");   // 批次四格2 验收锚点
+                break;
+            }
+        }
         _messageBox.Text = $"已导出到 {savePath}";
     }
 
@@ -685,7 +743,7 @@ public partial class WorkTab : Grid
     }
 
     /// <summary>格7：流式导出——非模态进度浮层（已写行数）＋取消（删半成品文件）。</summary>
-    private async Task StreamExportAsync(bool csv, IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string savePath)
+    private async Task StreamExportAsync(ExportKind kind, IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string savePath)
     {
         _exportCts = new CancellationTokenSource();
         _exportProgressText = new TextBlock { Text = "导出中…", FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
@@ -710,10 +768,30 @@ public partial class WorkTab : Grid
         {
             await Task.Run(() =>
             {
+                if (kind == ExportKind.Excel)
+                {
+                    rows = ExcelWriter.WriteStream(savePath, columns, pages, _exportCts.Token);
+                    AppLog.Write($"[导出] xlsx rows={rows}");   // 批次四格1 验收锚点
+                    return;
+                }
                 using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
-                rows = csv
-                    ? Exporter.CsvStream(pages, columns, w, _exportCts.Token)
-                    : Exporter.InsertSqlStream(pages, columns, _child.Length > 0 ? _child : "table", w, _exportCts.Token);
+                switch (kind)
+                {
+                    case ExportKind.Csv:
+                        rows = Exporter.CsvStream(pages, columns, w, _exportCts.Token);
+                        break;
+                    case ExportKind.InsertSql:
+                        rows = Exporter.InsertSqlStream(pages, columns, _child.Length > 0 ? _child : "table", w, _exportCts.Token);
+                        break;
+                    case ExportKind.Xml:
+                        rows = XmlExporter.WriteStream(pages, columns, w, _exportCts.Token);
+                        AppLog.Write($"[导出] xml rows={rows}");   // 批次四格2 验收锚点
+                        break;
+                    default:
+                        rows = HtmlExporter.WriteStream(pages, columns, _child.Length > 0 ? _child : "结果", w, _exportCts.Token);
+                        AppLog.Write($"[导出] html rows={rows}");   // 批次四格2 验收锚点
+                        break;
+                }
             });
             _messageBox.Text = $"已导出到 {savePath}（流式 {rows} 行）";
             AppLog.Write($"[导出] 流式 rows={rows}");
@@ -981,7 +1059,7 @@ public partial class WorkTab : Grid
             using var dlg = new System.Windows.Forms.OpenFileDialog
             {
                 Title = "选择导入文件",
-                Filter = "数据文件 (*.csv;*.json;*.txt)|*.csv;*.json;*.txt|所有文件 (*.*)|*.*",
+                Filter = "数据文件 (*.csv;*.json;*.xlsx;*.txt)|*.csv;*.json;*.xlsx;*.txt|所有文件 (*.*)|*.*",
             };
             if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             var path = dlg.FileName;
@@ -989,17 +1067,32 @@ public partial class WorkTab : Grid
 
             var text = await System.IO.File.ReadAllTextAsync(path);
             bool isJson = file.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+            // 批次四格1（2026-11-23）：xlsx 导入分流——ExcelReader 读首表（首行表头 + 公式读缓存值），复用 CSV 映射与执行链
+            bool isXlsx = file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase);
             List<string> headers = new();
             List<string?[]> rows = new();
             ImportPreviewDialog.ImportPlan? plan = null;
-            if (isJson)
+            if (isXlsx)
+            {
+                try { (headers, rows) = ExcelReader.Read(path); }
+                catch (Exception ex) { ShowError("xlsx 读取失败：" + ex.Message); return; }
+                if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "xlsx 首个工作表为空或没有表头行。"; return; }
+                AppLog.Write($"[导入] xlsx rows={rows.Count}");   // 批次四格1 验收锚点
+            }
+            else if (isJson)
             {
                 (headers, rows) = JsonImporter.Parse(text);
                 if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "JSON 内容为空，或不是「对象数组 / 每行一个对象」的格式，未能读出数据。"; return; }
             }
             if (_cols.Count == 0) _cols = await _provider.GetColumns(_db, _child);
 
-            if (!isJson)
+            if (isXlsx)
+            {
+                // 批次四格1：xlsx 先出预览与映射（前 50 行），确认后走 BuildInserts（与 JSON 同执行链）
+                plan = await ImportPreviewDialog.ShowAsync(_owner, _cols, headers, rows.Take(50).ToList());
+                if (plan is null) return;
+            }
+            else if (!isJson)
             {
                 // 格3：先出预览与映射（前 50 行），确认后才执行导入
                 List<string> previewHeaders;
@@ -1047,16 +1140,24 @@ public partial class WorkTab : Grid
             cancelBtn.Click += (_, _) => _importCts.Cancel();
             popup.IsOpen = true;
             var ct = _importCts.Token;
-            AppLog.Write($"[导入] 开始 file={file.Name} json={isJson}");
+            AppLog.Write($"[导入] 开始 file={file.Name} json={isJson} xlsx={isXlsx}");
 
             int total = 0, ok = 0; bool truncated = false;
             var errs = new System.Text.StringBuilder();
             try
             {
-                if (isJson)
+                if (isJson || isXlsx)
                 {
                     ct.ThrowIfCancellationRequested();
-                    var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, headers, rows);
+                    // xlsx 列映射按预览计划重排（与 CSV 同口径）
+                    List<string> execHeaders = headers;
+                    List<string?[]> execRows = rows;
+                    if (isXlsx && plan is not null)
+                    {
+                        execHeaders = plan.MappedHeaders.ToList();
+                        execRows = rows.Select(r => plan.MappedCsvIndexes.Select(i => i < r.Length ? r[i] : null).ToArray()).ToList();
+                    }
+                    var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, execHeaders, execRows);
                     foreach (var s in stmts)
                     {
                         ct.ThrowIfCancellationRequested();
@@ -1114,9 +1215,9 @@ public partial class WorkTab : Grid
                     }
                     if (total == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
                 }
-                QueryHistory.Add(_provider.EngineName, _db, $"-- {(isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
+                QueryHistory.Add(_provider.EngineName, _db, $"-- {(isXlsx ? "xlsx" : isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
                 _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errs.Length > 0 ? "\n" + errs : "")}";
-                _owner.SetStatus($"{(isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
+                _owner.SetStatus($"{(isXlsx ? "xlsx" : isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
                 AppLog.Write($"[导入] 完成 file={file.Name} total={total} ok={ok}");
                 _offset = 0;
                 await RunOrRefresh();
@@ -1293,6 +1394,7 @@ public partial class WorkTab : Grid
         }
         var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = new CornerRadius(4) };
         var dictBtn = new Button { Content = "导出数据字典（HTML / Word）", CornerRadius = new CornerRadius(4) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(dictBtn, "DataDictExport");   // 批次四格7 验收锚点
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = 12 });
         panel.Children.Add(lv);
@@ -1336,6 +1438,53 @@ public partial class WorkTab : Grid
                     tables.Add(DataDictionary.FromSpecs(name, cols));
                 }
                 if (tables.Count == 0) { _messageBox.Text = "该库没有可导出的表。"; return; }
+                // 批次四格7：索引/外键两段入账（ObjectTreeCatalog 目录口径，失败静默退空段）
+                string Cell(object?[] row, List<string> cols, string col)
+                {
+                    var i = cols.FindIndex(c => string.Equals(c, col, StringComparison.OrdinalIgnoreCase));
+                    return i >= 0 && i < row.Length ? Convert.ToString(row[i]) ?? "" : "";
+                }
+                int idxCount = 0, fkCount = 0;
+                try
+                {
+                    var ixRs = await _provider.Execute(_db, ObjectTreeCatalog.ListIndexes(_provider.Profile.Engine, _db));
+                    var ixRows = ixRs.Count > 0 ? ixRs[0].Rows : new List<object?[]>();
+                    var ixCols = ixRs.Count > 0 ? ixRs[0].Columns : new List<string>();
+                    foreach (var r in ixRows)
+                    {
+                        var t = tables.FirstOrDefault(x => string.Equals(x.Name, Cell(r, ixCols, "table_name"), StringComparison.OrdinalIgnoreCase));
+                        if (t is null) continue;
+                        string nu = Cell(r, ixCols, "non_unique"), iu = Cell(r, ixCols, "is_unique"), def = Cell(r, ixCols, "indexdef");
+                        bool unique = nu.Length > 0 ? nu == "0"
+                            : iu.Length > 0 ? (iu == "1" || string.Equals(iu, "True", StringComparison.OrdinalIgnoreCase))
+                            : def.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase);
+                        t.Indexes.Add(new DictionaryIndex { Table = t.Name, Name = Cell(r, ixCols, "index_name"), Unique = unique });
+                        idxCount++;
+                    }
+                }
+                catch { /* 无索引视图或权限不足：退空段 */ }
+                try
+                {
+                    var fkRs = await _provider.Execute(_db, ObjectTreeCatalog.ListForeignKeys(_provider.Profile.Engine, _db));
+                    var fkRows = fkRs.Count > 0 ? fkRs[0].Rows : new List<object?[]>();
+                    var fkCols = fkRs.Count > 0 ? fkRs[0].Columns : new List<string>();
+                    foreach (var r in fkRows)
+                    {
+                        var t = tables.FirstOrDefault(x => string.Equals(x.Name, Cell(r, fkCols, "table_name"), StringComparison.OrdinalIgnoreCase));
+                        if (t is null) continue;
+                        t.ForeignKeys.Add(new DictionaryForeignKey
+                        {
+                            Table = t.Name,
+                            Column = Cell(r, fkCols, "column_name"),
+                            RefTable = Cell(r, fkCols, "ref_table"),
+                            RefColumn = Cell(r, fkCols, "ref_column"),
+                            Name = Cell(r, fkCols, "constraint_name"),
+                        });
+                        fkCount++;
+                    }
+                }
+                catch { /* 无外键视图或权限不足：退空段 */ }
+                AppLog.Write($"[数据字典] 表={tables.Count} 索引={idxCount} 外键={fkCount}");   // 批次四格7 验收锚点
                 var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
                 picker.FileTypeChoices.Add("HTML 数据字典", new List<string> { ".html" });
                 picker.FileTypeChoices.Add("Word 数据字典", new List<string> { ".doc" });

@@ -563,6 +563,7 @@ public partial class MainWindow : Window
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info), group: "工具");
                 Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info), group: "工具");
                 Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider), group: "工具");
+                Item("仪表板", (_, _) => UI.DashboardDialog.Show(this, info), group: "工具");   // 批次五格6
                 Item("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info), group: "工具");
                 Item("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info), group: "工具");
                 Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info), group: "运维");
@@ -596,6 +597,7 @@ public partial class MainWindow : Window
                 Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info), group: "工具");
                 Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info), group: "工具");
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()), group: "工具");
+                Item("三层模型", (_, _) => UI.ModelDialog.Show(this, info), group: "工具");   // 批次五格1/2/4/5
                 Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info), group: "工具");
                 Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info), group: "工具");
                 Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info), group: "工具");

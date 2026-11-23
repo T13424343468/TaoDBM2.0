@@ -22,6 +22,8 @@ public class ConnectionDialog
     private readonly Button _tnsBtn = new() { Content = "从 tnsnames.ora 解析服务名", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4), Visibility = Visibility.Collapsed };
     private readonly ComboBox _tnsList = new() { Header = "TNS 网络服务名（选中后自动填主机/端口/服务名）", HorizontalAlignment = HorizontalAlignment.Stretch, Visibility = Visibility.Collapsed };
     private List<TnsNames.Entry> _tnsEntries = new();
+    // 批次四格3（2026-11-23）：ODBC（DSN）——DSN 下拉枚举本机数据源，选中即回填默认库
+    private readonly ComboBox _dsnList = new() { Header = "本机数据源（DSN，选中后自动填默认库）", HorizontalAlignment = HorizontalAlignment.Stretch, Visibility = Visibility.Collapsed };
     private readonly CheckBox _savePwd = new() { Content = "记住密码（本机加密保存）", IsChecked = true };
     private readonly TextBlock _hint = new() { Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
     // SSH 隧道（可选）
@@ -69,6 +71,10 @@ public class ConnectionDialog
         _auth.SelectedIndex = profile.AuthMode == "integrated" ? 1 : 0;
         _auth.SelectionChanged += (_, _) => OnAuthChanged();
         OnAuthChanged();
+        _dsnList.SelectionChanged += (_, _) =>
+        {
+            if (_dsnList.SelectedItem is string dsn) _database.Text = dsn;   // 批次四格3：选中即回填
+        };
         _tnsList.SelectionChanged += (_, _) =>
         {
             int i = _tnsList.SelectedIndex;
@@ -108,8 +114,22 @@ public class ConnectionDialog
         _port.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
         _user.Visibility = fileBased || integrated ? Visibility.Collapsed : Visibility.Visible;
         _pass.Visibility = fileBased || integrated ? Visibility.Collapsed : Visibility.Visible;
-        _database.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
+        _database.Visibility = fileBased || e == DbEngine.Odbc ? Visibility.Collapsed : Visibility.Visible;
         _file.Visibility = fileBased ? Visibility.Visible : Visibility.Collapsed;
+        // 批次四格3：ODBC 用 DSN 下拉替代默认库输入；主机 / 端口对 DSN 连接无意义，隐藏
+        _dsnList.Visibility = e == DbEngine.Odbc ? Visibility.Visible : Visibility.Collapsed;
+        _host.Visibility = fileBased || e == DbEngine.Odbc ? Visibility.Collapsed : _host.Visibility;
+        if (e == DbEngine.Odbc)
+        {
+            _host.Visibility = Visibility.Collapsed;
+            _port.Visibility = Visibility.Collapsed;
+            RefreshDsns();
+        }
+        else
+        {
+            _host.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
+            _port.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
+        }
         _params.Visibility = e == DbEngine.Oracle ? Visibility.Visible : Visibility.Visible; // Oracle service name 也走这一行
         _params.Header = e == DbEngine.Oracle ? "服务名（如 orcl）" : "附加参数（k=v;k2=v2）";
         _tnsBtn.Visibility = e == DbEngine.Oracle ? Visibility.Visible : Visibility.Collapsed;
@@ -131,8 +151,28 @@ public class ConnectionDialog
             DbEngine.SQLite => "本地文件即数据库，例如 D:\\data\\app.db；不存在时首次连接会自动创建。",
             DbEngine.Redis => "默认扫描 db0-db15；连接后左侧树中可切换库并浏览键。",
             DbEngine.MongoDB => "MongoDB 无需固定表结构，选中集合后可按 JSON 过滤器查询文档。",
+            DbEngine.Odbc => "从下拉选择本机已配置的 ODBC 数据源（DSN）；账号密码可选，附加参数可带 k=v 连接串属性。",
             _ => $"默认端口 {EngineInfo.DefaultPort(e)}，可留空自动填充。",
         };
+    }
+
+    /// <summary>批次四格3：枚举本机 DSN 填充下拉（失败静默给空提示，不闪退）。</summary>
+    private void RefreshDsns()
+    {
+        try
+        {
+            var dsns = OdbcCore.ListDsns();
+            _dsnList.Items.Clear();
+            foreach (var d in dsns) _dsnList.Items.Add(d);
+            _dsnList.Header = dsns.Count > 0
+                ? $"本机数据源（DSN，共 {dsns.Count} 项，选中后自动填默认库）"
+                : "本机数据源（未枚举到 DSN，可在「附加参数」直接写连接串属性）";
+            if (Profile.Database.Length > 0 && dsns.Contains(Profile.Database)) _dsnList.SelectedItem = Profile.Database;
+        }
+        catch (Exception ex)
+        {
+            _dsnList.Header = "本机数据源（枚举失败：" + ex.Message + "）";
+        }
     }
 
     /// <summary>挂到窗口显示；用户点保存返回 true。</summary>
@@ -147,6 +187,7 @@ public class ConnectionDialog
         panel.Children.Add(_user);
         panel.Children.Add(_pass);
         panel.Children.Add(_database);
+        panel.Children.Add(_dsnList);   // 批次四格3：ODBC DSN 下拉
         panel.Children.Add(_file);
         panel.Children.Add(_params);
         panel.Children.Add(_tnsBtn);

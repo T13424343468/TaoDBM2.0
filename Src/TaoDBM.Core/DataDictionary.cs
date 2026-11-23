@@ -14,12 +14,34 @@ public class DictionaryColumn
     public string? Comment { get; set; }
 }
 
-/// <summary>表级字典条目：表名 + 全部列。</summary>
+/// <summary>表级字典条目：表名 + 全部列 + 索引 / 外键段（批次四格7，2026-11-23 补全三段）。</summary>
 public class DictionaryTable
 {
     public string Name { get; set; } = "";
     public string? Comment { get; set; }
     public List<DictionaryColumn> Columns { get; set; } = new();
+    /// <summary>索引段（ObjectTreeCatalog.ListIndexes 口径：表 / 索引名 / 唯一性）。</summary>
+    public List<DictionaryIndex> Indexes { get; set; } = new();
+    /// <summary>外键段（ObjectTreeCatalog.ListForeignKeys 口径：列 → 引用表.引用列）。</summary>
+    public List<DictionaryForeignKey> ForeignKeys { get; set; } = new();
+}
+
+/// <summary>字典索引条目。</summary>
+public class DictionaryIndex
+{
+    public string Table { get; set; } = "";
+    public string Name { get; set; } = "";
+    public bool Unique { get; set; }
+}
+
+/// <summary>字典外键条目。</summary>
+public class DictionaryForeignKey
+{
+    public string Table { get; set; } = "";
+    public string Column { get; set; } = "";
+    public string RefTable { get; set; } = "";
+    public string RefColumn { get; set; } = "";
+    public string Name { get; set; } = "";
 }
 
 /// <summary>
@@ -70,6 +92,23 @@ td{{padding:8px;border-bottom:1px solid #E5E7EB}} tr:nth-child(even){{background
                     $"<td>{(c.Nullable ? "是" : "否")}</td><td>{Esc(c.Default ?? "-")}</td><td>{Esc(c.Comment ?? "")}</td></tr>");
             }
             sb.Append("</table>");
+            if (t.Indexes.Count > 0)
+            {
+                sb.Append("<p class='meta'>索引（").Append(t.Indexes.Count).Append("）</p>");
+                sb.Append("<table><tr><th>索引名</th><th>唯一</th></tr>");
+                foreach (var ix in t.Indexes)
+                    sb.Append("<tr><td>").Append(Esc(ix.Name)).Append("</td><td>").Append(ix.Unique ? "是" : "否").Append("</td></tr>");
+                sb.Append("</table>");
+            }
+            if (t.ForeignKeys.Count > 0)
+            {
+                sb.Append("<p class='meta'>外键（").Append(t.ForeignKeys.Count).Append("）</p>");
+                sb.Append("<table><tr><th>列</th><th>引用表</th><th>引用列</th><th>约束名</th></tr>");
+                foreach (var fk in t.ForeignKeys)
+                    sb.Append("<tr><td>").Append(Esc(fk.Column)).Append("</td><td>").Append(Esc(fk.RefTable))
+                      .Append("</td><td>").Append(Esc(fk.RefColumn)).Append("</td><td>").Append(Esc(fk.Name)).Append("</td></tr>");
+                sb.Append("</table>");
+            }
         }
         sb.Append("</body></html>");
         return sb.ToString();
@@ -100,6 +139,23 @@ td{{padding:8px;border-bottom:1px solid #E5E7EB}} tr:nth-child(even){{background
                     $"<td>{(c.Nullable ? "是" : "否")}</td><td>{EscX(c.Default ?? "-")}</td><td>{EscX(c.Comment ?? "")}</td></tr>");
             }
             sb.Append("</table>");
+            if (t.Indexes.Count > 0)
+            {
+                sb.Append("<p><b>索引（").Append(t.Indexes.Count).Append("）</b></p>");
+                sb.Append("<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\" style=\"border-collapse:collapse;font-size:10.5pt\"><tr style=\"background:#E8EEF7\"><th><b>索引名</b></th><th><b>唯一</b></th></tr>");
+                foreach (var ix in t.Indexes)
+                    sb.Append("<tr><td>").Append(EscX(ix.Name)).Append("</td><td>").Append(ix.Unique ? "是" : "否").Append("</td></tr>");
+                sb.Append("</table>");
+            }
+            if (t.ForeignKeys.Count > 0)
+            {
+                sb.Append("<p><b>外键（").Append(t.ForeignKeys.Count).Append("）</b></p>");
+                sb.Append("<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\" style=\"border-collapse:collapse;font-size:10.5pt\"><tr style=\"background:#E8EEF7\"><th><b>列</b></th><th><b>引用表</b></th><th><b>引用列</b></th><th><b>约束名</b></th></tr>");
+                foreach (var fk in t.ForeignKeys)
+                    sb.Append("<tr><td>").Append(EscX(fk.Column)).Append("</td><td>").Append(EscX(fk.RefTable))
+                      .Append("</td><td>").Append(EscX(fk.RefColumn)).Append("</td><td>").Append(EscX(fk.Name)).Append("</td></tr>");
+                sb.Append("</table>");
+            }
         }
         sb.Append("</body></html>");
         return sb.ToString();

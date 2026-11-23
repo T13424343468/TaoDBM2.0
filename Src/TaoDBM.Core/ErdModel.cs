@@ -18,12 +18,23 @@ public class ErdColumn
     public bool IsKey { get; set; }
 }
 
-/// <summary>表间关系（推断或手加）：from 表.fromCol → to 表主键。</summary>
+/// <summary>关系线端点符号（批次五格3，2026-11-23）：鸦爪（多端）/ 圆圈（可选）/ 双线（强制一）。</summary>
+public enum ErdEdgeSymbol
+{
+    None,
+    CrowFoot,
+    Circle,
+    DoubleLine,
+}
+
+/// <summary>表间关系（推断或手加）：from 表.fromCol → to 表主键。端点符号随基数自动标注（N 端鸦爪、1 端双线），可手改。</summary>
 public class ErdEdge
 {
     public string FromTable { get; set; } = "";
     public string FromCol { get; set; } = "";
     public string ToTable { get; set; } = "";
+    public ErdEdgeSymbol FromSymbol { get; set; } = ErdEdgeSymbol.None;
+    public ErdEdgeSymbol ToSymbol { get; set; } = ErdEdgeSymbol.None;
 }
 
 /// <summary>整张图；JSON 持久化可往返。</summary>
@@ -74,7 +85,7 @@ public class ErdModel
                 if (!targetTable.Columns.Any(p => p.IsKey && p.Name.Equals("id", StringComparison.OrdinalIgnoreCase))) continue;
                 if (target.Equals(t.Name, StringComparison.OrdinalIgnoreCase)) continue; // 自引用跳过（避免自环线）
                 if (edges.Any(e => e.FromTable == t.Name && e.FromCol == c.Name)) continue;
-                edges.Add(new ErdEdge { FromTable = t.Name, FromCol = c.Name, ToTable = targetTable.Name });
+                edges.Add(new ErdEdge { FromTable = t.Name, FromCol = c.Name, ToTable = targetTable.Name, FromSymbol = ErdEdgeSymbol.CrowFoot, ToSymbol = ErdEdgeSymbol.DoubleLine });
             }
         }
         return edges;
@@ -103,7 +114,7 @@ public class ErdModel
                 if (refTbl.Equals(tbl, StringComparison.OrdinalIgnoreCase)) continue; // 自引用跳过
                 if (edges.Any(e => e.FromTable.Equals(tbl, StringComparison.OrdinalIgnoreCase)
                     && e.FromCol.Equals(col, StringComparison.OrdinalIgnoreCase))) continue;
-                edges.Add(new ErdEdge { FromTable = byName[tbl].Name, FromCol = col, ToTable = byName[refTbl].Name });
+                edges.Add(new ErdEdge { FromTable = byName[tbl].Name, FromCol = col, ToTable = byName[refTbl].Name, FromSymbol = ErdEdgeSymbol.CrowFoot, ToSymbol = ErdEdgeSymbol.DoubleLine });
             }
         }
         // 命名约定补边：只补真值未覆盖的（按 FromTable+FromCol 去重）

@@ -10,6 +10,7 @@ public enum DbEngine
     Oracle,
     MongoDB,
     Redis,
+    Odbc,   // 批次四格3（2026-11-23）：ODBC（DSN），加在末尾保存档枚举序兼容
 }
 
 public static class EngineInfo
@@ -23,6 +24,7 @@ public static class EngineInfo
         DbEngine.Oracle => "Oracle",
         DbEngine.MongoDB => "MongoDB",
         DbEngine.Redis => "Redis",
+        DbEngine.Odbc => "ODBC（DSN）",
         _ => e.ToString(),
     };
 
@@ -34,6 +36,7 @@ public static class EngineInfo
         DbEngine.Oracle => 1521,
         DbEngine.Redis => 6379,
         DbEngine.MongoDB => 27017,
+        DbEngine.Odbc => 0,
         _ => 0,
     };
 
@@ -44,5 +47,5 @@ public static class EngineInfo
 
     public static IEnumerable<DbEngine> All =>
         new[] { DbEngine.MySQL, DbEngine.PostgreSQL, DbEngine.SqlServer, DbEngine.SQLite,
-                DbEngine.Oracle, DbEngine.MongoDB, DbEngine.Redis };
+                DbEngine.Oracle, DbEngine.MongoDB, DbEngine.Redis, DbEngine.Odbc };
 }

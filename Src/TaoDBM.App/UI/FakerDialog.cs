@@ -80,6 +80,30 @@ public static class FakerDialog
             Foreground = Ant.TextSub,
         };
 
+        // 批次四格6（2026-11-23）：快捷预设——姓名 / 手机 / 身份证段 / 地址四类一键模板，按表名模式填行数
+        var presetRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        foreach (var preset in FakerPreset.All)
+        {
+            var btn = new Button
+            {
+                Content = preset.Title,
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                Padding = new Thickness(8, 2, 8, 2),
+            };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(btn, "FakerPreset");
+            btn.Click += (_, _) =>
+            {
+                var counts = preset.RowsFor(rowBoxes.Keys);
+                foreach (var (name, box) in rowBoxes)
+                    box.Text = counts.TryGetValue(name, out var n) && n > 0 ? n.ToString() : "";
+                statusText.Text = $"已套用预设「{preset.Title}」：{preset.Hint}。点「生成预览」确认。";
+                statusText.Foreground = Ant.TextSub;
+                AppLog.Write($"[模拟数据] 预设={preset.Key}");   // 批次四格6 验收锚点
+            };
+            presetRow.Children.Add(btn);
+        }
+        ToolTipService.SetToolTip(presetRow, "一键模板：按表名模式填行数（命中模式的表给默认行数，其余清零）");
+
         var skipPkBox = new CheckBox { Content = "不写入主键列（自增主键推荐勾选）", IsChecked = true };
         var clearBox = new CheckBox { Content = "执行前先清空要生成的表（危险操作，请确认）", IsChecked = false };
         var previewBox = new TextBox
@@ -112,15 +136,28 @@ public static class FakerDialog
             Padding = new Thickness(10, 4, 10, 4),
             HorizontalAlignment = HorizontalAlignment.Left,
         };
+        // 批次四格6：执行中取消——CancellationToken 贯穿逐表写入，取消即停并如实报数
+        var cancelBtn = new Button
+        {
+            Content = "取消执行",
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            Padding = new Thickness(10, 4, 10, 4),
+            Visibility = Visibility.Collapsed,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(cancelBtn, "FakerCancel");
+        CancellationTokenSource? fakerCts = null;
+        cancelBtn.Click += (_, _) => fakerCts?.Cancel();
         var panel = new StackPanel { Spacing = 10, MinWidth = 520, Margin = new Thickness(0, 0, 12, 0) };
         panel.Children.Add(infoText);
         panel.Children.Add(listTitle);
         panel.Children.Add(listHost);
+        panel.Children.Add(presetRow);
         panel.Children.Add(skipPkBox);
         panel.Children.Add(clearBox);
         panel.Children.Add(previewBox);
         panel.Children.Add(previewBtn);
         panel.Children.Add(progress);
+        panel.Children.Add(cancelBtn);
         panel.Children.Add(statusText);
 
         var dlg = new ContentDialog
@@ -236,24 +273,29 @@ public static class FakerDialog
             sender.IsPrimaryButtonEnabled = false;
             progress.Visibility = Visibility.Visible;
             progress.Value = 0;
+            cancelBtn.Visibility = Visibility.Visible;
             statusText.Foreground = Ant.TextSub;
             IProgress<double> report = new Progress<double>(v => progress.Value = v);
             int doneRows = 0;
+            fakerCts = new CancellationTokenSource();
 
             try
             {
                 var errors = new List<string>();
                 await Task.Run(async () =>
                 {
+                    var ct = fakerCts.Token;
                     bool clear = clearBox.IsChecked == true;
                     bool skipPk = skipPkBox.IsChecked == true;
                     var engine = provider.Profile.Engine;
                     foreach (var (st, count) in plan)
                     {
+                        ct.ThrowIfCancellationRequested();   // 批次四格6：逐表检查点，取消即停
                         if (count <= 0) continue;
                         var colsOut = skipPk ? st.Columns.Where(c => !c.IsKey).ToList() : st.Columns;
                         if (colsOut.Count == 0) { report.Report(100.0 * doneRows / total); continue; }
                         // 池：引用目标表此刻已写入（拓扑序保证）或本来就有数据 → 直接读库 Top100
+                        ct.ThrowIfCancellationRequested();
                         var pools = await LoadPoolsAsync(provider, db, tables, st, null);
                         var genTable = new SeedTable { Name = st.Name, Columns = colsOut, Rows = count };
                         var rows = SeedPlan.GenerateRows(engine, genTable, _edges, pools, StableSeed(db, st.Name));
@@ -288,13 +330,27 @@ public static class FakerDialog
                 progress.Value = 100;
                 sender.Hide();
                 string tail = errors.Count > 0 ? "（部分表处理失败：" + string.Join("；", errors.Take(3)) + "）" : "";
+                AppLog.Write($"[模拟数据] 表={plan.Count} 行={doneRows}");   // 批次四格6 验收锚点
                 await new MessageDialogHelper(owner).Show("拟真数据", $"已写入 {doneRows:N0} 行拟真数据到 {db}。{tail}");
+            }
+            catch (OperationCanceledException)
+            {
+                // 批次四格6：取消即停，如实报数（已完成行数不虚报）
+                statusText.Text = $"已取消：完成前写入了 {doneRows:N0} 行，未完成的表不再继续。";
+                statusText.Foreground = Ant.Warn;
+                AppLog.Write($"[模拟数据] 取消 表={plan.Count} 行={doneRows}");
             }
             catch (Exception ex)
             {
                 statusText.Text = "写入失败：" + ex.Message + $"（已完成 {doneRows:N0} 行）";
                 statusText.Foreground = Ant.Error;
                 sender.IsPrimaryButtonEnabled = true;
+            }
+            finally
+            {
+                cancelBtn.Visibility = Visibility.Collapsed;
+                fakerCts.Dispose();
+                fakerCts = null;
             }
         };
 
