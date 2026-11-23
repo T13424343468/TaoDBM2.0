@@ -59,7 +59,7 @@ public static class ImportPreviewDialog
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.NoWrap,
-            FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
+            FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["AntMono"],
             FontSize = AntTokens.FontMinor,
             MaxHeight = 180,
             Text = sb.ToString(),

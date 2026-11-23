@@ -229,7 +229,7 @@ public partial class WorkTab
             SelectRange(caret + items[lv.SelectedIndex].Length, 0);
             AppLog.Write("[编辑器] clipstack-paste");
         }
-        else if (result == ContentDialogResult.Close) ClipboardStack.Clear();
+        else if (result == ContentDialogResult.None) ClipboardStack.Clear();   // 关闭/ESC 关闭返回 None（枚举无 Close）
     }
 
     private void FoldSelection()

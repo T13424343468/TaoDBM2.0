@@ -1040,7 +1040,7 @@ public partial class MainWindow : Window
             await wt.SaveSourceFileAsync();
             if (wt.IsDirty) return;   // 另存对话框被取消 → 留在页签
         }
-        else if (r == ContentDialogResult.Close) return;   // 取消 → 留在页签
+        else if (r == ContentDialogResult.None) return;   // 取消/关闭 → 留在页签（枚举无 Close，关闭返回 None）
         sender.TabItems.Remove(tab);
         if (_workTabs.Remove(tab)) SaveSession();
     }

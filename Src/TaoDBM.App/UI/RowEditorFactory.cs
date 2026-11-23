@@ -23,7 +23,7 @@ public static class RowEditorFactory
         string dt = (col.DataType ?? "").ToLowerInvariant();
         bool isBool = dt.Contains("bool") || dt == "bit";
         bool isDate = !isBool && (dt.Contains("date") || dt.Contains("time"));
-        bool isNumeric = !isBool && !isDate && CsvImporter.IsNumeric(col.DataType);
+        bool isNumeric = !isBool && !isDate && CsvImporter.IsNumeric(col.DataType ?? "");
         string header = $"{col.Name}（{col.DataType}{(col.IsKey ? " · 🔑" : "")}）";
 
         Field field;
@@ -39,7 +39,7 @@ public static class RowEditorFactory
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(nb, $"EditRow_{col.Name}");
             if (double.TryParse(initialText, System.Globalization.CultureInfo.InvariantCulture, out var d)) nb.Value = d;
             else if (!string.IsNullOrEmpty(initialText)) nb.Text = initialText;
-            if (readOnly) nb.IsReadOnly = true;
+            if (readOnly) nb.IsEnabled = false;   // NumberBox 无 IsReadOnly，与日期/布尔分支同口径用禁用表达只读
             field = new Field
             {
                 Control = nb,
@@ -66,17 +66,21 @@ public static class RowEditorFactory
             row.Children.Add(tp);
             row.Children.Add(clearBtn);
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(row, $"EditRow_{col.Name}");
+            // DatePicker.Date 为非可空 DateTimeOffset，清空语义用 hasDate 标记承载；重选日期经 DateChanged 恢复。
+            var hasDate = false;
             if (DateTime.TryParse(initialText, out var parsed))
             {
                 dp.Date = new DateTimeOffset(parsed);
                 tp.SelectedTime = parsed.TimeOfDay;
+                hasDate = true;
             }
-            clearBtn.Click += (_, _) => { dp.Date = null; tp.SelectedTime = null; };
+            dp.DateChanged += (_, _) => hasDate = true;
+            clearBtn.Click += (_, _) => { hasDate = false; tp.SelectedTime = null; };
             field = new Field
             {
                 Control = row,
-                GetText = () => dp.Date is null ? "" :
-                    (dp.Date.Value.DateTime.Date + (tp.SelectedTime ?? TimeSpan.Zero)).ToString("yyyy-MM-dd HH:mm:ss"),
+                GetText = () => !hasDate ? "" :
+                    (dp.Date.DateTime.Date + (tp.SelectedTime ?? TimeSpan.Zero)).ToString("yyyy-MM-dd HH:mm:ss"),
                 SetEnabled = v => { dp.IsEnabled = v; tp.IsEnabled = v; clearBtn.IsEnabled = v; },
             };
             if (readOnly) { dp.IsEnabled = false; tp.IsEnabled = false; clearBtn.IsEnabled = false; }

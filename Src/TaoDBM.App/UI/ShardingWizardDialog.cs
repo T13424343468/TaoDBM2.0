@@ -110,6 +110,10 @@ public static class ShardingWizardDialog
             Background = Ant.Bg,
             Child = new TextBlock { Text = n, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub },
         }).ToList();
+        // 格13：状态行前置——对话框顶部固定一行当前步骤说明，校验错误仍在步骤内 status 展示。
+        // 声明须先于步骤条 Tapped 挂接：局部函数 ShowStep 读取 topStatus，调用点前须已明确赋值。
+        var topStatus = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, TextWrapping = TextWrapping.Wrap };
+        var stepDescs = new[] { "第 1 步：选择目标表", "第 2 步：选拆分方式", "第 3 步：选分片键", "第 4 步：确认方案" };
         // 格13：步骤条可点跳转——已过步骤可点回跳（后续步骤态保留，确认页重过校验），未到步骤禁用（半透明）。
         for (int i = 0; i < chips.Count; i++)
         {
@@ -118,9 +122,6 @@ public static class ShardingWizardDialog
             chips[i].Tapped += (_, _) => { if (idx <= maxStep) ShowStep(idx); };
             stepChips.Children.Add(chips[i]);
         }
-        // 格13：状态行前置——对话框顶部固定一行当前步骤说明，校验错误仍在步骤内 status 展示。
-        var topStatus = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, TextWrapping = TextWrapping.Wrap };
-        var stepDescs = new[] { "第 1 步：选择目标表", "第 2 步：选拆分方式", "第 3 步：选分片键", "第 4 步：确认方案" };
 
         void ShowStep(int s)
         {

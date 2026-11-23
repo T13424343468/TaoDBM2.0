@@ -77,13 +77,14 @@ public static class GridBuilder
             // 格9：表头右缘 6px 拖拽分隔条（Pointer 捕获拖拽，双击恢复自动宽；与 Tapped 排序互不触发）
             var cellHost = new Grid();
             cellHost.Children.Add(headPanel);
-            var splitter = new Border
+            // WinUI 无公开 Cursor 属性，改用子类经 ProtectedCursor 承载列宽拖拽光标
+            var splitter = new CursorBorder
             {
                 Width = 6,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                Cursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast),
+                HoverCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.SizeWestEast),
             };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(splitter, $"ColSplitter_{r.Columns[i]}");
             cellHost.Children.Add(splitter);
@@ -262,5 +263,23 @@ public static class GridBuilder
             AppLog.Write($"[列宽] col={r.Columns[i]} 自动");
             e.Handled = true;
         };
+    }
+
+    /// <summary>悬停时显示指定光标的 Border（WinUI 无公开 Cursor 属性，经 ProtectedCursor 承载）。</summary>
+    private sealed class CursorBorder : Border
+    {
+        public Microsoft.UI.Input.InputSystemCursor? HoverCursor { get; set; }
+
+        protected override void OnPointerEntered(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            base.OnPointerEntered(e);
+            ProtectedCursor = HoverCursor;
+        }
+
+        protected override void OnPointerExited(Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            base.OnPointerExited(e);
+            ProtectedCursor = null;
+        }
     }
 }
