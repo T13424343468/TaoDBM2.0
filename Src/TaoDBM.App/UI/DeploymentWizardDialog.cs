@@ -205,6 +205,7 @@ public static class DeploymentWizardDialog
         var panels = new[] { step1, step2, step3, step4, step5 };
         void ShowStep(int i)
         {
+            AppLog.Write($"[部署向导] 进入步骤{i + 1}");   // 走查 S27 实效断言锚点（单步导航）
             body.Children.Clear();
             body.Children.Add(stepBar);
             var head = new TextBlock { Text = $"步骤 {i + 1}/5 · {StepNames[i]}", FontSize = AntTokens.FontTitle, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
@@ -215,6 +216,7 @@ public static class DeploymentWizardDialog
             if (i > 0)
             {
                 var prev = new Button { Content = "上一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(prev, "wiz-prev");
                 prev.Click += (_, _) => ShowStep(i - 1);
                 nav.Children.Add(prev);
             }
@@ -222,6 +224,7 @@ public static class DeploymentWizardDialog
             {
                 // P0 整改 06：导航按钮每步新建，不再往同一实例上重复挂事件（修「点一次跳多步」）
                 var next = new Button { Content = "下一步", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(next, "wiz-next");
                 next.Click += (_, _) => ShowStep(i + 1);
                 nav.Children.Add(next);
             }

@@ -119,6 +119,7 @@ public static class ResultGridMenu
         KanbanPinStore.Upsert(new KanbanPinStore.Pin(
             pinId, $"{column} · {Summarize(sourceSql)}", sourceSql, engine ?? "SQLite",
             CellAnalysis.ToChart(r, column).ChartId, interval, DateTimeOffset.UtcNow));
+        AppLog.Write($"[看板] 钉住 pin={pinId} col={column}");   // 走查 S26 实效断言锚点
     }
 
     /// <summary>同 SQL 同列 → 同一 PinId：重复钉住即更新（改间隔/换标题），不堆重复卡片。</summary>

@@ -97,6 +97,7 @@ public static class GridBuilder
             else if (sortMode == ResultGridOps.SortAsc) sortMode = ResultGridOps.SortDesc;
             else { sortCol = -1; sortMode = ResultGridOps.SortOriginal; }
             order = ResultGridOps.SortOrder(r.Rows, colIdx, sortMode);
+            AppLog.Write($"[网格] 排序 col={r.Columns[colIdx]} mode={sortMode} rows={r.Rows.Count}");   // 走查 S22 实效断言锚点
             for (int i = 0; i < nCols; i++)
                 arrows[i].Text = i == colIdx && sortMode != ResultGridOps.SortOriginal ? (sortMode == ResultGridOps.SortAsc ? "▲" : "▼") : "";
             PopulateRows();

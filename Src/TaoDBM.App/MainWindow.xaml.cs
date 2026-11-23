@@ -541,7 +541,11 @@ public partial class MainWindow : Window
         var node = (e.OriginalSource as FrameworkElement)?.DataContext as TreeViewNode;
         if (node is null || !_nodeMap.TryGetValue(node, out var info)) return;
         ConnTree.SelectedItem = node;   // 双击即选中，动作与选中态一致
-        if (info.Kind == NodeKind.Table) OpenTableTab(info);
+        if (info.Kind == NodeKind.Table)
+        {
+            AppLog.Write($"[对象树] 双击表 table={info.Name}");   // 走查 S21 实效断言锚点
+            OpenTableTab(info);
+        }
     }
 
     private void RefreshNode(TreeViewNode node)

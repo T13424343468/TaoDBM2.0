@@ -99,6 +99,7 @@ public static class VirtualizedResultGrid
             else if (sortMode == ResultGridOps.SortAsc) sortMode = ResultGridOps.SortDesc;
             else { sortCol = -1; sortMode = ResultGridOps.SortOriginal; }
             order = ResultGridOps.SortOrder(r.Rows, colIdx, sortMode);
+            AppLog.Write($"[网格] 排序 col={r.Columns[colIdx]} mode={sortMode} rows={total}");   // 走查 S22 实效断言锚点
             for (int i = 0; i < nCols; i++)
                 arrows[i].Text = i == colIdx && sortMode != ResultGridOps.SortOriginal ? (sortMode == ResultGridOps.SortAsc ? "▲" : "▼") : "";
             lastTop = double.NaN; lastFirst = int.MinValue; lastLast = int.MinValue;   // 强制重画窗口

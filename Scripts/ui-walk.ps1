@@ -232,6 +232,48 @@ function Select-ComboItem([System.Windows.Automation.AutomationElement]$combo, [
   try { Invoke-El $item; return $true } catch { }
   return $false
 }
+# ---------- 3b. 真鼠标点击（S20+ 批次新增） ----------
+# Tapped/DoubleTapped/ContextFlyout 只认真鼠标事件，UIA Invoke 打不进（S21 双击表/S22 排序/S23 右键菜单均此路）
+$mouseSrc = @'
+using System;
+using System.Runtime.InteropServices;
+public class MouseNative {
+  [StructLayout(LayoutKind.Sequential)]
+  public struct MOUSEINPUT { public int dx; public int dy; public uint mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct INPUT { public uint type; public MOUSEINPUT mi; }
+  const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010;
+  [DllImport("user32.dll")] static extern uint SendInput(uint n, INPUT[] inputs, int size);
+  [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+  static void One(uint down, uint up) {
+    var a = new INPUT { type = 0 }; a.mi.dwFlags = down;
+    var b = new INPUT { type = 0 }; b.mi.dwFlags = up;
+    SendInput(2, new INPUT[] { a, b }, Marshal.SizeOf(typeof(INPUT)));
+  }
+  public static void Click(int x, int y, bool right, bool dbl) {
+    SetCursorPos(x, y);
+    System.Threading.Thread.Sleep(150);
+    if (right) { One(RIGHTDOWN, RIGHTUP); return; }
+    One(LEFTDOWN, LEFTUP);
+    if (dbl) { System.Threading.Thread.Sleep(120); One(LEFTDOWN, LEFTUP); }
+  }
+}
+'@
+Add-Type -TypeDefinition $mouseSrc
+
+function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
+  $r = $el.Current.BoundingRectangle
+  if ($r.IsEmpty) { throw "mouse target has empty rect" }
+  $x = [int]($r.X + $r.Width / 2)
+  $y = [int]($r.Y + $r.Height / 2)
+  [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
+}
+function Get-AppLogTail([int]$n) {
+  foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+    if (Test-Path $lg) { return (Get-Content $lg -Tail $n) }
+  }
+  return @()
+}
 function Push-Evidence([string]$tag) {
   # 证据分步落公开分支：机器死亡时最后一次成功推送即死亡现场（#79-#82 四轮六杀全死在走查中途，登录侧什么都拿不到）
   try {
@@ -719,6 +761,111 @@ foreach ($s in $plan.steps) {
         Push-Evidence "SP shot-done"
         Close-ExtraWindows $handle
         Push-Evidence "SP closed"
+      }
+      'applog-contains' {
+        # 通用实效断言：轮询应用日志尾部等锚点行（零 UIA 读结果，与 query 对账制同路数）
+        $needles = @($s.value | ForEach-Object { Tpl ([string]$_) })
+        $nots = @()
+        if ($s.notContains) { $nots = @($s.notContains | ForEach-Object { Tpl ([string]$_) }) }
+        $timeoutSec = 15
+        if ($s.timeout) { $timeoutSec = [int]$s.timeout }
+        $deadline = (Get-Date).AddSeconds($timeoutSec)
+        $allFound = $false
+        do {
+          $tail = (Get-AppLogTail 200) -join "`n"
+          $allFound = $true
+          foreach ($v in $needles) { if (-not $tail.Contains($v)) { $allFound = $false; break } }
+          if ($allFound) {
+            foreach ($v in $nots) { if ($tail.Contains($v)) { throw "applog negative anchor hit: $v" } }
+            break
+          }
+          Start-Sleep -Seconds 1
+        } while ((Get-Date) -lt $deadline)
+        if (-not $allFound) { throw "applog anchor missing: $(($needles -join ' && '))" }
+        Push-Evidence "$id applog-hit $(($needles -join ' && '))"
+      }
+      'window-contains' {
+        # 主窗可见文本断言（弹层标题/步骤条头），支持 notContains 反断言
+        $needle = Tpl $s.value
+        $nots = @()
+        if ($s.notContains) { $nots = @($s.notContains | ForEach-Object { Tpl ([string]$_) }) }
+        $txt = ''
+        for ($i = 0; $i -lt 10; $i++) {
+          $txt = Get-ScopeText $mainRoot
+          if ($txt.Contains($needle)) { break }
+          Start-Sleep -Seconds 1
+        }
+        if (-not $txt.Contains($needle)) { throw "window text missing: $needle" }
+        foreach ($v in $nots) { if ($txt.Contains($v)) { throw "window negative anchor hit: $v" } }
+        Push-Evidence "$id window-hit $needle"
+      }
+      'mouse-click' {
+        # 真鼠标点击（left/right/double）：Tapped/DoubleTapped/ContextFlyout 只认实体鼠标事件
+        $el = Find-ElWait $s.find 10 $mainRoot
+        if ($null -eq $el) { throw "mouse target not found" }
+        $mode = 'left'
+        if ($s.button) { $mode = $s.button }
+        Click-ElMouse $el $mode
+        Start-Sleep -Seconds 2
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }
+      }
+      'menu-item' {
+        # 已开弹层中点菜单项（右键菜单/下拉菜单通用），UIA Invoke 可达
+        $item = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+        if ($null -eq $item) { $item = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
+        Invoke-El $item
+        Start-Sleep -Seconds 2
+      }
+      'tree-context' {
+        # 树节点右键 → 弹出菜单点项（连接右键菜单：任务中心/智能工具/看板管理/部署向导…）
+        $item = Find-ElWait @{ controlType = 'TreeItem'; name = (Tpl $s.prefix) } 10 $mainRoot
+        if ($null -eq $item) { throw "tree item not found: $(Tpl $s.prefix)" }
+        Click-ElMouse $item 'right'
+        Start-Sleep -Seconds 1
+        $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+        if ($null -eq $mi) { $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        if ($null -eq $mi) { throw "context item not found: $($s.itemName)" }
+        Invoke-El $mi
+        Start-Sleep -Seconds 3
+      }
+      'stop-query' {
+        # #01 停止按钮实效断言：长流式查询执行中点停止 → [执行账] cancelled=1
+        $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
+        if ($null -eq $ed) { throw "work-editor not found" }
+        try { $ed.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 400
+        [System.Windows.Forms.SendKeys]::SendWait("^a")
+        Start-Sleep -Milliseconds 150
+        [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+        Start-Sleep -Milliseconds 150
+        [System.Windows.Forms.SendKeys]::SendWait((Escape-SendKeys (Tpl $s.sql)))
+        Start-Sleep -Milliseconds 500
+        $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
+        if ($null -eq $run) { throw "work-run not found" }
+        Invoke-El $run
+        Push-Evidence "$id run-invoked-before-stop"
+        Start-Sleep -Seconds 2
+        $stop = Find-ElWait @{ automationId = 'work-stop' } 6 $mainRoot
+        if ($null -eq $stop) { throw "work-stop not found" }
+        Invoke-El $stop
+        Push-Evidence "$id stop-invoked"
+        $deadline = (Get-Date).AddSeconds(20)
+        $hit = $false
+        do {
+          $tail = (Get-AppLogTail 60) -join "`n"
+          if ($tail.Contains('[执行账] cancelled=1')) { $hit = $true; break }
+          Start-Sleep -Seconds 1
+        } while ((Get-Date) -lt $deadline)
+        if (-not $hit) { throw "stop not effective: no [执行账] cancelled=1 in applog" }
+        Push-Evidence "$id cancelled-hit"
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }
+      }
+      'press-esc' {
+        # 弹层收场：ESC 关 ContentDialog/MenuFlyout，恢复主窗可操作
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+        Start-Sleep -Seconds 1
+        Close-ExtraWindows $handle
       }
       default { throw "unknown action: $action" }
     }

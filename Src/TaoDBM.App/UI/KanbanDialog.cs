@@ -74,6 +74,7 @@ public static class KanbanDialog
             };
             cardData[pin.PinId] = data;
             var refreshBtn = new Button { Content = "立即刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = provider != null };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(refreshBtn, "kanban-refresh");
             refreshBtn.Click += async (_, _) => await RunPinAsync(provider, pin, status, cardData);
             var unpinBtn = new Button { Content = "摘除", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
             unpinBtn.Click += (_, _) => { KanbanPinStore.Unpin(pin.PinId); Rebuild(pinsHost, provider, status, cardData); };
@@ -118,6 +119,7 @@ public static class KanbanDialog
             if (cardData.TryGetValue(pin.PinId, out var data))
                 data.Text = Summarize(list);
             status.Text = $"「{pin.Title}」已刷新 {DateTimeOffset.Now:HH:mm:ss}。";
+            AppLog.Write($"[看板] 刷新 pin={pin.Title} summary={Summarize(list)}");   // 走查 S24 实效断言锚点
         }
         catch (Exception ex)
         {

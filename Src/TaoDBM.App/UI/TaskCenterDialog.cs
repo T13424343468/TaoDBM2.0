@@ -13,10 +13,14 @@ public static class TaskCenterDialog
     static TaskCenterDialog()
     {
         // P4：长任务终态接通知调度（Publish 内部按用户配置判定够不够格，回调在后台线程）
-        Shared.TaskCompleted += s => ToastCenter.Publish(new NotifyEvent(
-            NotifyKind.LongTask, s.TaskId, "长任务" + StateLabel(s.State),
-            s.Title + (s.Kind.Length == 0 ? "" : $"（{s.Kind}）") + (s.Message.Length == 0 ? "" : " " + s.Message),
-            DateTime.Now));
+        Shared.TaskCompleted += s =>
+        {
+            AppLog.Write($"[任务中心] 终态 id={s.TaskId} state={s.State} msg={s.Message}");   // 走查 S25 实效断言锚点
+            ToastCenter.Publish(new NotifyEvent(
+                NotifyKind.LongTask, s.TaskId, "长任务" + StateLabel(s.State),
+                s.Title + (s.Kind.Length == 0 ? "" : $"（{s.Kind}）") + (s.Message.Length == 0 ? "" : " " + s.Message),
+                DateTime.Now));
+        };
     }
 
     private static string StateLabel(string state) => state switch
@@ -59,11 +63,14 @@ public static class TaskCenterDialog
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var db = CurrentDb(info);
         var titleBox = new TextBox { PlaceholderText = "任务标题", MinWidth = 200 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(titleBox, "tc-title");
         var sqlBox = new TextBox { PlaceholderText = "SQL（长查询/导出语句）", MinWidth = 360 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(sqlBox, "tc-sql");
         var list = new StackPanel { Spacing = 8 };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         var submitBtn = new Button { Content = "提交任务", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(submitBtn, "tc-submit");
         var refreshBtn = new Button { Content = "刷新列表", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var pauseBtn = new Button { Content = "暂停队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var resumeBtn = new Button { Content = "续跑队列", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };

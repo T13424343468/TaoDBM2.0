@@ -23,7 +23,9 @@ public static class SmartToolsDialog
 
         // ── 查询重测 ──
         var beforeBox = new TextBox { PlaceholderText = "改写前 SQL（SELECT）", MinWidth = 420 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(beforeBox, "smart-before");
         var afterBox = new TextBox { PlaceholderText = "改写后 SQL（SELECT，留空则只测改写前）", MinWidth = 420 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(afterBox, "smart-after");
         var retestBtn = new Button { Content = "重测对比", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         retestBtn.Click += async (_, _) => await RunRetest(owner, info, beforeBox.Text, afterBox.Text, report, status);
 
@@ -66,11 +68,15 @@ public static class SmartToolsDialog
 
         // ── 优化回访（闭环）：登记 → 到期复测 → 前后对比卡 ──
         var followTitleBox = new TextBox { PlaceholderText = "回访标题，如 orders 改写优化", MinWidth = 260 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(followTitleBox, "smart-follow-title");
         var followIntervalBox = new TextBox { PlaceholderText = "间隔天（默认 1）", MinWidth = 120 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(followIntervalBox, "smart-follow-interval");
         var followRegisterBtn = new Button { Content = "登记回访", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(followRegisterBtn, "smart-register");
         var followDueBtn = new Button { Content = "查到期", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var followRetestBtn = new Button { Content = "复测并出对比卡", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var followCenterBtn = new Button { Content = "并入任务中心", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(followCenterBtn, "smart-center");
         followRegisterBtn.Click += async (_, _) =>
         {
             var sql = afterBox.Text.Length > 0 ? afterBox.Text : beforeBox.Text;
@@ -373,6 +379,7 @@ public static class SmartToolsDialog
             new List<string>(), baselineMs, interval);
         Followups.Add(task);
         FollowupLedger.Save(Followups);
+        AppLog.Write($"[智能工具] 回访登记 title={task.Title} baselineMs={baselineMs}");   // 走查 S26 实效断言锚点
         AddSection(report, "回访已登记");
         foreach (var line in OptimizationFollowup.CompareCard(task)) AddLine(report, line);
         status.Text = $"已登记，{interval} 天后到期可复测。";
