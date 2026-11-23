@@ -88,7 +88,7 @@ public partial class WorkTab
             AppLog.Write("[编辑器] run-selection current=" + (selLen > 0 ? "selection" : "statement"));
             await RunOrRefresh(stmt);
         }
-        catch (Exception ex) { _messageBox.Text = "执行失败：" + ex.Message; }
+        catch (Exception ex) { ShowError("执行失败：" + ex.Message); }
     }
 
     private void BeautifySql()

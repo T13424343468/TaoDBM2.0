@@ -474,7 +474,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("错误：" + ex.Message);
+            ShowError("执行失败：" + ex.Message);
             _owner.SetStatus("执行出错");
             AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
