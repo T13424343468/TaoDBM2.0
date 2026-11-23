@@ -11,6 +11,8 @@ public class TabSessionItem
     public string Db { get; set; } = "";
     public string Child { get; set; } = "";       // Browse 模式下的表 / 集合名
     public string Sql { get; set; } = "";         // Query 模式下的编辑器内容
+    /// <summary>P1-03：Query 页签的归属 .sql 文件路径（空=无归属）。</summary>
+    public string SourceFile { get; set; } = "";
 }
 
 /// <summary>标签会话存取：%APPDATA%\TaoDBM\tabsession.json；路径可注入便于测试。</summary>

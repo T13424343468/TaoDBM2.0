@@ -30,6 +30,7 @@ public partial class MainWindow
             tab.Content = wt;
             WorkTabs.TabItems.Add(tab);
             _workTabs[tab] = wt;
+            WireDirtyHeader(tab, wt);
             SaveSession();
             WorkTabs.SelectedItem = tab;
             SetStatus($"已装载 {Path.GetFileName(path)}（{sql.Length:N0} 字符）· 只装载未执行");

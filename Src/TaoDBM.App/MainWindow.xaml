@@ -102,7 +102,7 @@
 
         <!-- 状态栏 -->
         <Border Grid.Row="2" Background="{ThemeResource AntCard}" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,1,0,0">
-            <TextBlock x:Name="StatusText" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text="就绪"/>
+            <TextBlock x:Name="StatusText" AutomationId="status-text" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text="就绪"/>
         </Border>
     </Grid>
 </Window>

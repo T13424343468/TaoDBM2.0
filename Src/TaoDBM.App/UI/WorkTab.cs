@@ -72,20 +72,75 @@ public partial class WorkTab : Grid
     private bool _busy;
     private bool _isRelational => _provider is RelationalProvider;
 
-    public WorkTab(MainWindow owner, IDbProvider provider, string db, string child, WorkMode mode, string? initialSql)
+    // ---------- P1-01 错误横幅 / P1-02 脏标记 ----------
+
+    private readonly TextBlock _errorText = new()
+    {
+        IsTextSelectionEnabled = true,
+        TextWrapping = TextWrapping.Wrap,
+        FontSize = 12.5,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(6, 0, 0, 0),
+    };
+    private readonly Button _errorCopyBtn = new()
+    {
+        Content = "复制详情",
+        Padding = new Thickness(10, 2, 10, 2),
+        VerticalAlignment = VerticalAlignment.Center,
+        FontSize = 12,
+    };
+    private readonly Border _errorBanner = new()
+    {
+        Visibility = Visibility.Collapsed,
+        Padding = new Thickness(10, 6, 10, 6),
+        Margin = new Thickness(0, 0, 0, 4),
+        CornerRadius = new CornerRadius(6),
+    };
+
+    private bool _dirty;
+    /// <summary>未保存标记（P1-02）：编辑器变更置脏，保存成功清脏。</summary>
+    public bool IsDirty => _dirty;
+    /// <summary>脏标记变化通知（页签标题 ● 前缀由主窗维护）。</summary>
+    public event Action? DirtyChanged;
+    private void SetDirty(bool v)
+    {
+        if (_dirty == v) return;
+        _dirty = v;
+        try { DirtyChanged?.Invoke(); } catch { /* 通知失败不干扰业务 */ }
+    }
+
+    /// <summary>P1-01：错误走红色横幅（全文可选中、可复制详情）；成功/引导仍走状态文本区。</summary>
+    private void ShowError(string msg)
+    {
+        _errorText.Text = msg;
+        _errorBanner.Visibility = Visibility.Visible;
+        _messageBox.Text = "";
+        Core.AppLog.Write($"[错误横幅] {msg}");
+    }
+
+    /// <summary>收起错误横幅（下一次成功执行后调用）。</summary>
+    private void ClearError()
+    {
+        if (_errorBanner.Visibility == Visibility.Collapsed) return;
+        _errorBanner.Visibility = Visibility.Collapsed;
+        Core.AppLog.Write("[错误横幅] 收起");
+    }
+
+    public WorkTab(MainWindow owner, IDbProvider provider, string db, string child, WorkMode mode, string? initialSql, string? sourceFile = null)
     {
         _owner = owner;
         _provider = provider;
         _db = db;
         _child = child;
         _mode = mode;
+        SourceFile = sourceFile ?? "";
 
         _hlTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
         _hlTimer.Interval = TimeSpan.FromMilliseconds(250);
         _hlTimer.Tick += (_, _) => { _hlTimer.Stop(); ApplyHighlight(); };
         if (mode == WorkMode.Query)
         {
-            _editor.TextChanged += (_, _) => { if (!_applying) { _hlTimer.Stop(); _hlTimer.Start(); } };
+            _editor.TextChanged += (_, _) => { if (!_applying) { _hlTimer.Stop(); _hlTimer.Start(); SetDirty(true); } };
             _editor.Loaded += (_, _) => SetEditorFont();
             Ant.ThemeApplied += OnThemeApplied;
             Unloaded += (_, _) => Ant.ThemeApplied -= OnThemeApplied;
@@ -143,8 +198,32 @@ public partial class WorkTab : Grid
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
         };
-        Children.Add(msgBorder);
-        SetRow(msgBorder, 4);
+        // P1-01 错误横幅：浅红底＋Ant.Error 左边条，消息全文可选中，附「复制详情」
+        _errorBanner.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xB4, 0x55, 0x2E));
+        _errorBanner.BorderBrush = Ant.Error;
+        _errorBanner.BorderThickness = new Thickness(3, 1, 1, 1);
+        _errorBanner.Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        (_errorBanner.Child as StackPanel)!.Children.Add(new TextBlock { Text = "⚠", VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.Error });
+        (_errorBanner.Child as StackPanel)!.Children.Add(_errorText);
+        (_errorBanner.Child as StackPanel)!.Children.Add(_errorCopyBtn);
+        _errorCopyBtn.Click += (_, _) =>
+        {
+            try
+            {
+                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dp.SetText(_errorText.Text);
+                Windows.ApplicationModel.Clipboard.SetContent(dp);
+                _messageBox.Text = "错误详情已复制。";
+            }
+            catch { /* 剪贴板失败不影响业务 */ }
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_errorBanner, "work-error-banner");
+
+        var msgArea = new StackPanel { Margin = new Thickness(8, 4, 8, 8) };
+        msgArea.Children.Add(_errorBanner);
+        msgArea.Children.Add(msgBorder);
+        Children.Add(msgArea);
+        SetRow(msgArea, 4);
 
         // UIA 自动化标识（界面自动化走查定位用）
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
@@ -198,8 +277,8 @@ public partial class WorkTab : Grid
     /// <summary>归属 .sql 文件路径（需求合并稿第一章之二：Ctrl+S 覆盖保存用；空=未归属，另存）。</summary>
     public string SourceFile { get; set; } = "";
 
-    /// <summary>Ctrl+S：有归属文件直接覆盖（UTF-8）；否则另存对话框（UTF-8 默认，可 BOM / GBK）。只写文件不执行。</summary>
-    private async Task SaveSourceFileAsync()
+    /// <summary>Ctrl+S：有归属文件直接覆盖（UTF-8）；否则另存对话框（UTF-8 默认，可 BOM / GBK）。只写文件不执行。P1-02 起公开供关脏页签确认复用。</summary>
+    public async Task SaveSourceFileAsync()
     {
         if (_mode != WorkMode.Query) { _messageBox.Text = "表数据页没有可保存的 SQL。"; return; }
         try
@@ -209,18 +288,21 @@ public partial class WorkTab : Grid
             {
                 Core.SqlFileIo.Save(SourceFile, sql);
                 _messageBox.Text = $"已保存到 {SourceFile}";
+                SetDirty(false);
+                ClearError();
                 return;
             }
 
-            var picker = new FileSavePicker
+            // #216 同款预防：WinUI FileSavePicker 在 Server 会话原生崩溃（导出路径 c22a0575 已换）；
+            // 另存统一走 WinForms 经典对话框，失败落 managed catch
+            using var picker = new System.Windows.Forms.SaveFileDialog
             {
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                SuggestedFileName = "未命名.sql",
+                Title = "另存 SQL",
+                Filter = "SQL 文件 (*.sql)|*.sql",
+                FileName = "未命名.sql",
             };
-            picker.FileTypeChoices.Add("SQL 文件", new List<string> { ".sql" });
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
-            var file = await picker.PickSaveFileAsync();
-            if (file is null) return;
+            if (picker.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            var savePath = picker.FileName;
 
             // 编码选择：UTF-8（默认）/ UTF-8(BOM) / GBK
             var encBox = new ComboBox { MinWidth = 200, SelectedIndex = 0 };
@@ -237,13 +319,15 @@ public partial class WorkTab : Grid
                 XamlRoot = _owner.Content.XamlRoot,
             };
             if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
-            Core.SqlFileIo.Save(file.Path, sql, gbk: encBox.SelectedIndex == 2, bom: encBox.SelectedIndex == 1);
-            SourceFile = file.Path;
-            _messageBox.Text = $"已另存到 {file.Path}";
+            Core.SqlFileIo.Save(savePath, sql, gbk: encBox.SelectedIndex == 2, bom: encBox.SelectedIndex == 1);
+            SourceFile = savePath;
+            _messageBox.Text = $"已另存到 {savePath}";
+            SetDirty(false);
+            ClearError();
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "保存失败：" + ex.Message;
+            ShowError("保存失败：" + ex.Message);
         }
     }
 
@@ -353,7 +437,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "错误：" + ex.Message;
+            ShowError("错误：" + ex.Message);
             _owner.SetStatus("执行出错");
             AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
@@ -378,6 +462,7 @@ public partial class WorkTab : Grid
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
         }
         _resultsHost.Content = panel;
+        ClearError();
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
     }
 
@@ -419,7 +504,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "错误：" + ex.Message;
+            ShowError("错误：" + ex.Message);
         }
     }
 
@@ -451,7 +536,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "导出失败：" + ex.Message;
+            ShowError("导出失败：" + ex.Message);
         }
     }
 
@@ -472,7 +557,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "读取结构失败：" + ex.Message;
+            ShowError("读取结构失败：" + ex.Message);
         }
     }
 
@@ -625,7 +710,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "执行失败：" + ex.Message;
+            ShowError("执行失败：" + ex.Message);
         }
     }
 
@@ -699,7 +784,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            _messageBox.Text = "导入失败：" + ex.Message;
+            ShowError("导入失败：" + ex.Message);
         }
     }
 
@@ -710,6 +795,8 @@ public partial class WorkTab : Grid
     public string SessionDb => _db;
     public string SessionChild => _child;
     public string SessionSql => EditorText;
+    /// <summary>P1-03：文件归属随会话落盘（重启恢复后 Ctrl+S 直接回写原文件）。</summary>
+    public string SessionSourceFile => SourceFile;
 
     // ---------- 查询收藏 ----------
 
@@ -880,7 +967,7 @@ public partial class WorkTab : Grid
                 await Windows.Storage.FileIO.WriteTextAsync(file, ReportBuilder.ToHtml(qr, qr.Title));
                 _messageBox.Text = "报表已导出到 " + file.Path;
             }
-            catch (Exception ex) { _messageBox.Text = "导出失败：" + ex.Message; }
+            catch (Exception ex) { ShowError("导出失败：" + ex.Message); }
         };
         // 数据字典完整导出：当前连接的库逐表取列，HTML / Word 双口径（对账表第五章收口）
         dictBtn.Click += async (_, _) =>
@@ -912,7 +999,7 @@ public partial class WorkTab : Grid
                 await Windows.Storage.FileIO.WriteTextAsync(file, content);
                 _messageBox.Text = $"数据字典已导出（{tables.Count} 张表）到 " + file.Path;
             }
-            catch (Exception ex) { _messageBox.Text = "字典导出失败：" + ex.Message; }
+            catch (Exception ex) { ShowError("字典导出失败：" + ex.Message); }
         };
         await dlg.ShowThemedAsync();
     }

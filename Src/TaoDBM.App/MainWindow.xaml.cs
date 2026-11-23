@@ -867,6 +867,7 @@ public partial class MainWindow : Window
             tab.Content = wt;
             WorkTabs.TabItems.Add(tab);
             _workTabs[tab] = wt;
+            WireDirtyHeader(tab, wt);
             SaveSession();
             WorkTabs.SelectedItem = tab;
             Core.AppLog.Write("[新建查询] tab selected");
@@ -898,6 +899,7 @@ public partial class MainWindow : Window
                 redisTab.Content = redisWt;
                 WorkTabs.TabItems.Add(redisTab);
                 _workTabs[redisTab] = redisWt;
+                WireDirtyHeader(redisTab, redisWt);
                 SaveSession();
                 WorkTabs.SelectedItem = redisTab;
                 return;
@@ -917,14 +919,56 @@ public partial class MainWindow : Window
         tab.Content = wt;
         WorkTabs.TabItems.Add(tab);
         _workTabs[tab] = wt;
+        WireDirtyHeader(tab, wt);
         SaveSession();
         WorkTabs.SelectedItem = tab;
     }
 
     private void OnTabClose(TabView sender, TabViewTabCloseRequestedEventArgs args)
     {
+        // P1-02：脏页签先三选确认（保存并关闭 / 不保存 / 取消），干净页签直接关
+        if (_workTabs.TryGetValue(args.Tab, out var dirtyWt) && dirtyWt.IsDirty)
+        {
+            _ = ConfirmCloseDirtyAsync(sender, args.Tab, dirtyWt);
+            return;
+        }
         sender.TabItems.Remove(args.Tab);
         if (_workTabs.Remove(args.Tab)) SaveSession();
+    }
+
+    /// <summary>P1-02：关脏页签三选确认。保存被取消（另存未选文件）则留在页签。</summary>
+    private async Task ConfirmCloseDirtyAsync(TabView sender, TabViewItem tab, UI.WorkTab wt)
+    {
+        var dlg = new ContentDialog
+        {
+            Title = "未保存的更改",
+            Content = new TextBlock { Text = "这个页签还有没保存的修改，直接关闭就没了。", TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = "保存并关闭",
+            SecondaryButtonText = "不保存",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = Content.XamlRoot,
+        };
+        var r = await dlg.ShowThemedAsync();
+        if (r == ContentDialogResult.Primary)
+        {
+            await wt.SaveSourceFileAsync();
+            if (wt.IsDirty) return;   // 另存对话框被取消 → 留在页签
+        }
+        else if (r == ContentDialogResult.Close) return;   // 取消 → 留在页签
+        sender.TabItems.Remove(tab);
+        if (_workTabs.Remove(tab)) SaveSession();
+    }
+
+    /// <summary>P1-02：脏标记 → 页签标题 ● 前缀（保存后消失）。</summary>
+    private void WireDirtyHeader(TabViewItem tab, UI.WorkTab wt)
+    {
+        var baseHeader = tab.Header?.ToString() ?? "";
+        wt.DirtyChanged += () =>
+        {
+            try { tab.Header = (wt.IsDirty ? "● " : "") + baseHeader; }
+            catch { /* 标题更新失败不影响业务 */ }
+        };
     }
 
     // ---------- 标签会话保持 ----------
@@ -941,6 +985,7 @@ public partial class MainWindow : Window
                 Db = t.SessionDb,
                 Child = t.SessionChild,
                 Sql = t.SessionSql,
+                SourceFile = t.SessionSourceFile,
             }).ToList();
             TabSession.Save(TabSession.FilterValid(items, _profiles));
         }, "会话保存");
@@ -956,12 +1001,18 @@ public partial class MainWindow : Window
                 if (item.ConnectionId.Length == 0 || item.Mode != "Query") continue;
                 var p = _profiles.FirstOrDefault(x => x.Id == item.ConnectionId);
                 if (p is null) continue;
-                var tab = new TabViewItem { Header = $"查询 · {p.DisplayName}" };
+                // P1-03：标题带库名与文件归属，完整路径进 ToolTip；恢复后一律视为干净
+                var header = $"查询 · {p.DisplayName}" + (item.Db.Length > 0 ? $" · {item.Db}" : "")
+                    + (item.SourceFile.Length > 0 ? $" · {System.IO.Path.GetFileName(item.SourceFile)}" : "");
+                var tab = new TabViewItem { Header = header };
+                if (item.SourceFile.Length > 0) { tab.ToolTip = item.SourceFile; }
                 var wt = new UI.WorkTab(this, ProviderFactory.Create(p), item.Db, "", UI.WorkMode.Query,
-                    item.Sql.Length > 0 ? item.Sql : null);
+                    item.Sql.Length > 0 ? item.Sql : null, item.SourceFile.Length > 0 ? item.SourceFile : null);
+                Core.AppLog.Write($"[会话恢复] db={item.Db} file={item.SourceFile}");
                 tab.Content = wt;
                 WorkTabs.TabItems.Add(tab);
                 _workTabs[tab] = wt;
+                WireDirtyHeader(tab, wt);
             }
         }, "会话恢复");
     }
@@ -1050,15 +1101,12 @@ public partial class MainWindow : Window
         OpenQueryTab(info, RoutineManager.DebugScript(info.Profile.Engine, kind, info.Name));
     }
 
-    private async Task InfoAsync(string msg)
+    /// <summary>引导/提示类消息（P1-01 降模态）：走状态栏一句话，不再弹 ContentDialog 打断操作；确认类仍走 ConfirmAsync 模态。</summary>
+    private Task InfoAsync(string msg)
     {
-        var dlg = new ContentDialog
-        {
-            Content = new TextBlock { Text = msg, TextWrapping = TextWrapping.Wrap },
-            CloseButtonText = "好的",
-            XamlRoot = Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        SetStatus(msg);
+        Core.AppLog.Write($"[引导提示] {msg}");
+        return Task.CompletedTask;
     }
 
     public async Task<bool> ConfirmAsync(string msg)

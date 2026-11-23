@@ -113,6 +113,21 @@ function Find-El([System.Windows.Automation.AutomationElement]$scope, $find) {
   if ($cons.Count -eq 1) { $and = $cons[0] } else { $and = New-Object System.Windows.Automation.AndCondition($cons.ToArray()) }
   $el = $scope.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $and)
   if ($null -ne $el) { return $el }
+  # P1 走查：候选名列表（如页签关闭按钮中英文名不定），逐个精确试
+  if ($find.nameAny) {
+    foreach ($nm in $find.nameAny) {
+      $c2 = New-Object System.Collections.Generic.List[System.Windows.Automation.Condition]
+      if ($find.controlType) {
+        $ct2 = $null
+        try { $ct2 = [System.Windows.Automation.ControlType]::$($find.controlType) } catch { }
+        if ($ct2) { $c2.Add((New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, $ct2))) }
+      }
+      $c2.Add((New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $nm)))
+      $and2 = New-Object System.Windows.Automation.AndCondition($c2.ToArray())
+      $el2 = $scope.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $and2)
+      if ($null -ne $el2) { return $el2 }
+    }
+  }
   # 精确名未命中 -> 按包含关系兜底（枚举过滤）
   if ($find.name) {
     try {
