@@ -31,12 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT o1.id, o1.amount, o2.amount
+SELECT o1.id AS order_id, o1.status, o2.amount - o1.amount AS difference
 FROM orders o1
 JOIN orders o2 ON o2.id = o1.id + 1
-WHERE o1.status = 'paid' AND o2.status = 'paid';
+JOIN order_items o1i ON o1.id = o1i.order_id
+JOIN order_items o2i ON o2.id = o2i.order_id
+WHERE o1.status = 'paid' AND o2.status = 'processed';
 
-[ Prompt: 21.7 t/s | Generation: 7.5 t/s ]
+[ Prompt: 32.5 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

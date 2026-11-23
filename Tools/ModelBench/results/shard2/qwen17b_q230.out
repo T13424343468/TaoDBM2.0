@@ -33,9 +33,13 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name
 FROM users
-WHERE name LIKE '%%' -- 这里需要替换为实际的 rtrim 处理逻辑，但根据问题描述，可能只是需要处理姓名，所以直接使用原字段
+WHERE name LIKE '%%' -- 这里需要替换为实际的 rtrim 处理逻辑，但根据问题描述，可能只是需要处理姓名，所以直接使用 rtrim 函数
 
-[ Prompt: 20.5 t/s | Generation: 7.2 t/s ]
+-- 正确的 SQL 查询（使用 rtrim 处理姓名）
+SELECT rtrim(name, ' ') AS processed_name
+FROM users;
+
+[ Prompt: 35.1 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

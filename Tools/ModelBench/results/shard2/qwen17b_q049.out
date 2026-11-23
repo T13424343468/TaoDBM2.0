@@ -34,10 +34,10 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
-JOIN payments p ON o.id = p.order_id
-WHERE o.city = 'Moon';
+JOIN products p ON oi.product_id = p.id
+WHERE p.city = '月球';
 
-[ Prompt: 20.7 t/s | Generation: 7.3 t/s ]
+[ Prompt: 34.8 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

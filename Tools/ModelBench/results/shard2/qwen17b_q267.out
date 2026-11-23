@@ -35,7 +35,7 @@ SELECT name, INSTR(name, 'a') AS pos
 FROM users
 WHERE INSTR(name, 'a') > 0;
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.5 t/s | Generation: 9.7 t/s ]
 
 
 Exiting...

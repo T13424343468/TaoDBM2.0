@@ -35,7 +35,7 @@ SELECT SUM(quantity) AS total_items_sold
 FROM order_items
 WHERE created_at BETWEEN DATE_SUB(NOW(), INTERVAL 1 DAY) AND NOW();
 
-[ Prompt: 20.9 t/s | Generation: 7.3 t/s ]
+[ Prompt: 35.5 t/s | Generation: 8.2 t/s ]
 
 
 Exiting...

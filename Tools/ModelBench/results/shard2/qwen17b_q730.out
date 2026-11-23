@@ -35,9 +35,10 @@ SELECT order_items.id, order_items.order_id, order_items.product_id, order_items
 FROM order_items
 LEFT JOIN orders ON order_items.order_id = orders.id
 LEFT JOIN payments ON orders.id = payments.order_id
-WHERE orders.id IS NULL OR payments.order_id IS NULL;
+LEFT JOIN users ON orders.user_id = users.id
+WHERE 1=1;
 
-[ Prompt: 20.4 t/s | Generation: 7.6 t/s ]
+[ Prompt: 35.8 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

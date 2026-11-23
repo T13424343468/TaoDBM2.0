@@ -35,7 +35,7 @@ SELECT user_id, created_at, ROW_NUMBER() OVER (ORDER BY created_at) AS rank
 FROM orders
 WHERE user_id IN (SELECT id FROM users)
 
-[ Prompt: 21.4 t/s | Generation: 7.9 t/s ]
+[ Prompt: 36.0 t/s | Generation: 9.9 t/s ]
 
 
 Exiting...

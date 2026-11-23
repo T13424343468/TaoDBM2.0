@@ -31,15 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT SUM(p.amount) AS total_amount, SUM(p.amount) * 100.0 / SUM(o.total_amount) AS percentage
-FROM (
-    SELECT SUM(p.amount) AS total_amount
-    FROM payments p
-    JOIN orders o ON p.order_id = o.id
-) o
-JOIN payments p ON o.id = p.order_id;
+SELECT SUM(p.amount) AS total_amount
+FROM payments p
+JOIN orders o ON p.order_id = o.id
+WHERE o.status = 'paid';
 
-[ Prompt: 20.1 t/s | Generation: 7.4 t/s ]
+[ Prompt: 37.1 t/s | Generation: 10.2 t/s ]
 
 
 Exiting...

@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT ABS(sum(quantity - (SELECT stock FROM products WHERE id = order_items.product_id)) ) FROM order_items JOIN products ON order_items.product_id = products.id;
+SELECT ABS(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN (order_items.quantity * order_items.unit_price) ELSE 0 END) - (SELECT SUM(stock) FROM products)) AS abs_stock_change FROM products;
 
-[ Prompt: 20.9 t/s | Generation: 7.9 t/s ]
+[ Prompt: 34.2 t/s | Generation: 9.9 t/s ]
 
 
 Exiting...

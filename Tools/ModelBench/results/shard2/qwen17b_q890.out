@@ -31,9 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT * FROM users WHERE created_at = CURRENT_TIME;
+SELECT * FROM orders
+WHERE created_at = CURRENT_TIME
+AND status = 'completed';
 
-[ Prompt: 26.2 t/s | Generation: 9.6 t/s ]
+[ Prompt: 44.5 t/s | Generation: 12.4 t/s ]
 
 
 Exiting...

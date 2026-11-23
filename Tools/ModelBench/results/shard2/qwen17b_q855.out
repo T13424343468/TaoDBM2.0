@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM sys.sql_modules WHERE object_id IN (SELECT object_id FROM sys.objects WHERE type = 'P')
 
-[ Prompt: 16.4 t/s | Generation: 6.4 t/s ]
+[ Prompt: 36.7 t/s | Generation: 9.7 t/s ]
 
 
 Exiting...

@@ -33,16 +33,15 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 CREATE EVENT archive_orders
 ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_TIME + INTERVAL 9 HOUR
+STARTS CURRENT_TIME + INTERVAL '30' DAY
 DO
 BEGIN
   INSERT INTO archive_orders
-  SELECT *
-  FROM orders
-  WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 DAY;
+  SELECT * FROM orders
+  WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '30' DAY;
 END;
 
-[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
+[ Prompt: 44.1 t/s | Generation: 16.3 t/s ]
 
 
 Exiting...

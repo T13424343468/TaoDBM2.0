@@ -33,9 +33,9 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT YEAR(created_at) AS year, MONTH(created_at) AS month, COUNT(*) AS count
 FROM users
-GROUP BY YEAR(created_at), MONTH(created_at)
+GROUP BY year, month;
 
-[ Prompt: 20.9 t/s | Generation: 8.0 t/s ]
+[ Prompt: 35.5 t/s | Generation: 10.5 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT RIGHT('00000' + CAST(id AS VARCHAR(5)), 5) AS padded_id FROM users;
 
-[ Prompt: 20.7 t/s | Generation: 7.6 t/s ]
+[ Prompt: 33.8 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

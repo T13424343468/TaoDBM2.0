@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name FROM users WHERE CHARINDEX(' ', name) > 3;
 
-[ Prompt: 21.4 t/s | Generation: 7.6 t/s ]
+[ Prompt: 38.4 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...
