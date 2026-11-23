@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT CURRENT_DATE - INTERVAL '1 week'
 
-[ Prompt: 28.9 t/s | Generation: 4.8 t/s ]
+[ Prompt: 25.9 t/s | Generation: 5.5 t/s ]
 
 
 Exiting...

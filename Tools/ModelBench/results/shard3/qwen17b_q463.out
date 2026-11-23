@@ -35,7 +35,7 @@ SELECT HOUR(created_at) AS hour, COUNT(*) AS count
 FROM orders
 GROUP BY HOUR(created_at)
 
-[ Prompt: 27.6 t/s | Generation: 4.8 t/s ]
+[ Prompt: 25.1 t/s | Generation: 5.5 t/s ]
 
 
 Exiting...

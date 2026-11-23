@@ -35,7 +35,7 @@ SELECT product_id, name, category, price,
        ROW_NUMBER() OVER (PARTITION BY category ORDER BY price) AS rank
 FROM products;
 
-[ Prompt: 27.6 t/s | Generation: 4.6 t/s ]
+[ Prompt: 26.1 t/s | Generation: 5.3 t/s ]
 
 
 Exiting...

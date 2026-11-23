@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT strftime('%w', created_at) AS week_day FROM orders;
 
-[ Prompt: 27.9 t/s | Generation: 4.9 t/s ]
+[ Prompt: 25.1 t/s | Generation: 5.4 t/s ]
 
 
 Exiting...

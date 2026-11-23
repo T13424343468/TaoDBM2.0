@@ -35,7 +35,7 @@ SELECT o.id
 FROM orders o
 WHERE o.created_at > CURRENT_DATE;
 
-[ Prompt: 28.9 t/s | Generation: 4.8 t/s ]
+[ Prompt: 27.4 t/s | Generation: 5.2 t/s ]
 
 
 Exiting...

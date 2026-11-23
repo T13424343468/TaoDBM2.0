@@ -35,7 +35,7 @@ SELECT SUM(unit_price * quantity) AS total_revenue
 FROM order_items
 WHERE order_id IN (SELECT order_id FROM payments WHERE method = 'credit_card');
 
-[ Prompt: 28.4 t/s | Generation: 4.7 t/s ]
+[ Prompt: 24.3 t/s | Generation: 5.2 t/s ]
 
 
 Exiting...

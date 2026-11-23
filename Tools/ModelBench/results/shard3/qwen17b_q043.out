@@ -37,7 +37,7 @@ JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
 WHERE oi.quantity > 0;
 
-[ Prompt: 30.8 t/s | Generation: 4.5 t/s ]
+[ Prompt: 28.6 t/s | Generation: 5.0 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT GETDATE() + 7 days FROM sys.time;
 
-[ Prompt: 30.3 t/s | Generation: 4.5 t/s ]
+[ Prompt: 27.4 t/s | Generation: 5.3 t/s ]
 
 
 Exiting...

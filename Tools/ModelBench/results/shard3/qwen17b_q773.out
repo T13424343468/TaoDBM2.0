@@ -37,7 +37,7 @@ JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON o.id = p.order_id
 WHERE o.created_at > '2023-01-01';
 
-[ Prompt: 28.5 t/s | Generation: 4.7 t/s ]
+[ Prompt: 24.7 t/s | Generation: 4.8 t/s ]
 
 
 Exiting...

@@ -42,7 +42,7 @@ SELECT
 FROM 
     products;
 
-[ Prompt: 28.1 t/s | Generation: 3.6 t/s ]
+[ Prompt: 27.4 t/s | Generation: 5.0 t/s ]
 
 
 Exiting...

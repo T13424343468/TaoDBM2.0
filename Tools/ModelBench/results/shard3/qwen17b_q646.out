@@ -39,7 +39,7 @@ GROUP BY users.id
 ORDER BY total_amount DESC
 LIMIT 4;
 
-[ Prompt: 28.2 t/s | Generation: 4.6 t/s ]
+[ Prompt: 24.8 t/s | Generation: 5.3 t/s ]
 
 
 Exiting...

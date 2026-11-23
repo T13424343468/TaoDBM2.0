@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT SUBSTRING(name, 1, 3) AS truncated_name FROM users;
 
-[ Prompt: 29.8 t/s | Generation: 4.5 t/s ]
+[ Prompt: 27.5 t/s | Generation: 5.0 t/s ]
 
 
 Exiting...
