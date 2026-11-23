@@ -105,7 +105,8 @@ public static class UserPermissionDialog
             revokeChecks.Clear();
             if (current is null) { riskBox.Text = ""; revokeBtn.IsEnabled = false; return; }
             // 表头：全选/全不选列头 + 对象 + 权限 + 可转授
-            var headerCheck = new CheckBox { AutomationId = "PermGrid_All", MinWidth = 28 };
+            var headerCheck = new CheckBox { MinWidth = 28 };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(headerCheck, "PermGrid_All");
             var header = new Grid
             {
                 ColumnSpacing = 8,
@@ -134,7 +135,8 @@ public static class UserPermissionDialog
             foreach (var r in current.Records)
             {
                 int idx = matrixHost.Children.Count - 1; // 表头外序号
-                var cb = new CheckBox { AutomationId = $"PermRevoke_{idx}", MinWidth = 28, VerticalAlignment = VerticalAlignment.Center };
+                var cb = new CheckBox { MinWidth = 28, VerticalAlignment = VerticalAlignment.Center };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(cb, $"PermRevoke_{idx}");
                 var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(4, 2, 4, 2), Background = Ant.AltRow };
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

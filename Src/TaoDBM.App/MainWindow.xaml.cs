@@ -508,7 +508,7 @@ public partial class MainWindow : Window
             if (danger) mi.Foreground = Ant.Error;   // 跟主题走的警示红，不写死颜色
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(mi, group is null ? $"Menu_{text}" : $"Menu_{group}_{text}");
             mi.Click += h;
-            (group is null ? fly : Sub(group)).Items.Add(mi);
+            if (group is null) fly.Items.Add(mi); else Sub(group).Items.Add(mi);
         }
         switch (info.Kind)
         {
@@ -1090,7 +1090,7 @@ public partial class MainWindow : Window
                 var header = $"查询 · {p.DisplayName}" + (item.Db.Length > 0 ? $" · {item.Db}" : "")
                     + (item.SourceFile.Length > 0 ? $" · {System.IO.Path.GetFileName(item.SourceFile)}" : "");
                 var tab = new TabViewItem { Header = header };
-                if (item.SourceFile.Length > 0) { tab.ToolTip = item.SourceFile; }
+                if (item.SourceFile.Length > 0) { Microsoft.UI.Xaml.Controls.ToolTipService.SetToolTip(tab, item.SourceFile); }
                 var wt = new UI.WorkTab(this, ProviderFactory.Create(p), item.Db, "", UI.WorkMode.Query,
                     item.Sql.Length > 0 ? item.Sql : null, item.SourceFile.Length > 0 ? item.SourceFile : null);
                 Core.AppLog.Write($"[会话恢复] db={item.Db} file={item.SourceFile}");

@@ -30,6 +30,14 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -
   fi
 done
 
+# 1.7) C# 禁用裸 AutomationId（#268 教训：WinUI 控件代码侧同样无 AutomationId 属性，对象初始化器里写
+#      AutomationId = "..." 只能云测首验才爆——代码侧一律 AutomationProperties.SetAutomationId，机器替人注意）
+for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^Src/TaoDBM\.App/.*\.cs$' || true); do
+  if grep -nE '(^|[^.\w])AutomationId[[:space:]]*=[[:space:]]*["]' "$f" | grep -qv 'AutomationProperties\.AutomationId'; then
+    echo "[GATE] C# 误用裸 AutomationId（应为 AutomationProperties.SetAutomationId）: $f"; fail=1
+  fi
+done
+
 export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
 export PATH="$DOTNET_ROOT:$PATH"
 

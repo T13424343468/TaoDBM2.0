@@ -89,7 +89,8 @@ public static class ErdDialog
         // 格14：工具栏二级分组（文件：保存/打开/PNG；画布：生成/逆向/布局；DDL：预览/进查询窗口）
         MenuFlyoutItem SubItem(string text, string id, Action onClick)
         {
-            var it = new MenuFlyoutItem { Text = text, AutomationId = id };
+            var it = new MenuFlyoutItem { Text = text };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(it, id);
             it.Click += (_, _) => onClick();
             return it;
         }
@@ -125,7 +126,8 @@ public static class ErdDialog
         var menuBtn = new Button { Content = "操作 ▾", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         menuBtn.Flyout = barFlyout;
         // 格14：Ctrl+滚轮缩放 0.5–2.0 ＋ 适应窗口
-        var fitBtn = new Button { Content = "适应窗口", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), AutomationId = "ErdZoom" };
+        var fitBtn = new Button { Content = "适应窗口", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(fitBtn, "ErdZoom");
         fitBtn.Click += (_, _) => FitToWindow();
         _connBox = connBox;
 

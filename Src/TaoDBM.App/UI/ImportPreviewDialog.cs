@@ -14,7 +14,8 @@ public static class ImportPreviewDialog
     public static async Task<ImportPlan?> ShowAsync(MainWindow owner, List<ColumnSpec> tableCols, IReadOnlyList<string> csvHeaders, IReadOnlyList<string?[]> previewRows)
     {
         // 列映射：行=CSV 列，列=表列 ComboBox（默认同名匹配，忽略大小写；未匹配=不导入）
-        var mapGrid = new Grid { ColumnSpacing = 10, RowSpacing = 4, AutomationId = "MapGrid" };
+        var mapGrid = new Grid { ColumnSpacing = 10, RowSpacing = 4 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(mapGrid, "MapGrid");
         mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         mapGrid.Children.Add(new TextBlock { Text = "CSV 列", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontMinor });
@@ -25,7 +26,8 @@ public static class ImportPreviewDialog
             int row = mapGrid.RowDefinitions.Count;
             mapGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             mapGrid.Children.Add(new TextBlock { Text = csvHeaders[i], FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, Grid.Row = row, TextTrimming = TextTrimming.CharacterEllipsis });
-            var cb = new ComboBox { MinWidth = 170, AutomationId = $"Map_{i}", PlaceholderText = "（不导入）", HorizontalAlignment = HorizontalAlignment.Stretch, Grid.Row = row, Grid.Column = 1 };
+            var cb = new ComboBox { MinWidth = 170, PlaceholderText = "（不导入）", HorizontalAlignment = HorizontalAlignment.Stretch, Grid.Row = row, Grid.Column = 1 };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(cb, $"Map_{i}");
             cb.Items.Add("（不导入）");
             int def = 0;
             for (int c = 0; c < tableCols.Count; c++)
@@ -73,8 +75,8 @@ public static class ImportPreviewDialog
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = owner.Content.XamlRoot,
-            AutomationId = "ImportPreviewDlg",
-        };
+                    };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(dlg, "ImportPreviewDlg");
         var result = await dlg.ShowThemedAsync();
         if (result != ContentDialogResult.Primary) return null;
 

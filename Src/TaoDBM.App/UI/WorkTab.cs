@@ -204,7 +204,7 @@ public partial class WorkTab : Grid
             CornerRadius = new CornerRadius(6),
         };
         // P1-01 错误横幅：浅红底＋Ant.Error 左边条，消息全文可选中，附「复制详情」
-        _errorBanner.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xB4, 0x55, 0x2E));
+        _errorBanner.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x1A, 0xB4, 0x55, 0x2E));
         _errorBanner.BorderBrush = Ant.Error;
         _errorBanner.BorderThickness = new Thickness(3, 1, 1, 1);
         _errorBanner.Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
@@ -217,7 +217,7 @@ public partial class WorkTab : Grid
             {
                 var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
                 dp.SetText(_errorText.Text);
-                Windows.ApplicationModel.Clipboard.SetContent(dp);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
                 _messageBox.Text = "错误详情已复制。";
             }
             catch { /* 剪贴板失败不影响业务 */ }
@@ -940,7 +940,8 @@ public partial class WorkTab : Grid
             _importCts = new CancellationTokenSource();
             var progressBar = new ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = true };
             var progressText = new TextBlock { Text = "导入中…", FontSize = AntTokens.FontMinor };
-            var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), AutomationId = "ImportCancel" };
+            var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(cancelBtn, "ImportCancel");
             var box = new StackPanel { Spacing = 8, MinWidth = 300 };
             box.Children.Add(progressText);
             box.Children.Add(progressBar);
@@ -1405,20 +1406,21 @@ public partial class WorkTab : Grid
     private void OpenCompletePopup()
     {
         CloseCompletePopup();
-        var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, Height = 280, MaxWidth = 380, AutomationId = "CompleteList" };
+        var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, Height = 280, MaxWidth = 380 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(lv, "CompleteList");
         FillCompleteItems(lv);
         lv.SelectedIndex = 0;
         lv.DoubleTapped += (_, _) => InsertComplete();
         _completeList = lv;
         var border = new Border
         {
-            AutomationId = "CompletePopup",
             Child = lv,
             Background = Ant.Card,
             BorderBrush = Ant.Border,
             BorderThickness = new Thickness(1),
             CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(border, "CompletePopup");
         var popup = new Popup { Child = border, IsLightDismissEnabled = true };
         // 光标矩形定位：编辑器在窗口内的原点＋光标矩形偏移；取不到时退编辑器左上
         try
