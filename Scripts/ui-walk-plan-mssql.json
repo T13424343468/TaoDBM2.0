@@ -1,5 +1,5 @@
 {
- "version": "v3.13-real-db-mssql",
+ "version": "v3.13-real-db-editor1",
  "steps": [
   {
    "id": "S01",
@@ -210,6 +210,187 @@
    "page": "about",
    "allowMiss": true,
    "shot": "shot-15-about.png"
+  },
+  {
+   "id": "S55",
+   "feature": "批次一-编辑器填多语句",
+   "action": "editor-set",
+   "sql": "SELECT 1; SELECT 2;",
+   "critical": true
+  },
+  {
+   "id": "S56",
+   "feature": "批次一-右键打开编辑器菜单",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S56b",
+   "feature": "批次一-美化SQL菜单项",
+   "action": "menu-item",
+   "itemName": "美化 SQL",
+   "critical": true
+  },
+  {
+   "id": "S56c",
+   "feature": "批次一-美化实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] beautify"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S57",
+   "feature": "批次一-F6执行当前语句",
+   "action": "press-keys",
+   "keys": "{F6}",
+   "critical": true
+  },
+  {
+   "id": "S57b",
+   "feature": "批次一-执行账落账",
+   "action": "applog-contains",
+   "value": [
+    "[执行账]"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S58",
+   "feature": "批次一-右键注释切换",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S58b",
+   "feature": "批次一-注释切换菜单项",
+   "action": "menu-item",
+   "itemName": "注释切换（--）",
+   "critical": true
+  },
+  {
+   "id": "S58c",
+   "feature": "批次一-注释切换实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] comment-toggle"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S59",
+   "feature": "批次一-右键执行计划",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S59b",
+   "feature": "批次一-执行计划菜单项",
+   "action": "menu-item",
+   "itemName": "执行计划",
+   "critical": true
+  },
+  {
+   "id": "S59c",
+   "feature": "批次一-执行计划实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] explain engine="
+   ],
+   "critical": true
+  },
+  {
+   "id": "S60",
+   "feature": "批次一-右键代码段",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S60b",
+   "feature": "批次一-代码段菜单项",
+   "action": "menu-item",
+   "itemName": "代码段…",
+   "critical": true
+  },
+  {
+   "id": "S60c",
+   "feature": "批次一-代码段弹层断言",
+   "action": "window-contains",
+   "value": "代码段",
+   "critical": true
+  },
+  {
+   "id": "S60d",
+   "feature": "批次一-代码段收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S61",
+   "feature": "批次一-右键剪贴板堆栈",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S61b",
+   "feature": "批次一-堆栈菜单项",
+   "action": "menu-item",
+   "itemName": "粘贴自剪贴板堆栈…",
+   "critical": true
+  },
+  {
+   "id": "S61c",
+   "feature": "批次一-堆栈弹层断言",
+   "action": "window-contains",
+   "value": "剪贴板堆栈",
+   "critical": true
+  },
+  {
+   "id": "S61d",
+   "feature": "批次一-堆栈收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S62",
+   "feature": "批次一-Ctrl+F查找替换",
+   "action": "press-keys",
+   "keys": "^f",
+   "critical": true
+  },
+  {
+   "id": "S62b",
+   "feature": "批次一-查找替换弹层断言",
+   "action": "window-contains",
+   "value": "查找替换",
+   "critical": true
+  },
+  {
+   "id": "S62c",
+   "feature": "批次一-查找替换收场",
+   "action": "press-esc",
+   "critical": true
   }
  ]
 }

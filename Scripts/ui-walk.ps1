@@ -829,6 +829,30 @@ foreach ($s in $plan.steps) {
         Invoke-El $mi
         Start-Sleep -Seconds 3
       }
+      'editor-set' {
+        # 批次一：只填编辑器不执行（编辑器交互用例的铺底动作）
+        $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
+        if ($null -eq $ed) { throw "work-editor not found" }
+        try { $ed.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 400
+        [System.Windows.Forms.SendKeys]::SendWait("^a")
+        Start-Sleep -Milliseconds 150
+        [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+        Start-Sleep -Milliseconds 150
+        [System.Windows.Forms.SendKeys]::SendWait((Escape-SendKeys (Tpl $s.sql)))
+        Start-Sleep -Milliseconds 500
+        Push-Evidence "$id editor-set"
+      }
+      'press-keys' {
+        # 批次一：编辑器快捷键实效断言（SendKeys 语法，如 {F6}、^f）
+        $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
+        if ($null -eq $ed) { throw "work-editor not found" }
+        try { $ed.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 400
+        [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
+        Start-Sleep -Seconds 2
+        Push-Evidence "$id keys-sent $(Tpl $s.keys)"
+      }
       'stop-query' {
         # #01 停止按钮实效断言：长流式查询执行中点停止 → [执行账] cancelled=1
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot

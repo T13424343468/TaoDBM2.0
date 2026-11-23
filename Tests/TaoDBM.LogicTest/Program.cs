@@ -338,6 +338,95 @@ Console.WriteLine("== SqlHighlighter ==");
     Check("PG 引号标识符", SqlHighlighter.Text(sql, toks.First(t => t.Kind == TokenKind.QuotedIdent)) == "\"quoted ident\"");
 }
 
+Console.WriteLine("== 批次一 编辑器内核（美化/注释/定位/查找替换/代码段/堆栈/折叠/括号）==");
+{
+    var pretty = SqlBeautifier.Beautify("SELECT a, b FROM t WHERE x = 1 AND y = 2");
+    Check("美化-子句分行", pretty.Contains("\nFROM") && pretty.Contains("\nWHERE"), pretty.Replace("\n", "\\n"));
+    Check("美化-AND 换行", pretty.Contains("\nAND"), pretty.Replace("\n", "\\n"));
+    Check("美化-字符串内不拆", !SqlBeautifier.Beautify("SELECT 'a AND b' FROM t").Contains("'a\nAND"), SqlBeautifier.Beautify("SELECT 'a AND b' FROM t"));
+    Check("美化-空输入原样", SqlBeautifier.Beautify("") == "" && SqlBeautifier.Beautify("   ") == "   ");
+    Check("美化-括号缩进", SqlBeautifier.Beautify("SELECT * FROM (SELECT 1) x").Contains("\n"), SqlBeautifier.Beautify("SELECT * FROM (SELECT 1) x"));
+}
+{
+    var (c1, s1, l1) = SqlCommentToggler.Toggle("SELECT 1\nSELECT 2", 0, 8);
+    Check("注释-加注释", c1.StartsWith("-- SELECT 1"), c1);
+    var (c2, _, _) = SqlCommentToggler.Toggle(c1, s1, s1 + l1);
+    Check("注释-去注释还原", c2 == "SELECT 1\nSELECT 2", c2);
+    var (c3, _, _) = SqlCommentToggler.Toggle("SELECT 1\nSELECT 2", 12, 12);
+    Check("注释-无选区只动光标行", c3 == "SELECT 1\n-- SELECT 2", c3);
+    var (c4, _, _) = SqlCommentToggler.Toggle("-- a\nSELECT 2", 0, 13);
+    Check("注释-混合行整批加", c4 == "-- -- a\n-- SELECT 2", c4);
+    var (c5, _, _) = SqlCommentToggler.Toggle("-- a\n-- SELECT 2", 0, 15);
+    Check("注释-去注释还原原样", c5 == "a\nSELECT 2", c5);
+}
+{
+    Check("定位-选区优先", SqlStatementLocator.Locate("SELECT 1; SELECT 2", 5, 0, 8) == (0, 8));
+    Check("定位-光标第二句", SqlStatementLocator.Locate("SELECT 1; SELECT 2", 12, 0, 0) == (10, 8));
+    Check("定位-光标第一句", SqlStatementLocator.Locate("SELECT 1; SELECT 2", 3, 0, 0) == (0, 8));
+    Check("定位-去尾空白", SqlStatementLocator.Locate("SELECT 1 ;  ", 0, 0, 0) == (0, 8));
+    Check("定位-字符串分号不切", SqlStatementLocator.Locate("SELECT 'a;b'; SELECT 2", 3, 0, 0) == (0, 12));
+}
+{
+    var hits = SqlFindReplace.FindAll("select a from a", "a", new SqlFindOptions());
+    Check("查找-忽略大小写", hits.Count == 2 && hits[0].Start == 7, string.Join(",", hits));
+    Check("查找-区分大小写", SqlFindReplace.FindAll("Select a", "a", new SqlFindOptions { MatchCase = true }).Count == 1);
+    Check("查找-全字匹配", SqlFindReplace.FindAll("brand AND and", "AND", new SqlFindOptions { WholeWord = true }).Count == 2);
+    Check("查找-正则", SqlFindReplace.FindAll("aa b a", "a+", new SqlFindOptions { Regex = true }).Count == 2);
+    var (rText, rCount) = SqlFindReplace.ReplaceAll("aXa", "a", "b", new SqlFindOptions());
+    Check("替换-字面全部", rText == "bXb" && rCount == 2, $"{rText},{rCount}");
+    var (gText, _) = SqlFindReplace.ReplaceAll("col=5", @"col=(\d+)", "col: $1", new SqlFindOptions { Regex = true });
+    Check("替换-正则分组引用", gText == "col: 5", gText);
+    Check("替换-无匹配零次", SqlFindReplace.ReplaceAll("abc", "zz", "q", new SqlFindOptions()) == ("abc", 0));
+    bool threw = false;
+    try { SqlFindReplace.FindAll("abc", "([", new SqlFindOptions { Regex = true }); }
+    catch (ArgumentException) { threw = true; }
+    Check("查找-非法正则报错", threw);
+    Check("预览-返回上下文行", SqlFindReplace.Preview("SELECT 1\nSELECT 2", "SELECT", new SqlFindOptions()).First() == "SELECT 1");
+}
+{
+    Check("代码段-清单非空", SqlSnippets.Items.Count >= 10, SqlSnippets.Items.Count.ToString());
+    Check("代码段-关键字过滤", SqlSnippets.Search("连接").Any(s => s.Name == "多表连接"));
+    Check("代码段-空关键字全量", SqlSnippets.Search("").Count == SqlSnippets.Items.Count);
+}
+{
+    ClipboardStack.Clear();
+    ClipboardStack.Push("A"); ClipboardStack.Push("B"); ClipboardStack.Push("A");
+    var snap = ClipboardStack.Snapshot();
+    Check("堆栈-去重置顶", snap.Count == 2 && snap[0] == "A", string.Join("|", snap));
+    for (int i = 0; i < 25; i++) ClipboardStack.Push("S" + i);
+    Check("堆栈-容量上限", ClipboardStack.Snapshot().Count == 20);
+    ClipboardStack.Push("  ");
+    Check("堆栈-空串不入栈", ClipboardStack.Snapshot().Count == 20);
+    ClipboardStack.Clear();
+    Check("堆栈-清空", ClipboardStack.Snapshot().Count == 0);
+}
+{
+    var folder = new SqlFolder();
+    var src = "SELECT 1\nSELECT 2\nSELECT 3";
+    var (fText, fStart, fLen) = folder.Fold(src, 0, src.Length);
+    Check("折叠-生成标记", fText.Contains("已折叠 3 行") && fText.Contains("[fold:"), fText);
+    Check("折叠-单行不折", folder.Fold("SELECT 1", 0, 8).Text == "SELECT 1");
+    var (uText, _, _) = folder.Unfold(fText, fStart);
+    Check("折叠-展开还原", uText == src, uText);
+    Check("折叠-计数归零", folder.PendingCount == 0);
+    var four = "L1\nL2\nL3\nL4";
+    var (f1, _, _) = folder.Fold(four, 3, 9);                       // 折 L2-L3
+    var (f2, s2, _) = folder.Fold(f1, 0, f1.Length);                // 再折 L1+标记两行（首折已吞尾换行，端点即文末）
+    Check("折叠-可叠加", f2.Contains("[fold:") && folder.PendingCount == 2, f2);
+    var (u3, _, _) = folder.Unfold(f2, 0);                          // 展开外层
+    int innerCaret = u3.IndexOf("[fold:", StringComparison.Ordinal); // 内层标记位置
+    var (u4, _, _) = folder.Unfold(u3, innerCaret);
+    Check("折叠-逐个展开还原", u4 == four, u4);
+}
+{
+    Check("括号-正向配对", SqlBracketMatcher.Match("SELECT (a + b)", 7) == (7, 13));
+    Check("括号-反向配对", SqlBracketMatcher.Match("SELECT (a + b)", 14) == (7, 13));
+    Check("括号-字符串内不配", SqlBracketMatcher.Match("SELECT ('(')", 7) == (7, 11));
+    Check("括号-未闭合为空", SqlBracketMatcher.Match("SELECT (a", 7) == null);
+    Check("括号-嵌套配对", SqlBracketMatcher.Match("((x))", 0) == (0, 4));
+    Check("括号-空文本安全", SqlBracketMatcher.Match("", 0) == null);
+}
+
 Console.WriteLine("== TableDdl ==");
 {
     var my = (Func<string, string>)(s => "`" + s + "`");

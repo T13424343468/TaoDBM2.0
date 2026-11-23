@@ -12,7 +12,7 @@ namespace TaoDBM.UI;
 public enum WorkMode { Query, TableData }
 
 /// <summary>右侧工作区的一个标签页：查询编辑器或表数据浏览。</summary>
-public class WorkTab : Grid
+public partial class WorkTab : Grid
 {
     private readonly MainWindow _owner;
     private readonly IDbProvider _provider;
@@ -89,6 +89,7 @@ public class WorkTab : Grid
             _editor.Loaded += (_, _) => SetEditorFont();
             Ant.ThemeApplied += OnThemeApplied;
             Unloaded += (_, _) => Ant.ThemeApplied -= OnThemeApplied;
+            AttachEditorOps();   // 批次一：编辑器右键菜单＋快捷键操作集
         }
 
         // 层色底定律：标签页根板显式挂主题底色，中间内容靠网格自带层色与描边，不依赖系统纯黑
@@ -260,7 +261,7 @@ public class WorkTab : Grid
         _prevBtn.IsEnabled = _offset > 0;
     }
 
-    private async Task RunOrRefresh()
+    private async Task RunOrRefresh(string? sqlOverride = null)
     {
         if (_busy) return;
         _busy = true;
@@ -311,7 +312,7 @@ public class WorkTab : Grid
             }
             else
             {
-                var sql = EditorText;
+                var sql = sqlOverride ?? EditorText;
                 if (string.IsNullOrWhiteSpace(sql)) { _messageBox.Text = "请输入要执行的语句。"; return; }
                 // 批次F：关系库走流式底座列懒加载通道（宽表首屏只物化可见列，横向滚动增量拉取）；流式关闭或非关系引擎回旧整包
                 List<QueryResult> list;
@@ -919,7 +920,7 @@ public class WorkTab : Grid
     // ---------- SQL 语法高亮（RichEditBox 着色） ----------
 
     /// <summary>编辑器文本（Document 读写，末尾可能有段落符，执行前会 Trim）。</summary>
-    private string EditorText
+    public string EditorText
     {
         get
         {
@@ -990,6 +991,19 @@ public class WorkTab : Grid
                 if (t.Kind is TokenKind.Keyword or TokenKind.TypeName) r.CharacterFormat.Bold = Microsoft.UI.Text.FormatEffect.On;
                 if (t.Kind == TokenKind.Comment) r.CharacterFormat.Italic = Microsoft.UI.Text.FormatEffect.On;
             }
+
+            // 批次一：括号配对高亮——光标落在括号旁时给两端加底色，先整体还原底色防残色
+            try
+            {
+                doc.GetRange(0, text.Length).CharacterFormat.BackgroundColor = Microsoft.UI.Colors.Transparent;
+                if (SqlBracketMatcher.Match(text, caret) is { } pair)
+                {
+                    doc.GetRange(pair.Open, pair.Open + 1).CharacterFormat.BackgroundColor = Ant.Color("FFF1B8");
+                    doc.GetRange(pair.Close, pair.Close + 1).CharacterFormat.BackgroundColor = Ant.Color("FFF1B8");
+                }
+            }
+            catch { /* 配对高亮失败不影响编辑 */ }
+
             doc.Selection?.SetRange(caret, caret);
         }
         catch { /* 高亮失败不影响编辑 */ }

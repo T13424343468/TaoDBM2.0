@@ -1,508 +1,689 @@
 {
-  "version": "v3.13-real-db-sqlite",
-  "steps": [
-    {
-      "id": "S01",
-      "feature": "新建连接-打开对话框",
-      "action": "click",
-      "find": {
-        "controlType": "Button",
-        "name": "＋ 新建连接"
-      },
-      "shot": "shot-05-newconn-dialog.png"
-    },
-    {
-      "id": "S02",
-      "feature": "连接-选择SQLite引擎",
-      "action": "setcombo",
-      "find": {
-        "automationId": "conn-engine"
-      },
-      "value": "SQLite"
-    },
-    {
-      "id": "S03",
-      "feature": "连接-填写名称",
-      "action": "setvalue",
-      "find": {
-        "automationId": "conn-name"
-      },
-      "value": "__CONN_NAME__"
-    },
-    {
-      "id": "S04",
-      "feature": "连接-填写数据库文件",
-      "action": "setvalue",
-      "find": {
-        "automationId": "conn-file"
-      },
-      "value": "__DBFILE__"
-    },
-    {
-      "id": "S05",
-      "feature": "连接-保存",
-      "action": "click",
-      "find": {
-        "controlType": "Button",
-        "name": "保存"
-      },
-      "critical": true,
-      "shot": "shot-06-conn-saved.png"
-    },
-    {
-      "id": "S06",
-      "feature": "对象树-连接节点出现",
-      "action": "tree-contains",
-      "value": "__CONN_NAME__",
-      "critical": true
-    },
-    {
-      "id": "S07",
-      "feature": "对象树-展开连接",
-      "action": "expand",
-      "prefix": "🗄️ __CONN_NAME__",
-      "sleepAfter": 6
-    },
-    {
-      "id": "S08",
-      "feature": "对象树-展开数据库",
-      "action": "expand-keyboard",
-      "selectPrefix": "🗄️ __CONN_NAME__",
-      "childPrefix": "📁 main",
-      "sleepAfter": 6
-    },
-    {
-      "id": "S09",
-      "feature": "对象树-真实表清单",
-      "action": "tree-contains-all",
-      "value": [
-        "__TBL1__",
-        "__TBL2__"
-      ],
-      "critical": true,
-      "shot": "shot-07-table-tree.png"
-    },
-    {
-      "id": "S10",
-      "feature": "查询-选中连接",
-      "action": "select",
-      "prefix": "🗄️ __CONN_NAME__",
-      "critical": true
-    },
-    {
-      "id": "S11",
-      "feature": "查询-新建查询入口",
-      "action": "menu",
-      "buttonAutomationId": "BtnLogo",
-      "itemName": "新建查询",
-      "critical": true
-    },
-    {
-      "id": "S12",
-      "feature": "SQL真实执行-计数",
-      "action": "query",
-      "sql": "SELECT COUNT(*) AS c FROM orders;",
-      "expectContains": [
-        "__ORDERS_COUNT__"
-      ],
-      "critical": true,
-      "shot": "shot-08-count-5000.png"
-    },
-    {
-      "id": "S13",
-      "feature": "SQL真实执行-聚合",
-      "action": "query",
-      "sql": "SELECT SUM(amount) AS s FROM orders;",
-      "expectContains": [
-        "__SUM_AMOUNT__"
-      ],
-      "critical": true,
-      "shot": "shot-09-sum.png"
-    },
-    {
-      "id": "S14",
-      "feature": "SQL真实执行-空值过滤",
-      "action": "query",
-      "sql": "SELECT COUNT(*) AS c FROM products WHERE email IS NULL;",
-      "expectContains": [
-        "__NULLEMAILS__"
-      ],
-      "critical": true,
-      "shot": "shot-10-null-emails.png"
-    },
-    {
-      "id": "S15",
-      "feature": "SQL真实执行-取值比对",
-      "action": "query",
-      "sql": "SELECT name FROM products WHERE id = 7;",
-      "expectContains": [
-        "__NAME7__"
-      ],
-      "critical": true,
-      "shot": "shot-11-cell-value.png"
-    },
-    {
-      "id": "S16",
-      "feature": "SQL真实执行-脏数据行",
-      "action": "query",
-      "sql": "SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;",
-      "expectContains": [
-        "__NULLNOTES__"
-      ],
-      "critical": true,
-      "shot": "shot-12-dirty-rows.png"
-    },
-    {
-      "id": "S17",
-      "feature": "导出CSV",
-      "action": "export-csv",
-      "allowMiss": true,
-      "shot": "shot-13-export-csv.png"
-    },
-    {
-      "id": "S18",
-      "feature": "主题切换",
-      "action": "soft-page",
-      "page": "theme",
-      "allowMiss": true,
-      "shot": "shot-14-theme.png"
-    },
-    {
-      "id": "S19",
-      "feature": "关于页",
-      "action": "soft-page",
-      "page": "about",
-      "allowMiss": true,
-      "shot": "shot-15-about.png"
-    },
-    {
-      "id": "S20",
-      "feature": "P0-01 停止按钮-执行中点停",
-      "action": "stop-query",
-      "sql": "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 100000000) SELECT x FROM c;",
-      "shot": "shot-16-stop-cancelled.png",
-      "critical": true
-    },
-    {
-      "id": "S21",
-      "feature": "P0-03 前置-重查小结果集",
-      "action": "query",
-      "sql": "SELECT id, name FROM products ORDER BY id LIMIT 8;",
-      "expectContains": [
-        "__NAME7__"
-      ],
-      "critical": true
-    },
-    {
-      "id": "S22",
-      "feature": "P0-03 网格-列头点击循环排序",
-      "action": "mouse-click",
-      "find": {
-        "controlType": "TextBlock",
-        "name": "id"
-      },
-      "button": "left",
-      "shot": "shot-17-sort-asc.png",
-      "critical": true
-    },
-    {
-      "id": "S23",
-      "feature": "P0-03 排序实效断言",
-      "action": "applog-contains",
-      "value": [
-        "[网格] 排序 col=id"
-      ],
-      "timeout": 10,
-      "critical": true
-    },
-    {
-      "id": "S24",
-      "feature": "P0-03 网格-右键复制该行",
-      "action": "mouse-click",
-      "find": {
-        "controlType": "TextBlock",
-        "name": "__NAME7__"
-      },
-      "button": "right",
-      "critical": true
-    },
-    {
-      "id": "S25",
-      "feature": "P0-03 复制实效断言",
-      "action": "menu-item",
-      "itemName": "复制该行",
-      "critical": true
-    },
-    {
-      "id": "S26",
-      "feature": "P0-03 复制落账断言",
-      "action": "applog-contains",
-      "value": [
-        "[网格复制] rows=1"
-      ],
-      "timeout": 10,
-      "critical": true
-    },
-    {
-      "id": "S27",
-      "feature": "P0-04 网格-钉住到看板",
-      "action": "mouse-click",
-      "find": {
-        "controlType": "TextBlock",
-        "name": "id"
-      },
-      "button": "right",
-      "critical": true
-    },
-    {
-      "id": "S28",
-      "feature": "P0-04 钉住菜单项",
-      "action": "menu-item",
-      "itemName": "钉住到看板",
-      "critical": true
-    },
-    {
-      "id": "S29",
-      "feature": "P0-04 钉住确认",
-      "action": "mouse-click",
-      "find": {
-        "controlType": "Button",
-        "name": "钉住"
-      },
-      "button": "left",
-      "critical": true
-    },
-    {
-      "id": "S30",
-      "feature": "P0-04 钉住落账断言",
-      "action": "applog-contains",
-      "value": [
-        "[看板] 钉住 pin="
-      ],
-      "timeout": 10,
-      "critical": true
-    },
-    {
-      "id": "S31",
-      "feature": "P0-04 看板-打开管理",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "看板管理",
-      "critical": true
-    },
-    {
-      "id": "S32",
-      "feature": "P0-04 看板-立即刷新",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "kanban-refresh"
-      },
-      "button": "left",
-      "shot": "shot-18-kanban-refresh.png",
-      "critical": true
-    },
-    {
-      "id": "S33",
-      "feature": "P0-04 刷新实效断言",
-      "action": "applog-contains",
-      "value": [
-        "[看板] 刷新 pin="
-      ],
-      "timeout": 15,
-      "critical": true
-    },
-    {
-      "id": "S33b",
-      "feature": "P0-04 看板收场",
-      "action": "press-esc",
-      "critical": true
-    },
-    {
-      "id": "S34",
-      "feature": "P0-05 智能工具-打开",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "智能工具",
-      "critical": true
-    },
-    {
-      "id": "S35",
-      "feature": "P0-05 回访-填标题",
-      "action": "setvalue",
-      "find": {
-        "automationId": "smart-follow-title"
-      },
-      "value": "walk-follow-001",
-      "critical": true
-    },
-    {
-      "id": "S36",
-      "feature": "P0-05 回访-填SQL",
-      "action": "setvalue",
-      "find": {
-        "automationId": "smart-after"
-      },
-      "value": "SELECT id FROM products WHERE id = 7;",
-      "critical": true
-    },
-    {
-      "id": "S37",
-      "feature": "P0-05 回访-登记（异步不卡界面）",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "smart-register"
-      },
-      "button": "left",
-      "shot": "shot-19-followup-register.png",
-      "critical": true
-    },
-    {
-      "id": "S38",
-      "feature": "P0-05 登记实效断言",
-      "action": "applog-contains",
-      "value": [
-        "[智能工具] 回访登记 title=walk-follow-001"
-      ],
-      "timeout": 30,
-      "critical": true
-    },
-    {
-      "id": "S39",
-      "feature": "P0-05 回访-并入任务中心",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "smart-center"
-      },
-      "button": "left",
-      "critical": true
-    },
-    {
-      "id": "S40",
-      "feature": "P0-05 任务真执行终态断言",
-      "action": "applog-contains",
-      "value": [
-        "[任务中心] 终态",
-        "state=done"
-      ],
-      "timeout": 30,
-      "critical": true
-    },
-    {
-      "id": "S40b",
-      "feature": "P0-05 智能工具收场",
-      "action": "press-esc",
-      "critical": true
-    },
-    {
-      "id": "S41",
-      "feature": "P0-05 任务中心-打开",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "任务中心",
-      "critical": true
-    },
-    {
-      "id": "S42",
-      "feature": "P0-05 任务中心-填标题",
-      "action": "setvalue",
-      "find": {
-        "automationId": "tc-title"
-      },
-      "value": "walk-task-001",
-      "critical": true
-    },
-    {
-      "id": "S43",
-      "feature": "P0-05 任务中心-填SQL",
-      "action": "setvalue",
-      "find": {
-        "automationId": "tc-sql"
-      },
-      "value": "SELECT COUNT(*) AS c FROM orders;",
-      "critical": true
-    },
-    {
-      "id": "S44",
-      "feature": "P0-05 任务中心-提交真执行",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "tc-submit"
-      },
-      "button": "left",
-      "shot": "shot-20-taskcenter-submit.png",
-      "critical": true
-    },
-    {
-      "id": "S45",
-      "feature": "P0-05 任务真执行终态断言",
-      "action": "applog-contains",
-      "value": [
-        "[任务中心] 终态",
-        "state=done"
-      ],
-      "timeout": 30,
-      "critical": true
-    },
-    {
-      "id": "S46",
-      "feature": "P0-05 任务中心收场",
-      "action": "press-esc",
-      "critical": true
-    },
-    {
-      "id": "S47",
-      "feature": "P0-06 部署向导-打开",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "部署向导",
-      "critical": true
-    },
-    {
-      "id": "S48",
-      "feature": "P0-06 向导-下一步单步",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "wiz-next"
-      },
-      "button": "left",
-      "critical": true
-    },
-    {
-      "id": "S49",
-      "feature": "P0-06 单步导航断言（停在步骤2不跳步）",
-      "action": "window-contains",
-      "value": "步骤 2/5",
-      "notContains": [
-        "步骤 3/5"
-      ],
-      "critical": true
-    },
-    {
-      "id": "S50",
-      "feature": "P0-06 向导-上一步单步",
-      "action": "mouse-click",
-      "find": {
-        "automationId": "wiz-prev"
-      },
-      "button": "left",
-      "shot": "shot-21-wizard-back.png",
-      "critical": true
-    },
-    {
-      "id": "S51",
-      "feature": "P0-06 回退断言（停在步骤1）",
-      "action": "window-contains",
-      "value": "步骤 1/5",
-      "notContains": [
-        "步骤 2/5"
-      ],
-      "critical": true
-    },
-    {
-      "id": "S52",
-      "feature": "P0-06 向导收场",
-      "action": "press-esc",
-      "critical": true
-    }
-  ]
+ "version": "v3.13-real-db-editor1",
+ "steps": [
+  {
+   "id": "S01",
+   "feature": "新建连接-打开对话框",
+   "action": "click",
+   "find": {
+    "controlType": "Button",
+    "name": "＋ 新建连接"
+   },
+   "shot": "shot-05-newconn-dialog.png"
+  },
+  {
+   "id": "S02",
+   "feature": "连接-选择SQLite引擎",
+   "action": "setcombo",
+   "find": {
+    "automationId": "conn-engine"
+   },
+   "value": "SQLite"
+  },
+  {
+   "id": "S03",
+   "feature": "连接-填写名称",
+   "action": "setvalue",
+   "find": {
+    "automationId": "conn-name"
+   },
+   "value": "__CONN_NAME__"
+  },
+  {
+   "id": "S04",
+   "feature": "连接-填写数据库文件",
+   "action": "setvalue",
+   "find": {
+    "automationId": "conn-file"
+   },
+   "value": "__DBFILE__"
+  },
+  {
+   "id": "S05",
+   "feature": "连接-保存",
+   "action": "click",
+   "find": {
+    "controlType": "Button",
+    "name": "保存"
+   },
+   "critical": true,
+   "shot": "shot-06-conn-saved.png"
+  },
+  {
+   "id": "S06",
+   "feature": "对象树-连接节点出现",
+   "action": "tree-contains",
+   "value": "__CONN_NAME__",
+   "critical": true
+  },
+  {
+   "id": "S07",
+   "feature": "对象树-展开连接",
+   "action": "expand",
+   "prefix": "🗄️ __CONN_NAME__",
+   "sleepAfter": 6
+  },
+  {
+   "id": "S08",
+   "feature": "对象树-展开数据库",
+   "action": "expand-keyboard",
+   "selectPrefix": "🗄️ __CONN_NAME__",
+   "childPrefix": "📁 main",
+   "sleepAfter": 6
+  },
+  {
+   "id": "S09",
+   "feature": "对象树-真实表清单",
+   "action": "tree-contains-all",
+   "value": [
+    "__TBL1__",
+    "__TBL2__"
+   ],
+   "critical": true,
+   "shot": "shot-07-table-tree.png"
+  },
+  {
+   "id": "S10",
+   "feature": "查询-选中连接",
+   "action": "select",
+   "prefix": "🗄️ __CONN_NAME__",
+   "critical": true
+  },
+  {
+   "id": "S11",
+   "feature": "查询-新建查询入口",
+   "action": "menu",
+   "buttonAutomationId": "BtnLogo",
+   "itemName": "新建查询",
+   "critical": true
+  },
+  {
+   "id": "S12",
+   "feature": "SQL真实执行-计数",
+   "action": "query",
+   "sql": "SELECT COUNT(*) AS c FROM orders;",
+   "expectContains": [
+    "__ORDERS_COUNT__"
+   ],
+   "critical": true,
+   "shot": "shot-08-count-5000.png"
+  },
+  {
+   "id": "S13",
+   "feature": "SQL真实执行-聚合",
+   "action": "query",
+   "sql": "SELECT SUM(amount) AS s FROM orders;",
+   "expectContains": [
+    "__SUM_AMOUNT__"
+   ],
+   "critical": true,
+   "shot": "shot-09-sum.png"
+  },
+  {
+   "id": "S14",
+   "feature": "SQL真实执行-空值过滤",
+   "action": "query",
+   "sql": "SELECT COUNT(*) AS c FROM products WHERE email IS NULL;",
+   "expectContains": [
+    "__NULLEMAILS__"
+   ],
+   "critical": true,
+   "shot": "shot-10-null-emails.png"
+  },
+  {
+   "id": "S15",
+   "feature": "SQL真实执行-取值比对",
+   "action": "query",
+   "sql": "SELECT name FROM products WHERE id = 7;",
+   "expectContains": [
+    "__NAME7__"
+   ],
+   "critical": true,
+   "shot": "shot-11-cell-value.png"
+  },
+  {
+   "id": "S16",
+   "feature": "SQL真实执行-脏数据行",
+   "action": "query",
+   "sql": "SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;",
+   "expectContains": [
+    "__NULLNOTES__"
+   ],
+   "critical": true,
+   "shot": "shot-12-dirty-rows.png"
+  },
+  {
+   "id": "S17",
+   "feature": "导出CSV",
+   "action": "export-csv",
+   "allowMiss": true,
+   "shot": "shot-13-export-csv.png"
+  },
+  {
+   "id": "S18",
+   "feature": "主题切换",
+   "action": "soft-page",
+   "page": "theme",
+   "allowMiss": true,
+   "shot": "shot-14-theme.png"
+  },
+  {
+   "id": "S19",
+   "feature": "关于页",
+   "action": "soft-page",
+   "page": "about",
+   "allowMiss": true,
+   "shot": "shot-15-about.png"
+  },
+  {
+   "id": "S20",
+   "feature": "P0-01 停止按钮-执行中点停",
+   "action": "stop-query",
+   "sql": "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 100000000) SELECT x FROM c;",
+   "shot": "shot-16-stop-cancelled.png",
+   "critical": true
+  },
+  {
+   "id": "S21",
+   "feature": "P0-03 前置-重查小结果集",
+   "action": "query",
+   "sql": "SELECT id, name FROM products ORDER BY id LIMIT 8;",
+   "expectContains": [
+    "__NAME7__"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S22",
+   "feature": "P0-03 网格-列头点击循环排序",
+   "action": "mouse-click",
+   "find": {
+    "controlType": "TextBlock",
+    "name": "id"
+   },
+   "button": "left",
+   "shot": "shot-17-sort-asc.png",
+   "critical": true
+  },
+  {
+   "id": "S23",
+   "feature": "P0-03 排序实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[网格] 排序 col=id"
+   ],
+   "timeout": 10,
+   "critical": true
+  },
+  {
+   "id": "S24",
+   "feature": "P0-03 网格-右键复制该行",
+   "action": "mouse-click",
+   "find": {
+    "controlType": "TextBlock",
+    "name": "__NAME7__"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S25",
+   "feature": "P0-03 复制实效断言",
+   "action": "menu-item",
+   "itemName": "复制该行",
+   "critical": true
+  },
+  {
+   "id": "S26",
+   "feature": "P0-03 复制落账断言",
+   "action": "applog-contains",
+   "value": [
+    "[网格复制] rows=1"
+   ],
+   "timeout": 10,
+   "critical": true
+  },
+  {
+   "id": "S27",
+   "feature": "P0-04 网格-钉住到看板",
+   "action": "mouse-click",
+   "find": {
+    "controlType": "TextBlock",
+    "name": "id"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S28",
+   "feature": "P0-04 钉住菜单项",
+   "action": "menu-item",
+   "itemName": "钉住到看板",
+   "critical": true
+  },
+  {
+   "id": "S29",
+   "feature": "P0-04 钉住确认",
+   "action": "mouse-click",
+   "find": {
+    "controlType": "Button",
+    "name": "钉住"
+   },
+   "button": "left",
+   "critical": true
+  },
+  {
+   "id": "S30",
+   "feature": "P0-04 钉住落账断言",
+   "action": "applog-contains",
+   "value": [
+    "[看板] 钉住 pin="
+   ],
+   "timeout": 10,
+   "critical": true
+  },
+  {
+   "id": "S31",
+   "feature": "P0-04 看板-打开管理",
+   "action": "tree-context",
+   "prefix": "__CONN_NAME__",
+   "itemName": "看板管理",
+   "critical": true
+  },
+  {
+   "id": "S32",
+   "feature": "P0-04 看板-立即刷新",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "kanban-refresh"
+   },
+   "button": "left",
+   "shot": "shot-18-kanban-refresh.png",
+   "critical": true
+  },
+  {
+   "id": "S33",
+   "feature": "P0-04 刷新实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[看板] 刷新 pin="
+   ],
+   "timeout": 15,
+   "critical": true
+  },
+  {
+   "id": "S33b",
+   "feature": "P0-04 看板收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S34",
+   "feature": "P0-05 智能工具-打开",
+   "action": "tree-context",
+   "prefix": "__CONN_NAME__",
+   "itemName": "智能工具",
+   "critical": true
+  },
+  {
+   "id": "S35",
+   "feature": "P0-05 回访-填标题",
+   "action": "setvalue",
+   "find": {
+    "automationId": "smart-follow-title"
+   },
+   "value": "walk-follow-001",
+   "critical": true
+  },
+  {
+   "id": "S36",
+   "feature": "P0-05 回访-填SQL",
+   "action": "setvalue",
+   "find": {
+    "automationId": "smart-after"
+   },
+   "value": "SELECT id FROM products WHERE id = 7;",
+   "critical": true
+  },
+  {
+   "id": "S37",
+   "feature": "P0-05 回访-登记（异步不卡界面）",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "smart-register"
+   },
+   "button": "left",
+   "shot": "shot-19-followup-register.png",
+   "critical": true
+  },
+  {
+   "id": "S38",
+   "feature": "P0-05 登记实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[智能工具] 回访登记 title=walk-follow-001"
+   ],
+   "timeout": 30,
+   "critical": true
+  },
+  {
+   "id": "S39",
+   "feature": "P0-05 回访-并入任务中心",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "smart-center"
+   },
+   "button": "left",
+   "critical": true
+  },
+  {
+   "id": "S40",
+   "feature": "P0-05 任务真执行终态断言",
+   "action": "applog-contains",
+   "value": [
+    "[任务中心] 终态",
+    "state=done"
+   ],
+   "timeout": 30,
+   "critical": true
+  },
+  {
+   "id": "S40b",
+   "feature": "P0-05 智能工具收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S41",
+   "feature": "P0-05 任务中心-打开",
+   "action": "tree-context",
+   "prefix": "__CONN_NAME__",
+   "itemName": "任务中心",
+   "critical": true
+  },
+  {
+   "id": "S42",
+   "feature": "P0-05 任务中心-填标题",
+   "action": "setvalue",
+   "find": {
+    "automationId": "tc-title"
+   },
+   "value": "walk-task-001",
+   "critical": true
+  },
+  {
+   "id": "S43",
+   "feature": "P0-05 任务中心-填SQL",
+   "action": "setvalue",
+   "find": {
+    "automationId": "tc-sql"
+   },
+   "value": "SELECT COUNT(*) AS c FROM orders;",
+   "critical": true
+  },
+  {
+   "id": "S44",
+   "feature": "P0-05 任务中心-提交真执行",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "tc-submit"
+   },
+   "button": "left",
+   "shot": "shot-20-taskcenter-submit.png",
+   "critical": true
+  },
+  {
+   "id": "S45",
+   "feature": "P0-05 任务真执行终态断言",
+   "action": "applog-contains",
+   "value": [
+    "[任务中心] 终态",
+    "state=done"
+   ],
+   "timeout": 30,
+   "critical": true
+  },
+  {
+   "id": "S46",
+   "feature": "P0-05 任务中心收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S47",
+   "feature": "P0-06 部署向导-打开",
+   "action": "tree-context",
+   "prefix": "__CONN_NAME__",
+   "itemName": "部署向导",
+   "critical": true
+  },
+  {
+   "id": "S48",
+   "feature": "P0-06 向导-下一步单步",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "wiz-next"
+   },
+   "button": "left",
+   "critical": true
+  },
+  {
+   "id": "S49",
+   "feature": "P0-06 单步导航断言（停在步骤2不跳步）",
+   "action": "window-contains",
+   "value": "步骤 2/5",
+   "notContains": [
+    "步骤 3/5"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S50",
+   "feature": "P0-06 向导-上一步单步",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "wiz-prev"
+   },
+   "button": "left",
+   "shot": "shot-21-wizard-back.png",
+   "critical": true
+  },
+  {
+   "id": "S51",
+   "feature": "P0-06 回退断言（停在步骤1）",
+   "action": "window-contains",
+   "value": "步骤 1/5",
+   "notContains": [
+    "步骤 2/5"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S52",
+   "feature": "P0-06 向导收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S55",
+   "feature": "批次一-编辑器填多语句",
+   "action": "editor-set",
+   "sql": "SELECT 1; SELECT 2;",
+   "critical": true
+  },
+  {
+   "id": "S56",
+   "feature": "批次一-右键打开编辑器菜单",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S56b",
+   "feature": "批次一-美化SQL菜单项",
+   "action": "menu-item",
+   "itemName": "美化 SQL",
+   "critical": true
+  },
+  {
+   "id": "S56c",
+   "feature": "批次一-美化实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] beautify"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S57",
+   "feature": "批次一-F6执行当前语句",
+   "action": "press-keys",
+   "keys": "{F6}",
+   "critical": true
+  },
+  {
+   "id": "S57b",
+   "feature": "批次一-执行账落账",
+   "action": "applog-contains",
+   "value": [
+    "[执行账]"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S58",
+   "feature": "批次一-右键注释切换",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S58b",
+   "feature": "批次一-注释切换菜单项",
+   "action": "menu-item",
+   "itemName": "注释切换（--）",
+   "critical": true
+  },
+  {
+   "id": "S58c",
+   "feature": "批次一-注释切换实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] comment-toggle"
+   ],
+   "critical": true
+  },
+  {
+   "id": "S59",
+   "feature": "批次一-右键执行计划",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S59b",
+   "feature": "批次一-执行计划菜单项",
+   "action": "menu-item",
+   "itemName": "执行计划",
+   "critical": true
+  },
+  {
+   "id": "S59c",
+   "feature": "批次一-执行计划实效断言",
+   "action": "applog-contains",
+   "value": [
+    "[编辑器] explain engine="
+   ],
+   "critical": true
+  },
+  {
+   "id": "S60",
+   "feature": "批次一-右键代码段",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S60b",
+   "feature": "批次一-代码段菜单项",
+   "action": "menu-item",
+   "itemName": "代码段…",
+   "critical": true
+  },
+  {
+   "id": "S60c",
+   "feature": "批次一-代码段弹层断言",
+   "action": "window-contains",
+   "value": "代码段",
+   "critical": true
+  },
+  {
+   "id": "S60d",
+   "feature": "批次一-代码段收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S61",
+   "feature": "批次一-右键剪贴板堆栈",
+   "action": "mouse-click",
+   "find": {
+    "automationId": "work-editor"
+   },
+   "button": "right",
+   "critical": true
+  },
+  {
+   "id": "S61b",
+   "feature": "批次一-堆栈菜单项",
+   "action": "menu-item",
+   "itemName": "粘贴自剪贴板堆栈…",
+   "critical": true
+  },
+  {
+   "id": "S61c",
+   "feature": "批次一-堆栈弹层断言",
+   "action": "window-contains",
+   "value": "剪贴板堆栈",
+   "critical": true
+  },
+  {
+   "id": "S61d",
+   "feature": "批次一-堆栈收场",
+   "action": "press-esc",
+   "critical": true
+  },
+  {
+   "id": "S62",
+   "feature": "批次一-Ctrl+F查找替换",
+   "action": "press-keys",
+   "keys": "^f",
+   "critical": true
+  },
+  {
+   "id": "S62b",
+   "feature": "批次一-查找替换弹层断言",
+   "action": "window-contains",
+   "value": "查找替换",
+   "critical": true
+  },
+  {
+   "id": "S62c",
+   "feature": "批次一-查找替换收场",
+   "action": "press-esc",
+   "critical": true
+  }
+ ]
 }
