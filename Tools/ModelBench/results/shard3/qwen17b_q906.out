@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 EXEC sp_start_job 'archive_job';
 
-[ Prompt: 28.2 t/s | Generation: 10.7 t/s ]
+[ Prompt: 26.8 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

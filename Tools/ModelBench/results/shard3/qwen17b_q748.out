@@ -38,7 +38,7 @@ JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON o.id = p.order_id
 WHERE u.id = 1;
 
-[ Prompt: 19.9 t/s | Generation: 6.7 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', GETDATE()), (2, 'Bob', 'Los Angeles', GETDATE()), (3, 'Charlie', 'Chicago', GETDATE()), (4, 'David', 'Houston', GETDATE()), (5, 'Eve', 'Phoenix', GETDATE()), (6, 'Frank', 'San Francisco', GETDATE()), (7, 'Grace', 'Austin', GETDATE()), (8, 'Helen', 'Dallas', GETDATE()), (9, 'Ian', 'Seattle', GETDATE()), (10, 'Jack', 'Salt Lake City', GETDATE());
 
-[ Prompt: 17.3 t/s | Generation: 7.2 t/s ]
+[ Prompt: 21.5 t/s | Generation: 7.1 t/s ]
 
 
 Exiting...

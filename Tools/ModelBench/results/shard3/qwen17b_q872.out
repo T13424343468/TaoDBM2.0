@@ -38,7 +38,7 @@ UPDATE orders SET status = 'processed', paid_at = CURRENT_TIMESTAMP WHERE id = 1
 
 COMMIT;
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 15.9 t/s | Generation: 6.5 t/s ]
 
 
 Exiting...

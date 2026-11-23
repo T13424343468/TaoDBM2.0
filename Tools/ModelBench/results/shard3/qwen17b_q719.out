@@ -36,7 +36,7 @@ FROM orders o
 LEFT JOIN payments p ON o.id = p.order_id
 LEFT JOIN products p2 ON o.id = p2.id;
 
-[ Prompt: 21.2 t/s | Generation: 7.5 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

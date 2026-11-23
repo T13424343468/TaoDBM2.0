@@ -35,7 +35,7 @@ SELECT p.name, p.category, p.price, p.stock
 FROM products p
 WHERE p.stock < 0;
 
-[ Prompt: 38.9 t/s | Generation: 11.7 t/s ]
+[ Prompt: 39.0 t/s | Generation: 12.1 t/s ]
 
 
 Exiting...

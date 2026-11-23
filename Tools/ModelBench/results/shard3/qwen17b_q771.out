@@ -36,7 +36,7 @@ FROM orders o
 JOIN payments p ON o.id = p.order_id
 WHERE p.paid_at IS NOT NULL;
 
-[ Prompt: 20.3 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

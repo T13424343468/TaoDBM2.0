@@ -35,7 +35,7 @@ CREATE PROCEDURE GetStock @outStock OUT INT
 AS
 SET @outStock = (SELECT stock FROM products WHERE id = 1);
 
-[ Prompt: 16.3 t/s | Generation: 6.1 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

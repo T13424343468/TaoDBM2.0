@@ -37,7 +37,7 @@ JOIN order_items oi ON o.id = oi.order_id
 JOIN payments p ON o.id = p.order_id
 WHERE o.city = 'Moon';
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 17.9 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

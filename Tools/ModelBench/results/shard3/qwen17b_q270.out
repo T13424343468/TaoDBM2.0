@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT RIGHT('00000' + CAST(id AS VARCHAR(5)), 5) AS padded_id
 FROM users;
 
-[ Prompt: 21.2 t/s | Generation: 8.0 t/s ]
+[ Prompt: 20.2 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...

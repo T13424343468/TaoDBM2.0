@@ -2,7 +2,7 @@ load_backend: loaded RPC backend from D:\a\TaoDBM2.0\TaoDBM2.0\llama-bench-bin\g
 load_backend: loaded CPU backend from D:\a\TaoDBM2.0\TaoDBM2.0\llama-bench-bin\ggml-cpu-haswell.dll
 | model                          |       size |     params | backend    | threads |            test |                  t/s |
 | ------------------------------ | ---------: | ---------: | ---------- | ------: | --------------: | -------------------: |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CPU        |       4 |           pp128 |         80.41 ± 2.49 |
-| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CPU        |       4 |           tg128 |         27.86 ± 0.17 |
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CPU        |       4 |           pp128 |         70.83 ± 3.65 |
+| qwen3 1.7B Q4_K - Medium       |   1.19 GiB |     2.03 B | CPU        |       4 |           tg128 |         28.17 ± 0.10 |
 
 build: 7e960f40f (12559)

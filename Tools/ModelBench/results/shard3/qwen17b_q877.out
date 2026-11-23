@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION get_users_by_city(city VARCHAR(50)) RETURNS SETOF use
 SELECT * FROM users WHERE city = $1;
 $$ LANGUAGE sql;
 
-[ Prompt: 20.3 t/s | Generation: 7.3 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ EXECUTE AS OWNER = 'archive_owner';
 EXECUTE AS USER = 'archive_user';
 EXECUTE dbo.archive_storage_procedure;
 
-[ Prompt: 20.9 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.7 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

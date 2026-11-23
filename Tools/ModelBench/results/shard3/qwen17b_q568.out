@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM users WHERE city IS NOT NULL AND city != ''
 
-[ Prompt: 20.9 t/s | Generation: 8.0 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

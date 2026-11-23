@@ -39,7 +39,7 @@ WHERE order_id IN (
     WHERE paid_at >= NOW() - INTERVAL 1 DAY
 )
 
-[ Prompt: 21.2 t/s | Generation: 7.3 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

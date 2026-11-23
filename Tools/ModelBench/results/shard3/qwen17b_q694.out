@@ -43,7 +43,7 @@ WHERE o.user_id IN (
     LIMIT 1
 );
 
-[ Prompt: 20.2 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...
