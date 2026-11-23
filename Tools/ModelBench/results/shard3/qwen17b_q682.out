@@ -31,15 +31,17 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT u.name, COUNT(*) as total_orders
+SELECT u.name, COUNT(*) AS rank
 FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
+JOIN payments p ON oi.id = p.id
+WHERE p.paid_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
 GROUP BY u.id, u.name
-ORDER BY total_orders DESC
+ORDER BY COUNT(*) DESC
 LIMIT 5;
 
-[ Prompt: 20.8 t/s | Generation: 7.9 t/s ]
+[ Prompt: 35.6 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

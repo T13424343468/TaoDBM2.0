@@ -37,14 +37,14 @@ WITH ranked_orders AS (
         o.user_id,
         o.status,
         o.created_at,
-        ROW_NUMBER() OVER (PARTITION BY o.user_id ORDER BY o.created_at DESC) as rn
+        ROW_NUMBER() OVER (PARTITION BY o.user_id ORDER BY o.created_at DESC) as rank
     FROM orders o
 )
 SELECT *
 FROM ranked_orders
-WHERE rn <= 3;
+WHERE rank = 1;
 
-[ Prompt: 20.4 t/s | Generation: 7.7 t/s ]
+[ Prompt: 34.6 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

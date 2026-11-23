@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-INSERT INTO users (id, name, city, created_at) SELECT id, name, city, created_at FROM users WHERE 1=1 AND id NOT IN (SELECT id FROM users);
+INSERT INTO users (id, name, city, created_at) SELECT id, name, city, created_at FROM users WHERE 1=1 AND id NOT IN (SELECT id FROM users WHERE created_at > NOW() - INTERVAL 1 DAY) LIMIT 1;
 
-[ Prompt: 21.5 t/s | Generation: 7.7 t/s ]
+[ Prompt: 37.7 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

@@ -31,9 +31,19 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', NOW()), (2, 'Bob', 'Los Angeles', NOW()), (3, 'Charlie', 'Chicago', NOW()), (4, 'David', 'Houston', NOW()), (5, 'Eve', 'Phoenix', NOW()), (6, 'Frank', 'San Francisco', NOW()), (7, 'Grace', 'Austin', NOW()), (8, 'Helen', 'Dallas', NOW()), (9, 'Ian', 'Seattle', NOW()), (10, 'Jack', 'Salt Lake City', NOW());
+INSERT INTO users (id, name, city, created_at) VALUES
+(1, 'Alice', 'New York', NOW()),
+(2, 'Bob', 'Los Angeles', NOW()),
+(3, 'Charlie', 'Chicago', NOW()),
+(4, 'David', 'Houston', NOW()),
+(5, 'Eve', 'Phoenix', NOW()),
+(6, 'Frank', 'San Francisco', NOW()),
+(7, 'Grace', 'Austin', NOW()),
+(8, 'Helen', 'Dallas', NOW()),
+(9, 'Ian', 'Seattle', NOW()),
+(10, 'Jack', 'Salt Lake City', NOW());
 
-[ Prompt: 18.8 t/s | Generation: 7.4 t/s ]
+[ Prompt: 35.6 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

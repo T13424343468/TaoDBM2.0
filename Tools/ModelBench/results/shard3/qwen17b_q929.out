@@ -31,12 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT order_id, SUM(quantity) AS total_quantity
-FROM order_items
-GROUP BY order_id
-HAVING total_quantity > 10;
+SELECT p.category, COUNT(*) AS count
+FROM products p
+JOIN order_items o ON p.id = o.product_id
+GROUP BY p.category
+HAVING COUNT(*) > 1
+ORDER BY count DESC;
 
-[ Prompt: 27.8 t/s | Generation: 9.1 t/s ]
+[ Prompt: 43.7 t/s | Generation: 11.5 t/s ]
 
 
 Exiting...

@@ -39,7 +39,7 @@ JOIN payments pa ON o2.id = pa.order_id
 WHERE pa.paid_at = (SELECT MAX(paid_at) FROM payments)
 ORDER BY pa.paid_at DESC;
 
-[ Prompt: 21.1 t/s | Generation: 7.5 t/s ]
+[ Prompt: 38.3 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

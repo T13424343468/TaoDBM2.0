@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT id, CONCAT('00000', id) AS padded_id FROM users;
+INSERT INTO users (id, name, city, created_at) VALUES (0, 'User0', 'City0', NOW()), (0, 'User1', 'City1', NOW()), (0, 'User2', 'City2', NOW()), (0, 'User3', 'City3', NOW()), (0, 'User4', 'City4', NOW());
 
-[ Prompt: 21.1 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.3 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

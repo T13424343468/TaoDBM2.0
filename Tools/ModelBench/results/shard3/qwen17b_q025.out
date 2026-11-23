@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT COUNT(*) FROM users WHERE created_at >= CURDATE() - INTERVAL 7 DAY;
 
-[ Prompt: 20.8 t/s | Generation: 7.7 t/s ]
+[ Prompt: 33.8 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...

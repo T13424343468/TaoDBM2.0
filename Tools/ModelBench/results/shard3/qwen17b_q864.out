@@ -31,9 +31,18 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', GETDATE()), (2, 'Bob', 'Los Angeles', GETDATE()), (3, 'Charlie', 'Chicago', GETDATE()), (4, 'David', 'Houston', GETDATE()), (5, 'Eve', 'Phoenix', GETDATE()), (6, 'Frank', 'San Francisco', GETDATE()), (7, 'Grace', 'Austin', GETDATE()), (8, 'Helen', 'Dallas', GETDATE()), (9, 'Ian', 'Seattle', GETDATE()), (10, 'Jack', 'Salt Lake City', GETDATE());
+INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (2, 'Bob', 'Los Angeles', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (3, 'Charlie', 'Chicago', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (4, 'David', 'Houston', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (5, 'Eve', 'Phoenix', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (6, 'Frank', 'San Francisco', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (7, 'Grace', 'Austin', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (8, 'Henry', 'Dallas', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (9, 'Ivy', 'Seattle', GETDATE())
+INSERT INTO users (id, name, city, created_at) VALUES (10, 'Jack', 'Salt Lake City', GETDATE())
 
-[ Prompt: 15.5 t/s | Generation: 5.8 t/s ]
+[ Prompt: 39.3 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

@@ -31,16 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-START TRANSACTION;
+BEGIN TRANSACTION;
 
-SELECT u.id, u.name, o.status, p.name, o.created_at, pi.quantity, pi.unit_price
-FROM users u
-JOIN orders o ON u.id = o.user_id
-JOIN order_items pi ON o.id = pi.order_id
-JOIN products p ON pi.product_id = p.id
-WHERE o.status = 'completed';
+UPDATE users SET city = 'New York' WHERE id = 1;
 
-[ Prompt: 17.4 t/s | Generation: 6.1 t/s ]
+COMMIT;
+
+[ Prompt: 39.7 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

@@ -31,11 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT COUNT(*) FROM orders
-WHERE created_at >= CURRENT_TIME
-AND created_at < CURRENT_TIME + INTERVAL '1 hour'
+SELECT 
+    TIMESTAMPDIFF(HOUR, created_at, paid_at) AS hour_diff
+FROM 
+    payments
+WHERE 
+    paid_at > created_at;
 
-[ Prompt: 20.9 t/s | Generation: 7.7 t/s ]
+[ Prompt: 35.5 t/s | Generation: 10.3 t/s ]
 
 
 Exiting...

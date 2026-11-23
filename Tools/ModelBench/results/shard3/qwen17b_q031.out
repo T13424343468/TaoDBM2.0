@@ -40,7 +40,7 @@ WHERE created_at >= CURDATE() - INTERVAL 30 DAY
 GROUP BY city
 ORDER BY total_sales DESC;
 
-[ Prompt: 20.9 t/s | Generation: 7.8 t/s ]
+[ Prompt: 34.9 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...
