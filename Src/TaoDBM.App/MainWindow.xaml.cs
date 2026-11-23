@@ -359,6 +359,10 @@ public partial class MainWindow : Window
         var host = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
         host.Children.Add(new FontIcon { Glyph = NodeGlyphs[glyphKey], FontFamily = IconFont, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub });
         host.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        // #285 定谳：Content 从字符串换 StackPanel 后 TreeViewItem 的 UIA Name 变空（文本沉到内部 TextBlock），
+        // 走查按 TreeItem Name 匹配全部失配（N07/N08 静默红→N09/N10 关键步连红，S09/S55/S56 同源）。
+        // 补自动化名＝恢复可测性，同时修无障碍读屏取不到节点名。
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(host, text);
         return host;
     }
 
