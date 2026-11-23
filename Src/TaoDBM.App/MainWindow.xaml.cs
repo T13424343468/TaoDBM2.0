@@ -92,7 +92,7 @@ public partial class MainWindow : Window
             rootGrid.KeyboardAccelerators.Add(f11);
             // 整改三批三-2：快捷键三件套——Ctrl+N 新建查询 / Ctrl+W 关当前页签 / Ctrl+Tab(+Shift) 循环切页签
             var ctrlN = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.N };
-            ctrlN.Invoked += (_, args) => { args.Handled = true; OnNewQuerySel(null!); Core.AppLog.Write("[快捷键] n 新建查询"); };
+            ctrlN.Invoked += (_, args) => { args.Handled = true; OnNewQuerySel(this, new RoutedEventArgs()); Core.AppLog.Write("[快捷键] n 新建查询"); };
             rootGrid.KeyboardAccelerators.Add(ctrlN);
             var ctrlW = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.W };
             ctrlW.Invoked += (_, args) => { args.Handled = true; CloseCurrentTab(); };
@@ -1096,22 +1096,26 @@ public partial class MainWindow : Window
     }
 
     private void OnTabClose(TabView sender, TabViewTabCloseRequestedEventArgs args)
+        => CloseTabItem(sender, args.Tab);
+
+    /// <summary>关页签公共链路：脏页签三选确认不绕过，干净页签直接关并落会话。</summary>
+    private void CloseTabItem(TabView tabView, TabViewItem tab)
     {
         // P1-02：脏页签先三选确认（保存并关闭 / 不保存 / 取消），干净页签直接关
-        if (_workTabs.TryGetValue(args.Tab, out var dirtyWt) && dirtyWt.IsDirty)
+        if (_workTabs.TryGetValue(tab, out var dirtyWt) && dirtyWt.IsDirty)
         {
-            _ = ConfirmCloseDirtyAsync(sender, args.Tab, dirtyWt);
+            _ = ConfirmCloseDirtyAsync(tabView, tab, dirtyWt);
             return;
         }
-        sender.TabItems.Remove(args.Tab);
-        if (_workTabs.Remove(args.Tab)) SaveSession();
+        tabView.TabItems.Remove(tab);
+        if (_workTabs.Remove(tab)) SaveSession();
     }
 
-    /// <summary>整改三批三-2：Ctrl+W 关当前页签——复用 OnTabClose 链路（脏页签三选确认不绕过）。</summary>
+    /// <summary>整改三批三-2：Ctrl+W 关当前页签——复用关页签公共链路（脏页签三选确认不绕过）。</summary>
     private void CloseCurrentTab()
     {
         if (WorkTabs.SelectedItem is not TabViewItem tab || WorkTabs.TabItems.Count <= 1) return;
-        OnTabClose(WorkTabs, new TabViewTabCloseRequestedEventArgs(tab, tab));
+        CloseTabItem(WorkTabs, tab);
         Core.AppLog.Write("[快捷键] w 关页签");
     }
 
