@@ -23,13 +23,16 @@ public static class UserPermissionDialog
         }
 
         var accountBox = new ComboBox { MinWidth = 260, PlaceholderText = "加载中…" };
-        var matrix = new TextBlock
+        // 格16：权限矩阵表格化（行=对象.权限，列=回收勾选/对象/权限/可转授），废弃等宽文本块
+        var matrixHost = new StackPanel { Spacing = 0 };
+        var matrixScroll = new ScrollViewer
         {
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = AntTokens.FontMinor,
-            IsTextSelectionEnabled = true,
-            TextWrapping = TextWrapping.Wrap,
+            Content = matrixHost,
+            MaxHeight = 220,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
+        List<CheckBox> revokeChecks = new();
         var riskBox = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.Error };
         var revokeBtn = new Button
         {
@@ -98,9 +101,59 @@ public static class UserPermissionDialog
 
         void Render()
         {
-            if (current is null) { matrix.Text = ""; riskBox.Text = ""; revokeBtn.IsEnabled = false; return; }
-            matrix.Text = string.Join("\n", current.Records.Select(r =>
-                $"{r.Object,-28} {string.Join(", ", r.Privileges)}{(r.WithGrantOption ? "   ⚠ 可转授" : "")}"));
+            matrixHost.Children.Clear();
+            revokeChecks.Clear();
+            if (current is null) { riskBox.Text = ""; revokeBtn.IsEnabled = false; return; }
+            // 表头：全选/全不选列头 + 对象 + 权限 + 可转授
+            var headerCheck = new CheckBox { AutomationId = "PermGrid_All", MinWidth = 28 };
+            var header = new Grid
+            {
+                ColumnSpacing = 8,
+                Background = Ant.HeadBg,
+                Padding = new Thickness(4, 2, 4, 2),
+            };
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
+            void AddHeader(FrameworkElement el, int col)
+            {
+                Grid.SetColumn(el, col);
+                header.Children.Add(el);
+            }
+            AddHeader(headerCheck, 0);
+            AddHeader(new TextBlock { Text = "对象", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center }, 1);
+            AddHeader(new TextBlock { Text = "权限", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center }, 2);
+            AddHeader(new TextBlock { Text = "可转授", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center }, 3);
+            matrixHost.Children.Add(header);
+            headerCheck.Click += (_, _) =>
+            {
+                foreach (var c in revokeChecks) c.IsChecked = headerCheck.IsChecked == true;
+            };
+            // 行：对象.权限 + 回收勾选
+            foreach (var r in current.Records)
+            {
+                int idx = matrixHost.Children.Count - 1; // 表头外序号
+                var cb = new CheckBox { AutomationId = $"PermRevoke_{idx}", MinWidth = 28, VerticalAlignment = VerticalAlignment.Center };
+                var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(4, 2, 4, 2), Background = Ant.AltRow };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
+                Grid.SetColumn(cb, 0);
+                row.Children.Add(cb);
+                var objText = new TextBlock { Text = r.Object, FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+                Grid.SetColumn(objText, 1);
+                row.Children.Add(objText);
+                var privText = new TextBlock { Text = string.Join(", ", r.Privileges), FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+                Grid.SetColumn(privText, 2);
+                row.Children.Add(privText);
+                var grantText = new TextBlock { Text = r.WithGrantOption ? "⚠ 可转授" : "", FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, Foreground = r.WithGrantOption ? Ant.Error : Ant.TextSub };
+                Grid.SetColumn(grantText, 3);
+                row.Children.Add(grantText);
+                matrixHost.Children.Add(row);
+                revokeChecks.Add(cb);
+            }
             riskBox.Text = current.Findings.Count == 0
                 ? ""
                 : string.Join("\n", current.Findings.Select(f => $"{(f.Severity == "danger" ? "⚠" : "△")} {f.Code} {f.Message}"));
@@ -119,8 +172,22 @@ public static class UserPermissionDialog
         revokeBtn.Click += async (_, _) =>
         {
             if (current is null || current.Records.Count == 0) return;
-            var drafts = current.Records.SelectMany(PermissionAuditor.RevokeSql).Distinct().ToList();
+            // 格16：只对勾选行生成回收草稿（未勾选行不进草稿）
+            var picked = new List<GrantRecord>();
+            for (int i = 0; i < revokeChecks.Count && i < current.Records.Count; i++)
+                if (revokeChecks[i].IsChecked == true) picked.Add(current.Records[i]);
+            if (picked.Count == 0) { status.Text = "未勾选任何行，未生成回收草稿。"; return; }
+            var drafts = picked.SelectMany(PermissionAuditor.RevokeSql).Distinct().ToList();
+            AppLog.Write($"[权限] 回收={drafts.Count}");
             await ConfirmExecuteAsync(owner, prov, $"回收 {current.Label} 的权限", drafts, status);
+            // 执行后重读授权刷新矩阵（对应行消失）
+            if (accountBox.SelectedIndex >= 0 && accountBox.SelectedIndex < accounts.Count)
+            {
+                var (u, h) = accounts[accountBox.SelectedIndex];
+                var label = accountBox.SelectedItem?.ToString() ?? "";
+                current = await LoadGrantsAsync(u, h, label);
+                Render();
+            }
         };
 
         createUserBtn.Click += async (_, _) =>
@@ -199,7 +266,7 @@ public static class UserPermissionDialog
         topRow.Children.Add(passwdBtn);
         panel.Children.Add(topRow);
         panel.Children.Add(new TextBlock { Text = "权限矩阵", FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
-        panel.Children.Add(new ScrollViewer { Content = matrix, MaxHeight = 190, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        panel.Children.Add(matrixScroll);
         panel.Children.Add(riskBox);
         panel.Children.Add(status);
 

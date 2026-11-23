@@ -22,7 +22,33 @@ public static class BatchCleanupDialog
 
         var planBtn = new Button { Content = "生成分批计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var execBtn = new Button { Content = "按批执行（草稿确认）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
+        var runAllBtn = new Button { Content = "一次跑完（二次确认）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(execBtn, "BatchNext");   // 格12：走查 S79 锚点
         BatchCleanupPlan? plan = null;
+        int nextBatch = 0;   // 格12：下一批序号（0 基）
+        long doneRows = 0;   // 格12：累计已清理行数（按批大小估算）
+
+        async Task ExecOneAsync()
+        {
+            var idx = nextBatch;
+            var drafts = new List<string> { plan!.BatchSqls[idx] };
+            await DraftOps.ConfirmExecuteAsync(owner, prov, $"批量清理 {plan.Table}（第 {idx + 1}/{plan.TotalBatches} 批草稿）", drafts, status);
+            nextBatch++;
+            doneRows += Math.Min(plan.BatchSize, Math.Max(0, plan.EstimatedRows - doneRows));
+            AppLog.Write($"[清理] 批={nextBatch}/{plan.TotalBatches} rows={doneRows}");   // 走查 S79 实效断言锚点
+            if (nextBatch >= plan.BatchSqls.Count)
+            {
+                execBtn.Content = $"已完成 {plan.TotalBatches} 批";
+                execBtn.IsEnabled = false;
+                runAllBtn.IsEnabled = false;
+                status.Text = $"已完成 {plan.TotalBatches} 批，累计约 {doneRows} 行。";
+            }
+            else
+            {
+                execBtn.Content = $"继续下一批 ({nextBatch + 1}/{plan.TotalBatches})";
+                status.Text = $"已执行 {nextBatch}/{plan.TotalBatches} 批，累计约 {doneRows} 行：复核行数后再继续。";
+            }
+        }
 
         planBtn.Click += async (_, _) =>
         {
@@ -41,7 +67,11 @@ public static class BatchCleanupDialog
                 int batch = int.TryParse((batchBox.Text ?? "").Trim(), out var b) && b > 0 ? b : 1000;
                 plan = BatchCleanup.Plan(table, where.Length == 0 ? null : where, pk, est, batch, prov.Profile.Engine);
                 if (plan.BatchSqls.Count == 0) { status.Text = "估算行数为 0，没有可清理的数据。"; return; }
+                nextBatch = 0;
+                doneRows = 0;
                 execBtn.IsEnabled = true;
+                execBtn.Content = "按批执行（草稿确认）";
+                runAllBtn.IsEnabled = true;
                 AddSection(report, $"表 {table}：约 {est} 行待清理，共 {plan.TotalBatches} 批 × {batch} 行");
                 AddLine(report, $"首批语句：{plan.BatchSqls[0]}");
                 AddLine(report, "执行策略：默认每次执行 1 批，跑完复核行数再继续；全部语句都要逐条勾选确认。");
@@ -53,16 +83,30 @@ public static class BatchCleanupDialog
         execBtn.Click += async (_, _) =>
         {
             if (plan is null || plan.BatchSqls.Count == 0) { status.Text = "请先生成分批计划。"; return; }
-            var drafts = plan.BatchSqls.Take(1).ToList();
-            await DraftOps.ConfirmExecuteAsync(owner, prov, $"批量清理 {plan.Table}（首批草稿）", drafts, status);
-            status.Text = "首批执行完毕（如确认过）：复核行数后再继续下一批；全表清理请分多次执行。";
-            await Task.CompletedTask;
+            if (nextBatch >= plan.BatchSqls.Count) return;
+            await ExecOneAsync();
+        };
+        // 格12：「一次跑完」循环执行剩余全部批次，需二次确认；保留逐条勾选确认口径，不绕过 DraftOps。
+        runAllBtn.Click += async (_, _) =>
+        {
+            if (plan is null || plan.BatchSqls.Count == 0 || nextBatch >= plan.BatchSqls.Count) return;
+            var confirm = new ContentDialog
+            {
+                Title = "一次跑完剩余批次",
+                Content = new TextBlock { Text = $"将连续执行第 {nextBatch + 1}–{plan.TotalBatches} 批（每批仍逐条勾选确认），长事务与锁表风险自担。确定继续？", TextWrapping = TextWrapping.Wrap },
+                PrimaryButtonText = "继续执行",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+            while (nextBatch < plan.BatchSqls.Count) await ExecOneAsync();
         };
 
         var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row1.Children.Add(tableBox); row1.Children.Add(whereBox); row1.Children.Add(pkBox); row1.Children.Add(batchBox);
         var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row2.Children.Add(planBtn); row2.Children.Add(execBtn);
+        row2.Children.Add(planBtn); row2.Children.Add(execBtn); row2.Children.Add(runAllBtn);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 720 };
         panel.Children.Add(new TextBlock

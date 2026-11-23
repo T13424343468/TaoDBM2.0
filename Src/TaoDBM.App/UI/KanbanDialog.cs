@@ -8,6 +8,8 @@ namespace TaoDBM.UI;
 /// 刷新执行走当前连接提供者（流式底座 QueryRouter 分流，禁整表物化）；对话框关闭即停表，不后台空转。
 /// P0 整改 04（2026-11-22）：刷新不再只推水位——重跑后把结果摘要在卡片上就地更新（单值大字显示，多行给行数＋首行快照），
 /// 自动刷新与手动刷新同一条更新链路，卡片数字随数据变化。
+/// 整改二批格19（2026-11-23）：刷新后重建卡片视觉——单值大数字（28pt）＋趋势箭头（↑绿↓红）＋头部时间戳；
+/// 重建走「清空 StackPanel→按最新结果重建子树」；刷新中卡片置灰＋加载点。AppLog 锚点 [看板] 刷新 pin= 保持。
 /// 钉住入口在结果网格右键（ResultGridMenu），本弹窗是看板的统一管理面。</summary>
 public static class KanbanDialog
 {
@@ -15,7 +17,8 @@ public static class KanbanDialog
     {
         var pinsHost = new StackPanel { Spacing = 10, MinWidth = 640 };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var cardData = new Dictionary<string, TextBlock>();   // PinId → 卡片数据行，刷新后就地更新
+        var cardData = new Dictionary<string, StackPanel>();   // PinId → 卡片数据宿主，刷新后清空重建子树（格19）
+        var lastValues = new Dictionary<string, string>();     // PinId → 上次数值（趋势箭头对比用）
         var dlg = new ContentDialog
         {
             Title = "看板（钉住与定时刷新）",
@@ -29,15 +32,15 @@ public static class KanbanDialog
         dlg.Closed += (_, _) => timer.Stop();
         dlg.Opened += (_, _) =>
         {
-            timer.Tick += async (_, _) => await RefreshDueAsync(provider, status, cardData);
+            timer.Tick += async (_, _) => await RefreshDueAsync(provider, status, cardData, lastValues);
             timer.Start();
         };
 
-        Rebuild(pinsHost, provider, status, cardData);
+        Rebuild(pinsHost, provider, status, cardData, lastValues);
         _ = dlg.ShowThemedAsync();
     }
 
-    static void Rebuild(StackPanel pinsHost, IDbProvider? provider, TextBlock status, Dictionary<string, TextBlock> cardData)
+    static void Rebuild(StackPanel pinsHost, IDbProvider? provider, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)
     {
         pinsHost.Children.Clear();
         cardData.Clear();
@@ -65,19 +68,13 @@ public static class KanbanDialog
                 Foreground = Ant.Text,
                 TextWrapping = TextWrapping.Wrap,
             };
-            var data = new TextBlock
-            {
-                Text = "尚未刷新，点「立即刷新」取数。",
-                FontSize = AntTokens.FontBody,
-                Foreground = Ant.Text,
-                TextWrapping = TextWrapping.Wrap,
-            };
+            var data = new StackPanel { Spacing = 2 };   // 格19：数据宿主，刷新后清空重建子树
             cardData[pin.PinId] = data;
             var refreshBtn = new Button { Content = "立即刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = provider != null };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(refreshBtn, "kanban-refresh");
-            refreshBtn.Click += async (_, _) => await RunPinAsync(provider, pin, status, cardData);
+            refreshBtn.Click += async (_, _) => await RunPinAsync(provider, pin, status, cardData, lastValues);
             var unpinBtn = new Button { Content = "摘除", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-            unpinBtn.Click += (_, _) => { KanbanPinStore.Unpin(pin.PinId); Rebuild(pinsHost, provider, status, cardData); };
+            unpinBtn.Click += (_, _) => { KanbanPinStore.Unpin(pin.PinId); Rebuild(pinsHost, provider, status, cardData, lastValues); };
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             row.Children.Add(refreshBtn);
             row.Children.Add(unpinBtn);
@@ -93,19 +90,20 @@ public static class KanbanDialog
                 CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
                 Padding = new Thickness(12, 10, 12, 10),
             };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(box, $"KanbanCard_{pin.PinId}");   // 格19：卡片锚点
             pinsHost.Children.Add(box);
         }
     }
 
-    static async Task RefreshDueAsync(IDbProvider? provider, TextBlock status, Dictionary<string, TextBlock> cardData)
+    static async Task RefreshDueAsync(IDbProvider? provider, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)
     {
         foreach (var pin in KanbanPinStore.Due(DateTimeOffset.UtcNow))
         {
-            await RunPinAsync(provider, pin, status, cardData);   // 取数走流式底座（QueryRouter 分流），单卡重跑
+            await RunPinAsync(provider, pin, status, cardData, lastValues);   // 取数走流式底座（QueryRouter 分流），单卡重跑
         }
     }
 
-    static async Task RunPinAsync(IDbProvider? provider, KanbanPinStore.Pin pin, TextBlock status, Dictionary<string, TextBlock> cardData)
+    static async Task RunPinAsync(IDbProvider? provider, KanbanPinStore.Pin pin, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)
     {
         if (provider is null)
         {
@@ -114,17 +112,90 @@ public static class KanbanDialog
         }
         try
         {
+            // 格19：刷新中卡片置灰＋加载点，避免旧数据被误读为最新
+            if (cardData.TryGetValue(pin.PinId, out var host))
+            {
+                host.Opacity = 0.6;
+                host.Children.Clear();
+                host.Children.Add(new TextBlock { Text = "刷新中…", FontSize = AntTokens.FontBody, Foreground = Ant.TextSub });
+            }
             var list = await provider.Execute(pin.Db ?? "", pin.Sql);
             KanbanPinStore.Touch(pin.PinId, DateTimeOffset.UtcNow);   // 重跑成功即推水位
-            if (cardData.TryGetValue(pin.PinId, out var data))
-                data.Text = Summarize(list);
+            if (cardData.TryGetValue(pin.PinId, out host))
+            {
+                host.Opacity = 1.0;
+                host.Children.Clear();   // 格19：清空重建子树，避免旧控件残留
+                BuildCardVisual(host, pin, list, lastValues);
+            }
             status.Text = $"「{pin.Title}」已刷新 {DateTimeOffset.Now:HH:mm:ss}。";
-            AppLog.Write($"[看板] 刷新 pin={pin.Title} summary={Summarize(list)}");   // 走查 S24 实效断言锚点
+            AppLog.Write($"[看板] 刷新 pin={pin.Title} summary={Summarize(list)}");   // 走查 S24/S33/S86 实效断言锚点（保持不变）
         }
         catch (Exception ex)
         {
+            if (cardData.TryGetValue(pin.PinId, out var host))
+            {
+                host.Opacity = 1.0;
+                host.Children.Clear();
+                host.Children.Add(new TextBlock { Text = $"刷新失败：{ex.Message}", FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+            }
             status.Text = $"「{pin.Title}」刷新失败：{ex.Message}";
         }
+    }
+
+    /// <summary>格19：按最新结果重建卡片视觉——单值大数字（28pt）＋趋势箭头（↑绿↓红，对比上次值）；多行行数大字＋首行快照；头部带刷新时间戳。</summary>
+    static void BuildCardVisual(StackPanel host, KanbanPinStore.Pin pin, List<QueryResult> list, Dictionary<string, string> lastValues)
+    {
+        string ts = DateTimeOffset.Now.ToString("HH:mm:ss");
+        var r = list.FirstOrDefault(x => x.Rows.Count > 0) ?? list.FirstOrDefault();
+        if (r is null || r.Rows.Count == 0)
+        {
+            string empty = r is null ? "无结果。" : (string.IsNullOrEmpty(r.Message) ? "查询成功，0 行。" : r.Message);
+            host.Children.Add(new TextBlock { Text = $"{empty}（{ts}）", FontSize = AntTokens.FontBody, Foreground = Ant.Text, TextWrapping = TextWrapping.Wrap });
+            return;
+        }
+        string headline, sub;
+        if (r.Rows.Count == 1 && r.Columns.Count == 1)
+        {
+            headline = Convert.ToString(r.Rows[0][0]) ?? "";
+            sub = $"{pin.Title} · {ts}";
+        }
+        else
+        {
+            headline = $"{r.Rows.Count:N0} 行";
+            var head = new System.Text.StringBuilder();
+            for (int c = 0; c < r.Columns.Count && c < 4; c++)
+            {
+                if (c > 0) head.Append(" · ");
+                head.Append(r.Columns[c]).Append('=').Append(Convert.ToString(r.Rows[0][c]) ?? "");
+            }
+            sub = $"首行 {head} · {ts}";
+        }
+        var big = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        big.Children.Add(new TextBlock
+        {
+            Text = headline,
+            FontSize = 28,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Ant.Text,
+            VerticalAlignment = VerticalAlignment.Bottom,
+        });
+        // 趋势箭头：上次值可解析为数值且不同时，↑绿↓红
+        string prev = lastValues.GetValueOrDefault(pin.PinId, "");
+        lastValues[pin.PinId] = headline;
+        if (prev.Length > 0 && prev != headline &&
+            double.TryParse(prev.TrimEnd('%'), out var pv) && double.TryParse(headline.TrimEnd('%'), out var nv))
+        {
+            bool up = nv > pv;
+            big.Children.Add(new TextBlock
+            {
+                Text = up ? "↑" : "↓",
+                FontSize = 16,
+                Foreground = up ? Ant.Success : Ant.Error,
+                VerticalAlignment = VerticalAlignment.Bottom,
+            });
+        }
+        host.Children.Add(big);
+        host.Children.Add(new TextBlock { Text = sub, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
     }
 
     /// <summary>结果摘要：单值查询直接给值；多行多列给行数＋首行快照（列=值），空结果如实显示。</summary>

@@ -199,6 +199,11 @@ public static class BackupDialog
             BorderThickness = new Thickness(0),
             CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
+        // 格10：后台化执行＋取消（进程树 Kill / 检查点）
+        var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
+        var execRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        execRow.Children.Add(startBtn);
+        execRow.Children.Add(cancelBtn);
         var output = new TextBox
         {
             IsReadOnly = true,
@@ -213,7 +218,7 @@ public static class BackupDialog
         step4.Children.Add(confirmBox);
         step4.Children.Add(drillHint);
         step4.Children.Add(drillBtn);
-        step4.Children.Add(startBtn);
+        step4.Children.Add(execRow);
         step4.Children.Add(output);
 
         void RefreshConfirm()
@@ -298,7 +303,7 @@ public static class BackupDialog
         };
 
         // ---- 执行（沿用既有引擎分流；恢复前自动备份默认开启） ----
-        async Task<string> RunBackupAsync(string db, string file)
+        async Task<string> RunBackupAsync(string db, string file, CancellationToken ct, IProgress<int> progress)
         {
             switch (profile.Engine)
             {
@@ -306,7 +311,7 @@ public static class BackupDialog
                 {
                     var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
                     var spec = BackupTools.MysqlDump(h, p, profile.User, profile.Password, db, file);
-                    var (code, text) = await RunTool(spec);
+                    var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
                         ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
                         : $"退出码 {code}\n{text}";
@@ -315,7 +320,7 @@ public static class BackupDialog
                 {
                     var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
                     var spec = BackupTools.PgDump(h, p, profile.User, profile.Password, db, file);
-                    var (code, text) = await RunTool(spec);
+                    var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
                         ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
                         : $"退出码 {code}\n{text}";
@@ -323,19 +328,21 @@ public static class BackupDialog
                 case DbEngine.SqlServer:
                 {
                     var sql = BackupTools.SqlServerBackupSql(db, file);
+                    ct.ThrowIfCancellationRequested(); // 格10：T-SQL 执行前检查点
                     var list = await prov.Execute("", sql);
                     var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
                     return err is null ? $"备份完成：服务器已写入 {file}" : err.Message;
                 }
                 case DbEngine.SQLite:
-                    BackupTools.SqliteBackup(profile.Database, file);
+                    // 格10：SQLite 备份后台化，取消走检查点
+                    await Task.Run(() => { ct.ThrowIfCancellationRequested(); BackupTools.SqliteBackup(profile.Database, file); }, ct);
                     return $"备份完成：{profile.Database} → {file}";
                 default:
                     return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
             }
         }
 
-        async Task<string> RunRestoreAsync(string db, string file)
+        async Task<string> RunRestoreAsync(string db, string file, CancellationToken ct, IProgress<int> progress)
         {
             switch (profile.Engine)
             {
@@ -343,25 +350,26 @@ public static class BackupDialog
                 {
                     var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
                     var spec = BackupTools.MysqlRestore(h, p, profile.User, profile.Password, db, file);
-                    var (code, text) = await RunTool(spec);
+                    var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";
                 }
                 case DbEngine.PostgreSQL:
                 {
                     var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
                     var spec = BackupTools.PgRestore(h, p, profile.User, profile.Password, db, file);
-                    var (code, text) = await RunTool(spec);
+                    var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";
                 }
                 case DbEngine.SqlServer:
                 {
                     var sql = BackupTools.SqlServerRestoreSql(db, file);
+                    ct.ThrowIfCancellationRequested(); // 格10：T-SQL 执行前检查点
                     var list = await prov.Execute("", sql);
                     var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
                     return err is null ? $"还原完成：{db} 已从 {file} 恢复" : err.Message;
                 }
                 case DbEngine.SQLite:
-                    BackupTools.SqliteRestore(profile.Database, file);
+                    await Task.Run(() => { ct.ThrowIfCancellationRequested(); BackupTools.SqliteRestore(profile.Database, file); }, ct);
                     return $"还原完成：{file} → {profile.Database}";
                 default:
                     return "当前向导支持 MySQL / PostgreSQL / SQL Server / SQLite；其他引擎请使用恢复演练或备份计划。";
@@ -376,6 +384,9 @@ public static class BackupDialog
             return Path.Combine(dir, $"{name}.pre-restore-{DateTime.Now:yyyyMMdd-HHmmss}{ext}");
         }
 
+        // 格10：执行期 CTS 引用（OnExecute 每次新建，取消按钮转发）
+        CancellationTokenSource? liveCts = null;
+
         async void OnExecute()
         {
             bool backup = isBackup.IsChecked == true;
@@ -384,14 +395,19 @@ public static class BackupDialog
             if (db.Length == 0) { output.Text = "请先选择数据库。"; return; }
             if (file.Length == 0) { output.Text = "请先选择文件。"; return; }
 
+            // 格10：后台化执行＋可取消（进度行数进 output，取消立即 Kill/检查点）
+            using var cts = new CancellationTokenSource();
+            liveCts = cts;
+            var progress = new Progress<int>(n => output.Text = $"执行中…（已读工具输出 {n} 行）");
             startBtn.IsEnabled = false;
+            cancelBtn.IsEnabled = true;
             output.Text = "执行中…";
             try
             {
                 string result;
                 if (backup)
                 {
-                    result = await RunBackupAsync(db, file);
+                    result = await RunBackupAsync(db, file, cts.Token, progress);
                 }
                 else
                 {
@@ -399,7 +415,7 @@ public static class BackupDialog
                     {
                         string pre = PreRestoreFile(file);
                         output.Text = $"恢复前自动备份当前状态 → {pre}\n执行中…";
-                        string preResult = await RunBackupAsync(db, pre);
+                        string preResult = await RunBackupAsync(db, pre, cts.Token, progress);
                         if (!preResult.StartsWith("备份完成", StringComparison.Ordinal))
                         {
                             output.Text = $"恢复前自动备份失败，已停止恢复（现有数据未动）：\n{preResult}";
@@ -407,7 +423,7 @@ public static class BackupDialog
                         }
                         output.Text = $"恢复前自动备份完成：{pre}\n开始恢复…";
                     }
-                    result = await RunRestoreAsync(db, file);
+                    result = await RunRestoreAsync(db, file, cts.Token, progress);
                 }
                 output.Text = result;
                 // P4：备份 / 恢复结果接通知调度（规则判定不够格就静默）；消息取结果首行，超长截断
@@ -418,15 +434,25 @@ public static class BackupDialog
                     backup ? "备份结果" : "还原结果", firstLine, DateTime.Now));
                 QueryHistory.Add(prov.EngineName, db, $"-- {(backup ? "备份" : "还原")}：{file}");
             }
+            catch (OperationCanceledException)
+            {
+                output.Text = "已取消。";
+                AppLog.Write("[备份] cancel");
+            }
             catch (Exception ex)
             {
                 output.Text = (ex is System.ComponentModel.Win32Exception
                     ? "未找到命令行工具。请安装 MySQL / PostgreSQL 客户端工具并加入 PATH 后重试。\n"
                     : "") + "失败：" + ex.Message;
             }
-            finally { RefreshConfirm(); }
+            finally
+            {
+                cancelBtn.IsEnabled = false;
+                RefreshConfirm();
+            }
         }
         startBtn.Click += (_, _) => OnExecute();
+        cancelBtn.Click += (_, _) => { output.Text = "取消中…"; liveCts?.Cancel(); };
 
         UpdateStepBar();
         RefreshConfirm();
@@ -443,7 +469,8 @@ public static class BackupDialog
         await dlg.ShowThemedAsync();
     }
 
-    private static async Task<(int Code, string Output)> RunTool(ToolSpec spec)
+    /// <summary>格10：后台化执行外部工具——逐行泵输出做不确定进度，取消走进程树 Kill。</summary>
+    private static async Task<(int Code, string Output)> RunTool(ToolSpec spec, CancellationToken ct = default, IProgress<int>? progress = null)
     {
         var psi = new ProcessStartInfo(spec.FileName, spec.Arguments)
         {
@@ -478,9 +505,27 @@ public static class BackupDialog
         try
         {
             using var p = new Process { StartInfo = psi };
+            // 格10：取消＝进程树整树 Kill（含 mysqldump/pg_dump 派生子进程）
+            using var reg = ct.Register(() =>
+            {
+                try { p.Kill(entireProcessTree: true); } catch { /* 进程可能已退出 */ }
+            });
             p.Start();
-            var outTask = p.StandardOutput.ReadToEndAsync();
-            var errTask = p.StandardError.ReadToEndAsync();
+            int lines = 0;
+            async Task Pump(System.IO.StreamReader r, System.Text.StringBuilder sink)
+            {
+                while (await r.ReadLineAsync(ct) is { } line)
+                {
+                    sink.AppendLine(line);
+                    lines++;
+                    if (lines % 50 == 0) progress?.Report(lines);
+                    if (lines % 500 == 0) AppLog.Write($"[备份] progress lines={lines}");
+                }
+            }
+            var outSink = new System.Text.StringBuilder();
+            var errSink = new System.Text.StringBuilder();
+            var outTask = Pump(p.StandardOutput, outSink);
+            var errTask = Pump(p.StandardError, errSink);
             if (spec.InputFile != null)
             {
                 var content = await File.ReadAllTextAsync(spec.InputFile);
@@ -488,9 +533,9 @@ public static class BackupDialog
                 p.StandardInput.Close();
             }
             await p.WaitForExitAsync();
-            var text = await outTask;
-            var err = await errTask;
-            return (p.ExitCode, (text + "\n" + err).Trim());
+            await outTask;
+            await errTask;
+            return (p.ExitCode, (outSink.ToString() + "\n" + errSink.ToString()).Trim());
         }
         finally
         {

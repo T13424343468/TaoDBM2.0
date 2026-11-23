@@ -47,7 +47,10 @@ public static class DataSyncDialog
         var chkAll = new CheckBox { Content = "全选", IsChecked = true };
         var syncStruct = new CheckBox { Content = "结构同步（补缺失列，可选对齐类型）", IsChecked = true };
         var alignTypes = new CheckBox { Content = "对齐共有列的类型（会修改目标表已有列，谨慎勾选）", IsChecked = false, Margin = new Thickness(20, 0, 0, 0) };
-        var sendData = new CheckBox { Content = "传输数据（全量，不清空目标表）", IsChecked = true };
+        // 格11：两种数据模式——追加（默认，记同步账表 tao_sync_log）/ 清空重灌（TRUNCATE 后全量）
+        var modeAppend = new RadioButton { Content = "追加写入（记同步账表 tao_sync_log）", IsChecked = true, Margin = new Thickness(0, 0, 0, 0) };
+        var modeTruncate = new RadioButton { Content = "清空重灌（先 TRUNCATE 目标表再全量写入，不可回退）", Margin = new Thickness(20, 0, 0, 0) };
+        var sendData = new CheckBox { Content = "传输数据（按所选模式）", IsChecked = true };
         alignTypes.IsEnabled = false;
         syncStruct.Checked += (_, _) => alignTypes.IsEnabled = true;
         syncStruct.Unchecked += (_, _) => alignTypes.IsEnabled = false;
@@ -61,6 +64,8 @@ public static class DataSyncDialog
             BorderThickness = new Thickness(0),
             CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
+        // 格11：取消（贯穿分页枚举与逐页写入）
+        var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
         var output = new TextBox
         {
             IsReadOnly = true,
@@ -121,9 +126,10 @@ public static class DataSyncDialog
                 output.Text = "请把源 / 目标连接、库和要传的表都选好。";
                 return;
             }
+            bool truncateMode = modeTruncate.IsChecked == true;
             // 目标库会被直接建表 / 改表 / 写入，属危险操作：先给预览 + 确认，不静默执行。
             var steps = new[] { syncStruct.IsChecked == true ? "结构同步（补缺失列" + (alignTypes.IsChecked == true ? "，并对齐共有列类型" : "") + "）" : null,
-                                sendData.IsChecked == true ? "数据写入（全量追加，不清空目标表）" : null }
+                                sendData.IsChecked == true ? (truncateMode ? "清空重灌（先 TRUNCATE 目标表再全量写入）" : "追加写入（记同步账表 tao_sync_log）") : null }
                 .Where(s => s is not null).ToList();
             var confirm = new ContentDialog
             {
@@ -142,63 +148,135 @@ public static class DataSyncDialog
             };
             if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
             runBtn.IsEnabled = false;
+            cancelBtn.IsEnabled = true;
+            using var cts = new CancellationTokenSource();
+            cancelBtn.Click += (_, _) => cts.Cancel();
+            var ct = cts.Token;
             int done = 0, failed = 0;
             output.Text = "开始传输…\n";
-            foreach (var t in tables)
+            try
             {
-                try
+                foreach (var t in tables)
                 {
-                    var line = new List<string> { $"▶ {t}" };
-                    // 1) 结构同步
-                    List<ColumnSpec> srcCols;
-                    try { srcCols = await src.GetColumns(sdb, t); }
-                    catch { srcCols = new(); }
-                    if (syncStruct.IsChecked == true && srcCols.Count > 0)
+                    ct.ThrowIfCancellationRequested();
+                    try
                     {
-                        List<string> dstNames = new();
-                        bool targetExists = true;
-                        try { dstNames = (await dst.GetColumns(ddb, t)).Select(c => c.Name).ToList(); }
-                        catch { targetExists = false; }
-                        if (!targetExists)
+                        var line = new List<string> { $"▶ {t}" };
+                        // 1) 结构同步
+                        List<ColumnSpec> srcCols;
+                        try { srcCols = await src.GetColumns(sdb, t); }
+                        catch { srcCols = new(); }
+                        if (syncStruct.IsChecked == true && srcCols.Count > 0)
                         {
-                            var create = DataSync.CreateForTarget(t, srcCols, ((RelationalProvider)dst).Profile.Engine, dst.Quote);
-                            await dst.Execute(ddb, create);
-                            line.Add("  目标表不存在，已按源结构创建");
-                        }
-                        else
-                        {
-                            var (stmts, skipped) = DataSync.SyncColumns(t, srcCols, dstNames, ((RelationalProvider)dst).Profile.Engine, dst.Quote, alignTypes.IsChecked == true);
-                            foreach (var s in stmts) await dst.Execute(ddb, s);
-                            line.Add($"  结构同步：执行 {stmts.Count} 条语句" + (skipped.Count > 0 ? $"，跳过 {skipped.Count} 条（{skipped[0]}）" : ""));
-                        }
-                    }
-                    // 2) 数据传输
-                    if (sendData.IsChecked == true)
-                    {
-                        var qr = (await src.Execute(sdb, $"SELECT * FROM {src.Quote(t)}")).FirstOrDefault();
-                        if (qr is null || qr.Rows.Count == 0) line.Add("  数据：源无行，跳过");
-                        else
-                        {
-                            int inserted = 0;
-                            foreach (var b in DataSync.InsertBatches(qr, dst.Quote(t), dst.Quote))
+                            List<string> dstNames = new();
+                            bool targetExists = true;
+                            try { dstNames = (await dst.GetColumns(ddb, t)).Select(c => c.Name).ToList(); }
+                            catch { targetExists = false; }
+                            if (!targetExists)
                             {
-                                await dst.Execute(ddb, b);
-                                inserted += b.Count(c => c == '\n');
+                                var create = DataSync.CreateForTarget(t, srcCols, ((RelationalProvider)dst).Profile.Engine, dst.Quote);
+                                await dst.Execute(ddb, create);
+                                line.Add("  目标表不存在，已按源结构创建");
                             }
-                            line.Add($"  数据：写入 {inserted} 行");
+                            else
+                            {
+                                var (stmts, skipped) = DataSync.SyncColumns(t, srcCols, dstNames, ((RelationalProvider)dst).Profile.Engine, dst.Quote, alignTypes.IsChecked == true);
+                                foreach (var s in stmts) await dst.Execute(ddb, s);
+                                line.Add($"  结构同步：执行 {stmts.Count} 条语句" + (skipped.Count > 0 ? $"，跳过 {skipped.Count} 条（{skipped[0]}）" : ""));
+                            }
                         }
+                        // 2) 数据传输（格11：src 侧分页枚举逐页写入；追加/清空重灌两模式）
+                        if (sendData.IsChecked == true)
+                        {
+                            if (truncateMode)
+                            {
+                                // 清空重灌：SQLite 无 TRUNCATE 用 DELETE FROM，其余 TRUNCATE
+                                var clearSql = dst.Profile.Engine == DbEngine.SQLite
+                                    ? $"DELETE FROM {dst.Quote(t)}"
+                                    : $"TRUNCATE TABLE {dst.Quote(t)}";
+                                await dst.Execute(ddb, clearSql);
+                                line.Add("  已清空目标表（清空重灌）");
+                            }
+                            else if (await TargetHasRowsAsync(dst, ddb, t))
+                            {
+                                line.Add("  目标表已有数据，按追加模式继续写入（账表 tao_sync_log 记录本次传输）");
+                            }
+                            int inserted = 0, pages = 0;
+                            bool streamed = false;
+                            if (src is RelationalProvider relSrc)
+                            {
+                                // 格11：流式分页——DataReader 直驱逐页，不整包攒内存
+                                try
+                                {
+                                    await using var conn = relSrc.OpenStream(sdb);
+                                    var sq = await Core.Streaming.StreamingQuery.StartAsync(conn, $"SELECT * FROM {src.Quote(t)}", ct);
+                                    try
+                                    {
+                                        while (true)
+                                        {
+                                            ct.ThrowIfCancellationRequested();
+                                            var page = await sq.NextPageAsync(200, ct);
+                                            if (page.Rows.Length == 0 && !page.HasMore) break;
+                                            var qr = new QueryResult();
+                                            qr.Columns.AddRange(sq.Columns);
+                                            foreach (var r in page.Rows) qr.Rows.Add(r);
+                                            foreach (var b in DataSync.InsertBatches(qr, dst.Quote(t), dst.Quote))
+                                                await dst.Execute(ddb, b);
+                                            inserted += page.Rows.Length;
+                                            pages++;
+                                            AppLog.Write($"[同步] 表={t} 页={pages}");
+                                            output.Text = $"传输中… {t}：已写 {inserted} 行（{pages} 页）\n";
+                                            if (!page.HasMore) break;
+                                        }
+                                        streamed = true;
+                                    }
+                                    finally { await sq.DisposeAsync(); }
+                                }
+                                catch (OperationCanceledException) { throw; }
+                                catch { streamed = false; } // 流式不可用退整包路径
+                            }
+                            if (!streamed)
+                            {
+                                var qr = (await src.Execute(sdb, $"SELECT * FROM {src.Quote(t)}")).FirstOrDefault();
+                                if (qr is null || qr.Rows.Count == 0) { line.Add("  数据：源无行，跳过"); }
+                                else
+                                {
+                                    foreach (var b in DataSync.InsertBatches(qr, dst.Quote(t), dst.Quote))
+                                    {
+                                        ct.ThrowIfCancellationRequested();
+                                        await dst.Execute(ddb, b);
+                                    }
+                                    inserted = qr.Rows.Count;
+                                }
+                            }
+                            if (inserted > 0) line.Add($"  数据：写入 {inserted} 行（{pages} 页）");
+                            // 追加模式：同步账表 tao_sync_log 记录本次传输
+                            if (!truncateMode && inserted > 0)
+                                await WriteSyncLogAsync(dst, ddb, t, inserted, ct);
+                        }
+                        output.Text += string.Join("\n", line) + "\n";
+                        done++;
                     }
-                    output.Text += string.Join("\n", line) + "\n";
-                    done++;
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        failed++;
+                        output.Text += $"▶ {t}  失败：{ex.Message}\n";
+                    }
                 }
-                catch (Exception ex)
-                {
-                    failed++;
-                    output.Text += $"▶ {t}  失败：{ex.Message}\n";
-                }
+                output.Text += $"完成：成功 {done}，失败 {failed}。";
+                AppLog.Write($"[同步] 完成 成功={done} 失败={failed}");
             }
-            output.Text += $"完成：成功 {done}，失败 {failed}。";
-            runBtn.IsEnabled = true;
+            catch (OperationCanceledException)
+            {
+                output.Text += "已取消。";
+                AppLog.Write("[同步] cancel");
+            }
+            finally
+            {
+                runBtn.IsEnabled = true;
+                cancelBtn.IsEnabled = false;
+            }
         };
 
         var content = new StackPanel { Spacing = 10, MinWidth = 620, Margin = new Thickness(0, 0, 12, 0) };
@@ -227,7 +305,12 @@ public static class DataSyncDialog
         content.Children.Add(syncStruct);
         content.Children.Add(alignTypes);
         content.Children.Add(sendData);
-        content.Children.Add(runBtn);
+        content.Children.Add(modeAppend);
+        content.Children.Add(modeTruncate);
+        var runRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        runRow.Children.Add(runBtn);
+        runRow.Children.Add(cancelBtn);
+        content.Children.Add(runRow);
         content.Children.Add(output);
 
         var dlg = new ContentDialog
@@ -238,5 +321,33 @@ public static class DataSyncDialog
             XamlRoot = owner.Content.XamlRoot,
         };
         _ = dlg.ShowThemedAsync();
+    }
+
+    /// <summary>格11：目标表是否已有数据（重复同名表提示用；读不到按无数据处理）。</summary>
+    private static async Task<bool> TargetHasRowsAsync(IDbProvider dst, string ddb, string table)
+    {
+        try
+        {
+            var rs = await dst.Execute(ddb, $"SELECT COUNT(*) AS n FROM {dst.Quote(table)}");
+            var qr = rs.FirstOrDefault();
+            if (qr is null || qr.Rows.Count == 0) return false;
+            return Convert.ToInt64(qr.Rows[0][0]) > 0;
+        }
+        catch { return false; }
+    }
+
+    /// <summary>格11：同步账表 tao_sync_log——建表（缺则建）＋记录本次传输（追加模式）。</summary>
+    private static async Task WriteSyncLogAsync(IDbProvider dst, string ddb, string table, long rows, CancellationToken ct)
+    {
+        try
+        {
+            string create = dst.Profile.Engine == DbEngine.SqlServer
+                ? "IF OBJECT_ID(N'dbo.tao_sync_log', N'U') IS NULL CREATE TABLE dbo.tao_sync_log (table_name NVARCHAR(256), row_count BIGINT, mode NVARCHAR(20), synced_at DATETIME DEFAULT GETDATE());"
+                : "CREATE TABLE IF NOT EXISTS tao_sync_log (table_name VARCHAR(256), row_count BIGINT, mode VARCHAR(20), synced_at TIMESTAMP)";
+            await dst.Execute(ddb, create);
+            await dst.Execute(ddb, $"INSERT INTO {dst.Quote("tao_sync_log")} (table_name, row_count, mode, synced_at) " +
+                                   $"VALUES ('{table.Replace("'", "''")}', {rows}, 'append', CURRENT_TIMESTAMP)");
+        }
+        catch { /* 账表失败不阻断传输主流程 */ }
     }
 }

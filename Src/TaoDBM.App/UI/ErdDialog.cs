@@ -20,6 +20,11 @@ public static class ErdDialog
     private static readonly Dictionary<string, FrameworkElement> _boxes = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, string> _pkOf = new(StringComparer.OrdinalIgnoreCase);
     private static TextBlock _hint = null!;
+    private static ComboBox _connBox = null!;
+    // 格14：画布缩放状态（Ctrl+滚轮 0.5–2.0）
+    private static double _zoom = 1.0;
+    private static readonly ScaleTransform _scaleTf = new() { ScaleX = 1.0, ScaleY = 1.0 };
+    private static readonly object _edgeLabelTag = new();
 
     public static async Task Show(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
     {
@@ -32,6 +37,16 @@ public static class ErdDialog
         }
 
         _canvas = new Canvas { Background = Ant.Card, MinHeight = 560, MinWidth = 760 };
+        _canvas.RenderTransform = _scaleTf;
+        _canvas.PointerWheelChanged += (_, e) =>
+        {
+            // 格14：按住 Ctrl 滚轮缩放（0.5–2.0），不按 Ctrl 走默认滚动
+            if (!e.KeyModifiers.HasFlag(Windows.System.VirtualKeyModifiers.Control)) return;
+            _zoom = Math.Clamp(_zoom + (e.GetCurrentPoint(_canvas).Properties.MouseWheelDelta > 0 ? 0.1 : -0.1), 0.5, 2.0);
+            _scaleTf.ScaleX = _zoom;
+            _scaleTf.ScaleY = _zoom;
+            e.Handled = true;
+        };
         _boxes.Clear();
         _model = new ErdModel();
         _hint = new TextBlock
@@ -71,43 +86,48 @@ public static class ErdDialog
         }
 
         var genBtn = new Button { Content = "生成 ER 图", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        var layoutBtn = new Button { Content = "重新布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        var pngBtn = new Button { Content = "导出 PNG", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        var saveBtn = new Button { Content = "保存布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        var openBtn = new Button { Content = "打开布局", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        var ddlBtn = new Button { Content = "正向生成建库 DDL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        ddlBtn.Click += async (_, _) =>
+        // 格14：工具栏二级分组（文件：保存/打开/PNG；画布：生成/逆向/布局；DDL：预览/进查询窗口）
+        MenuFlyoutItem SubItem(string text, string id, Action onClick)
         {
-            if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型，再正向生成 DDL。"; return; }
-            var r = ErdForward.Generate(_model);
-            if (!r.Ok || r.Ddl.Count == 0) { _hint.Text = "生成失败：" + string.Join("；", r.Errors); return; }
-            var box = new TextBox
-            {
-                AcceptsReturn = true,
-                IsReadOnly = true,
-                Text = string.Join("\n\n", r.Ddl),
-                FontFamily = new FontFamily("Consolas"),
-                MinWidth = 640,
-                MinHeight = 420,
-                TextWrapping = TextWrapping.NoWrap,
-            };
-            await new ContentDialog
-            {
-                Title = "正向生成 · 建库 DDL",
-                Content = box,
-                CloseButtonText = "关闭",
-                XamlRoot = owner.Content.XamlRoot,
-            }.ShowThemedAsync();
-            _hint.Text = $"已按模型生成 {r.Ddl.Count} 条 DDL（只读预览，可复制到查询窗口执行）。";
-        };
-
-        var revBtn = new Button { Content = "逆向拉取（差异预览）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        revBtn.Click += async (_, _) =>
+            var it = new MenuFlyoutItem { Text = text, AutomationId = id };
+            it.Click += (_, _) => onClick();
+            return it;
+        }
+        var fileMenu = new MenuFlyoutSubItem { Text = "文件" };
+        fileMenu.Items.Add(SubItem("保存布局", "ErdFile_Save", async () => await SaveLayout(owner)));
+        fileMenu.Items.Add(SubItem("打开布局", "ErdFile_Open", async () => await OpenLayout(owner)));
+        fileMenu.Items.Add(SubItem("导出 PNG", "ErdFile_Png", async () => await ExportPng(owner)));
+        var canvasMenu = new MenuFlyoutSubItem { Text = "画布" };
+        canvasMenu.Items.Add(SubItem("生成 ER 图", "ErdCanvas_Gen", async () =>
+        {
+            var sel = await Selected();
+            if (sel is null) return;
+            await Build(sel.Value.Db, sel.Value.Prov);
+        }));
+        canvasMenu.Items.Add(SubItem("逆向拉取（差异预览）", "ErdCanvas_Rev", async () =>
         {
             var sel = await Selected();
             if (sel is null) return;
             await ReverseDiff(owner, sel.Value.Db, sel.Value.Prov);
-        };
+        }));
+        canvasMenu.Items.Add(SubItem("重新布局", "ErdCanvas_Layout", () =>
+        {
+            ErdModel.AutoLayout(_model);
+            Place(_model);
+        }));
+        var ddlMenu = new MenuFlyoutSubItem { Text = "DDL" };
+        ddlMenu.Items.Add(SubItem("预览 DDL", "ErdDdl_Preview", async () => await PreviewDdlAsync(owner)));
+        ddlMenu.Items.Add(SubItem("进查询窗口", "ErdToQuery", () => SendDdlToQuery(owner)));
+        var barFlyout = new MenuFlyout();
+        barFlyout.Items.Add(fileMenu);
+        barFlyout.Items.Add(canvasMenu);
+        barFlyout.Items.Add(ddlMenu);
+        var menuBtn = new Button { Content = "操作 ▾", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        menuBtn.Flyout = barFlyout;
+        // 格14：Ctrl+滚轮缩放 0.5–2.0 ＋ 适应窗口
+        var fitBtn = new Button { Content = "适应窗口", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), AutomationId = "ErdZoom" };
+        fitBtn.Click += (_, _) => FitToWindow();
+        _connBox = connBox;
 
         Task<(string Db, IDbProvider Prov)?> Selected()
         {
@@ -127,25 +147,13 @@ public static class ErdDialog
             if (sel is null) return;
             await Build(sel.Value.Db, sel.Value.Prov);
         };
-        layoutBtn.Click += (_, _) =>
-        {
-            ErdModel.AutoLayout(_model);
-            Place(_model);
-        };
-        pngBtn.Click += async (_, _) => await ExportPng(owner);
-        saveBtn.Click += async (_, _) => await SaveLayout(owner);
-        openBtn.Click += async (_, _) => await OpenLayout(owner);
 
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 0, 0, 8) };
         bar.Children.Add(connBox);
         bar.Children.Add(dbBox);
         bar.Children.Add(genBtn);
-        bar.Children.Add(revBtn);
-        bar.Children.Add(layoutBtn);
-        bar.Children.Add(pngBtn);
-        bar.Children.Add(saveBtn);
-        bar.Children.Add(openBtn);
-        bar.Children.Add(ddlBtn);
+        bar.Children.Add(menuBtn);
+        bar.Children.Add(fitBtn);
 
         var panel = new StackPanel { Spacing = 4, MinWidth = 800, MinHeight = 640 };
         panel.Children.Add(bar);
@@ -373,6 +381,9 @@ public static class ErdDialog
     private static void DrawEdges()
     {
         foreach (var child in _canvas.Children.OfType<Line>().ToList()) _canvas.Children.Remove(child);
+        // 格14：同步清掉上一轮的关系标签
+        foreach (var lbl in _canvas.Children.OfType<Border>().Where(b => ReferenceEquals(b.Tag, _edgeLabelTag)).ToList())
+            _canvas.Children.Remove(lbl);
         foreach (var e in _model.Edges)
         {
             if (!_boxes.TryGetValue(e.FromTable, out var from) || !_boxes.TryGetValue(e.ToTable, out var to)) continue;
@@ -387,7 +398,79 @@ public static class ErdDialog
             };
             _canvas.Children.Add(line);
             Canvas.SetZIndex(line, 1);
+            // 格14：线中点 1:N/N:1 白底小标签（from=外键侧为 N，to=主键侧为 1）
+            var lbl = new Border
+            {
+                Tag = _edgeLabelTag,
+                Background = Ant.Card,
+                BorderBrush = Ant.Border,
+                BorderThickness = new Thickness(0.5),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+                Padding = new Thickness(3, 0, 3, 0),
+                Child = new TextBlock
+                {
+                    Text = $"N:1 {e.FromCol}",
+                    FontSize = 10,
+                    Foreground = Ant.TextSub,
+                },
+            };
+            _canvas.Children.Add(lbl);
+            Canvas.SetLeft(lbl, (a.X + b.X) / 2 - 24);
+            Canvas.SetTop(lbl, (a.Y + b.Y) / 2 - 9);
+            Canvas.SetZIndex(lbl, 2);
         }
+    }
+
+    /// <summary>格14：适应窗口——按表包围盒与画布可视区算缩放（夹 0.5–2.0）。</summary>
+    private static void FitToWindow()
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "先生成 ER 图再适应窗口。"; return; }
+        double maxX = _model.Tables.Max(t => t.X) + 280;
+        double maxY = _model.Tables.Max(t => t.Y) + 240;
+        double w = _canvas.ActualWidth > 0 ? _canvas.ActualWidth : 760;
+        double h = _canvas.ActualHeight > 0 ? _canvas.ActualHeight : 560;
+        _zoom = Math.Clamp(Math.Min(w / maxX, h / maxY), 0.5, 2.0);
+        _scaleTf.ScaleX = _zoom;
+        _scaleTf.ScaleY = _zoom;
+        _hint.Text = $"已适应窗口（缩放 {_zoom:0.0#}×；Ctrl+滚轮可继续缩放 0.5–2.0）。";
+    }
+
+    /// <summary>格14：正向 DDL 只读预览（原「正向生成建库 DDL」按钮口径）。</summary>
+    private static async Task PreviewDdlAsync(MainWindow owner)
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型，再正向生成 DDL。"; return; }
+        var r = ErdForward.Generate(_model);
+        if (!r.Ok || r.Ddl.Count == 0) { _hint.Text = "生成失败：" + string.Join("；", r.Errors); return; }
+        var box = new TextBox
+        {
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            Text = string.Join("\n\n", r.Ddl),
+            FontFamily = new FontFamily("Consolas"),
+            MinWidth = 640,
+            MinHeight = 420,
+            TextWrapping = TextWrapping.NoWrap,
+        };
+        await new ContentDialog
+        {
+            Title = "正向生成 · 建库 DDL",
+            Content = box,
+            CloseButtonText = "关闭",
+            XamlRoot = owner.Content.XamlRoot,
+        }.ShowThemedAsync();
+        _hint.Text = $"已按模型生成 {r.Ddl.Count} 条 DDL（只读预览，可复制到查询窗口执行）。";
+    }
+
+    /// <summary>格14：正向 DDL 一键进查询窗口（带所选连接上下文，可直接执行）。</summary>
+    private static void SendDdlToQuery(MainWindow owner)
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "请先生成或载入 ER 模型。"; return; }
+        var r = ErdForward.Generate(_model);
+        if (!r.Ok || r.Ddl.Count == 0) { _hint.Text = "生成失败：" + string.Join("；", r.Errors); return; }
+        var p = _connBox.SelectedItem as ConnectionProfile;
+        var info = new NodeInfo { Kind = NodeKind.Connection, Profile = p ?? new ConnectionProfile(), Name = p?.DisplayName ?? "ERD DDL" };
+        owner.OpenQueryWithSql(string.Join("\n\n", r.Ddl), info);
+        _hint.Text = $"已把 {r.Ddl.Count} 条 DDL 送进查询窗口（{(p is null ? "未选连接，执行前请先选库" : "已带连接上下文")}）。";
     }
 
     private static async Task ExportPng(MainWindow owner)

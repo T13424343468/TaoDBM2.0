@@ -80,6 +80,9 @@
                             <Button Content="重试" Click="OnMetaRetry"/>
                         </InfoBar.ActionButton>
                     </InfoBar>
+                    <!-- 格18：连接树筛选框——输入即过滤根节点（名称/主机包含匹配），清空恢复全部 -->
+                    <TextBox x:Name="ConnFilter" AutomationProperties.AutomationId="ConnFilter"
+                             PlaceholderText="筛选连接（名称 / 主机）" Margin="4,4,4,0" TextChanged="OnConnFilterChanged"/>
                     <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
                               Expanding="OnNodeExpanding"
                               SelectionChanged="OnTreeSelection"

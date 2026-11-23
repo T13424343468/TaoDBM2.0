@@ -37,6 +37,19 @@ public static class Exporter
         _ => v.ToString() ?? "",
     };
 
+    /// <summary>整改二批格8：网格显示口径——NULL 显示 (NULL) 而非空白；二进制超 64 字节只显体积（B/KB/MB，阈值 1024 一位小数），
+    /// 小 BLOB（≤64B）仍可见 hex；其余走原 Format。CSV/INSERT 导出仍用 Format（空串/hex 口径不变）。</summary>
+    public static string DisplayFormat(object? v) => v switch
+    {
+        null or DBNull => "(NULL)",
+        byte[] b => b.Length <= 64 ? Convert.ToHexString(b) : HumanSize(b.Length),
+        _ => Format(v),
+    };
+
+    static string HumanSize(int n) => n < 1024 ? $"{n} B"
+        : n < 1024 * 1024 ? $"{n / 1024.0:0.#} KB"
+        : $"{n / 1024.0 / 1024.0:0.#} MB";
+
     /// <summary>导出为 INSERT 语句（需要表名）。</summary>
     public static string InsertSql(QueryResult r, string table)
     {

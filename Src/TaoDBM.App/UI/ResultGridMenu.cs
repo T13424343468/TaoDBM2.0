@@ -34,7 +34,7 @@ public static class ResultGridMenu
     static void CopyCell(QueryResult r, int rowIdx, int colIdx)
     {
         var row = r.Rows[rowIdx];
-        SetClipboard(ResultGridOps.CellText(colIdx < row.Length ? row[colIdx] : null));
+        SetClipboard(Exporter.DisplayFormat(colIdx < row.Length ? row[colIdx] : null));   // 格8：复制单元格与网格显示口径一致
     }
 
     static void CopyRows(QueryResult r, IEnumerable<int> rowIndices)

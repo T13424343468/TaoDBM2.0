@@ -1,5 +1,5 @@
 {
-  "version": "v3.14-real-db-p1a",
+  "version": "v3.15-real-db-p1b",
   "steps": [
     {
       "id": "S01",
@@ -587,6 +587,178 @@
       "notContains": [
         "● 查询"
       ],
+      "critical": true
+    },
+    {
+      "id": "S68",
+      "feature": "P1-格5 表设计器-改表模式打开",
+      "action": "tree-context",
+      "prefix": "📋 __TBL1__",
+      "itemName": "设计表",
+      "critical": true
+    },
+    {
+      "id": "S69",
+      "feature": "P1-格5 改表弹窗断言",
+      "action": "window-contains",
+      "value": "改表结构 · __TBL1__",
+      "critical": true,
+      "shot": "shot-p1-designer.png"
+    },
+    {
+      "id": "S70",
+      "feature": "P1-格5 索引外键区可见",
+      "action": "window-contains",
+      "value": "索引（勾选删除）",
+      "critical": true
+    },
+    {
+      "id": "S71",
+      "feature": "P1-格5 生成SQL",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "生成 SQL"
+      },
+      "critical": true
+    },
+    {
+      "id": "S72",
+      "feature": "P1-格5 预览断言",
+      "action": "window-contains",
+      "value": "ALTER TABLE",
+      "timeout": 15,
+      "critical": true
+    },
+    {
+      "id": "S73",
+      "feature": "P1-格5 收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "S74",
+      "feature": "P1-格1 补全-编辑器铺底",
+      "action": "editor-set",
+      "sql": "SE",
+      "critical": true
+    },
+    {
+      "id": "S75",
+      "feature": "P1-格1 补全-Ctrl+Space触发",
+      "action": "press-keys",
+      "keys": "^ ",
+      "critical": true
+    },
+    {
+      "id": "S76",
+      "feature": "P1-格1 补全-浮层落账",
+      "action": "applog-contains",
+      "value": [
+        "[补全] 打开"
+      ],
+      "timeout": 15,
+      "critical": true,
+      "shot": "shot-p1-complete.png"
+    },
+    {
+      "id": "S77",
+      "feature": "P1-格1 补全-收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "S78",
+      "feature": "P1-格7 导出流式-真实导出",
+      "action": "export-csv",
+      "allowMiss": true,
+      "shot": "shot-p1-export.png"
+    },
+    {
+      "id": "S79",
+      "feature": "P1-格10 备份-打开向导",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "备份 / 还原",
+      "critical": true
+    },
+    {
+      "id": "S80",
+      "feature": "P1-格10 备份-弹窗断言",
+      "action": "window-contains",
+      "value": "备份 / 恢复向导",
+      "critical": true,
+      "shot": "shot-p1-backup.png"
+    },
+    {
+      "id": "S81",
+      "feature": "P1-格10 备份-收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "S82",
+      "feature": "P1-格11 同步-打开",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "传输",
+      "critical": true
+    },
+    {
+      "id": "S83",
+      "feature": "P1-格11 同步-追加模式断言",
+      "action": "window-contains",
+      "value": "追加写入",
+      "critical": true,
+      "shot": "shot-p1-sync.png"
+    },
+    {
+      "id": "S84",
+      "feature": "P1-格11 同步-收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "S85",
+      "feature": "P1-格14 ERD-打开",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "ER 图",
+      "critical": true
+    },
+    {
+      "id": "S85b",
+      "feature": "P1-格14 ERD-弹窗断言",
+      "action": "window-contains",
+      "value": "模型设计 · ER 图",
+      "critical": true
+    },
+    {
+      "id": "S85c",
+      "feature": "P1-格14 ERD-收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "S86",
+      "feature": "P1-格16 权限-打开审计",
+      "action": "tree-context",
+      "prefix": "__CONN_NAME__",
+      "itemName": "权限审计",
+      "critical": true
+    },
+    {
+      "id": "S86b",
+      "feature": "P1-格16 权限-弹窗断言",
+      "action": "window-contains",
+      "value": "用户与权限审计",
+      "critical": true,
+      "shot": "shot-p1-perm.png"
+    },
+    {
+      "id": "S86c",
+      "feature": "P1-格16 权限-收场",
+      "action": "press-esc",
       "critical": true
     }
   ]

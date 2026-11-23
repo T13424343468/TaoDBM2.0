@@ -10,7 +10,9 @@ namespace TaoDBM.UI;
 /// 血缘图（LineageMapper 从 SQL 语料建血缘地图并做影响追溯）。全部只读 / 纯计算，不改任何数据。</summary>
 public static class DesignAssistDialog
 {
-    public static void Show(MainWindow owner, NodeInfo info)
+    /// <summary>格15：带上下文进入——table 非空预填表单表名并自动生成；last 非空把结果快照序列化预填图表输入；
+    /// 无上下文入口行为不变。预填在状态行标注「已带入上下文」。</summary>
+    public static void Show(MainWindow owner, NodeInfo info, string? table = null, QueryResult? last = null)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -83,6 +85,30 @@ public static class DesignAssistDialog
         panel.Children.Add(lineageBox);
         panel.Children.Add(lineageRow);
 
+        // 格15：上下文预填——表名进表单（自动生成），结果快照进图表输入；状态行标注可修改。
+        string ctxNote = "";
+        if (!string.IsNullOrEmpty(table))
+        {
+            formTableBox.Text = table;
+            ctxNote = $"已带入上下文：表 {table}";
+            AppLog.Write($"[设计辅助] 上下文 表={table}");   // 走查 S82 断言锚点
+            _ = RunForm(owner, info, table, report, status);   // 自动生成表单
+        }
+        if (last is { Columns.Count: > 0 })
+        {
+            chartBox.Text = Snapshot(last);
+            ctxNote = ctxNote.Length > 0 ? ctxNote : "已带入上下文：查询结果快照";
+            AppLog.Write("[设计辅助] 上下文 结果快照");
+        }
+        if (ctxNote.Length > 0)
+            panel.Children.Insert(0, new TextBlock
+            {
+                Text = ctxNote + "，可修改。",
+                Foreground = Ant.Primary,
+                FontSize = AntTokens.FontMinor,
+                TextWrapping = TextWrapping.Wrap,
+            });
+
         var dlg = new ContentDialog
         {
             Title = "设计辅助（图表规范 / 表单构建 / 血缘图）",
@@ -91,6 +117,15 @@ public static class DesignAssistDialog
             XamlRoot = owner.Content.XamlRoot,
         };
         _ = dlg.ShowThemedAsync();
+    }
+
+    /// <summary>格15：结果快照序列化为图表输入格式（列名行＋数据行，分号分隔，截断前 100 行）。</summary>
+    private static string Snapshot(QueryResult r)
+    {
+        var parts = new List<string> { string.Join(",", r.Columns) };
+        foreach (var row in r.Rows.Take(100))
+            parts.Add(string.Join(",", row.Select(Exporter.Format)));
+        return string.Join("; ", parts);
     }
 
     // ── 图表规范：解析粘贴的轻量结果 → 推荐图型 → 聚合 ──

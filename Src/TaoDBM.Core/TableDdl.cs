@@ -160,6 +160,27 @@ public static class TableDdl
     /// <summary>建表语句包装为语句列表（统一执行入口用）。</summary>
     public static List<string> AsStatements(string sql) => new() { sql.TrimEnd(';') };
 
+    /// <summary>生成删除索引语句；不支持的引擎返回空串（改表模式勾选删除时用）。</summary>
+    public static string BuildDropIndex(DbEngine engine, string table, string indexName, Func<string, string> quote) => engine switch
+    {
+        DbEngine.MySQL => $"DROP INDEX {quote(indexName)} ON {quote(table)}",
+        DbEngine.SqlServer => $"DROP INDEX {quote(indexName)} ON {quote(table)}",
+        DbEngine.SQLite => $"DROP INDEX {quote(indexName)}",
+        DbEngine.PostgreSQL => $"DROP INDEX {quote(indexName)}",
+        DbEngine.Oracle => $"DROP INDEX {quote(indexName)}",
+        _ => "",
+    };
+
+    /// <summary>生成删除外键约束语句；SQLite 不支持单独删约束，返回空串。</summary>
+    public static string BuildDropForeignKey(DbEngine engine, string table, string constraintName, Func<string, string> quote) => engine switch
+    {
+        DbEngine.MySQL => $"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(constraintName)}",
+        DbEngine.SqlServer => $"ALTER TABLE {quote(table)} DROP CONSTRAINT {quote(constraintName)}",
+        DbEngine.PostgreSQL => $"ALTER TABLE {quote(table)} DROP CONSTRAINT {quote(constraintName)}",
+        DbEngine.Oracle => $"ALTER TABLE {quote(table)} DROP CONSTRAINT {quote(constraintName)}",
+        _ => "",
+    };
+
     /// <summary>默认值：NULL / 数字 / 常见时间表达式原样，其余加单引号。</summary>
     public static string FormatDefault(string v)
     {

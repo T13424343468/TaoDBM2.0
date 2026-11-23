@@ -115,7 +115,7 @@ public static class LazyWideGrid
         for (int i = colFrom; i <= colTo; i++)
         {
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColWidth) });
-            string text = store.IsLoaded(i) ? Exporter.Format(store.GetValue(rowIdx, i)) : "";
+            string text = store.IsLoaded(i) ? Exporter.DisplayFormat(store.GetValue(rowIdx, i)) : "";   // 格8：宽表网格同口径（NULL→(NULL)、大 BLOB 显体积）
             var tb = new TextBlock
             {
                 Text = text,

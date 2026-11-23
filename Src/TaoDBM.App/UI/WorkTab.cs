@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
@@ -42,6 +43,7 @@ public partial class WorkTab : Grid
     private readonly Button _fakerBtn = new() { Content = "拟真数据", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _histBtn = new() { Content = "历史", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _reportBtn = new() { Content = "报表", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _assistBtn = new() { Content = "设计辅助", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };   // 格15：结果上下文入口
     private readonly Button _delKeyBtn = new() { Content = "删除此键", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _favBtn = new() { Content = "收藏", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = 12 };
@@ -71,6 +73,7 @@ public partial class WorkTab : Grid
     private const int PageSize = 200;
     private bool _busy;
     private bool _isRelational => _provider is RelationalProvider;
+    private readonly Dictionary<string, double> _colWidths = new();   // 格9：用户拖拽列宽（键=查询文本|列名 或 browse:库.表|列名）
 
     // ---------- P1-01 错误横幅 / P1-02 脏标记 ----------
 
@@ -177,6 +180,7 @@ public partial class WorkTab : Grid
         }
         if (mode == WorkMode.Query) { bar.Children.Add(_favBtn); bar.Children.Add(_histBtn); }
         bar.Children.Add(_reportBtn);
+        bar.Children.Add(_assistBtn);
         bar.Children.Add(new TextBlock { Text = "　", Width = 8 });
         bar.Children.Add(_prevBtn);
         bar.Children.Add(_pageInfo);
@@ -246,6 +250,12 @@ public partial class WorkTab : Grid
         _histBtn.Click += (_, _) => ShowHistory();
         _favBtn.Click += (_, _) => ShowFavorites();
         _reportBtn.Click += (_, _) => _ = ShowReport();
+        _assistBtn.Click += (_, _) =>
+        {
+            // 格15：结果入口——把当前首结果集快照带进设计助手（图表输入预填）
+            var info = new NodeInfo { Kind = NodeKind.Database, Profile = _provider.Profile, Provider = _provider, Db = _db, Name = _db };
+            UI.DesignAssistDialog.Show(_owner, info, table: _child.Length > 0 ? _child : null, last: _last?.Count > 0 ? _last[0] : null);
+        };
         _prevBtn.Click += (_, _) => { if (_offset >= PageSize) { _offset -= PageSize; _ = RunOrRefresh(); } };
         _nextBtn.Click += (_, _) => { _offset += PageSize; _ = RunOrRefresh(); };
         AddAccelerator(Windows.System.VirtualKey.F5, Windows.System.VirtualKeyModifiers.None, RunNow);
@@ -257,14 +267,40 @@ public partial class WorkTab : Grid
         _dbBox.SelectedIndex = 0;
         _dbBox.SelectionChanged += (_, _) =>
         {
-            if (_dbBox.SelectedItem is string s && s != "(默认)") _db = s;
+            if (_dbBox.SelectedItem is string s && s != "(默认)" && s != "(加载中…)") _db = s;
         };
+        _ = LoadDatabaseListAsync(db);   // 整改二批格2：异步加载全部库
 
         if (initialSql != null) EditorText = initialSql;
         if (mode == WorkMode.TableData) EditorText = "";
 
         UpdateButtons();
         if (mode == WorkMode.TableData) _ = RunOrRefresh();
+    }
+
+    /// <summary>整改二批格2：库下拉异步加载全部库，当前库选中；加载中占位，失败回退单项并横幅提示。</summary>
+    private async Task LoadDatabaseListAsync(string currentDb)
+    {
+        try
+        {
+            _dbBox.ItemsSource = new List<string> { "(加载中…)" };
+            _dbBox.SelectedIndex = 0;
+            var dbs = await _provider.GetDatabases();
+            if (dbs.Count == 0) throw new InvalidOperationException("库列表为空");
+            var items = new List<string>(dbs);
+            if (string.IsNullOrEmpty(currentDb)) items.Insert(0, "(默认)");
+            else if (!items.Contains(currentDb)) items.Insert(0, currentDb);
+            _dbBox.ItemsSource = items;
+            _dbBox.SelectedItem = string.IsNullOrEmpty(currentDb) ? "(默认)" : currentDb;
+            AppLog.Write($"[库下拉] 已加载 {dbs.Count} 个库");
+        }
+        catch (Exception ex)
+        {
+            _dbBox.ItemsSource = new List<string> { string.IsNullOrEmpty(currentDb) ? "(默认)" : currentDb };
+            _dbBox.SelectedIndex = 0;
+            ShowError("库列表加载失败：" + ex.Message);
+            AppLog.Write("[库下拉] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
+        }
     }
 
     private void AddAccelerator(Windows.System.VirtualKey key, Windows.System.VirtualKeyModifiers mod, Action action)
@@ -451,6 +487,9 @@ public partial class WorkTab : Grid
         }
     }
 
+    /// <summary>格9：列宽记忆键——查询模式用 SQL 文本，表数据浏览用 browse:库.表（EditorText 为空）。</summary>
+    private string WidthKey() => EditorText.Length > 0 ? EditorText : $"browse:{_db}.{_child}";
+
     private void ShowResults(List<QueryResult> list)
     {
         _last = list;
@@ -458,7 +497,7 @@ public partial class WorkTab : Grid
         var msgs = new System.Text.StringBuilder();
         foreach (var r in list)
         {
-            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName));   // 批次E：结果网格右键分析/钉住
+            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey()));   // 批次E：结果网格右键分析/钉住；格9 用户列宽
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
         }
         _resultsHost.Content = panel;
@@ -470,9 +509,9 @@ public partial class WorkTab : Grid
     {
         _last = new List<QueryResult> { r };
         FrameworkElement el;
-        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName);
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName);
-        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName);
+        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey());
+        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey());
+        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey());
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
@@ -523,21 +562,152 @@ public partial class WorkTab : Grid
             };
             if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             var savePath = dlg.FileName;
-            // 批次F：懒加载结果导出全列——先把所有列拉齐再物化（列按需通道下导出=显式全量动作）
-            QueryResult exportSrc = _last[0];
-            if (exportSrc is LazyQueryResult lz)
+            // 格6：多结果集先选导出对象（单个 / 全部各存一个文件，文件名 _r2/_r3 序号）
+            List<int> picks;
+            if (_last.Count > 1)
             {
-                await lz.Store.EnsureColumnsAsync(Enumerable.Range(0, lz.Store.TotalColumns));
-                exportSrc = lz.Materialize(Enumerable.Range(0, lz.Store.TotalColumns).ToList());
+                var picked = await PickExportSetAsync();
+                if (picked is null) return;
+                picks = picked;
+                if (picks.Count > 1) AppLog.Write($"[导出] 集={picks.Count}");
             }
-            var content = csv ? Exporter.Csv(exportSrc) : Exporter.InsertSql(exportSrc, _child.Length > 0 ? _child : "table");
-            System.IO.File.WriteAllText(savePath, content, new System.Text.UTF8Encoding(false));
-            _messageBox.Text = $"已导出到 {savePath}";
+            else picks = new List<int> { 0 };
+
+            for (int pi = 0; pi < picks.Count; pi++)
+            {
+                int idx = picks[pi];
+                string path = savePath;
+                if (picks.Count > 1)
+                {
+                    var dir = System.IO.Path.GetDirectoryName(savePath) ?? ".";
+                    var name = System.IO.Path.GetFileNameWithoutExtension(savePath);
+                    var ext = System.IO.Path.GetExtension(savePath);
+                    path = System.IO.Path.Combine(dir, $"{name}{(idx == 0 ? "" : $"_r{idx + 1}")}{ext}");
+                }
+                await ExportOneAsync(csv, _last[idx], path);
+            }
         }
         catch (Exception ex)
         {
             ShowError("导出失败：" + ex.Message);
         }
+    }
+
+    /// <summary>格6：多结果集导出选择器（结果集 1..n ＋ 全部）。</summary>
+    private async Task<List<int>?> PickExportSetAsync()
+    {
+        var combo = new ComboBox { MinWidth = 260, Header = "选择结果集" };
+        for (int i = 0; i < _last.Count; i++) combo.Items.Add($"结果集 {i + 1}（{_last[i].Rows.Count} 行）");
+        combo.Items.Add("全部（各存一个文件）");
+        combo.SelectedIndex = 0;
+        var dlg = new ContentDialog
+        {
+            Title = "多结果集导出",
+            Content = combo,
+            PrimaryButtonText = "导出",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = _owner.Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return null;
+        if (combo.SelectedIndex == _last.Count) return Enumerable.Range(0, _last.Count).ToList();
+        return new List<int> { combo.SelectedIndex };
+    }
+
+    private async Task ExportOneAsync(bool csv, QueryResult src0, string savePath)
+    {
+        // 格7：懒加载结果走流式导出（分页枚举＋非模态进度＋取消）；其余保持整包口径
+        if (src0 is LazyQueryResult lz)
+        {
+            // 批次F：懒加载结果导出全列——先把所有列拉齐再物化（列按需通道下导出=显式全量动作）
+            await lz.Store.EnsureColumnsAsync(Enumerable.Range(0, lz.Store.TotalColumns));
+            var progress = new Progress<long>(n => { if (_exportProgressText is not null) _exportProgressText.Text = $"已写 {n} 行…"; });
+            await StreamExportAsync(csv, EnumerateStorePages(lz.Store, progress), lz.Store.ColumnNames, savePath);
+            return;
+        }
+        var content = csv ? Exporter.Csv(src0) : Exporter.InsertSql(src0, _child.Length > 0 ? _child : "table");
+        System.IO.File.WriteAllText(savePath, content, new System.Text.UTF8Encoding(false));
+        _messageBox.Text = $"已导出到 {savePath}";
+    }
+
+    /// <summary>格7：把已加载的懒加载存储按行分页枚举成流式页序列（页大小 5000，边枚举边报进度）。</summary>
+    private static IEnumerable<Core.Streaming.QueryPage> EnumerateStorePages(ColumnLazyStore store, IProgress<long>? progress = null)
+    {
+        const int pageSize = 5000;
+        long written = 0;
+        for (int offset = 0; offset < store.RowCount; offset += pageSize)
+        {
+            int count = Math.Min(pageSize, store.RowCount - offset);
+            var rows = new object[count][];
+            for (int r = 0; r < count; r++)
+            {
+                var row = new object[store.TotalColumns];
+                for (int c = 0; c < store.TotalColumns; c++) row[c] = store.GetValue(offset + r, c)!;
+                rows[r] = row;
+            }
+            written += count;
+            progress?.Report(written);
+            yield return new Core.Streaming.QueryPage { Rows = rows, HasMore = offset + count < store.RowCount };
+        }
+    }
+
+    /// <summary>格7：流式导出——非模态进度浮层（已写行数）＋取消（删半成品文件）。</summary>
+    private async Task StreamExportAsync(bool csv, IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string savePath)
+    {
+        _exportCts = new CancellationTokenSource();
+        _exportProgressText = new TextBlock { Text = "导出中…", FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
+        var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        cancelBtn.Click += (_, _) => _exportCts?.Cancel();
+        var box = new StackPanel { Spacing = 8, MinWidth = 300 };
+        box.Children.Add(_exportProgressText);
+        box.Children.Add(cancelBtn);
+        var border = new Border
+        {
+            Child = box,
+            Background = Ant.Card,
+            BorderBrush = Ant.Border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            Padding = new Thickness(12),
+        };
+        var popup = new Popup { Child = border };
+        popup.IsOpen = true;
+        long rows = 0;
+        try
+        {
+            await Task.Run(() =>
+            {
+                using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
+                rows = csv
+                    ? Exporter.CsvStream(pages, columns, w, _exportCts.Token)
+                    : Exporter.InsertSqlStream(pages, columns, _child.Length > 0 ? _child : "table", w, _exportCts.Token);
+            });
+            _messageBox.Text = $"已导出到 {savePath}（流式 {rows} 行）";
+            AppLog.Write($"[导出] 流式 rows={rows}");
+        }
+        catch (OperationCanceledException)
+        {
+            TryDeleteHalfWritten(savePath);
+            ShowError("已取消");
+            AppLog.Write("[导出] 流式取消");
+        }
+        catch (Exception ex)
+        {
+            TryDeleteHalfWritten(savePath);
+            ShowError("导出失败：" + ex.Message);
+        }
+        finally
+        {
+            popup.IsOpen = false;
+            _exportProgressText = null;
+            _exportCts.Dispose();
+            _exportCts = null;
+        }
+    }
+
+    private static void TryDeleteHalfWritten(string path)
+    {
+        try { if (System.IO.File.Exists(path)) System.IO.File.Delete(path); } catch { /* 删不掉留给用户手动清理 */ }
     }
 
     // ---------- 表结构 ----------
@@ -578,32 +748,29 @@ public partial class WorkTab : Grid
             return;
         }
 
-        var inputs = new List<TextBox>();
+        var fields = new List<RowEditorFactory.Field>();
         var nullChecks = new List<CheckBox>();
         var panel = new StackPanel { Spacing = 10, MinWidth = 380, Margin = new Thickness(0, 0, 12, 0) };
         panel.Children.Add(new TextBlock { Text = "勾选 NULL＝存 NULL；留空＝存空字符串（数字列留空仍按 NULL）。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
         for (int i = 0; i < _cols.Count; i++)
         {
             var nullCheck = new CheckBox { Content = "NULL", HorizontalAlignment = HorizontalAlignment.Right, FontSize = AntTokens.FontMinor };
-            var box = new TextBox
-            {
-                Header = $"{_cols[i].Name}（{_cols[i].DataType}{(_cols[i].IsKey ? " · 🔑" : "")}）",
-                PlaceholderText = "留空＝空字符串；勾选左侧 NULL 存 NULL",
-            };
-            nullCheck.Checked += (_, _) => box.IsEnabled = false;
-            nullCheck.Unchecked += (_, _) => box.IsEnabled = true;
+            string? initialText = null;
             if (existing != null && i < existing.Length)
             {
                 var v = existing[i];
                 bool isNull = v == null || v is DBNull;
-                box.Text = isNull ? "" : Exporter.Format(v);
+                initialText = isNull ? "" : Exporter.Format(v);
                 nullCheck.IsChecked = isNull;
-                if (_cols[i].IsKey) box.IsReadOnly = true;
             }
-            inputs.Add(box);
+            var field = RowEditorFactory.Create(_cols[i], initialText, readOnly: _cols[i].IsKey);   // 格4：按列类型出控件
+            nullCheck.Checked += (_, _) => field.SetEnabled(false);
+            nullCheck.Unchecked += (_, _) => field.SetEnabled(true);
+            if (nullCheck.IsChecked == true) field.SetEnabled(false);
+            fields.Add(field);
             nullChecks.Add(nullCheck);
             var fieldRow = new StackPanel { Spacing = 4 };
-            fieldRow.Children.Add(box);
+            fieldRow.Children.Add(field.Control);
             fieldRow.Children.Add(nullCheck);
             panel.Children.Add(fieldRow);
         }
@@ -630,7 +797,7 @@ public partial class WorkTab : Grid
                 Title = "确认删除这一行",
                 Content = new TextBlock
                 {
-                    Text = $"将删除 {_child} 中 {KeyCol!.Name} = {inputs[_cols.IndexOf(KeyCol)].Text} 的这一行，删除后需自行恢复数据，请确认。",
+                    Text = $"将删除 {_child} 中 {KeyCol!.Name} = {fields[_cols.IndexOf(KeyCol)].GetText()} 的这一行，删除后需自行恢复数据，请确认。",
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = Ant.Error,
                 },
@@ -640,7 +807,7 @@ public partial class WorkTab : Grid
                 XamlRoot = _owner.Content.XamlRoot,
             };
             if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
-            var del = $"DELETE FROM {_provider.Quote(_child)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, inputs[_cols.IndexOf(KeyCol)].Text)}";
+            var del = $"DELETE FROM {_provider.Quote(_child)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
             await ExecWrite(del, "已删除 1 行");
             return;
         }
@@ -652,7 +819,7 @@ public partial class WorkTab : Grid
         for (int i = 0; i < _cols.Count; i++)
         {
             bool isNull = nullChecks[i].IsChecked == true;
-            bool empty = inputs[i].Text.Length == 0;
+            bool empty = fields[i].GetText().Length == 0;
             string val;
             if (isNull)
             {
@@ -664,7 +831,7 @@ public partial class WorkTab : Grid
             }
             else
             {
-                val = Exporter.Literal(_cols[i], inputs[i].Text);
+                val = Exporter.Literal(_cols[i], fields[i].GetText());
             }
 
             if (existing == null)
@@ -687,7 +854,7 @@ public partial class WorkTab : Grid
         else
         {
             if (sets.Count == 0) { _messageBox.Text = "没有可更新的列（主键列不可修改）。"; return; }
-            sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, inputs[_cols.IndexOf(KeyCol)].Text)}";
+            sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
         }
         await ExecWrite(sql, existing == null ? "已新增 1 行" : "已保存修改");
     }
@@ -721,18 +888,21 @@ public partial class WorkTab : Grid
         if (!_isRelational) { _messageBox.Text = "该引擎不支持数据导入。"; return; }
         try
         {
-            var picker = new FileOpenPicker();
-            picker.FileTypeFilter.Add(".csv");
-            picker.FileTypeFilter.Add(".json");
-            picker.FileTypeFilter.Add(".txt");
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(_owner));
-            var file = await picker.PickSingleFileAsync();
-            if (file == null) return;
+            // 格3：FileOpenPicker 换 WinForms OpenFileDialog（#216 同款预防：Server 会话原生崩）
+            using var dlg = new System.Windows.Forms.OpenFileDialog
+            {
+                Title = "选择导入文件",
+                Filter = "数据文件 (*.csv;*.json;*.txt)|*.csv;*.json;*.txt|所有文件 (*.*)|*.*",
+            };
+            if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            var path = dlg.FileName;
+            var file = new System.IO.FileInfo(path);
 
-            var text = await Windows.Storage.FileIO.ReadTextAsync(file);
+            var text = await System.IO.File.ReadAllTextAsync(path);
             bool isJson = file.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
             List<string> headers = new();
             List<string?[]> rows = new();
+            ImportPreviewDialog.ImportPlan? plan = null;
             if (isJson)
             {
                 (headers, rows) = JsonImporter.Parse(text);
@@ -740,47 +910,138 @@ public partial class WorkTab : Grid
             }
             if (_cols.Count == 0) _cols = await _provider.GetColumns(_db, _child);
 
-            int total = 0, ok = 0; bool truncated = false;
-            var errs = new System.Text.StringBuilder();
-            if (isJson)
+            if (!isJson)
             {
-                var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, headers, rows);
-                foreach (var s in stmts)
+                // 格3：先出预览与映射（前 50 行），确认后才执行导入
+                List<string> previewHeaders;
+                List<string?[]> previewRows = new();
+                var first = ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 50 }).FirstOrDefault();
+                previewHeaders = first?.Headers?.ToList() ?? new List<string>();
+                if (first is not null)
                 {
-                    var list = await _provider.Execute(_db, s);
-                    foreach (var qr in list)
+                    previewRows.AddRange(first.Rows);
+                    // 预览不足 50 行时再取一批补齐展示
+                    if (previewRows.Count < 50)
                     {
-                        if (qr.Message.StartsWith("错误", StringComparison.Ordinal)) errs.AppendLine(qr.Message);
-                        else ok++;
+                        foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 50 }))
+                        {
+                            previewRows.AddRange(b.Rows);
+                            if (previewRows.Count >= 50) break;
+                        }
                     }
                 }
+                if (previewHeaders.Count == 0 || previewRows.Count == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
+                plan = await ImportPreviewDialog.ShowAsync(_owner, _cols, previewHeaders, previewRows);
+                if (plan is null) return;
             }
-            else
+
+            // 格3：导入进度（ProgressBar）＋取消（CancellationToken 贯穿 CsvBatches）
+            _importCts = new CancellationTokenSource();
+            var progressBar = new ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = true };
+            var progressText = new TextBlock { Text = "导入中…", FontSize = AntTokens.FontMinor };
+            var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), AutomationId = "ImportCancel" };
+            var box = new StackPanel { Spacing = 8, MinWidth = 300 };
+            box.Children.Add(progressText);
+            box.Children.Add(progressBar);
+            box.Children.Add(cancelBtn);
+            var border = new Border
             {
-                // CSV 走流式批次：逐批生成并执行 INSERT，内存中仅保留单批
-                foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 100 }))
+                Child = box,
+                Background = Ant.Card,
+                BorderBrush = Ant.Border,
+                BorderThickness = new Thickness(1),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+                Padding = new Thickness(12),
+            };
+            var popup = new Popup { Child = border };
+            cancelBtn.Click += (_, _) => _importCts.Cancel();
+            popup.IsOpen = true;
+            var ct = _importCts.Token;
+            AppLog.Write($"[导入] 开始 file={file.Name} json={isJson}");
+
+            int total = 0, ok = 0; bool truncated = false;
+            var errs = new System.Text.StringBuilder();
+            try
+            {
+                if (isJson)
                 {
-                    if (b.Headers == null || b.Rows.Count == 0) continue;
-                    var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, b.Headers.ToList(), b.Rows.ToList());
+                    ct.ThrowIfCancellationRequested();
+                    var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, headers, rows);
                     foreach (var s in stmts)
                     {
+                        ct.ThrowIfCancellationRequested();
                         var list = await _provider.Execute(_db, s);
                         foreach (var qr in list)
                         {
-                            if (qr.Message.StartsWith("错误", StringComparison.Ordinal)) errs.AppendLine(qr.Message);
+                            if (qr.Message.StartsWith("错误", StringComparison.Ordinal))
+                            {
+                                errs.AppendLine(qr.Message);
+                                if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
+                            }
                             else ok++;
                         }
                     }
-                    total = (int)b.CumulativeRows;
-                    truncated |= b.Truncated;
+                    total = rows.Count;
                 }
-                if (total == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
+                else
+                {
+                    // CSV 走流式批次：逐批生成并执行 INSERT，内存中仅保留单批；列映射按预览计划重排
+                    foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 100 }))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        if (b.Headers == null || b.Rows.Count == 0) continue;
+                        List<string> execHeaders;
+                        List<string?[]> execRows;
+                        if (plan is null) { execHeaders = b.Headers.ToList(); execRows = b.Rows.ToList(); }
+                        else
+                        {
+                            execHeaders = plan.MappedHeaders.ToList();
+                            execRows = b.Rows.Select(r => plan.MappedCsvIndexes.Select(i => i < r.Length ? r[i] : null).ToArray()).ToList();
+                            if (!plan.FirstRowHeader)
+                            {
+                                // 首行不是表头：把原首行当数据补回（仅首批）
+                                if (total == 0) execRows.Insert(0, b.Headers.Select(h => (string?)h).ToArray());
+                            }
+                        }
+                        var stmts = CsvImporter.BuildInserts(_provider, _db, _child, _cols, execHeaders, execRows);
+                        foreach (var s in stmts)
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            var list = await _provider.Execute(_db, s);
+                            foreach (var qr in list)
+                            {
+                                if (qr.Message.StartsWith("错误", StringComparison.Ordinal))
+                                {
+                                    errs.AppendLine(qr.Message);
+                                    if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
+                                }
+                                else ok++;
+                            }
+                        }
+                        total = (int)b.CumulativeRows;
+                        truncated |= b.Truncated;
+                        progressText.Text = $"导入中…（累计 {total} 行）";
+                    }
+                    if (total == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
+                }
+                QueryHistory.Add(_provider.EngineName, _db, $"-- {(isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
+                _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errs.Length > 0 ? "\n" + errs : "")}";
+                _owner.SetStatus($"{(isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
+                AppLog.Write($"[导入] 完成 file={file.Name} total={total} ok={ok}");
+                _offset = 0;
+                await RunOrRefresh();
             }
-            QueryHistory.Add(_provider.EngineName, _db, $"-- {(isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
-            _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errs.Length > 0 ? "\n" + errs : "")}";
-            _owner.SetStatus($"{(isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
-            _offset = 0;
-            await RunOrRefresh();
+            catch (OperationCanceledException)
+            {
+                ShowError("已取消");
+                AppLog.Write("[导入] 取消");
+            }
+            finally
+            {
+                popup.IsOpen = false;
+                _importCts.Dispose();
+                _importCts = null;
+            }
         }
         catch (Exception ex)
         {
@@ -1097,7 +1358,7 @@ public partial class WorkTab : Grid
         finally { _applying = false; }
     }
 
-    // ---------- SQL 补全（Ctrl+Space） ----------
+    // ---------- SQL 补全（Ctrl+Space，格1：非模态浮层，键盘直达） ----------
 
     private static readonly string[] Keywords =
     {
@@ -1108,7 +1369,17 @@ public partial class WorkTab : Grid
         "BETWEEN", "EXISTS", "UNION", "ALL", "DESC", "ASC", "PRIMARY", "KEY", "INDEX",
     };
 
-    private async void ShowComplete()
+    private Popup? _completePopup;
+    private ListView? _completeList;
+    private int _completeStart;
+    private List<string> _completeAll = new();
+    // 格7：流式导出进度与取消
+    private TextBlock? _exportProgressText;
+    private CancellationTokenSource? _exportCts;
+    // 格3：导入取消
+    private CancellationTokenSource? _importCts;
+
+    private void ShowComplete()
     {
         int caret = _editor.Document?.Selection?.StartPosition ?? 0;
         string text = EditorText;
@@ -1116,30 +1387,131 @@ public partial class WorkTab : Grid
         while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
         string word = text[start..caret];
 
-        var candidates = Keywords
-            .Concat(_cols.Select(c => c.Name))
-            .Where(k => k.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
-                        !k.Equals(word, StringComparison.OrdinalIgnoreCase))
-            .Take(30).ToList();
-        if (candidates.Count == 0) return;
+        var candidates = CompleteCandidates(word);
+        if (candidates.Count == 0) { AppLog.Write($"[补全] 无候选 词={word}"); return; }
+        _completeStart = start;
+        _completeAll = candidates;
+        OpenCompletePopup();
+        AppLog.Write($"[补全] 打开 候选={candidates.Count} 词={word}");
+    }
 
-        var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, Height = 280, MaxWidth = 380 };
-        foreach (var k in candidates) lv.Items.Add(new TextBlock { Text = k, FontFamily = (FontFamily)Application.Current.Resources["AntMono"] });
+    private List<string> CompleteCandidates(string word) => Keywords
+        .Concat(_cols.Select(c => c.Name))
+        .Where(k => k.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
+                    !k.Equals(word, StringComparison.OrdinalIgnoreCase))
+        .Take(30).ToList();
 
-        var dlg = new ContentDialog
+    private void OpenCompletePopup()
+    {
+        CloseCompletePopup();
+        var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, Height = 280, MaxWidth = 380, AutomationId = "CompleteList" };
+        FillCompleteItems(lv);
+        lv.SelectedIndex = 0;
+        lv.DoubleTapped += (_, _) => InsertComplete();
+        _completeList = lv;
+        var border = new Border
         {
-            Title = $"补全（当前词：{word}）",
-            Content = lv,
-            PrimaryButtonText = "插入",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = _owner.Content.XamlRoot,
+            AutomationId = "CompletePopup",
+            Child = lv,
+            Background = Ant.Card,
+            BorderBrush = Ant.Border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
-        var result = await dlg.ShowThemedAsync();
-        if (result != ContentDialogResult.Primary || lv.SelectedIndex < 0) return;
-        string pick = candidates[lv.SelectedIndex];
-        EditorText = text[..start] + pick + text[caret..];
+        var popup = new Popup { Child = border, IsLightDismissEnabled = true };
+        // 光标矩形定位：编辑器在窗口内的原点＋光标矩形偏移；取不到时退编辑器左上
+        try
+        {
+            var origin = _editor.TransformToVisual(_owner.Content).TransformPoint(new Windows.Foundation.Point(0, 0));
+            _editor.Document!.Selection!.GetRect(PointOptions.None, out var rect, out _);
+            popup.HorizontalOffset = origin.X + rect.X;
+            popup.VerticalOffset = origin.Y + rect.Y + rect.Height + 4;
+        }
+        catch
+        {
+            try
+            {
+                var origin = _editor.TransformToVisual(_owner.Content).TransformPoint(new Windows.Foundation.Point(0, 0));
+                popup.HorizontalOffset = origin.X + 40;
+                popup.VerticalOffset = origin.Y + 40;
+            }
+            catch { popup.HorizontalOffset = 80; popup.VerticalOffset = 120; }
+        }
+        popup.Closed += (_, _) => { if (ReferenceEquals(_completePopup, popup)) { _completePopup = null; _completeList = null; } };
+        _completePopup = popup;
+        popup.IsOpen = true;
+        _editor.KeyDown -= OnCompleteKeyDown;
+        _editor.KeyDown += OnCompleteKeyDown;
+        _editor.TextChanged -= OnCompleteTextChanged;
+        _editor.TextChanged += OnCompleteTextChanged;
+    }
+
+    private void FillCompleteItems(ListView lv)
+    {
+        lv.Items.Clear();
+        foreach (var k in _completeAll)
+            lv.Items.Add(new TextBlock { Text = k, FontFamily = (FontFamily)Application.Current.Resources["AntMono"] });
+    }
+
+    private void OnCompleteKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (_completePopup is null || !_completePopup.IsOpen || _completeList is null) return;
+        switch (e.Key)
+        {
+            case Windows.System.VirtualKey.Down:
+                if (_completeList.SelectedIndex < _completeList.Items.Count - 1) _completeList.SelectedIndex++;
+                e.Handled = true;
+                break;
+            case Windows.System.VirtualKey.Up:
+                if (_completeList.SelectedIndex > 0) _completeList.SelectedIndex--;
+                e.Handled = true;
+                break;
+            case Windows.System.VirtualKey.Enter:
+            case Windows.System.VirtualKey.Tab:
+                InsertComplete();
+                e.Handled = true;
+                break;
+            case Windows.System.VirtualKey.Escape:
+                CloseCompletePopup();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnCompleteTextChanged(object? sender, RoutedEventArgs e)
+    {
+        // 继续输入重过滤；插入路径由 _applying 挡住（高亮定时器同款口径）
+        if (_completePopup is null || !_completePopup.IsOpen || _applying) return;
+        int caret = _editor.Document?.Selection?.StartPosition ?? 0;
+        string text = EditorText;
+        int start = caret;
+        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
+        string word = text[start..caret];
+        _completeStart = start;
+        var candidates = CompleteCandidates(word);
+        if (candidates.Count == 0) { CloseCompletePopup(); return; }
+        _completeAll = candidates;
+        if (_completeList is not null) { FillCompleteItems(_completeList); _completeList.SelectedIndex = 0; }
+    }
+
+    private void InsertComplete()
+    {
+        if (_completeList is null || _completeList.SelectedIndex < 0) { CloseCompletePopup(); return; }
+        string pick = _completeAll[_completeList.SelectedIndex];
+        string text = EditorText;
+        int start = Math.Min(_completeStart, text.Length);
+        EditorText = text[..start] + pick + text[start..];
         _editor.Document?.Selection?.SetRange(start + pick.Length, start + pick.Length);
+        CloseCompletePopup();
+        AppLog.Write($"[补全] 插入 {pick}");
         _editor.Focus(FocusState.Programmatic);
+    }
+
+    private void CloseCompletePopup()
+    {
+        if (_completePopup is not null) { var p = _completePopup; _completePopup = null; p.IsOpen = false; }
+        _completeList = null;
+        _editor.KeyDown -= OnCompleteKeyDown;
+        _editor.TextChanged -= OnCompleteTextChanged;
     }
 }

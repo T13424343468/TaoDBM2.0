@@ -22,6 +22,7 @@ public class NodeInfo
     public bool Loaded;
     public string Category = "";  // B2 对象树：views/indexes/fks/routines/triggers
     public string RowText = "";   // B2 对象树：目录行原文（索引/外键无 DDL，直接展示）
+    public string ConnState = ""; // 格18：连接运行态 ""=未知 / "Connected"=绿点 / "Failed"=红点（随 RebuildRoots 按 Profile.Id 保留）
 }
 
 public partial class MainWindow : Window
@@ -271,22 +272,58 @@ public partial class MainWindow : Window
 
     private void RebuildRoots()
     {
+        // 格18：状态随重建保留（按 Profile.Id 映射），筛选只隐藏不销毁（_profiles 不动）
+        var states = _nodeMap.Values.Where(i => i.ConnState.Length > 0)
+            .GroupBy(i => i.Profile.Id).ToDictionary(g => g.Key, g => g.First().ConnState);
         ConnTree.RootNodes.Clear();
         _nodeMap.Clear();
+        var filter = (ConnFilter.Text ?? "").Trim();
+        int shown = 0;
         foreach (var p in _profiles)
         {
-            var info = new NodeInfo { Kind = NodeKind.Connection, Profile = p, Name = p.DisplayName };
-            var node = new TreeViewNode
-            {
-                Content = $"🗄️ {p.DisplayName}（{EngineInfo.Name(p.Engine)}）",
-                IsExpanded = false,
-            };
+            // 格18：筛选——DisplayName/Host 不区分大小写包含匹配；清空恢复全部
+            if (filter.Length > 0 &&
+                !(p.DisplayName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                  p.Host.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            shown++;
+            var info = new NodeInfo { Kind = NodeKind.Connection, Profile = p, Name = p.DisplayName, ConnState = states.GetValueOrDefault(p.Id, "") };
+            var node = new TreeViewNode { IsExpanded = false };
+            SetNodeContent(node, info);   // 格18：状态点着色（绿=Connected / 红=Failed），无状态保持纯文本
             node.Children.Add(new TreeViewNode { Content = "…" }); // 占位，展开时填充
             _nodeMap[node] = info;
             ConnTree.RootNodes.Add(node);
         }
-        SetStatus($"共 {_profiles.Count} 个连接");
+        SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接");
+        AppLog.Write($"[连接树] filter={filter} shown={shown}");   // 格18：走查 S85 断言锚点
     }
+
+    /// <summary>格18：筛选框输入即过滤（清空恢复全部）；XAML 解析期 TextChanged 可能早于树就绪，判空防崩。</summary>
+    private void OnConnFilterChanged(object sender, TextChangedEventArgs e)
+    {
+        if (ConnTree is null) return;
+        RebuildRoots();
+    }
+
+    /// <summary>格18：根节点内容——无状态纯文本；Connected 绿点 / Failed 红点前缀（颜色随主题语义色）。</summary>
+    private static void SetNodeContent(TreeViewNode node, NodeInfo info)
+    {
+        string text = $"🗄️ {info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";
+        if (info.ConnState.Length == 0) { node.Content = text; return; }
+        var host = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        host.Children.Add(new TextBlock
+        {
+            Text = "●",
+            FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = info.ConnState == "Connected" ? Ant.Success : Ant.Error,
+        });
+        host.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        node.Content = host;
+    }
+
+    /// <summary>格18：展开成败后就地刷新该根节点状态点（不重建整树）。</summary>
+    private void SetNodeStateDot(TreeViewNode node, NodeInfo info) => SetNodeContent(node, info);
 
     private async void OnNewConn(object sender, RoutedEventArgs e)
     {
@@ -452,67 +489,82 @@ public partial class MainWindow : Window
         ConnTree.SelectedItem = node;   // 右键即选中，菜单动作与选中态一致
         var fly = new MenuFlyout();
         fly.PinTheme();   // 右键菜单是弹层，挂窗口内容之外，钉当前明暗象
-        void Item(string text, RoutedEventHandler h, bool danger = false)
+        // 格17：二级分组——语义子菜单收敛平铺项，高频项保留一级；AutomationId=Menu_{组}_{项}。
+        var subMenus = new Dictionary<string, MenuFlyoutSubItem>();
+        MenuFlyoutSubItem Sub(string name)
+        {
+            if (!subMenus.TryGetValue(name, out var sub))
+            {
+                sub = new MenuFlyoutSubItem { Text = name };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(sub, $"Menu_{name}");
+                fly.Items.Add(sub);
+                subMenus[name] = sub;
+            }
+            return sub;
+        }
+        void Item(string text, RoutedEventHandler h, bool danger = false, string? group = null)
         {
             var mi = new MenuFlyoutItem { Text = text };
             if (danger) mi.Foreground = Ant.Error;   // 跟主题走的警示红，不写死颜色
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(mi, group is null ? $"Menu_{text}" : $"Menu_{group}_{text}");
             mi.Click += h;
-            fly.Items.Add(mi);
+            (group is null ? fly : Sub(group)).Items.Add(mi);
         }
         switch (info.Kind)
         {
             case NodeKind.Connection:
-                Item("展开连接", (_, _) => { if (!node.IsExpanded) node.IsExpanded = true; });
-                Item("编辑连接", async (_, _) => await EditConnection(info));
-                Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
-                Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
-                Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
-                Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
-                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
-                Item("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info));
-                Item("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info));
-                Item("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info));
-                Item("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
-                Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
-                Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
-                Item("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
-                Item("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
-                Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
-                Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
-                Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
-                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
-                Item("关闭连接", (_, _) => CloseConnection(info, node));
-                Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true);
+                Item("展开连接", (_, _) => { if (!node.IsExpanded) node.IsExpanded = true; }, group: "连接");
+                Item("编辑连接", async (_, _) => await EditConnection(info), group: "连接");
+                Item("关闭连接", (_, _) => CloseConnection(info, node), group: "连接");
+                Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true, group: "连接");
+                Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info), group: "工具");
+                Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info), group: "工具");
+                Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info), group: "工具");
+                Item("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider), group: "工具");
+                Item("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info), group: "工具");
+                Item("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info), group: "工具");
+                Item("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info), group: "运维");
+                Item("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info), group: "运维");
+                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info), group: "运维");
+                Item("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info), group: "运维");
+                Item("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info), group: "运维");
+                Item("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info), group: "运维");
+                Item("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info), group: "运维");
+                Item("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info), group: "运维");
+                Item("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info), group: "运维");
+                Item("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info), group: "运维");
+                Item("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info), group: "运维");
+                Item("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info), group: "运维");
                 break;
             case NodeKind.Database:
                 Item("刷新", (_, _) => RefreshNode(node));
-                Item("新建查询", (_, _) => OpenQueryTab(info));
+                Item("新建查询", (_, _) => OpenQueryTab(info));   // 高频项保留一级
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
-                Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
-                Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
-                Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
-                Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
-                Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
-                Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
-                Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
-                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
-                Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
-                Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
-                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
-                Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
-                Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
-                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
+                Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()), group: "备份");
+                Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info), group: "备份");
+                Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info), group: "备份");
+                Item("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info), group: "备份");
+                Item("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info), group: "工具");
+                Item("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info), group: "工具");
+                Item("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info), group: "工具");
+                Item("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info), group: "工具");
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info), group: "工具");
+                Item("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info), group: "工具");
+                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info), group: "工具");
+                Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()), group: "工具");
+                Item("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info), group: "工具");
+                Item("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info), group: "工具");
+                Item("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info), group: "工具");
                 break;
             case NodeKind.Table:
                 Item("刷新", (_, _) => RefreshNode(node));
                 Item("新建查询", (_, _) => OpenQueryTab(info));
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
-                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
-                Item("拟真数据", (_, _) => OpenFaker(info));
+                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info), group: "工具");
+                Item("拟真数据", (_, _) => OpenFaker(info), group: "工具");
+                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info, info.Name), group: "工具");   // 格15：表节点带表名上下文
                 break;
             case NodeKind.Category:
                 Item("刷新", (_, _) => RefreshNode(node));
@@ -586,6 +638,8 @@ public partial class MainWindow : Window
         info.Provider?.Dispose();
         info.Provider = null;
         info.Loaded = false;
+        info.ConnState = "";   // 格18：断开置回未知，状态点消失
+        SetNodeContent(node, info);
         node.Children.Clear();
         node.Children.Add(new TreeViewNode { Content = "…" });
         node.IsExpanded = false;
@@ -614,6 +668,8 @@ public partial class MainWindow : Window
                     SetStatus($"正在连接 {info.Profile.DisplayName}…");
                     info.Provider ??= ProviderFactory.Create(info.Profile);
                     var dbs = await info.Provider.GetDatabases();
+                    info.ConnState = "Connected";   // 格18：展开成功置绿点
+                    SetNodeStateDot(node, info);
                     // #154 S09 取证先行：连接装载零打点致 MSSQL 红账无法定谳，装载链路入应用日志
                     Core.AppLog.Write($"[对象树] 连接展开 engine={info.Profile.Engine} dbs={dbs.Count} [{string.Join(",", dbs.Take(8))}]");
                     foreach (var db in dbs)
@@ -704,6 +760,7 @@ public partial class MainWindow : Window
             info.Loaded = false;
             node.Children.Clear();
             node.Children.Add(new TreeViewNode { Content = "⚠ " + ex.Message + "（点击刷新重试）" });
+            if (info.Kind == NodeKind.Connection) { info.ConnState = "Failed"; SetNodeStateDot(node, info); }   // 格18：展开失败置红点
             // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
             Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
             SetStatus("加载失败：" + ex.Message);
@@ -877,6 +934,34 @@ public partial class MainWindow : Window
             // #88 S11 红场（0xC000027B）：首跑云路径异常不得带崩整个应用——落账＋界面提示，走查按 work-editor 缺席定谳
             Core.AppLog.Write($"[新建查询] {ex.GetType().Name}: {ex.Message}");
             _ = InfoAsync($"新建查询失败：{ex.Message}");
+        }
+    }
+
+    /// <summary>格14：把任意 SQL（如 ERD 正向 DDL）一键送进新查询页签；info 可空（无连接上下文，执行时再选连接）。</summary>
+    public void OpenQueryWithSql(string sql, NodeInfo? info = null)
+    {
+        try
+        {
+            info ??= new NodeInfo { Kind = NodeKind.Connection, Name = "SQL" };
+            info.Provider ??= ProviderFactory.Create(info.Profile);
+            var db = info.Kind == NodeKind.Database ? info.Name
+                : info.Profile.Engine == DbEngine.SQLite
+                    ? (info.Profile.Database.Length > 0 ? "main" : "")
+                    : info.Profile.Database;
+            var tab = new TabViewItem { Header = $"查询 · {info.Name}" };
+            var wt = new UI.WorkTab(this, info.Provider!, db, info.Kind == NodeKind.Table ? info.Name : "", UI.WorkMode.Query, sql);
+            tab.Content = wt;
+            WorkTabs.TabItems.Add(tab);
+            _workTabs[tab] = wt;
+            WireDirtyHeader(tab, wt);
+            SaveSession();
+            WorkTabs.SelectedItem = tab;
+            Core.AppLog.Write($"[ERD] DDL 进查询窗口 db={db}");
+        }
+        catch (Exception ex)
+        {
+            Core.AppLog.Write($"[ERD] DDL 进查询窗口失败 {ex.GetType().Name}: {ex.Message}");
+            _ = InfoAsync($"打开查询窗口失败：{ex.Message}");
         }
     }
 

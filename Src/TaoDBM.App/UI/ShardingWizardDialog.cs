@@ -29,6 +29,7 @@ public static class ShardingWizardDialog
 
         // ── 向导状态 ──
         int step = StepTable;
+        int maxStep = StepTable;   // 格13：已到达过的最远步骤（决定步骤条可点范围）
         var drafts = new List<string>();
         var indexedCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         bool expertUnlocked = false;
@@ -109,20 +110,33 @@ public static class ShardingWizardDialog
             Background = Ant.Bg,
             Child = new TextBlock { Text = n, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub },
         }).ToList();
-        foreach (var c in chips) stepChips.Children.Add(c);
+        // 格13：步骤条可点跳转——已过步骤可点回跳（后续步骤态保留，确认页重过校验），未到步骤禁用（半透明）。
+        for (int i = 0; i < chips.Count; i++)
+        {
+            int idx = i;
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(chips[i], $"StepChip_{i + 1}");
+            chips[i].Tapped += (_, _) => { if (idx <= maxStep) ShowStep(idx); };
+            stepChips.Children.Add(chips[i]);
+        }
+        // 格13：状态行前置——对话框顶部固定一行当前步骤说明，校验错误仍在步骤内 status 展示。
+        var topStatus = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, TextWrapping = TextWrapping.Wrap };
+        var stepDescs = new[] { "第 1 步：选择目标表", "第 2 步：选拆分方式", "第 3 步：选分片键", "第 4 步：确认方案" };
 
         void ShowStep(int s)
         {
             step = s;
+            maxStep = Math.Max(maxStep, s);
             foreach (var child in stepPanels.Children.OfType<Border>())
                 child.Visibility = (int)child.Tag == s ? Visibility.Visible : Visibility.Collapsed;
             for (int i = 0; i < chips.Count; i++)
             {
                 chips[i].Background = i == s ? Ant.Primary : Ant.Bg;
                 ((TextBlock)chips[i].Child).Foreground = i == s ? Ant.OnPrimary : Ant.TextSub;
+                chips[i].Opacity = i <= maxStep ? 1.0 : 0.5;   // 格13：未到步骤半透明禁点
             }
             prevBtn.IsEnabled = s > StepTable;
             nextBtn.Content = s == StepConfirm ? "生成分片方案" : "下一步";
+            topStatus.Text = stepDescs[s];
             status.Text = "";
         }
 
@@ -562,6 +576,7 @@ public static class ShardingWizardDialog
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 580 };
         panel.Children.Add(Head("四步向导：选表 → 选拆分方式 → 选分片键 → 确认方案"));
+        panel.Children.Add(topStatus);   // 格13：状态行前置
         panel.Children.Add(stepChips);
         panel.Children.Add(stepPanels);
         panel.Children.Add(navRow);
