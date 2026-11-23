@@ -35,7 +35,7 @@ SELECT order_items.id, order_items.order_id, order_items.product_id, order_items
 FROM order_items
 WHERE order_items.quantity = 0;
 
-[ Prompt: 14.9 t/s | Generation: 5.9 t/s ]
+[ Prompt: 20.1 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

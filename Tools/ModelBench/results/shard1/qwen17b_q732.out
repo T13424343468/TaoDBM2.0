@@ -36,7 +36,7 @@ UNION ALL
 SELECT * FROM order_items
 ORDER BY id;
 
-[ Prompt: 20.4 t/s | Generation: 7.4 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

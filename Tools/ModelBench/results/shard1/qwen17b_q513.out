@@ -35,7 +35,7 @@ SELECT strftime('%Q', created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
 GROUP BY quarter;
 
-[ Prompt: 20.7 t/s | Generation: 8.0 t/s ]
+[ Prompt: 21.4 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

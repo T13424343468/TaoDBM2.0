@@ -36,7 +36,7 @@ FROM order_items
 GROUP BY order_id
 HAVING total_quantity > 10;
 
-[ Prompt: 26.9 t/s | Generation: 8.8 t/s ]
+[ Prompt: 26.9 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

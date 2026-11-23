@@ -40,7 +40,7 @@ WHERE o.status = 'completed'
 GROUP BY u.id, u.name
 HAVING SUM(oi.quantity * oi.unit_price) > (SELECT AVG(price) FROM products);
 
-[ Prompt: 20.7 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

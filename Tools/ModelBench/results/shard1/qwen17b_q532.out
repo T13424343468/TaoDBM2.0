@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s')
 
-[ Prompt: 20.8 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

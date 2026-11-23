@@ -35,7 +35,7 @@ SELECT product_id, category, AVG(price) OVER (PARTITION BY category) AS avg_pric
 FROM products
 ORDER BY avg_price_rank;
 
-[ Prompt: 21.0 t/s | Generation: 7.5 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

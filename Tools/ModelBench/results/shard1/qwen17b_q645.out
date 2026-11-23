@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT p.name, p.price - AVG(p.price) OVER (PARTITION BY p.category) AS diff
 FROM products p;
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

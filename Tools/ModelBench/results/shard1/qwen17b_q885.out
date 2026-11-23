@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT CASE WHEN SUM(stock) < 10 THEN '不足' ELSE '充足' END AS stock_status
 FROM products;
 
-[ Prompt: 20.8 t/s | Generation: 7.2 t/s ]
+[ Prompt: 19.9 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

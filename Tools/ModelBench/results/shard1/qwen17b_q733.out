@@ -37,7 +37,7 @@ FULL JOIN order_items oi ON o.id = oi.order_id
 FULL JOIN products p ON oi.product_id = p.id
 FULL JOIN users u ON o.user_id = u.id;
 
-[ Prompt: 21.4 t/s | Generation: 6.9 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
