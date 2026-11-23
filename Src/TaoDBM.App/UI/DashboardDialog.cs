@@ -191,7 +191,7 @@ public static class DashboardDialog
         host.Children.Add(new TextBlock
         {
             Text = headline,
-            FontSize = 28,
+            FontSize = AntTokens.FontDisplayLg,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Text,
         });

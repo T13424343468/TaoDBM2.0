@@ -47,7 +47,7 @@ public static class ServerMonitorDialog
                     if (!metrics.TryGetValue(key, out var v)) continue;
                     metricsPanel.Children.Add(new StackPanel { Spacing = 2, Children = {
                         new TextBlock { Text = key, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub },
-                        new TextBlock { Text = v, FontSize = 24, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold } } });
+                        new TextBlock { Text = v, FontSize = AntTokens.FontDisplay, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold } } });
                     if (!history.TryGetValue(key, out var list)) history[key] = list = new List<double>();
                     if (double.TryParse(v, out var d)) { list.Add(d); if (list.Count > 60) list.RemoveAt(0); }
                 }

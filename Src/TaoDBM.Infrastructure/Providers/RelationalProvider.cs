@@ -34,6 +34,13 @@ public static class ProviderFactory
         DbEngine.MongoDB => new MongoProvider(p),
         DbEngine.Redis => new RedisProvider(p),
         DbEngine.Odbc => new OdbcProvider(p),   // 批次四格3：ODBC（DSN）
+        // 批次七：国产六家——协议兼容引擎复用现有 Provider，方言差异层做增量
+        DbEngine.OceanBase => new OceanBaseProvider(p),
+        DbEngine.GaussDB => new GaussDbProvider(p),
+        DbEngine.Dameng => new DamengProvider(p),
+        DbEngine.Kingbase => new KingbaseProvider(p),
+        DbEngine.PolarDB => new PolarDbProvider(p),
+        DbEngine.Tdsql => new TdsqlProvider(p),
         _ => throw new NotSupportedException("不支持的数据库类型"),
     };
 }

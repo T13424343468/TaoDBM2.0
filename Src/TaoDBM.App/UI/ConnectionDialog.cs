@@ -10,7 +10,9 @@ public class ConnectionDialog
 {
     public ConnectionProfile Profile { get; }
 
-    private readonly ComboBox _engine = new() { Header = "数据库类型", HorizontalAlignment = HorizontalAlignment.Stretch, MinWidth = 360 };
+    private readonly ComboBox _engine = new() { Header = "数据库类型", HorizontalAlignment = HorizontalAlignment.Stretch, MaxWidth = 480 };
+    /// <summary>批次七：引擎下拉项→枚举映射（含国产分组头，索引不再等于枚举值）。</summary>
+    private List<DbEngine>? _engineMap;
     private readonly TextBox _name = new() { Header = "连接名称" };
     private readonly TextBox _host = new() { Header = "主机" };
     private readonly TextBox _port = new() { Header = "端口" };
@@ -50,8 +52,20 @@ public class ConnectionDialog
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_database, "conn-database");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_file, "conn-file");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_params, "conn-params");
-        foreach (var e in EngineInfo.All) _engine.Items.Add(EngineInfo.Name(e));
-        _engine.SelectedIndex = (int)profile.Engine;
+        // 批次七：引擎下拉分组——常规引擎在前，「国产数据库」分组头（不可选）＋六家在后；映射表保序防索引错位
+        _engineMap = new List<DbEngine>();
+        foreach (var e in EngineInfo.All.Where(x => !EngineInfo.IsDomestic(x)))
+        {
+            _engine.Items.Add(EngineInfo.Name(e));
+            _engineMap.Add(e);
+        }
+        _engine.Items.Add(new ComboBoxItem { Content = "── 国产数据库 ──", IsEnabled = false, IsTabStop = false });
+        foreach (var e in EngineInfo.Domestic)
+        {
+            _engine.Items.Add(EngineInfo.Name(e));
+            _engineMap.Add(e);
+        }
+        _engine.SelectedIndex = _engineMap.IndexOf(profile.Engine);
         _engine.SelectionChanged += (_, _) => OnEngineChanged();
         _name.Text = profile.DisplayName;
         _host.Text = profile.Host;
@@ -107,7 +121,8 @@ public class ConnectionDialog
 
     private void OnEngineChanged()
     {
-        var e = (DbEngine)_engine.SelectedIndex;
+        if (_engineMap == null || _engine.SelectedIndex < 0 || _engine.SelectedIndex >= _engineMap.Count) return;
+        var e = _engineMap[_engine.SelectedIndex];
         bool fileBased = EngineInfo.IsFileBased(e);
         bool integrated = _auth.SelectedIndex == 1;   // 批次三格5：集成认证隐藏账号密码（与引擎可见性叠加）
         _host.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
@@ -152,6 +167,13 @@ public class ConnectionDialog
             DbEngine.Redis => "默认扫描 db0-db15；连接后左侧树中可切换库并浏览键。",
             DbEngine.MongoDB => "MongoDB 无需固定表结构，选中集合后可按 JSON 过滤器查询文档。",
             DbEngine.Odbc => "从下拉选择本机已配置的 ODBC 数据源（DSN）；账号密码可选，附加参数可带 k=v 连接串属性。",
+            // 批次七：国产六家提示语（说人话口径）
+            DbEngine.OceanBase => "走 MySQL 租户协议；用户名格式 用户@租户#集群（如 root@prod#cluster1），单租户直连可只写用户名。",
+            DbEngine.GaussDB => "走 PostgreSQL 协议；库与用户双命名空间，对象树按 模式.表 展示。",
+            DbEngine.Dameng => "走 Oracle 兼容方言；首次使用需将厂商驱动 DmProvider.dll 放到程序目录 drivers/dameng 下（缺驱动连接时会给出放置路径指引）。",
+            DbEngine.Kingbase => "走 PostgreSQL 兼容协议（默认端口 54321）；大小写敏感模式可在附加参数配置。",
+            DbEngine.PolarDB => "走 MySQL 协议；主机填集群地址，连接后自动识别只读节点并标注。",
+            DbEngine.Tdsql => "走 MySQL 协议；主机填 Proxy 地址，分片表元数据只读展示，执行计划透传。",
             _ => $"默认端口 {EngineInfo.DefaultPort(e)}，可留空自动填充。",
         };
     }
@@ -179,7 +201,8 @@ public class ConnectionDialog
     public async Task<bool> ShowAsync(Window owner, bool isNew)
     {
         // 右侧留出滚动条带：浮层滚动条不再压在输入框右缘上（2026-11-03 真机截图反馈）
-        var panel = new StackPanel { Spacing = 10, MinWidth = 400, Margin = new Thickness(0, 0, 12, 0) };
+        // 批次六格2：窄窗断点——弹层 MinWidth 改 MaxWidth 约束，窄窗不横向溢出
+        var panel = new StackPanel { Spacing = 10, MaxWidth = 520, Margin = new Thickness(0, 0, 12, 0) };
         panel.Children.Add(_engine);
         panel.Children.Add(_name);
         panel.Children.Add(_host);
@@ -276,7 +299,8 @@ public class ConnectionDialog
 
     private void Apply()
     {
-        Profile.Engine = _engine.SelectedIndex >= 0 ? (DbEngine)_engine.SelectedIndex : DbEngine.MySQL;
+        Profile.Engine = _engine.SelectedIndex >= 0 && _engine.SelectedIndex < _engineMap.Count
+            ? _engineMap[_engine.SelectedIndex] : DbEngine.MySQL;
         Profile.DisplayName = string.IsNullOrWhiteSpace(_name.Text) ? EngineInfo.Name(Profile.Engine) : _name.Text.Trim();
         Profile.Host = _host.Text.Trim();
         Profile.Port = int.TryParse(_port.Text, out var p) ? p : 0;
@@ -300,6 +324,7 @@ public class ConnectionDialog
         {
             using var prov = ProviderFactory.Create(Profile);
             await prov.TestConnection();
+            Core.AppLog.Write($"[连接] engine={EngineInfo.Name(Profile.Engine)} ok");
             return true;
         }
         catch (Exception ex)

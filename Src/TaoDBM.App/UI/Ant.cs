@@ -148,13 +148,16 @@ public static class Ant
 /// 字号六档 / 间距五档 / 圆角三档，界面落码一律取令牌、不再手写零散值。</summary>
 public static class AntTokens
 {
-    /// <summary>字号六档（px 对应 XAML 像素）：说明文字/次要/正文/强调/标题/页面标题。</summary>
+    /// <summary>字号九档（px 对应 XAML 像素）：微字号/说明文字/次要/正文/强调/标题/页面标题/展示数字/大展示数字（格19口径）。</summary>
+    public const double FontTiny = 10;
     public const double FontCaption = 11;
     public const double FontMinor = 12;
     public const double FontBody = 13;
     public const double FontEmphasis = 14;
     public const double FontTitle = 16;
     public const double FontPage = 20;
+    public const double FontDisplay = 24;
+    public const double FontDisplayLg = 28;
 
     /// <summary>间距五档：紧凑/默认/宽松/区块/页面留白。</summary>
     public const double SpaceXs = 4;
@@ -163,10 +166,11 @@ public static class AntTokens
     public const double SpaceLg = 16;
     public const double SpaceXl = 24;
 
-    /// <summary>圆角三档：直角感/默认/卡片。</summary>
+    /// <summary>圆角四档：直角感/默认/卡片/徽标（状态点小胶囊 3px）。</summary>
     public const double RadiusSm = 2;
     public const double RadiusMd = 4;
     public const double RadiusLg = 6;
+    public const double RadiusBadge = 3;
 
     /// <summary>胶囊圆角（徽标/状态点）：设计稿 99px 胶囊口径。</summary>
     public const double RadiusPill = 99;

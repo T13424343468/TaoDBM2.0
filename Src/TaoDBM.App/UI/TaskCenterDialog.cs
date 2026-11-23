@@ -177,11 +177,11 @@ public static class TaskCenterDialog
         var ivBox = new TextBox { PlaceholderText = "间隔(分)", MinWidth = 70, Text = "60" };
         // 批次三格1：任务类型扩容（query/backup/sync/import/export/dictionary/faker）
         var kindBox = new ComboBox { MinWidth = 110, ItemsSource = new List<string> { "查询 query", "备份 backup", "同步 sync", "导入 import", "导出 export", "字典 dictionary", "拟真 faker" }, SelectedIndex = 0 };
-        var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var addBtn = new Button { Content = "新增定时任务", CornerRadius = new CornerRadius(4) };
-        var runDueBtn = new Button { Content = "执行到期任务", CornerRadius = new CornerRadius(4) };
-        var refreshBtn = new Button { Content = "刷新", CornerRadius = new CornerRadius(4) };
+        var addBtn = new Button { Content = "新增定时任务", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var runDueBtn = new Button { Content = "执行到期任务", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var refreshBtn = new Button { Content = "刷新", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         addBtn.Click += async (_, _) =>
         {
@@ -229,7 +229,7 @@ public static class TaskCenterDialog
         panel.Children.Add(new TextBlock
         {
             Text = "定时 SQL：到点自动执行（间隔分钟），结果回写最近状态；任务持久化到本机，重启不丢。",
-            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = 12,
+            TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(row);
         panel.Children.Add(row2);
@@ -260,19 +260,19 @@ public static class TaskCenterDialog
             {
                 Text = $"{(e.Enabled ? "▶" : "⏸")} {e.Name}（{e.Id}）每 {e.IntervalMinutes} 分 · 下次 {e.NextRunAt:MM-dd HH:mm}" +
                        (e.LastResult.Length == 0 ? "" : $" · 最近 {e.LastResult}"),
-                FontSize = 12, Foreground = Ant.TextSub, FontFamily = new FontFamily("Consolas"),
+                FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, FontFamily = new FontFamily("Consolas"),
                 VerticalAlignment = VerticalAlignment.Center,
             });
             var toggleBtn = new Button
             {
                 Content = e.Enabled ? "停用" : "启用",
-                CornerRadius = new CornerRadius(3), FontSize = 11, Padding = new Thickness(8, 2, 8, 2),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge), FontSize = AntTokens.FontCaption, Padding = new Thickness(8, 2, 8, 2),
             };
             toggleBtn.Click += (_, _) => { SqlScheduler.Update(e.Id, null, null, null, null, !e.Enabled); RefreshSched(list, prov, status); };
             var delBtn = new Button
             {
                 Content = "删除",
-                CornerRadius = new CornerRadius(3), FontSize = 11, Padding = new Thickness(8, 2, 8, 2),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge), FontSize = AntTokens.FontCaption, Padding = new Thickness(8, 2, 8, 2),
             };
             delBtn.Click += (_, _) => { SqlScheduler.Delete(e.Id); RefreshSched(list, prov, status); };
             row.Children.Add(toggleBtn);

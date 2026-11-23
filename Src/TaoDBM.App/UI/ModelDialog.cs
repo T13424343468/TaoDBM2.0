@@ -491,7 +491,7 @@ public static class ModelDialog
                 BorderThickness = new Thickness(0.5),
                 CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
                 Padding = new Thickness(3, 0, 3, 0),
-                Child = new TextBlock { Text = $"N:1 {e.FromCol}", FontSize = 10, Foreground = Ant.TextSub },
+                Child = new TextBlock { Text = $"N:1 {e.FromCol}", FontSize = AntTokens.FontTiny, Foreground = Ant.TextSub },
             };
             _canvas.Children.Add(lbl);
             Canvas.SetLeft(lbl, (a.X + b.X) / 2 - 24);

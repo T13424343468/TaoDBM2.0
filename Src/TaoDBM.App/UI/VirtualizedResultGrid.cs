@@ -49,7 +49,7 @@ public static class VirtualizedResultGrid
         var arrows = new TextBlock[nCols];
         for (int i = 0; i < nCols; i++)
         {
-            var arrow = new TextBlock { Foreground = Ant.Primary, FontSize = 11, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var arrow = new TextBlock { Foreground = Ant.Primary, FontSize = AntTokens.FontCaption, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             arrows[i] = arrow;
             var headPanel = new StackPanel { Orientation = Orientation.Horizontal };
             headPanel.Children.Add(new TextBlock

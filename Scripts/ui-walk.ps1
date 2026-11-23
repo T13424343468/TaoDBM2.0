@@ -19,6 +19,9 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 $src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); }'
 Add-Type -TypeDefinition $src
+# 批次六格2：三档分辨率＋DPI 九宫格——MoveWindow 设窗尺寸、GetDpiForWindow 读 DPI 落账
+$srcRes = 'using System; using System.Runtime.InteropServices; public class WinRes { [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int x, int y, int w, int h, bool repaint); [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr hWnd); }'
+Add-Type -TypeDefinition $srcRes
 
 $shots = New-Object System.Collections.Generic.List[string]
 $walkLog = New-Object System.Collections.Generic.List[string]
@@ -467,6 +470,19 @@ foreach ($s in $plan.steps) {
         $el = Find-ElWait $s.find 8 $sc
         if ($null -eq $el) { throw "field not found" }
         if (-not (Set-TextValue $el (Tpl $s.value))) { throw "set value failed" }
+      }
+      'set-window-size' {
+        # 批次六格2：三档分辨率（1366×768 / 1920×1080 / 2560×1440）＋DPI 落账——Win32 MoveWindow 设尺寸，GetDpiForWindow 读实际 DPI
+        $w = [int](Tpl ([string]$s.width)); $h = [int](Tpl ([string]$s.height))
+        $proc.Refresh()
+        $hnd = $proc.MainWindowHandle
+        if ($hnd -eq [IntPtr]::Zero) { throw "no main window handle" }
+        if (-not [WinRes]::MoveWindow($hnd, 0, 0, $w, $h, $true)) { throw "MoveWindow failed" }
+        Start-Sleep -Seconds 2
+        $dpi = [WinRes]::GetDpiForWindow($hnd)
+        Log ("res={0}x{1} dpi={2}" -f $w, $h, $dpi)
+        Push-Evidence ("res {0}x{1} dpi={2}" -f $w, $h, $dpi)
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'tree-contains' {
         # 保存→RebuildRoots 异步重建，单次读树会竞速（#76 S06 误报嫌疑）：轮询 10 秒等节点出现

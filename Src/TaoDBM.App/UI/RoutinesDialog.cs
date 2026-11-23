@@ -62,7 +62,7 @@ public static class RoutinesDialog
             AcceptsReturn = true,
             TextWrapping = TextWrapping.NoWrap,
             FontFamily = new FontFamily("Consolas"),
-            FontSize = 12.5,
+            FontSize = AntTokens.FontMinor,
             MinHeight = 300,
             MinWidth = 460,
             PlaceholderText = "双击或选中左侧例程查看定义",

@@ -83,6 +83,14 @@ public partial class MainWindow : Window
         AddWelcomeTab();
         RestoreSession();
         ApplyWindowState();
+        // 批次六格3：F11 专注模式——根网格挂加速键；上次退出为专注态则原样恢复
+        if (Content is Grid rootGrid)
+        {
+            var f11 = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.F11 };
+            f11.Invoked += (_, args) => { args.Handled = true; ToggleFocusMode(); };
+            rootGrid.KeyboardAccelerators.Add(f11);
+        }
+        RestoreFocusMode();
         SizeChanged += EnforceMinimumSize;
         SizeChanged += OnSizeTierChanged;   // 批次H：弹性布局三档（第十五章）
         ApplyLayoutTier();

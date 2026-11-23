@@ -422,7 +422,7 @@ public static class ErdDialog
                 Child = new TextBlock
                 {
                     Text = $"N:1 {e.FromCol}",
-                    FontSize = 10,
+                    FontSize = AntTokens.FontTiny,
                     Foreground = Ant.TextSub,
                 },
             };

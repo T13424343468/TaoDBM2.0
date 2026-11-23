@@ -38,6 +38,13 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -
   fi
 done
 
+# 1.8) 设计令牌单一出口（批次六格1：色值/字号/圆角字面量只准在 Ant.cs 定义，UI 文件一律走 Ant.*/AntTokens.*）
+for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^Src/TaoDBM\.App/.*\.cs$' | grep -v 'UI/Ant\.cs' || true); do
+  if grep -nE 'Brush\("#|FontSize[[:space:]]*=[[:space:]]*[0-9]|CornerRadius[[:space:]]*=[[:space:]]*new CornerRadius\([0-9]' "$f" | grep -qv '^\s*//'; then
+    echo "[GATE] 设计令牌字面量（应走 Ant.*/AntTokens.*）: $f"; grep -nE 'Brush\("#|FontSize[[:space:]]*=[[:space:]]*[0-9]|CornerRadius[[:space:]]*=[[:space:]]*new CornerRadius\([0-9]' "$f" | head -3; fail=1
+  fi
+done
+
 export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
 export PATH="$DOTNET_ROOT:$PATH"
 

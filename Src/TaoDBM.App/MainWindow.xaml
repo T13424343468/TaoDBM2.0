@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
 
         <!-- 顶栏 -->
-        <Border Grid.Row="0" Background="{ThemeResource AntPrimary}">
+        <Border x:Name="HeadBorder" Grid.Row="0" Background="{ThemeResource AntPrimary}">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0" Spacing="10">
                     <Button x:Name="BtnLogo" Background="Transparent" BorderThickness="0" Padding="4" AutomationProperties.AutomationId="BtnLogo">
@@ -31,6 +31,7 @@
                                 <MenuFlyoutItem Text="编辑连接" Click="OnEditConn"/>
                                 <MenuFlyoutItem Text="删除连接" Click="OnDelConn"/>
                                 <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="专注模式（F11）" Click="OnToggleFocusMode" AutomationProperties.AutomationId="FocusMode"/>
                                 <MenuFlyoutItem Text="设置" Click="OnSettings"/>
                                 <MenuFlyoutItem Text="操作手册" Click="OnManual"/>
                                                             </MenuFlyout>
@@ -104,7 +105,7 @@
         </Grid>
 
         <!-- 状态栏 -->
-        <Border Grid.Row="2" Background="{ThemeResource AntCard}" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,1,0,0">
+        <Border x:Name="StatusBorder" Grid.Row="2" Background="{ThemeResource AntCard}" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,1,0,0">
             <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="status-text" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text="就绪"/>
         </Border>
     </Grid>

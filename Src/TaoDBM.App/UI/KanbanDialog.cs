@@ -174,7 +174,7 @@ public static class KanbanDialog
         big.Children.Add(new TextBlock
         {
             Text = headline,
-            FontSize = 28,
+            FontSize = AntTokens.FontDisplayLg,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Ant.Text,
             VerticalAlignment = VerticalAlignment.Bottom,
@@ -189,7 +189,7 @@ public static class KanbanDialog
             big.Children.Add(new TextBlock
             {
                 Text = up ? "↑" : "↓",
-                FontSize = 16,
+                FontSize = AntTokens.FontTitle,
                 Foreground = up ? Ant.Success : Ant.Error,
                 VerticalAlignment = VerticalAlignment.Bottom,
             });

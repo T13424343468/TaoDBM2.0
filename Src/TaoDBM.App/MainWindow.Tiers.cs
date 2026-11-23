@@ -10,6 +10,7 @@ namespace TaoDBM;
 public partial class MainWindow
 {
     private LayoutTier? _currentTier;
+    private bool _autoSidebarCollapsed;   // 批次六格2：<1000 DIP 自动收起侧栏（区别于用户手动收起，回宽自动还原）
 
     /// <summary>当前生效档位（测试与走查读取；null=尚未应用）。</summary>
     internal LayoutTier? CurrentTier => _currentTier;
@@ -39,6 +40,24 @@ public partial class MainWindow
                 AppTitleText.FontSize = AntTokens.FontPage;                       // 宽屏放宽标题
                 break;
         }
+
+        // 批次六格2：窗口 <1000 DIP 断点——侧栏自动收起（列宽清零＋分栏条隐藏），回宽自动还原；
+        // 用户手动收起态（列宽已为 0）不重复干预
+        if (w < 1000 && !_autoSidebarCollapsed && TreeCol.Width.Value > 0.5)
+        {
+            _autoSidebarCollapsed = true;
+            TreeCol.MinWidth = 0;
+            TreeCol.Width = new GridLength(0);
+            TreeSplitter.Visibility = Visibility.Collapsed;
+        }
+        else if (w >= 1000 && _autoSidebarCollapsed)
+        {
+            _autoSidebarCollapsed = false;
+            TreeCol.MinWidth = 200;
+            TreeCol.Width = new GridLength(300);
+            TreeSplitter.Visibility = Visibility.Visible;
+        }
+
         Core.AppLog.Write($"布局分档切换: {tier} @ {w:0} DIP");
     }
 

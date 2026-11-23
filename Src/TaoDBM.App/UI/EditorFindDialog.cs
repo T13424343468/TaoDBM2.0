@@ -22,13 +22,13 @@ public static class EditorFindDialog
 
         var preview = new TextBlock
         {
-            FontSize = 12,
+            FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
             MaxHeight = 110,
         };
-        var nextBtn = new Button { Content = "查找下一个", CornerRadius = new CornerRadius(4) };
-        var replBtn = new Button { Content = "全部替换", CornerRadius = new CornerRadius(4) };
+        var nextBtn = new Button { Content = "查找下一个", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var replBtn = new Button { Content = "全部替换", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
         btnRow.Children.Add(nextBtn);
         btnRow.Children.Add(replBtn);

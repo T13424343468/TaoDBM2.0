@@ -16,7 +16,8 @@ public class MySqlProvider : RelationalProvider
         var sb = new MySqlConnector.MySqlConnectionStringBuilder
         {
             Server = host,
-            Port = (uint)(port > 0 ? port : EngineInfo.DefaultPort(DbEngine.MySQL)),
+            // 批次七：国产兼容引擎（OceanBase/PolarDB/TDSQL）复用本 Provider，默认端口按各自引擎档取
+            Port = (uint)(port > 0 ? port : EngineInfo.DefaultPort(Profile.Engine)),
             UserID = Profile.User,
             Password = Profile.Password,
             AllowUserVariables = true,
@@ -59,7 +60,8 @@ public class PostgreSqlProvider : RelationalProvider
         var sb = new Npgsql.NpgsqlConnectionStringBuilder
         {
             Host = host,
-            Port = port > 0 ? port : EngineInfo.DefaultPort(DbEngine.PostgreSQL),
+            // 批次七：国产兼容引擎（GaussDB/金仓）复用本 Provider，默认端口按各自引擎档取
+            Port = port > 0 ? port : EngineInfo.DefaultPort(Profile.Engine),
             Username = Profile.User,
             Password = Profile.Password,
             Timeout = 10,

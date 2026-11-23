@@ -217,7 +217,60 @@ Console.WriteLine("== EngineInfo ==");
     Check("默认端口", EngineInfo.DefaultPort(DbEngine.MySQL) == 3306 && EngineInfo.DefaultPort(DbEngine.Redis) == 6379);
     Check("文件库判断", EngineInfo.IsFileBased(DbEngine.SQLite) && !EngineInfo.IsFileBased(DbEngine.MySQL));
     Check("NoSql 判断", EngineInfo.IsRelational(DbEngine.MongoDB) == false && EngineInfo.IsRelational(DbEngine.Oracle));
-    Check("引擎数量", EngineInfo.All.Count() == 8);   // 批次四格8：新增 Odbc（DSN）
+    Check("引擎数量", EngineInfo.All.Count() == 14);   // 批次七：新增国产六家（OceanBase/GaussDB/达梦/金仓/PolarDB/TDSQL）
+}
+
+Console.WriteLine("== DomesticDialect ==");
+{
+    Check("国产六家清单", EngineInfo.Domestic.Count() == 6
+        && EngineInfo.Domestic.SequenceEqual(new[] { DbEngine.OceanBase, DbEngine.GaussDB, DbEngine.Dameng, DbEngine.Kingbase, DbEngine.PolarDB, DbEngine.Tdsql }));
+    Check("国产判定", EngineInfo.IsDomestic(DbEngine.OceanBase) && !EngineInfo.IsDomestic(DbEngine.MySQL));
+    Check("国产默认端口", EngineInfo.DefaultPort(DbEngine.OceanBase) == 2881
+        && EngineInfo.DefaultPort(DbEngine.GaussDB) == 8000
+        && EngineInfo.DefaultPort(DbEngine.Dameng) == 5236
+        && EngineInfo.DefaultPort(DbEngine.Kingbase) == 54321
+        && EngineInfo.DefaultPort(DbEngine.PolarDB) == 3306
+        && EngineInfo.DefaultPort(DbEngine.Tdsql) == 3306);
+    foreach (var e in EngineInfo.Domestic)
+    {
+        var d = DomesticDialect.Get(e);
+        Check($"方言档非空 {e}", d.OpenQuote != '\0' && d.CloseQuote != '\0'
+            && d.ListColumnsSql("db", "t").Contains("t")
+            && d.ExplainSql("SELECT 1").StartsWith("EXPLAIN")
+            && d.BackupCommand("db", "f.bak").Length > 0);
+    }
+    Check("分页语法 MySQL 系", DomesticDialect.Get(DbEngine.OceanBase).Paging(DbEngine.OceanBase, 20, 10) == "LIMIT 10 OFFSET 20");
+    Check("分页语法 达梦", DomesticDialect.Get(DbEngine.Dameng).Paging(DbEngine.Dameng, 20, 10) == "OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY");
+    Check("达梦驱动指引", DomesticDialect.Get(DbEngine.Dameng).DriverHint != null && DomesticDialect.Get(DbEngine.Dameng).DriverHint!.Contains("drivers"));
+    Check("OceanBase 用户名原样", DomesticDialect.NormalizeObUser("root") == "root"
+        && DomesticDialect.NormalizeObUser("root@prod") == "root@prod"
+        && DomesticDialect.NormalizeObUser("root@prod#cluster1") == "root@prod#cluster1");
+    bool obBad = false;
+    try { DomesticDialect.NormalizeObUser("@#cluster1"); } catch (FormatException) { obBad = true; }
+    Check("OceanBase 用户名格式校验", obBad);
+    // 工厂映射：六家各建 Provider 且类型正确
+    static ConnectionProfile Prof(DbEngine e) => new() { Engine = e, Host = "localhost", User = "u", Password = "p" };
+    Check("工厂 OceanBase", ProviderFactory.Create(Prof(DbEngine.OceanBase)) is OceanBaseProvider);
+    Check("工厂 GaussDB", ProviderFactory.Create(Prof(DbEngine.GaussDB)) is GaussDbProvider);
+    Check("工厂 达梦", ProviderFactory.Create(Prof(DbEngine.Dameng)) is DamengProvider);
+    Check("工厂 金仓", ProviderFactory.Create(Prof(DbEngine.Kingbase)) is KingbaseProvider);
+    Check("工厂 PolarDB", ProviderFactory.Create(Prof(DbEngine.PolarDB)) is PolarDbProvider);
+    Check("工厂 TDSQL", ProviderFactory.Create(Prof(DbEngine.Tdsql)) is TdsqlProvider);
+    // 达梦缺驱动：连接给说人话指引（不网络连接即抛）
+    string dmErr = "";
+    try { ProviderFactory.Create(Prof(DbEngine.Dameng)).TestConnection().Wait(); }
+    catch (AggregateException ae) { dmErr = ae.InnerException?.Message ?? ""; }
+    catch (Exception ex) { dmErr = ex.Message; }
+    Check("达梦缺驱动指引", dmErr.Contains("drivers"));
+    // 专注模式状态存取（批次六格3）：写读往返＋损坏回落
+    var fmPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"fm-{Guid.NewGuid():N}.json");
+    FocusModeState.UseFile(fmPath);
+    Check("专注默认关", FocusModeState.Load() == false);
+    FocusModeState.Save(true);
+    Check("专注写读往返", FocusModeState.Load() == true);
+    System.IO.File.WriteAllText(fmPath, "{broken");
+    Check("专注损坏回落", FocusModeState.Load() == false);
+    try { System.IO.File.Delete(fmPath); } catch { }
 }
 
 Console.WriteLine("== CsvImporter ==");

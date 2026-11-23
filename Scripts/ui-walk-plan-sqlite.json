@@ -2,6 +2,14 @@
   "version": "v3.15-real-db-p1b",
   "steps": [
     {
+      "id": "S00A",
+      "feature": "三档分辨率-1366x768",
+      "action": "set-window-size",
+      "width": 1366,
+      "height": 768,
+      "critical": false
+    },
+    {
       "id": "S01",
       "feature": "新建连接-打开对话框",
       "action": "click",
@@ -55,6 +63,14 @@
       "action": "tree-contains",
       "value": "__CONN_NAME__",
       "critical": true
+    },
+    {
+      "id": "S06A",
+      "feature": "三档分辨率-回1920x1080",
+      "action": "set-window-size",
+      "width": 1920,
+      "height": 1080,
+      "critical": false
     },
     {
       "id": "S07",
@@ -1053,6 +1069,14 @@
       "feature": "P1-格16 权限-收场",
       "action": "press-esc",
       "critical": true
+    },
+    {
+      "id": "S99A",
+      "feature": "三档分辨率-2560x1440",
+      "action": "set-window-size",
+      "width": 2560,
+      "height": 1440,
+      "critical": false
     }
   ]
 }
