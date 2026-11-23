@@ -35,6 +35,20 @@ internal static class KillRestartDrill
         }
 
         // verify：模拟重启后的恢复对账
+        try
+        {
+            return VerifyChecks(registry, watermark, spill);
+        }
+        catch (Exception ex)
+        {
+            // 对账前置读盘/解析崩溃也要留注解：CI 红时无登录权限，注解是唯一免登录取证窗口
+            Console.WriteLine($"::error::DRILL-崩溃 {ex.GetType().Name}: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private static int VerifyChecks(string registry, string watermark, string spill)
+    {
         int ok = 0, bad = 0;
         void Check(string name, bool cond, string detail = "")
         {

@@ -24,18 +24,31 @@ New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 $registry = Join-Path $WorkDir "sqlhandoff.registry"
 Write-Host "[DRILL] workdir=$WorkDir"
 
-function Start-Drill([string]$Phase) {
+function Start-Drill([string]$Phase, [string]$OutFile) {
     # Windows：Start-Process -Environment（pwsh 7.4+）；其余：env 包装。绝不能不带环境变量起进程，
     # 否则会落进常规全量测试路径（约 5.5 分钟），演练语义全失。
+    # 输出重定向落盘：失败时把尾行打回 ::error:: 注解，CI 红无登录也能定位（#278 演练红无 DRILL 注解教训）。
     if ($IsWindows) {
         return Start-Process -FilePath "dotnet" -ArgumentList @($dll, $WorkDir) -PassThru -NoNewWindow `
-            -Environment @{ TAODBM_DRILL = $Phase }
+            -Environment @{ TAODBM_DRILL = $Phase } -RedirectStandardOutput $OutFile -RedirectStandardError "$OutFile.err"
     }
-    return Start-Process -FilePath "env" -ArgumentList @("TAODBM_DRILL=$Phase", "dotnet", $dll, $WorkDir) -PassThru -NoNewWindow
+    return Start-Process -FilePath "env" -ArgumentList @("TAODBM_DRILL=$Phase", "dotnet", $dll, $WorkDir) -PassThru -NoNewWindow `
+        -RedirectStandardOutput $OutFile -RedirectStandardError "$OutFile.err"
+}
+
+function Show-Tail([string]$File, [string]$Tag) {
+    if (Test-Path $File) {
+        Get-Content $File -Tail 8 | ForEach-Object { if ($_.Trim()) { Write-Host "::error::$Tag $_" } }
+    }
+    $err = "$File.err"
+    if (Test-Path $err) {
+        Get-Content $err -Tail 4 | ForEach-Object { if ($_.Trim()) { Write-Host "::error::$Tag-err $_" } }
+    }
 }
 
 # ---- 阶段一：seed（落状态后驻留，等强杀）----
-$seed = Start-Drill "seed"
+$seedOut = Join-Path $WorkDir "seed.out"
+$seed = Start-Drill "seed" $seedOut
 $waited = 0
 while (-not (Test-Path $registry) -and $waited -lt 60) { Start-Sleep -Seconds 1; $waited++ }
 if (-not (Test-Path $registry)) {
@@ -51,9 +64,11 @@ try { Wait-Process -Id $seed.Id -ErrorAction SilentlyContinue; $null = $seed.Exi
 Start-Sleep -Seconds 2
 
 # ---- 阶段二：verify（新进程回读对账）----
-$verify = Start-Drill "verify"
+$verifyOut = Join-Path $WorkDir "verify.out"
+$verify = Start-Drill "verify" $verifyOut
 Wait-Process -Id $verify.Id -ErrorAction SilentlyContinue
 $code = $verify.ExitCode
 Write-Host "[DRILL] verify exit=$code"
-if ($code -eq 0) { Write-Host "[DRILL] kill/restart recovery PASS" } else { Write-Host "::error::kill/restart recovery FAILED" }
+if ($code -eq 0) { Write-Host "[DRILL] kill/restart recovery PASS" }
+else { Show-Tail $verifyOut "DRILL-verify"; Write-Host "::error::kill/restart recovery FAILED" }
 exit $code
