@@ -49,7 +49,7 @@ WHERE o.user_id IN (
     )
 );
 
-[ Prompt: 20.8 t/s | Generation: 7.3 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT u.name + ' ' + u.city AS full_name_city
 FROM users u;
 
-[ Prompt: 21.6 t/s | Generation: 7.6 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

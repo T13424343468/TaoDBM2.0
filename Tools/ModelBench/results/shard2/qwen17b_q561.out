@@ -42,7 +42,7 @@ JOIN
 WHERE 
     paid_at > created_at;
 
-[ Prompt: 21.9 t/s | Generation: 7.7 t/s ]
+[ Prompt: 21.6 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

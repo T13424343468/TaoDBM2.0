@@ -35,7 +35,7 @@ SELECT u.id, u.name, o.id, o.status, o.created_at
 FROM users u
 FULL JOIN orders o ON u.id = o.user_id;
 
-[ Prompt: 20.8 t/s | Generation: 7.4 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

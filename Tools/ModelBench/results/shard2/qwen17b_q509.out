@@ -35,7 +35,7 @@ SELECT YEAR(created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
 GROUP BY quarter;
 
-[ Prompt: 20.9 t/s | Generation: 7.9 t/s ]
+[ Prompt: 20.7 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

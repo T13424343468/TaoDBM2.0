@@ -35,7 +35,7 @@ SELECT product_id, price / stock AS price_per_unit
 FROM products
 WHERE stock > 0;
 
-[ Prompt: 20.9 t/s | Generation: 7.0 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

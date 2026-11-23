@@ -35,7 +35,7 @@ SELECT o.id, o.user_id, o.status, o.created_at, oi.product_id, oi.quantity, oi.u
 FROM orders o
 LEFT JOIN order_items oi ON o.id = oi.order_id;
 
-[ Prompt: 20.5 t/s | Generation: 7.5 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

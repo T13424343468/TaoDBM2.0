@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT created_at FROM orders WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
 
-[ Prompt: 20.4 t/s | Generation: 7.3 t/s ]
+[ Prompt: 21.3 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

@@ -40,7 +40,7 @@ WHERE o2.status = 'paid'
 ORDER BY o2.created_at DESC
 LIMIT 1;
 
-[ Prompt: 20.5 t/s | Generation: 7.7 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

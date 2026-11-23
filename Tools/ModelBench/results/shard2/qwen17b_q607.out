@@ -35,7 +35,7 @@ SELECT u.id, u.name, u.city, u.created_at, COUNT(*) OVER (PARTITION BY u.id) AS 
 FROM users u
 ORDER BY u.created_at;
 
-[ Prompt: 20.3 t/s | Generation: 7.9 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

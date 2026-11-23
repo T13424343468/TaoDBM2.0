@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT created_at FROM users WHERE created_at = (SELECT MAX(created_at) FROM users WHERE month(created_at) = month(curdate()))
 
-[ Prompt: 21.1 t/s | Generation: 7.9 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

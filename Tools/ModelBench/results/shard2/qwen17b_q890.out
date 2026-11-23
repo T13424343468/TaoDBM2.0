@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM users WHERE created_at = CURRENT_TIME;
 
-[ Prompt: 25.7 t/s | Generation: 7.2 t/s ]
+[ Prompt: 26.2 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

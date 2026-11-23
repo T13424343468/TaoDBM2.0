@@ -36,7 +36,7 @@ FROM products p
 WHERE p.stock < 0
 ORDER BY p.id;
 
-[ Prompt: 21.3 t/s | Generation: 7.8 t/s ]
+[ Prompt: 21.4 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

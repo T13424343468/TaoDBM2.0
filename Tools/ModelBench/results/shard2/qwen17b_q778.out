@@ -39,7 +39,7 @@ WHERE p.order_id = (SELECT order_id FROM orders o
                   ORDER BY o.created_at DESC
                   LIMIT 1);
 
-[ Prompt: 21.2 t/s | Generation: 7.8 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

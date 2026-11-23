@@ -40,7 +40,7 @@ WHERE p.method = 'credit_card'
 ORDER BY p.amount DESC
 LIMIT 2;
 
-[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
