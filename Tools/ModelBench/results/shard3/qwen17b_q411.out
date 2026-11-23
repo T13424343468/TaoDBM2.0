@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT price * 2 AS price_exponential FROM products;
 
-[ Prompt: 30.1 t/s | Generation: 4.5 t/s ]
+[ Prompt: 28.8 t/s | Generation: 4.7 t/s ]
 
 
 Exiting...

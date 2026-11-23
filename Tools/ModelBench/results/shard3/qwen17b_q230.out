@@ -39,7 +39,7 @@ WHERE name LIKE '%%' -- 这里需要替换为实际的 rtrim 处理逻辑，但�
 SELECT rtrim(name, ' ') AS processed_name
 FROM users;
 
-[ Prompt: 30.5 t/s | Generation: 4.7 t/s ]
+[ Prompt: 29.2 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

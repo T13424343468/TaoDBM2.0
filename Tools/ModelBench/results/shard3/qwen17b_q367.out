@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT ABS(CAST(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN quantity ELSE 0 END) AS DECIMAL(10,2)) - CAST(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN stock ELSE 0 END) AS DECIMAL(10,2))) AS abs_stock_change FROM products;
 
-[ Prompt: 27.0 t/s | Generation: 4.8 t/s ]
+[ Prompt: 29.3 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

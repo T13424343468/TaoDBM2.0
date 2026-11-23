@@ -36,7 +36,7 @@ FROM order_items
 WINDOW window1 AS (ORDER BY order_id)
 WINDOW window2 AS (ORDER BY product_id)
 
-[ Prompt: 24.6 t/s | Generation: 3.8 t/s ]
+[ Prompt: 22.2 t/s | Generation: 3.8 t/s ]
 
 
 Exiting...

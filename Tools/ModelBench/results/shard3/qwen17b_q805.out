@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT name FROM products GROUP BY name;
 
-[ Prompt: 27.1 t/s | Generation: 4.7 t/s ]
+[ Prompt: 30.7 t/s | Generation: 4.5 t/s ]
 
 
 Exiting...

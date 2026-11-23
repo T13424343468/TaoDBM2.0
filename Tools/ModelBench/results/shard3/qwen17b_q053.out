@@ -37,7 +37,7 @@ INSERT INTO orders (id, user_id, status, created_at) VALUES (1, 1, 'Shipped', '2
 INSERT INTO order_items (id, order_id, product_id, quantity, unit_price) VALUES (1, 1, 1, 2, 999.99);
 INSERT INTO payments (id, order_id, amount, method, paid_at) VALUES (1, 1, 1999.98, 'Credit Card', '2023-04-01 10:10:00');
 
-[ Prompt: 28.5 t/s | Generation: 4.7 t/s ]
+[ Prompt: 29.2 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

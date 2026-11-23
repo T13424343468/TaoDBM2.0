@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', '2023-04-01 10:00:00') ON CONFLICT (id) DO NOTHING;
 
-[ Prompt: 28.6 t/s | Generation: 4.7 t/s ]
+[ Prompt: 30.4 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

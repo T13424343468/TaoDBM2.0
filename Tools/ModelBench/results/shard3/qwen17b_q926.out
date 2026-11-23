@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM users WHERE city = ''
 
-[ Prompt: 48.3 t/s | Generation: 6.5 t/s ]
+[ Prompt: 48.4 t/s | Generation: 6.6 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT created_at + INTERVAL '1 month' AS registered_at FROM users;
 
-[ Prompt: 28.4 t/s | Generation: 4.7 t/s ]
+[ Prompt: 28.6 t/s | Generation: 4.6 t/s ]
 
 
 Exiting...

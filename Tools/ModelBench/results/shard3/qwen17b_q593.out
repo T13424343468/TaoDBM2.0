@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT category FROM products WHERE price > 100 GROUP BY category HAVING AVG(unit_price) > 100;
 
-[ Prompt: 29.9 t/s | Generation: 4.6 t/s ]
+[ Prompt: 27.1 t/s | Generation: 4.8 t/s ]
 
 
 Exiting...
