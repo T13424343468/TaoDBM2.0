@@ -36,7 +36,7 @@ FROM orders
 WHERE created_at BETWEEN DATE_ADD(CURDATE(), INTERVAL -3 MONTH) AND CURDATE()
 GROUP BY YEAR(created_at);
 
-[ Prompt: 20.9 t/s | Generation: 7.8 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

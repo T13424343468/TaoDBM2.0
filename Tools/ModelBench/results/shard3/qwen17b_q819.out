@@ -37,7 +37,7 @@ FROM users
 WHERE 1=1
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, city = EXCLUDED.city, created_at = EXCLUDED.created_at;
 
-[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.7 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

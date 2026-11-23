@@ -39,7 +39,7 @@ WHERE o.user_id = (SELECT id FROM users WHERE name = '张三')
 ORDER BY p.amount DESC
 LIMIT 2;
 
-[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

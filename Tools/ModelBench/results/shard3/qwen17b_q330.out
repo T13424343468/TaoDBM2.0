@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 ALTER TABLE products
 ALTER COLUMN name VARCHAR(10);
 
-[ Prompt: 21.7 t/s | Generation: 7.6 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

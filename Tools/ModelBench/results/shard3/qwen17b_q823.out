@@ -46,7 +46,7 @@ WHERE oi.order_id IN (
     )
 )
 
-[ Prompt: 20.9 t/s | Generation: 7.7 t/s ]
+[ Prompt: 21.9 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...
