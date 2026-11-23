@@ -37,7 +37,7 @@ FULL JOIN orders o ON u.id = o.user_id
 FULL JOIN order_items pi ON o.id = pi.order_id
 FULL JOIN payments pa ON o.id = pa.order_id;
 
-[ Prompt: 35.2 t/s | Generation: 9.1 t/s ]
+[ Prompt: 34.1 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

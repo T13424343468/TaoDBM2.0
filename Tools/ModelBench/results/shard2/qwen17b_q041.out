@@ -35,7 +35,7 @@ SELECT COUNT(*) FROM orders
 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
 AND status = 'completed';
 
-[ Prompt: 36.2 t/s | Generation: 9.9 t/s ]
+[ Prompt: 35.4 t/s | Generation: 9.7 t/s ]
 
 
 Exiting...

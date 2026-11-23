@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name FROM users WHERE name LIKE '% %' REPLACE WITH ''
 
-[ Prompt: 28.7 t/s | Generation: 8.5 t/s ]
+[ Prompt: 34.9 t/s | Generation: 10.0 t/s ]
 
 
 Exiting...

@@ -44,7 +44,7 @@ JOIN
 WHERE 
     o.status = 'completed';
 
-[ Prompt: 36.2 t/s | Generation: 9.5 t/s ]
+[ Prompt: 37.5 t/s | Generation: 9.2 t/s ]
 
 
 Exiting...

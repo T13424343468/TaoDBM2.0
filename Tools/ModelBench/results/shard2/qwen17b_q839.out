@@ -40,7 +40,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-[ Prompt: 35.6 t/s | Generation: 9.8 t/s ]
+[ Prompt: 35.8 t/s | Generation: 9.7 t/s ]
 
 
 Exiting...

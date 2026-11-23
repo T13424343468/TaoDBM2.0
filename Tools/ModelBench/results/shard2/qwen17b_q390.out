@@ -35,7 +35,7 @@ SELECT unit_price
 FROM order_items
 WHERE unit_price = SQRT(unit_price);
 
-[ Prompt: 40.1 t/s | Generation: 8.2 t/s ]
+[ Prompt: 37.8 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

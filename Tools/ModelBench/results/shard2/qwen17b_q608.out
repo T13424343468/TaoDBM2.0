@@ -35,7 +35,7 @@ SELECT user_id, created_at, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY cre
 FROM orders
 WHERE user_id IN (SELECT user_id FROM orders)
 
-[ Prompt: 36.1 t/s | Generation: 9.3 t/s ]
+[ Prompt: 37.9 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

@@ -38,7 +38,7 @@ LEFT JOIN payments p ON o.id = p.order_id
 LEFT JOIN users u ON o.user_id = u.id
 WHERE o.id IS NOT NULL;
 
-[ Prompt: 38.8 t/s | Generation: 8.0 t/s ]
+[ Prompt: 37.5 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

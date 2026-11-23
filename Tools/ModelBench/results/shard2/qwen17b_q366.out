@@ -36,7 +36,7 @@ FROM products
 JOIN order_items ON products.id = order_items.product_id
 WHERE order_items.created_at >= DATEADD(DAY, -7, GETDATE());
 
-[ Prompt: 33.0 t/s | Generation: 10.2 t/s ]
+[ Prompt: 34.1 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

@@ -38,7 +38,7 @@ JOIN products p ON oi.product_id = p.id
 WHERE o.id = (SELECT MAX(order_id) FROM orders
              WHERE user_id = (SELECT id FROM users WHERE name = 'John Doe'));
 
-[ Prompt: 33.4 t/s | Generation: 8.9 t/s ]
+[ Prompt: 35.0 t/s | Generation: 8.7 t/s ]
 
 
 Exiting...

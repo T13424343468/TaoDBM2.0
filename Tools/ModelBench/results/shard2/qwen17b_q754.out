@@ -37,7 +37,7 @@ JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
 GROUP BY u.id, u.name;
 
-[ Prompt: 39.0 t/s | Generation: 8.9 t/s ]
+[ Prompt: 34.2 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

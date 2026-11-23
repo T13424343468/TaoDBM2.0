@@ -37,7 +37,7 @@ JOIN orders ON payments.order_id = orders.id
 JOIN users ON orders.user_id = users.id
 WHERE paid_at > created_at;
 
-[ Prompt: 35.9 t/s | Generation: 10.0 t/s ]
+[ Prompt: 38.5 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT u.id, u.name, u.city, u.created_at, ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY u.created_at DESC) AS rank
 FROM users u;
 
-[ Prompt: 40.4 t/s | Generation: 8.3 t/s ]
+[ Prompt: 36.0 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

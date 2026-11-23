@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT SUM(n) FROM generate_series(1,100) AS n;
 
-[ Prompt: 36.2 t/s | Generation: 9.6 t/s ]
+[ Prompt: 36.7 t/s | Generation: 9.4 t/s ]
 
 
 Exiting...

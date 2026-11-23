@@ -35,7 +35,7 @@ SELECT method, COUNT(*) AS count, SUM(amount) AS total_amount
 FROM payments
 GROUP BY method;
 
-[ Prompt: 38.4 t/s | Generation: 8.7 t/s ]
+[ Prompt: 33.5 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

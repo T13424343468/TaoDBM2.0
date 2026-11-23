@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT DATE(created_at) FROM users WHERE created_at BETWEEN DATE('2023-01-01') AND DATE('2023-01-31');
 
-[ Prompt: 37.9 t/s | Generation: 9.3 t/s ]
+[ Prompt: 37.8 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.phone FROM users u JOIN order_items oi ON u.id = oi.user_id JOIN orders o ON oi.order_id = o.id JOIN payments p ON o.id = p.order_id WHERE p.method = 'credit_card' ORDER BY SUM(p.amount) DESC LIMIT 1;
 
-[ Prompt: 33.8 t/s | Generation: 8.7 t/s ]
+[ Prompt: 35.6 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

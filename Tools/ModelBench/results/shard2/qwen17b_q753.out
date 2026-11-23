@@ -38,7 +38,7 @@ JOIN payments ON order_items.order_id = payments.order_id
 JOIN users ON orders.user_id = users.id
 JOIN products ON order_items.product_id = products.id;
 
-[ Prompt: 37.2 t/s | Generation: 9.2 t/s ]
+[ Prompt: 37.7 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT SUM(quantity) AS total_items_sold FROM order_items;
 
-[ Prompt: 32.5 t/s | Generation: 9.2 t/s ]
+[ Prompt: 30.5 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...
