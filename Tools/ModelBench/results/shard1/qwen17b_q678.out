@@ -35,7 +35,7 @@ SELECT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 WHERE o.created_at = (SELECT MAX(created_at) FROM orders)
 
-[ Prompt: 21.4 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

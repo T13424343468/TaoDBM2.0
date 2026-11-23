@@ -37,7 +37,7 @@ JOIN payments p2 ON p2.order_id = p1.order_id
 WHERE p1.order_id = p2.order_id
 ORDER BY p1.order_id;
 
-[ Prompt: 21.7 t/s | Generation: 7.4 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

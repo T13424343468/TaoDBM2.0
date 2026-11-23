@@ -39,7 +39,7 @@ JOIN users ON orders.user_id = users.id
 JOIN products ON order_items.product_id = products.id
 WHERE orders.user_id = 1;
 
-[ Prompt: 20.6 t/s | Generation: 7.5 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 EXECUTE AS @proxy_user;
 EXEC sp_archive_data;
 
-[ Prompt: 26.3 t/s | Generation: 9.2 t/s ]
+[ Prompt: 26.8 t/s | Generation: 8.7 t/s ]
 
 
 Exiting...

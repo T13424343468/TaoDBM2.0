@@ -38,7 +38,7 @@ WHERE id NOT IN (
     HAVING COUNT(DISTINCT user_id) > 1
 );
 
-[ Prompt: 27.8 t/s | Generation: 8.8 t/s ]
+[ Prompt: 27.6 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

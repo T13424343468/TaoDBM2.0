@@ -42,7 +42,7 @@ JOIN
 WHERE 
     o.status = 'paid';
 
-[ Prompt: 21.0 t/s | Generation: 7.5 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

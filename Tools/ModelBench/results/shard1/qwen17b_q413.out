@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT unit_price :: TEXT AS unit_price FROM order_items;
 
-[ Prompt: 21.5 t/s | Generation: 7.9 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

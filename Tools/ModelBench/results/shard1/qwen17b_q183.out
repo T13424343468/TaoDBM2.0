@@ -37,7 +37,7 @@ LEFT JOIN order_items oi ON o.id = oi.order_id
 LEFT JOIN payments p ON o.id = p.order_id
 WHERE LEFT(o.created_at, 3) = '2023';
 
-[ Prompt: 21.3 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.7 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

@@ -38,7 +38,7 @@ FROM
 WHERE 
     paid_at > created_at;
 
-[ Prompt: 20.6 t/s | Generation: 7.9 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

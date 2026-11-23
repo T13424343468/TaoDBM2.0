@@ -39,7 +39,7 @@ WHERE p2.paid_at = (SELECT MAX(paid_at) FROM payments)
 ORDER BY total_amount DESC
 LIMIT 2;
 
-[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

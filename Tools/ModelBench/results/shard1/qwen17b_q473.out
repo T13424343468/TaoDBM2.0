@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT EXTRACT(DAY FROM (CURRENT_DATE - created_at)) AS days_since_order
 FROM orders;
 
-[ Prompt: 21.4 t/s | Generation: 7.5 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

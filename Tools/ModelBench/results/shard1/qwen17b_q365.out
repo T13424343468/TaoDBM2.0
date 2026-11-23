@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT ABS(sum(quantity - (SELECT stock FROM products WHERE id = order_items.product_id)) ) FROM order_items JOIN products ON order_items.product_id = products.id;
 
-[ Prompt: 21.7 t/s | Generation: 7.6 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

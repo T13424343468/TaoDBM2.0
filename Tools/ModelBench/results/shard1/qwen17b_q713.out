@@ -36,7 +36,7 @@ FROM users u
 FULL JOIN payments p ON u.id = p.order_id
 FULL JOIN orders o ON u.id = o.user_id;
 
-[ Prompt: 20.5 t/s | Generation: 7.3 t/s ]
+[ Prompt: 18.5 t/s | Generation: 7.1 t/s ]
 
 
 Exiting...
