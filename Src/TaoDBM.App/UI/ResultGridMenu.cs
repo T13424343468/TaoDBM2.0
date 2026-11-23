@@ -23,6 +23,7 @@ public static class ResultGridMenu
             menu.Items.Add(MenuItem("复制该行", () => CopyRows(r, new[] { ri })));
             menu.Items.Add(MenuItem("复制该单元格", () => CopyCell(r, ri, colIdx)));
             menu.Items.Add(MenuItem($"复制全部（前 {ResultGridOps.CopyRowLimit:N0} 行）", () => CopyRows(r, Enumerable.Range(0, r.Rows.Count))));
+            menu.Items.Add(MenuItem("复制为 INSERT（跨库粘贴用）", () => CopyAsInsert(r, Enumerable.Range(0, r.Rows.Count))));   // 批次二格4
         }
         menu.Items.Add(MenuItem("分析本列", () => _ = ShowAnalysisAsync(host, r, colIdx)));
         if (!string.IsNullOrWhiteSpace(sourceSql))
@@ -43,6 +44,16 @@ public static class ResultGridMenu
         if (n > ResultGridOps.CopyRowLimit) rowIndices = rowIndices.Take(ResultGridOps.CopyRowLimit);
         SetClipboard(ResultGridOps.ToTsv(r.Columns, r.Rows, rowIndices));
         AppLog.Write($"[网格复制] rows={Math.Min(n, ResultGridOps.CopyRowLimit)}");
+    }
+
+    /// <summary>批次二格4：复制为 INSERT——表名取结果集标题（浏览页即表名），标识符引用按引擎方言出口。</summary>
+    static void CopyAsInsert(QueryResult r, IEnumerable<int> rowIndices)
+    {
+        int n = rowIndices.Count();
+        if (n > ResultGridOps.CopyRowLimit) rowIndices = rowIndices.Take(ResultGridOps.CopyRowLimit);
+        string table = r.Title.Length > 0 ? r.Title : "target_table";
+        SetClipboard(ResultGridOps.ToInsertSql(table, r.Columns, r.Rows, rowIndices));
+        AppLog.Write($"[网格复制] as=insert rows={Math.Min(n, ResultGridOps.CopyRowLimit)}");
     }
 
     static void SetClipboard(string text)

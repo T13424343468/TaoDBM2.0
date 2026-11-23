@@ -30,6 +30,10 @@ public class ConnectionDialog
     private readonly TextBox _sshPort = new() { Header = "SSH 端口", PlaceholderText = "22" };
     private readonly TextBox _sshUser = new() { Header = "SSH 用户名" };
     private readonly PasswordBox _sshPass = new() { Header = "SSH 密码" };
+    // 批次三格4：HTTP 隧道（可选；SSH 优先，HTTP 次之）
+    private readonly TextBox _tunnelUrl = new() { Header = "HTTP 隧道端点（可选，如 https://主机/tunnel.php）", PlaceholderText = "留空不启用" };
+    // 批次三格5：认证方式（账号密码 / Windows 集成）
+    private readonly ComboBox _auth = new() { Header = "认证方式", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new List<string> { "账号密码", "Windows 集成（免密）" } };
 
     public ConnectionDialog(ConnectionProfile profile)
     {
@@ -61,6 +65,10 @@ public class ConnectionDialog
         _sshUser.Text = profile.SshUser;
         _sshPass.Password = profile.SshPassword;
         _ssh.IsChecked = !string.IsNullOrEmpty(profile.SshHost);
+        _tunnelUrl.Text = profile.TunnelUrl;
+        _auth.SelectedIndex = profile.AuthMode == "integrated" ? 1 : 0;
+        _auth.SelectionChanged += (_, _) => OnAuthChanged();
+        OnAuthChanged();
         _tnsList.SelectionChanged += (_, _) =>
         {
             int i = _tnsList.SelectedIndex;
@@ -82,14 +90,24 @@ public class ConnectionDialog
         _sshHost.Visibility = _sshPort.Visibility = _sshUser.Visibility = _sshPass.Visibility = vis;
     }
 
+    /// <summary>批次三格5：选 Windows 集成认证时隐藏账号密码框（免密语义）。</summary>
+    private void OnAuthChanged()
+    {
+        bool integrated = _auth.SelectedIndex == 1;
+        var vis = integrated ? Visibility.Collapsed : Visibility.Visible;
+        _user.Visibility = _pass.Visibility = vis;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_auth, "conn-auth");
+    }
+
     private void OnEngineChanged()
     {
         var e = (DbEngine)_engine.SelectedIndex;
         bool fileBased = EngineInfo.IsFileBased(e);
+        bool integrated = _auth.SelectedIndex == 1;   // 批次三格5：集成认证隐藏账号密码（与引擎可见性叠加）
         _host.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
         _port.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
-        _user.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
-        _pass.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
+        _user.Visibility = fileBased || integrated ? Visibility.Collapsed : Visibility.Visible;
+        _pass.Visibility = fileBased || integrated ? Visibility.Collapsed : Visibility.Visible;
         _database.Visibility = fileBased ? Visibility.Collapsed : Visibility.Visible;
         _file.Visibility = fileBased ? Visibility.Visible : Visibility.Collapsed;
         _params.Visibility = e == DbEngine.Oracle ? Visibility.Visible : Visibility.Visible; // Oracle service name 也走这一行
@@ -133,6 +151,7 @@ public class ConnectionDialog
         panel.Children.Add(_params);
         panel.Children.Add(_tnsBtn);
         panel.Children.Add(_tnsList);
+        panel.Children.Add(_auth);   // 批次三格5：认证方式
         _tnsBtn.Click += (_, _) => _ = PickTns(owner);
         panel.Children.Add(_savePwd);
         panel.Children.Add(_hint);
@@ -144,6 +163,7 @@ public class ConnectionDialog
         sshPanel.Children.Add(_sshPort);
         sshPanel.Children.Add(_sshUser);
         sshPanel.Children.Add(_sshPass);
+        sshPanel.Children.Add(_tunnelUrl);   // 批次三格4：HTTP 隧道端点
         panel.Children.Add(sshPanel);
 
         var scroll = new ScrollViewer { Content = panel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -229,6 +249,8 @@ public class ConnectionDialog
         Profile.SshPort = int.TryParse(_sshPort.Text, out var sp) ? sp : 22;
         Profile.SshUser = _sshUser.Text.Trim();
         Profile.SshPassword = _sshPass.Password;
+        Profile.TunnelUrl = _tunnelUrl.Text.Trim();   // 批次三格4
+        Profile.AuthMode = _auth.SelectedIndex == 1 ? "integrated" : "password";   // 批次三格5
     }
 
     private async Task<bool> TestConn()

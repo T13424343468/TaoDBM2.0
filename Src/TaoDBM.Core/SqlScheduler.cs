@@ -16,6 +16,9 @@ public class ScheduledSqlEntry
     public DateTimeOffset NextRunAt { get; set; }
     /// <summary>最近一次执行结果（done / failed / 未跑过为空）。</summary>
     public string LastResult { get; set; } = "";
+    /// <summary>批次三格1：任务类型（query/backup/sync/import/export/dictionary/faker）。
+    /// 旧 JSON 缺省兼容为 query；分派执行时 Kind 为空或未知按 query 处理，不阻断旧条目。</summary>
+    public string Kind { get; set; } = "query";
 }
 
 /// <summary>
@@ -47,7 +50,7 @@ public static class SqlScheduler
     public static List<ScheduledSqlEntry> List() { lock (Gate) return Load(); }
 
     /// <summary>新增任务：Id 自动生成，NextRunAt = now + interval。返回带 Id 的条目。</summary>
-    public static ScheduledSqlEntry Add(string name, string db, string sql, int intervalMinutes)
+    public static ScheduledSqlEntry Add(string name, string db, string sql, int intervalMinutes, string kind = "query")
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("任务名不能为空");
         if (string.IsNullOrWhiteSpace(sql)) throw new ArgumentException("SQL 不能为空");
@@ -64,11 +67,23 @@ public static class SqlScheduler
                 IntervalMinutes = intervalMinutes,
                 Enabled = true,
                 NextRunAt = DateTimeOffset.Now.AddMinutes(intervalMinutes),
+                Kind = NormalizeKind(kind),
             };
             list.Add(e);
             Save(list);
             return e;
         }
+    }
+
+    /// <summary>批次三格1：任务类型归一——空/未知回退 query，旧条目兼容口径。</summary>
+    public static string NormalizeKind(string? kind)
+    {
+        var k = (kind ?? "").Trim().ToLowerInvariant();
+        return k switch
+        {
+            "backup" or "sync" or "import" or "export" or "dictionary" or "faker" => k,
+            _ => "query",
+        };
     }
 
     /// <summary>更新任务；不存在返回 false。</summary>

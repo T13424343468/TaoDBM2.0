@@ -33,7 +33,7 @@ public class MongoProvider : IDbProvider
 
     private MongoClient BuildClient()
     {
-        var (host, port) = SshTunnel.Resolve(Profile, Profile.Host, Profile.Port > 0 ? Profile.Port : 27017);
+        var (host, port) = TunnelResolver.Resolve(Profile, Profile.Host, Profile.Port > 0 ? Profile.Port : 27017);
         var url = $"mongodb://{Uri.EscapeDataString(Profile.User)}:{Uri.EscapeDataString(Profile.Password)}@{host}:{port}";
         if (string.IsNullOrEmpty(Profile.User)) url = $"mongodb://{host}:{port}";
         return new MongoClient(MongoUrl.Create(url + "/?serverSelectionTimeoutMS=8000&connectTimeoutMS=8000"));

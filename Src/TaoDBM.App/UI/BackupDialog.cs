@@ -309,7 +309,7 @@ public static class BackupDialog
             {
                 case DbEngine.MySQL:
                 {
-                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
                     var spec = BackupTools.MysqlDump(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
@@ -318,7 +318,7 @@ public static class BackupDialog
                 }
                 case DbEngine.PostgreSQL:
                 {
-                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
                     var spec = BackupTools.PgDump(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
@@ -348,14 +348,14 @@ public static class BackupDialog
             {
                 case DbEngine.MySQL:
                 {
-                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 3306);
                     var spec = BackupTools.MysqlRestore(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";
                 }
                 case DbEngine.PostgreSQL:
                 {
-                    var (h, p) = SshTunnel.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
+                    var (h, p) = TunnelResolver.Resolve(profile, profile.Host, profile.Port > 0 ? profile.Port : 5432);
                     var spec = BackupTools.PgRestore(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 ? $"还原完成：{file} → {db}" : $"退出码 {code}\n{text}";

@@ -21,6 +21,10 @@ public class ConnectionProfile
     public int SshPort { get; set; } = 22;
     public string SshUser { get; set; } = "";
     public string SshPassword { get; set; } = "";
+    // 批次三格4：HTTP 隧道端点（留空不启用；SSH 优先，HTTP 次之）
+    public string TunnelUrl { get; set; } = "";
+    // 批次三格5：认证方式（password=账号密码 / integrated=Windows 集成；缺省兼容旧 JSON）
+    public string AuthMode { get; set; } = "password";
 }
 
 public static class ProfileCrypto

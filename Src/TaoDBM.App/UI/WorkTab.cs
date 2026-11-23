@@ -47,6 +47,10 @@ public partial class WorkTab : Grid
     private readonly Button _assistBtn = new() { Content = "设计辅助", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };   // 格15：结果上下文入口
     private readonly Button _delKeyBtn = new() { Content = "删除此键", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _favBtn = new() { Content = "收藏", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    // 批次二格1：表单视图切换（浏览模式）；格4：粘贴数据（浏览模式）
+    private readonly Button _formBtn = new() { Content = "表单", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _pasteBtn = new() { Content = "粘贴数据", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private bool _formMode;
     private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = 12 };
     private readonly Button _prevBtn = new() { Content = "◀ 上一页", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
     private readonly Button _nextBtn = new() { Content = "下一页 ▶", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
@@ -173,6 +177,8 @@ public partial class WorkTab : Grid
             bar.Children.Add(_importBtn);
             bar.Children.Add(_designBtn);
             bar.Children.Add(_fakerBtn);
+            if (provider is RelationalProvider) bar.Children.Add(_formBtn);   // 批次二格1：表单视图（关系库浏览页）
+            bar.Children.Add(_pasteBtn);   // 批次二格4：粘贴数据
         }
         if (mode == WorkMode.TableData && provider is RedisProvider && child.Length > 0)
         {
@@ -246,6 +252,24 @@ public partial class WorkTab : Grid
         _structBtn.Click += (_, _) => _ = ShowStructure();
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
         _importBtn.Click += (_, _) => _ = ImportCsv();
+        _formBtn.Click += (_, _) =>   // 批次二格1：网格/表单双视图切换
+        {
+            _formMode = !_formMode;
+            _formBtn.Content = _formMode ? "网格" : "表单";
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_formBtn, "FormViewToggle");
+            if (_browseResult is not null && _isRelational)
+            {
+                if (_formMode)
+                {
+                    var host = new FormViewHost(this);
+                    Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(host, "FormViewHost");
+                    host.Render(_offset);
+                    _resultsHost.Content = host;
+                }
+                else ShowResult(_browseResult, editable: true);
+            }
+        };
+        _pasteBtn.Click += (_, _) => _ = UI.PastePreviewDialog.Show(_owner, this, _provider, _db, _child.Length > 0 ? _child : "main");   // 批次二格4
         _designBtn.Click += (_, _) => _ = UI.TableDesignerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);
         _fakerBtn.Click += (_, _) => _ = UI.FakerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : "main");
         _histBtn.Click += (_, _) => ShowHistory();
@@ -744,6 +768,50 @@ public partial class WorkTab : Grid
 
     private ColumnSpec? KeyCol => _cols.FirstOrDefault(c => c.IsKey);
 
+    /// <summary>批次二格3：外键候选预取——本表外键列 → 参考表键值 LIMIT 200（超时/不支持回空表）。</summary>
+    private async Task<Dictionary<string, List<string>>> FetchFkCandidatesAsync()
+    {
+        var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        if (!_isRelational) return map;
+        var rs = await _provider.Execute(_db, ObjectTreeCatalog.ListForeignKeys(_provider.Profile.Engine, _db));
+        var r = rs.FirstOrDefault();
+        if (r is null) return map;
+        int tCol = r.Columns.FindIndex(c => c.Equals("table_name", StringComparison.OrdinalIgnoreCase));
+        int cCol = r.Columns.FindIndex(c => c.Equals("column_name", StringComparison.OrdinalIgnoreCase));
+        int rtCol = r.Columns.FindIndex(c => c.Equals("ref_table", StringComparison.OrdinalIgnoreCase));
+        int rcCol = r.Columns.FindIndex(c => c.Equals("ref_column", StringComparison.OrdinalIgnoreCase));
+        if (tCol < 0 || cCol < 0 || rtCol < 0 || rcCol < 0) return map;
+        foreach (var row in r.Rows)
+        {
+            if (Convert.ToString(row[tCol]) != _child) continue;
+            var refTable = Convert.ToString(row[rtCol]) ?? "";
+            var refCol = Convert.ToString(row[rcCol]) ?? "";
+            if (refTable.Length == 0 || refCol.Length == 0) continue;
+            try
+            {
+                var vals = await _provider.Execute(_db, $"SELECT {refCol} FROM {_provider.Quote(refTable)} LIMIT 200");
+                var v0 = vals.FirstOrDefault();
+                if (v0 is null) continue;
+                map[Convert.ToString(row[cCol]) ?? ""] = v0.Rows
+                    .Select(x => Convert.ToString(x[0]) ?? "")
+                    .Where(s => s.Length > 0).ToList();
+            }
+            catch { /* 参考表读不到：该列回退文本框 */ }
+        }
+        return map;
+    }
+
+    // ---------- 批次二格1/格4：表单视图与粘贴数据的公开出口 ----------
+
+    /// <summary>浏览结果行（表单视图行游标用；空表返回 null）。</summary>
+    public System.Collections.Generic.IReadOnlyList<object?[]>? BrowseRows => _browseResult?.Rows;
+    /// <summary>当前列信息（表单视图字段渲染用）。</summary>
+    public System.Collections.Generic.IReadOnlyList<ColumnSpec> Columns => _cols;
+    /// <summary>打开指定行的编辑弹层（表单视图「编辑本行」入口，走既有 EditRow 全口径）。</summary>
+    public Task EditRowAt(int rowIndex) => EditRow(rowIndex);
+    /// <summary>刷新浏览数据（粘贴数据落库后回显）。</summary>
+    public Task RefreshAsync() { _offset = 0; return RunOrRefresh(); }
+
     private async Task EditRow(int? rowIndex)
     {
         if (!_isRelational) { _messageBox.Text = "该引擎不支持行内编辑。"; return; }
@@ -761,6 +829,15 @@ public partial class WorkTab : Grid
         var nullChecks = new List<CheckBox>();
         var panel = new StackPanel { Spacing = 10, MinWidth = 380, Margin = new Thickness(0, 0, 12, 0) };
         panel.Children.Add(new TextBlock { Text = "勾选 NULL＝存 NULL；留空＝存空字符串（数字列留空仍按 NULL）。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        RowEditorFactory.BlobOwner = _owner;   // 批次二格2：大字段弹层宿主
+        // 批次二格3：外键候选预取（2 秒超时回退普通文本框，不阻断编辑；异步等待不阻塞 UI 线程）
+        var fkMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var fkTask = FetchFkCandidatesAsync();
+            if (await Task.WhenAny(fkTask, Task.Delay(TimeSpan.FromSeconds(2))) == fkTask) fkMap = await fkTask;
+        }
+        catch { /* 外键候选取不到：全部回退普通文本框 */ }
         for (int i = 0; i < _cols.Count; i++)
         {
             var nullCheck = new CheckBox { Content = "NULL", HorizontalAlignment = HorizontalAlignment.Right, FontSize = AntTokens.FontMinor };
@@ -772,7 +849,10 @@ public partial class WorkTab : Grid
                 initialText = isNull ? "" : Exporter.Format(v);
                 nullCheck.IsChecked = isNull;
             }
-            var field = RowEditorFactory.Create(_cols[i], initialText, readOnly: _cols[i].IsKey);   // 格4：按列类型出控件
+            // 批次二格3：外键列出可编辑下拉（候选来自参考表 LIMIT 200）
+            var field = fkMap.TryGetValue(_cols[i].Name, out var cands) && cands.Count > 0 && !_cols[i].IsKey
+                ? RowEditorFactory.CreateFk(_cols[i], initialText, cands)
+                : RowEditorFactory.Create(_cols[i], initialText, readOnly: _cols[i].IsKey);   // 格4：按列类型出控件
             nullCheck.Checked += (_, _) => field.SetEnabled(false);
             nullCheck.Unchecked += (_, _) => field.SetEnabled(true);
             if (nullCheck.IsChecked == true) field.SetEnabled(false);

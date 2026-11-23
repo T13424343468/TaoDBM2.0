@@ -42,6 +42,40 @@ public static class ResultGridOps
         _ => v.ToString() ?? "",
     };
 
+    /// <summary>批次二格4：行集转 INSERT 语句（跨库复制粘贴的复制端）。
+    /// quoteIdent 为标识符引用出口（走 provider 方言，勿硬编码反引号）；值字面量按 SQL 通用口径
+    /// （字符串单引号转义、NULL/二进制 0x…/布尔 TRUE/FALSE、数值原样），与 Exporter.Literal 同语义。</summary>
+    public static string ToInsertSql(string table, IReadOnlyList<string> columns,
+        IReadOnlyList<object?[]> rows, IEnumerable<int> rowIndices, Func<string, string>? quoteIdent = null)
+    {
+        var q = quoteIdent ?? (s => s);
+        var sb = new System.Text.StringBuilder();
+        int n = 0;
+        foreach (var i in rowIndices)
+        {
+            if (i < 0 || i >= rows.Count) continue;
+            var row = rows[i];
+            var vals = new string[columns.Count];
+            for (int c = 0; c < columns.Count; c++)
+                vals[c] = SqlLiteral(c < row.Length ? row[c] : null);
+            sb.Append($"INSERT INTO {q(table)} ({string.Join(", ", columns.Select(q))}) VALUES ({string.Join(", ", vals)});\n");
+            n++;
+            if (n >= CopyRowLimit) break;
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>SQL 通用字面量（复制端生成用；与 Exporter.Literal 同语义但无列类型依赖）。</summary>
+    public static string SqlLiteral(object? v) => v switch
+    {
+        null or DBNull => "NULL",
+        byte[] b => "0x" + Convert.ToHexString(b),
+        bool x => x ? "TRUE" : "FALSE",
+        DateTime dt => $"'{dt:yyyy-MM-dd HH:mm:ss}'",
+        decimal or int or long or short or byte or double or float => Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? "NULL",
+        _ => "'" + (v.ToString() ?? "").Replace("'", "''") + "'",
+    };
+
     /// <summary>排序模式：0 原序 / 1 升序 / 2 降序（表头点击循环）。</summary>
     public const int SortOriginal = 0, SortAsc = 1, SortDesc = 2;
 

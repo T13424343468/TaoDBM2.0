@@ -111,6 +111,30 @@ public static class RowEditorFactory
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(box, $"EditRow_{col.Name}");
             box.Text = initialText ?? "";
             if (readOnly) box.IsReadOnly = true;
+
+            // 批次二格2：大字段（BLOB/TEXT/IMAGE/bytea 或值超 64 字节）加「编辑大字段」按钮 → BlobEditorDialog
+            bool isBlob = dt.Contains("blob") || dt.Contains("text") || dt.Contains("image") || dt.Contains("bytea")
+                || (initialText?.Length ?? 0) > 64;
+            if (isBlob && !readOnly)
+            {
+                var blobBtn = new Button { Content = "编辑大字段", FontSize = AntTokens.FontMinor, Padding = new Thickness(8, 2, 8, 2) };
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(blobBtn, $"BlobEdit_{col.Name}");
+                blobBtn.Click += async (_, _) =>
+                {
+                    var edited = await BlobEditorDialog.Show(BlobOwner!, col, box.Text);
+                    if (edited is not null) box.Text = edited;
+                };
+                var wrap = new StackPanel { Spacing = 4 };
+                wrap.Children.Add(box);
+                wrap.Children.Add(blobBtn);
+                field = new Field
+                {
+                    Control = wrap,
+                    GetText = () => box.Text,
+                    SetEnabled = v => { box.IsEnabled = v; blobBtn.IsEnabled = v; },
+                };
+                return field;
+            }
             field = new Field
             {
                 Control = box,
@@ -119,5 +143,24 @@ public static class RowEditorFactory
             };
         }
         return field;
+    }
+
+    /// <summary>大字段弹层宿主（EditRow 注入；App 层单窗，静态持有即可）。</summary>
+    internal static MainWindow? BlobOwner;
+
+    /// <summary>批次二格3：外键下拉——参考表键值候选（可编辑 ComboBox，选值保存走既有 Literal 口径）。
+    /// 取不到候选（超时/无外键）由调用方回退普通文本框，不阻断编辑。</summary>
+    public static Field CreateFk(ColumnSpec col, string? initialText, IReadOnlyList<string> candidates)
+    {
+        string header = $"{col.Name}（{col.DataType}{(col.IsKey ? " · 🔑" : "")} · 外键）";
+        var combo = new ComboBox { Header = header, IsEditable = true, MinWidth = 200, ItemsSource = candidates };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(combo, $"FkCombo_{col.Name}");
+        if (initialText is not null) combo.Text = initialText;
+        return new Field
+        {
+            Control = combo,
+            GetText = () => combo.Text?.Trim() ?? "",
+            SetEnabled = v => combo.IsEnabled = v,
+        };
     }
 }

@@ -64,6 +64,8 @@ public class PostgreSqlProvider : RelationalProvider
             Password = Profile.Password,
             Timeout = 10,
         };
+        // 批次三格5：Windows 集成认证（GSSAPI/SSPI）——选集成时忽略账号密码字段（Npgsql 6+ 移除 IntegratedSecurity，账号留空即走 SSPI）
+        if (Profile.AuthMode == "integrated") { sb.Username = null; sb.Password = null; }
         sb.Database = string.IsNullOrEmpty(db) ? (string.IsNullOrEmpty(Profile.Database) ? "postgres" : Profile.Database) : db;
         foreach (var kv in Profile.Parameters.Split(';', StringSplitOptions.RemoveEmptyEntries))
         {
@@ -119,6 +121,8 @@ public class SqlServerProvider : RelationalProvider
             // 老库（2008 R2 及以前）默认无 TLS1.2 补丁：首连保持驱动默认加密，握手被拒后由 AdaptiveDbConnection 降级重连
             Encrypt = encrypt,
         };
+        // 批次三格5：Windows 集成认证——选集成时忽略账号密码字段（驱动自带 SSPI）
+        if (Profile.AuthMode == "integrated") sb.IntegratedSecurity = true;
         if (!string.IsNullOrEmpty(db)) sb.InitialCatalog = db;
         foreach (var kv in Profile.Parameters.Split(';', StringSplitOptions.RemoveEmptyEntries))
         {

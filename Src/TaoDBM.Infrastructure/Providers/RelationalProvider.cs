@@ -120,7 +120,7 @@ public abstract class RelationalProvider : IDbProvider
 
     /// <summary>解析实际连接端点（启用 SSH 隧道时返回本地转发端口）。</summary>
     protected (string Host, int Port) Endpoint() =>
-        SshTunnel.Resolve(Profile, Profile.Host, Profile.Port > 0 ? Profile.Port : EngineInfo.DefaultPort(Profile.Engine));
+        TunnelResolver.Resolve(Profile, Profile.Host, Profile.Port > 0 ? Profile.Port : EngineInfo.DefaultPort(Profile.Engine));
 
     public Task TestConnection() => Task.Run(async () =>
     {

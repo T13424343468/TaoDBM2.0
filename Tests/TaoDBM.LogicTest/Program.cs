@@ -4126,6 +4126,8 @@ Console.WriteLine("== 批次 K2 收尾（数据字典/ER深度/内存封顶/定�
 Console.WriteLine("\n== 组合矩阵（二期全覆盖批次）==");
 TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
 TaoDBM.LogicTest.KanbanAnalysis.RunAll(Check);   // 批次E：点选式分析 + 看板钉住/定时刷新（独立文件，ComboMatrix 家法）
+TaoDBM.LogicTest.BatchCheck23.RunAll(Check);   // 批次二三：库搜索/监控/INSERT 复制/计划 Kind/连接分组/隧道生命周期
+TaoDBM.LogicTest.ColumnLazyCheck.RunAll(Check);   // 批次F：宽表列按需加载（2026-11-20 全覆盖令）
 
 // 制度补齐层：tao-testing-standard 标准测试项与 v3.3 新增把尺逐项落测（2026-11-18 老板令「按制度全覆盖无死角补齐」）
 Layer("制度补齐");

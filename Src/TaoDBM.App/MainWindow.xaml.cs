@@ -88,7 +88,7 @@ public partial class MainWindow : Window
         ApplyLayoutTier();
         EnableSqlDrop();
         DispatcherQueue.TryEnqueue(LoadSqlFromCommandLine);
-        Closed += (_, _) => { SaveWindowState(); SaveSession(); SshTunnel.StopAll(); };
+        Closed += (_, _) => { SaveWindowState(); SaveSession(); TunnelResolver.StopAll(); };
     }
 
     /// <summary>系统通知点击跳转：回主窗并打开对应功能入口（P4）。路由键见 ToastCenter.Route。</summary>
@@ -279,6 +279,18 @@ public partial class MainWindow : Window
         _nodeMap.Clear();
         var filter = (ConnFilter.Text ?? "").Trim();
         int shown = 0;
+        // 批次二格6：虚拟分组——组节点作顶层文件夹，成员连接嵌组内；未分组连接保持顶层。组只是视图，连接数据不动。
+        var groupNames = ConnectionGroups.List().Select(g => g.Name).ToList();
+        var groupNodes = new Dictionary<string, TreeViewNode>();
+        foreach (var name in groupNames)
+        {
+            var gInfo = new NodeInfo { Kind = NodeKind.Category, Name = $"group:{name}" };
+            var gNode = new TreeViewNode { IsExpanded = false, Content = $"📁 {name}" };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(gNode, $"ConnGroup_{name}");
+            _nodeMap[gNode] = gInfo;
+            ConnTree.RootNodes.Add(gNode);
+            groupNodes[name] = gNode;
+        }
         foreach (var p in _profiles)
         {
             // 格18：筛选——DisplayName/Host 不区分大小写包含匹配；清空恢复全部
@@ -292,10 +304,14 @@ public partial class MainWindow : Window
             SetNodeContent(node, info);   // 格18：状态点着色（绿=Connected / 红=Failed），无状态保持纯文本
             node.Children.Add(new TreeViewNode { Content = "…" }); // 占位，展开时填充
             _nodeMap[node] = info;
-            ConnTree.RootNodes.Add(node);
+            var groupName = ConnectionGroups.GroupOf(p.Id);
+            if (groupName.Length > 0 && groupNodes.TryGetValue(groupName, out var gNode)) gNode.Children.Add(node);
+            else ConnTree.RootNodes.Add(node);
         }
-        SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接");
-        AppLog.Write($"[连接树] filter={filter} shown={shown}");   // 格18：走查 S85 断言锚点
+        // 组内连接被筛选隐藏时组节点仍显示（组是视图），空组如实标注
+        foreach (var g in groupNodes) if (g.Value.Children.Count == 0) g.Value.Children.Add(new TreeViewNode { Content = "（空分组）" });
+        SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接 · {groupNames.Count} 个分组");
+        AppLog.Write($"[连接树] filter={filter} shown={shown} groups={groupNames.Count}");   // 格18：走查 S85 断言锚点
     }
 
     /// <summary>格18：筛选框输入即过滤（清空恢复全部）；XAML 解析期 TextChanged 可能早于树就绪，判空防崩。</summary>
@@ -447,7 +463,7 @@ public partial class MainWindow : Window
     {
         bool ok = await ConfirmAsync($"确定删除连接“{info.Profile.DisplayName}”吗？");
         if (!ok) return;
-        SshTunnel.StopProfile(info.Profile.Id);
+        TunnelResolver.StopProfile(info.Profile.Id);
         info.Provider?.Dispose();
         var dead = _workTabs.Where(kv => kv.Value.SessionConnectionId == info.Profile.Id).Select(kv => kv.Key).ToList();
         foreach (var tab in dead) { _workTabs.Remove(tab); WorkTabs.TabItems.Remove(tab); }
@@ -472,6 +488,28 @@ public partial class MainWindow : Window
     }
 
     // ---------- 树交互 ----------
+
+    /// <summary>批次二格6：把连接移到虚拟分组（输入组名，不存在自动建；留空取消）。</summary>
+    private async Task MoveToGroup(NodeInfo info)
+    {
+        var box = new TextBox { Header = "分组名（不存在自动创建；留空取消）", PlaceholderText = "如：生产环境 / 测试环境" };
+        var dlg = new ContentDialog
+        {
+            Title = $"把「{info.Profile.DisplayName}」移到分组",
+            Content = box,
+            PrimaryButtonText = "确定",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return;
+        var name = box.Text.Trim();
+        if (name.Length == 0) return;
+        ConnectionGroups.MoveTo(info.Profile.Id, name);
+        RebuildRoots();
+        SetStatus($"已把 {info.Profile.DisplayName} 移到分组「{name}」");
+        AppLog.Write($"[连接分组] 组={name} 成员=1");
+    }
 
     private NodeInfo? SelectedInfo()
     {
@@ -517,6 +555,10 @@ public partial class MainWindow : Window
                 Item("编辑连接", async (_, _) => await EditConnection(info), group: "连接");
                 Item("关闭连接", (_, _) => CloseConnection(info, node), group: "连接");
                 Item("删除连接", async (_, _) => await DeleteConnection(info), danger: true, group: "连接");
+                Item("移到分组", async (_, _) => await MoveToGroup(info), group: "连接");   // 批次二格6
+                Item("移出分组", (_, _) => { ConnectionGroups.MoveTo(info.Profile.Id, ""); RebuildRoots(); SetStatus($"已把 {info.Profile.DisplayName} 移出分组"); }, group: "连接");
+                Item("服务器监控", (_, _) => UI.ServerMonitorDialog.Show(this, info), group: "运维");   // 批次三格2
+                Item("命令监控", (_, _) => UI.CommandMonitorDialog.Show(this, info), group: "运维");   // 批次三格3
                 Item("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info), group: "工具");
                 Item("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info), group: "工具");
                 Item("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info), group: "工具");
@@ -541,6 +583,7 @@ public partial class MainWindow : Window
                 Item("新建查询", (_, _) => OpenQueryTab(info));   // 高频项保留一级
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
+                Item("在库中搜索", async (_, _) => await UI.DbSearchDialog.Show(this, info), group: "工具");   // 批次二格5
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()), group: "备份");
                 Item("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info), group: "备份");
                 Item("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info), group: "备份");
@@ -634,7 +677,7 @@ public partial class MainWindow : Window
     /// <summary>关闭连接：断开 provider、收起子树、关闭该连接的 SSH 隧道，连接配置保留可再展开。</summary>
     private void CloseConnection(NodeInfo info, TreeViewNode node)
     {
-        SshTunnel.StopProfile(info.Profile.Id);
+        TunnelResolver.StopProfile(info.Profile.Id);
         info.Provider?.Dispose();
         info.Provider = null;
         info.Loaded = false;

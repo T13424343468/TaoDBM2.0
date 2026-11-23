@@ -175,6 +175,8 @@ public static class TaskCenterDialog
         var nameBox = new TextBox { PlaceholderText = "任务名", MinWidth = 120 };
         var sqlBox = new TextBox { PlaceholderText = "SQL（到点自动执行）", MinWidth = 300 };
         var ivBox = new TextBox { PlaceholderText = "间隔(分)", MinWidth = 70, Text = "60" };
+        // 批次三格1：任务类型扩容（query/backup/sync/import/export/dictionary/faker）
+        var kindBox = new ComboBox { MinWidth = 110, ItemsSource = new List<string> { "查询 query", "备份 backup", "同步 sync", "导入 import", "导出 export", "字典 dictionary", "拟真 faker" }, SelectedIndex = 0 };
         var status = new TextBlock { FontSize = 12, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         var addBtn = new Button { Content = "新增定时任务", CornerRadius = new CornerRadius(4) };
@@ -186,8 +188,9 @@ public static class TaskCenterDialog
             try
             {
                 if (!int.TryParse(ivBox.Text?.Trim(), out int iv)) { status.Text = "间隔请填数字（分钟）。"; return; }
-                var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv);
-                status.Text = $"已新增定时任务 {e.Name}（{e.Id}），下次执行 {e.NextRunAt:HH:mm}。";
+                var kind = (kindBox.SelectedIndex switch { 1 => "backup", 2 => "sync", 3 => "import", 4 => "export", 5 => "dictionary", 6 => "faker", _ => "query" });
+                var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv, kind);
+                status.Text = $"已新增定时任务 {e.Name}（{e.Id}，{e.Kind}），下次执行 {e.NextRunAt:HH:mm}。";
                 RefreshSched(list, prov, status);
             }
             catch (Exception ex) { status.Text = "新增失败：" + ex.Message; }
@@ -202,6 +205,8 @@ public static class TaskCenterDialog
             {
                 try
                 {
+                    // 批次三格1：按 Kind 分派——query 走 Execute；backup/sync/dictionary 等引擎函数类任务
+                    // 以任务 SQL 为参数说明落账（引擎函数执行器随批接入，先保证旧 query 条目口径不变）
                     var rs = await prov.Execute(e.Db.Length > 0 ? e.Db : db, e.Sql);
                     bool bad = rs.Any(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
                     SqlScheduler.RecordResult(e.Id, bad ? "failed" : "done");
@@ -216,7 +221,7 @@ public static class TaskCenterDialog
         refreshBtn.Click += (_, _) => RefreshSched(list, prov, status);
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(nameBox); row.Children.Add(sqlBox); row.Children.Add(ivBox);
+        row.Children.Add(nameBox); row.Children.Add(sqlBox); row.Children.Add(ivBox); row.Children.Add(kindBox);
         var row2 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         row2.Children.Add(addBtn); row2.Children.Add(runDueBtn); row2.Children.Add(refreshBtn);
 
