@@ -31,14 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.name, o.created_at
-FROM orders o
+SELECT u.id, u.name, u.city, p.name, p.category, p.price, p.stock
+FROM users u
+JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id
-JOIN payments p ON oi.id = p.id
-JOIN users u ON o.user_id = u.id
+JOIN payments p ON o.id = p.order_id
 WHERE o.created_at = (SELECT MAX(created_at) FROM orders)
 
-[ Prompt: 38.4 t/s | Generation: 8.9 t/s ]
+[ Prompt: 20.2 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

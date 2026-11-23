@@ -31,13 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT u.id, u.name, p.name, p.category, p.price, p.stock, o.status, o.created_at, pi.quantity, pi.unit_price, pa.amount, pa.method, pa.paid_at
+SELECT u.id, u.name, p.name, p.category, p.price, p.stock, o.status, p.id
 FROM users u
-FULL JOIN orders o ON u.id = o.user_id
-FULL JOIN order_items pi ON o.id = pi.order_id
-FULL JOIN payments pa ON o.id = pa.order_id;
+FULL JOIN payments p ON u.id = p.order_id
+FULL JOIN orders o ON u.id = o.user_id;
 
-[ Prompt: 36.6 t/s | Generation: 9.5 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

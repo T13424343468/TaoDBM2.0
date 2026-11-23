@@ -35,10 +35,9 @@ SELECT p.name, o.status, o.created_at
 FROM orders o
 JOIN order_items oi ON o.id = oi.order_id
 JOIN products p ON oi.product_id = p.id
-WHERE o.id = (SELECT MAX(order_id) FROM orders
-             WHERE user_id = (SELECT id FROM users WHERE name = 'John Doe'));
+WHERE o.created_at = (SELECT MAX(created_at) FROM orders)
 
-[ Prompt: 38.5 t/s | Generation: 8.7 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

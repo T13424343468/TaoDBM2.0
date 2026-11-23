@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT DATEADD(DAY, 7, created_at) as next_day FROM users;
 
-[ Prompt: 34.3 t/s | Generation: 11.1 t/s ]
+[ Prompt: 21.9 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

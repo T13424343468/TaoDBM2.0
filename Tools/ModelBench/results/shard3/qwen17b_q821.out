@@ -33,10 +33,13 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT order_id, product_id, quantity, unit_price
 FROM order_items
-WINDOW window1 AS (ORDER BY order_id)
-WINDOW window2 AS (ORDER BY product_id)
+WHERE order_id IN (
+    SELECT order_id
+    FROM payments
+    WHERE paid_at >= NOW() - INTERVAL 1 DAY
+)
 
-[ Prompt: 38.2 t/s | Generation: 9.3 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

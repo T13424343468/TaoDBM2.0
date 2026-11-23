@@ -35,7 +35,7 @@ SELECT * FROM payments
 ORDER BY amount DESC
 LIMIT 5;
 
-[ Prompt: 35.7 t/s | Generation: 8.9 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

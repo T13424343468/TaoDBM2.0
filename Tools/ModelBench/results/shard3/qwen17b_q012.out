@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT MAX(amount) FROM payments;
 
-[ Prompt: 32.3 t/s | Generation: 10.0 t/s ]
+[ Prompt: 20.4 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

@@ -31,15 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-CREATE EVENT archive_old_orders
+CREATE EVENT archive_orders
 ON SCHEDULE EVERY 10 MINUTE
 DO
 BEGIN
   DELETE FROM orders
-  WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
+  WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 DAY;
 END;
 
-[ Prompt: 43.9 t/s | Generation: 11.5 t/s ]
+[ Prompt: 27.0 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

@@ -31,13 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT created_at
+SELECT created_at, DATE_WEEKDAY(created_at) AS week_day
 FROM orders
-WHERE created_at BETWEEN DATEADD(WEEK, -1, created_at) AND created_at
-ORDER BY created_at
-LIMIT 1;
+WHERE status = 'completed';
 
-[ Prompt: 38.3 t/s | Generation: 9.6 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...
