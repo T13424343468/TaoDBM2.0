@@ -496,12 +496,20 @@ public partial class WorkTab : Grid
         _last = list;
         var panel = new StackPanel { Spacing = 12 };
         var msgs = new System.Text.StringBuilder();
+        QueryResult? errResult = null;
         foreach (var r in list)
         {
             panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey()));   // 批次E：结果网格右键分析/钉住；格9 用户列宽
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
+            // P1-01：流式/分页通道不抛异常，SQL 错误以「错误：」前缀落在结果消息里——识别后转错误横幅，与异常路径同口径
+            if (errResult is null && r.Message.StartsWith("错误：", StringComparison.Ordinal)) errResult = r;
         }
         _resultsHost.Content = panel;
+        if (errResult is not null)
+        {
+            ShowError("执行失败：" + errResult.Message["错误：".Length..]);
+            return;
+        }
         ClearError();
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
     }
