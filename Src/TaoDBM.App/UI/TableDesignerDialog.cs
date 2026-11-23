@@ -325,7 +325,6 @@ public static class TableDesignerDialog
         runBtn.Click += (_, _) => OnRun();
         _ = dlg.ShowThemedAsync();
         _ = LoadIndexFkAsync();
-    }
 
     // 改表模式：异步拉取本表索引 / 外键清单，只读行 + 删除勾选；失败如实提示不阻断。
     async Task LoadIndexFkAsync()
