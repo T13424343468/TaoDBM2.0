@@ -22,6 +22,14 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -
   fi
 done
 
+# 1.6) XAML 禁用裸 AutomationId（#248 教训：WinUI 无 AutomationId 属性，XamlCompiler WMC0011 只能云测首验——
+#      控件标识一律用 AutomationProperties.AutomationId 附加属性，机器替人注意）
+for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^Src/TaoDBM\.App/.*\.xaml$' || true); do
+  if grep -nE '(^|[^.])\bAutomationId=' "$f" | grep -qv 'AutomationProperties\.AutomationId='; then
+    echo "[GATE] XAML 误用裸 AutomationId（应为 AutomationProperties.AutomationId）: $f"; fail=1
+  fi
+done
+
 export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
 export PATH="$DOTNET_ROOT:$PATH"
 
