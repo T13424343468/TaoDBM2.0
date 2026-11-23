@@ -31,10 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-EXECUTE AS @proxy_name;
-EXEC sp_start_job @job_name = 'archive_job';
+INSERT INTO dbo.schedules (schedule_name, cron_expression) VALUES ('archive_job', '0 2 * * *');
 
-[ Prompt: 21.4 t/s | Generation: 7.5 t/s ]
+[ Prompt: 37.7 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

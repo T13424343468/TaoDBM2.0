@@ -34,9 +34,9 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT order_items.product_id, order_items.quantity, order_items.unit_price, products.name, products.category, products.price
 FROM order_items
 JOIN products ON order_items.product_id = products.id
-WHERE products.price > 100;
+WHERE order_items.unit_price > 100;
 
-[ Prompt: 21.4 t/s | Generation: 7.7 t/s ]
+[ Prompt: 34.7 t/s | Generation: 10.3 t/s ]
 
 
 Exiting...

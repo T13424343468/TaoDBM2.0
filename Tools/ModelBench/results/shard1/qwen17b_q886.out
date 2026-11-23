@@ -36,11 +36,13 @@ ON SCHEDULE EVERY 1 DAY
 STARTS CURRENT_TIME + INTERVAL '2' HOUR
 DO
 BEGIN
-    DELETE FROM orders
-    WHERE created_at < CURRENT_TIME() - INTERVAL '30' DAY;
+  INSERT INTO archive_orders (order_id, user_id, status, created_at)
+  SELECT order_id, user_id, status, created_at
+  FROM orders
+  WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '30' DAY;
 END;
 
-[ Prompt: 22.1 t/s | Generation: 8.5 t/s ]
+[ Prompt: 36.7 t/s | Generation: 9.7 t/s ]
 
 
 Exiting...

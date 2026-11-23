@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT product_id, category, AVG(price) OVER (PARTITION BY category) AS avg_price_rank
-FROM products
-ORDER BY avg_price_rank;
+SELECT p.name, p.price, (COUNT(*) * 100.0) / (SELECT COUNT(*) FROM products) AS percentile_rank
+FROM products p
+GROUP BY p.name, p.price;
 
-[ Prompt: 21.0 t/s | Generation: 7.5 t/s ]
+[ Prompt: 36.2 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

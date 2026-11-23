@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT ABS(SUM(CASE WHEN stock > 0 THEN 1 ELSE -1 END) * (SELECT COUNT(*) FROM order_items)) FROM products;
+SELECT ABS(CAST(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN quantity ELSE 0 END) AS DECIMAL(10,2)) - CAST(SUM(CASE WHEN product_id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT order_id FROM payments)) THEN stock ELSE 0 END) AS DECIMAL(10,2))) AS abs_stock_change FROM products;
 
-[ Prompt: 21.7 t/s | Generation: 7.7 t/s ]
+[ Prompt: 38.9 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

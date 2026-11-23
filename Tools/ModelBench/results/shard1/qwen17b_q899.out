@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT * FROM order_items WHERE created_at = CURRENT_TIME - INTERVAL '10 MINUTE';
+SELECT * FROM order_items WHERE quantity > 0 AND created_at > CURRENT_TIME - INTERVAL '10 MINUTE';
 
-[ Prompt: 25.3 t/s | Generation: 8.6 t/s ]
+[ Prompt: 37.0 t/s | Generation: 8.7 t/s ]
 
 
 Exiting...

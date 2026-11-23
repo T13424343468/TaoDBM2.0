@@ -31,9 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-INSERT INTO dbo.代理作业安排 (job_name, schedule) VALUES ('archive_job', '0 0 * * *');
+EXECUTE AS OWNER OF 'archival_procedure';
+GO
+EXEC [archival_procedure];
 
-[ Prompt: 20.8 t/s | Generation: 7.6 t/s ]
+[ Prompt: 36.5 t/s | Generation: 8.6 t/s ]
 
 
 Exiting...

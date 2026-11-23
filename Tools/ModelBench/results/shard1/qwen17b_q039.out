@@ -36,7 +36,7 @@ FROM products p
 JOIN order_items oi ON p.id = oi.product_id
 WHERE p.stock < 10;
 
-[ Prompt: 21.2 t/s | Generation: 8.0 t/s ]
+[ Prompt: 38.0 t/s | Generation: 9.9 t/s ]
 
 
 Exiting...

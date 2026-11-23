@@ -31,19 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT 
-    LENGTH(name) AS name_length,
-    LENGTH(city) AS city_length,
-    LENGTH(product_name) AS product_name_length,
-    LENGTH(order_id) AS order_id_length,
-    LENGTH(payment_id) AS payment_id_length
-FROM 
-    users
-    JOIN orders ON users.id = orders.user_id
-    JOIN order_items ON orders.id = order_items.order_id
-    JOIN payments ON orders.id = payments.order_id;
+SELECT SUM(length) AS total_length
+FROM (
+    SELECT DATALENGTH(name) AS length
+    FROM users
+) AS subquery;
 
-[ Prompt: 21.0 t/s | Generation: 7.7 t/s ]
+[ Prompt: 31.7 t/s | Generation: 10.4 t/s ]
 
 
 Exiting...

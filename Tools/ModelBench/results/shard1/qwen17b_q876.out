@@ -31,12 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-CREATE FUNCTION GetUsersByCity @city VARCHAR(50) AS
-BEGIN
-    RETURN SELECT id, name, city FROM users WHERE city = @city
-END
+CREATE FUNCTION GetUsersByCity (@city VARCHAR(50))  
+RETURNS TABLE  
+AS  
+RETURN  
+(SELECT id, name, city FROM users WHERE city = @city)
 
-[ Prompt: 19.7 t/s | Generation: 7.4 t/s ]
+[ Prompt: 38.4 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...
