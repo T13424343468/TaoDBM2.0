@@ -85,7 +85,7 @@ jobs:
               $errLines = @(Get-Content test-stderr.txt -Encoding utf8 -ErrorAction SilentlyContinue | Where-Object { "$_" -ne '' } | Select-Object -Last 9)
               $errLines | ForEach-Object { $t="$_"; Write-Host "::error::[stderr] $($t.Substring(0, [Math]::Min(280, $t.Length)))" }
               if ($ck.Count -eq 0 -and $errLines.Count -eq 0) {
-                $tail | Where-Object { "$_" -ne '' } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+                $tail | Where-Object { "$_" -ne '' } | Select-Object -First 40 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
               }
               $scene = Join-Path $env:RUNNER_TEMP 'autopsy'
               New-Item -ItemType Directory -Force -Path $scene | Out-Null
@@ -543,7 +543,7 @@ jobs:
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
             $out | Select-Object -Last 100 | ForEach-Object { $_ -replace '<','&lt;' | Add-Content $env:GITHUB_STEP_SUMMARY }
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            $out | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
+            $out | Where-Object { "$_" -match "error" } | Select-Object -First 40 | ForEach-Object { $t="$_"; Write-Host "::error::$($t.Substring(0, [Math]::Min(300, $t.Length)))" }
             exit $LASTEXITCODE
           }
 
@@ -608,7 +608,7 @@ jobs:
           # 绝对路径传参——WiX 对 SourceFile 与 Files Include 的相对解析基准不同（一期 run 43579338702 实锤）
           $out2 = wix build Installer/Package.wxs -arch x64 -d PublishDir="$pub" -d IconSource="$ico" -o "out/TaoDBM-2.0.0-x64.msi" 2>&1
           $out2 | ForEach-Object { Write-Host "$_" }
-          if ($LASTEXITCODE -ne 0) { $out2 | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { $out2 | Where-Object { "$_" -match "error" } | Select-Object -First 40 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
           $msis = Get-ChildItem out -Filter *.msi
           if ($msis.Count -ne 1) { Write-Host "::error::msi count wrong: $($msis.Count)"; exit 1 }
           Write-Host "[HASH] SHA256: $((Get-FileHash $msis[0].FullName -Algorithm SHA256).Hash)"
@@ -714,7 +714,7 @@ jobs:
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $out = dotnet publish Src/TaoDBM.App -c Release -p:Platform=x64 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=true -p:TrimMode=partial -p:PublishReadyToRun=true -o publish/trim 2>&1
           $out | ForEach-Object { Write-Host "$_" }
-          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 9 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { $out | Where-Object { "$_" -match "error" } | Select-Object -First 40 | ForEach-Object { Write-Host "::error::$_" }; exit $LASTEXITCODE }
           if (-not (Test-Path "publish/trim/TaoDBM.exe")) { Write-Host "::error::payload missing TaoDBM.exe"; exit 1 }
           $full = (Get-ChildItem publish/full -Recurse | Measure-Object Length -Sum).Sum / 1MB
           $trim = (Get-ChildItem publish/trim -Recurse | Measure-Object Length -Sum).Sum / 1MB
