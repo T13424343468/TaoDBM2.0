@@ -1,5 +1,5 @@
 {
-  "version": "v3.13-newuser-r10",
+  "version": "v3.13-newuser-r11-glyph-anchor",
   "comment": "R10 新用户全流程走查（2026-11-21 盲区补齐令）：模拟首次启动→建连接→浏览→查询→导出。跑前须清空用户配置目录（D:\\TaoDBMData\\TaoDBM 与 %LOCALAPPDATA%\\TaoDBM）模拟全新安装；占位符由 ui-walk.ps1 的 Tpl 机制用真实连接名/库文件/期望值替换。段内步数≤10，CI 用 SkipIds 拆段。",
   "steps": [
     { "id": "N01", "feature": "新用户-打开新建连接对话框", "action": "click", "find": { "controlType": "Button", "name": "＋ 新建连接" }, "critical": true, "shot": "shot-n01-newconn.png" },
@@ -8,10 +8,10 @@
     { "id": "N04", "feature": "新用户-选择库文件", "action": "setvalue", "find": { "automationId": "conn-file" }, "value": "__DBFILE__" },
     { "id": "N05", "feature": "新用户-保存连接", "action": "click", "find": { "controlType": "Button", "name": "保存" }, "critical": true, "shot": "shot-n05-saved.png" },
     { "id": "N06", "feature": "新用户-连接出现在对象树", "action": "tree-contains", "value": "__CONN_NAME__", "critical": true },
-    { "id": "N07", "feature": "新用户-展开连接", "action": "expand", "prefix": "🗄️ __CONN_NAME__", "sleepAfter": 6 },
-    { "id": "N08", "feature": "新用户-展开数据库", "action": "expand-keyboard", "selectPrefix": "🗄️ __CONN_NAME__", "childPrefix": "📁 main", "sleepAfter": 6 },
+    { "id": "N07", "feature": "新用户-展开连接", "action": "expand", "prefix": "__CONN_NAME__", "sleepAfter": 6 },
+    { "id": "N08", "feature": "新用户-展开数据库", "action": "expand-keyboard", "selectPrefix": "__CONN_NAME__", "childPrefix": "main", "sleepAfter": 6 },
     { "id": "N09", "feature": "新用户-看到真实表清单", "action": "tree-contains-all", "value": ["__TBL1__", "__TBL2__"], "critical": true, "shot": "shot-n09-tables.png" },
-    { "id": "N10", "feature": "新用户-选中连接准备查询", "action": "select", "prefix": "🗄️ __CONN_NAME__", "critical": true },
+    { "id": "N10", "feature": "新用户-选中连接准备查询", "action": "select", "prefix": "__CONN_NAME__", "critical": true },
     { "id": "N11", "feature": "新用户-新建查询入口", "action": "menu", "buttonAutomationId": "BtnLogo", "itemName": "新建查询", "critical": true },
     { "id": "N12", "feature": "新用户-首条查询出数", "action": "query", "sql": "SELECT COUNT(*) AS c FROM orders;", "expectContains": ["__ORDERS_COUNT__"], "critical": true, "shot": "shot-n12-count.png" },
     { "id": "N13", "feature": "新用户-取值比对", "action": "query", "sql": "SELECT name FROM products WHERE id = 7;", "expectContains": ["__NAME7__"], "critical": true, "shot": "shot-n13-cell.png" },

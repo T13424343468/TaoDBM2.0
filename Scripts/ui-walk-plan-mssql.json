@@ -1,5 +1,5 @@
 {
-  "version": "v3.16-real-db-p1b-editor-reopen",
+  "version": "v3.17-tree-glyph-anchor",
   "steps": [
     {
       "id": "S01",
@@ -96,15 +96,15 @@
       "id": "S07",
       "feature": "对象树-展开连接",
       "action": "expand",
-      "prefix": "🗄️ __CONN_NAME__",
+      "prefix": "__CONN_NAME__",
       "sleepAfter": 6
     },
     {
       "id": "S08",
       "feature": "对象树-展开数据库",
       "action": "expand-keyboard",
-      "selectPrefix": "🗄️ __CONN_NAME__",
-      "childPrefix": "📁 __DBNAME__",
+      "selectPrefix": "__CONN_NAME__",
+      "childPrefix": "__DBNAME__",
       "sleepAfter": 6
     },
     {
@@ -122,7 +122,7 @@
       "id": "S10",
       "feature": "查询-选中连接",
       "action": "select",
-      "prefix": "🗄️ __CONN_NAME__",
+      "prefix": "__CONN_NAME__",
       "critical": true
     },
     {
