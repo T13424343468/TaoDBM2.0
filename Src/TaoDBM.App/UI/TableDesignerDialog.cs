@@ -392,6 +392,7 @@ public static class TableDesignerDialog
             fkHost.Children.Add(new TextBlock { Text = "外键清单读取失败（权限或引擎限制）。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         }
     }
+    }
 
     private static int FindCol(QueryResult res, string header, int fallback)
     {
