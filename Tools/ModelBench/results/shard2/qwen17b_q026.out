@@ -35,7 +35,7 @@ SELECT SUM(p.amount) AS total_payment_amount
 FROM payments p
 WHERE YEAR(p.paid_at) = 2023;
 
-[ Prompt: 31.0 t/s | Generation: 4.4 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

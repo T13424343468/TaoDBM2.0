@@ -31,11 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-CREATE OR REPLACE FUNCTION get_user_count() RETURNS INT AS $$
-SELECT COUNT(*) FROM users;
-$$ LANGUAGE sql;
+CREATE OR REPLACE PROCEDURE get_user_count() AS $$
+BEGIN
+    SELECT COUNT(*) INTO user_count FROM users;
+END;
+$$ LANGUAGE plpgsql;
 
-[ Prompt: 27.5 t/s | Generation: 4.7 t/s ]
+[ Prompt: 19.2 t/s | Generation: 5.9 t/s ]
 
 
 Exiting...

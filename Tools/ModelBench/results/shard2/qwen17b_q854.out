@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM pg_proc;
 
-[ Prompt: 30.6 t/s | Generation: 4.6 t/s ]
+[ Prompt: 21.5 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
