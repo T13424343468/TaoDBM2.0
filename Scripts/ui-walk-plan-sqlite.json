@@ -179,7 +179,7 @@
       "id": "S20",
       "feature": "P0-01 停止按钮-执行中点停",
       "action": "stop-query",
-      "sql": "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 100000000) SELECT x FROM c;",
+      "sql": "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 500000000) SELECT x FROM c WHERE x % 100000 = 0;",
       "shot": "shot-16-stop-cancelled.png",
       "critical": true
     },

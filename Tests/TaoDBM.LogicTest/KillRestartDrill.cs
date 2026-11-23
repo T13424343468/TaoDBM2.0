@@ -39,7 +39,8 @@ internal static class KillRestartDrill
         void Check(string name, bool cond, string detail = "")
         {
             Console.WriteLine($"{(cond ? "PASS" : "FAIL")} {name} {detail}");
-            if (cond) ok++; else bad++;
+            if (cond) { ok++; }
+            else { bad++; Console.WriteLine($"::error::DRILL {name} {detail}"); }   // 失败即注解点名，CI 红时无需登录即可从注解定位红项
         }
 
         // 1) 死亡进程登记：seed 进程已被强杀，MostRecentAlive 应清掉它（pid 被系统复用的极端情形按存活放行）
@@ -70,7 +71,19 @@ internal static class KillRestartDrill
 
     private static bool PidAlive(int pid)
     {
-        try { Process.GetProcessById(pid); return true; }
+        try
+        {
+            Process.GetProcessById(pid);
+            // Linux 僵尸态（已死未收尸）判死：进程不可能再服务任何管道，按存活只会误导交接对账
+            try
+            {
+                var stat = File.ReadAllText($"/proc/{pid}/stat");
+                var close = stat.LastIndexOf(')');
+                if (close >= 0 && close + 2 < stat.Length && stat[close + 2] == 'Z') return false;
+            }
+            catch { /* 非 Linux 或进程刚退出：按 GetProcessById 的存活口径 */ }
+            return true;
+        }
         catch { return false; }
     }
 }

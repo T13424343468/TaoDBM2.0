@@ -30,6 +30,8 @@ public static class QueryRouter
                 {
                     ct.ThrowIfCancellationRequested();
                     var page = await sq.NextPageAsync(2000, ct);
+                    // 同 ExecuteLazyAsync：快产快消通道不能独占调用线程，取消与 UI 交互要进得来
+                    await Task.Yield();
                     foreach (var row in page.Rows)
                     {
                         if (MaxRowsPerStatement > 0 && rows >= MaxRowsPerStatement) { capped = true; break; }
@@ -90,11 +92,17 @@ public static class QueryRouter
                     var bufs = new List<object?>[nVis];
                     for (int b = 0; b < nVis; b++) bufs[b] = new List<object?>();
                     int rows = 0;
+                    bool capped = false;
                     while (await reader.ReadAsync(ct))
                     {
                         ct.ThrowIfCancellationRequested();
+                        // 内存封顶与整包通道 ExecuteAsync 同口径：#273 实锤无封顶时 1 亿行递归 CTE 把应用吃爆（0xC0000407 fail-fast）
+                        if (MaxRowsPerStatement > 0 && rows >= MaxRowsPerStatement) { capped = true; break; }
                         for (int b = 0; b < nVis; b++) bufs[b].Add(reader.GetValue(vis[b]));
                         rows++;
+                        // 本地库快产快消时 ReadAsync 几乎全同步完成，await 连续同步续接会独占调用线程
+                        //（UI 线程被饿死＝停止按钮点不动，#273 S20 崩溃共因）：定期让出消息泵，取消与交互才进得来
+                        if ((rows & 511) == 0) await Task.Yield();
                     }
                     Safe.Run(() => qr.Affected = reader.RecordsAffected, "读取受影响行数");
                     if (qr.Affected < 0) qr.Affected = 0;
@@ -104,7 +112,9 @@ public static class QueryRouter
                     var store = new ColumnLazyStore(source);
                     store.SeedColumns(vis, bufs.Select(b => b.ToArray()).ToArray());
                     sw.Stop();
-                    results.Add(new LazyQueryResult(store, vis, qr.Title, sw.Elapsed));
+                    var lazy = new LazyQueryResult(store, vis, qr.Title, sw.Elapsed);
+                    if (capped) lazy.Message = $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
+                    results.Add(lazy);
                     continue;
                 }
             }

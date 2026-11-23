@@ -122,7 +122,20 @@ public static class SqlHandoffRegistry
 
     private static bool PidAlive(int pid)
     {
-        try { Process.GetProcessById(pid); return true; }
+        try
+        {
+            Process.GetProcessById(pid);
+            // Linux 僵尸态（已死未收尸）判死：进程不可能再收管道交接，按存活只会把交接交给尸体；
+            // Windows 无 /proc，读取失败走原口径，行为不变。
+            try
+            {
+                var stat = System.IO.File.ReadAllText($"/proc/{pid}/stat");
+                var close = stat.LastIndexOf(')');
+                if (close >= 0 && close + 2 < stat.Length && stat[close + 2] == 'Z') return false;
+            }
+            catch { }
+            return true;
+        }
         catch { return false; }
     }
 }

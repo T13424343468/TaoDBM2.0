@@ -52,6 +52,8 @@ public sealed class RelationalColumnSource : IColumnSource
         int rows = 0;
         while (await reader.ReadAsync(ct))
         {
+            // 首读封顶后补列读取同口径截断：行数必须与首读一致，否则 Store 行数口径错乱
+            if (_rowCount >= 0 && rows >= _rowCount) break;
             for (int b = 0; b < columnIndexes.Length; b++)
             {
                 int ci = columnIndexes[b];

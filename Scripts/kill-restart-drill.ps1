@@ -45,6 +45,9 @@ if (-not (Test-Path $registry)) {
 }
 Write-Host "[DRILL] seed registered after ${waited}s, killing pid=$($seed.Id)"
 Stop-Process -Id $seed.Id -Force   # 强杀 = 模拟崩溃，无任何清理机会
+# 显式收尸后再起 verify：Linux 下父进程未及时 reap 时强杀进程留僵尸态（/proc 仍在），
+# verify 侧存活判定有竞态窗口（CI 偶发红的头号嫌疑）；先 Wait+ExitCode 逼 pwsh waitpid 收尸。
+try { Wait-Process -Id $seed.Id -ErrorAction SilentlyContinue; $null = $seed.ExitCode } catch { }
 Start-Sleep -Seconds 2
 
 # ---- 阶段二：verify（新进程回读对账）----
