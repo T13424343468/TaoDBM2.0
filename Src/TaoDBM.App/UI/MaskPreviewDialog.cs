@@ -16,7 +16,18 @@ public static class MaskPreviewDialog
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var tableBox = new TextBox { PlaceholderText = "表名", MinWidth = 220, Text = info.Kind == NodeKind.Table ? info.Name : "" };
+        // 整改三批三-7：表名手填改可编辑下拉——进入时异步拉表清单，失败回落手填
+        var tableBox = new ComboBox { IsEditable = true, MinWidth = 220, PlaceholderText = "表名（可选下拉或输入）" };
+        if (info.Kind == NodeKind.Table) tableBox.Text = info.Name;
+        if (!prov.IsNoSql && prov.SupportsBrowse)
+        {
+            _ = Safe.RunAsync(async () =>
+            {
+                var tables = await prov.GetChildren(CurrentDb(info));
+                foreach (var t in tables) tableBox.Items.Add(t);
+                if (info.Kind == NodeKind.Table && !tables.Contains(info.Name)) tableBox.Items.Insert(0, info.Name);
+            }, "数据脱敏");
+        }
         var limitBox = new TextBox { PlaceholderText = "行数", Text = "20", MinWidth = 80 };
 
         var runBtn = new Button { Content = "预览脱敏效果", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };

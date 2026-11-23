@@ -67,7 +67,7 @@ public static class ServerMonitorDialog
                             var sid = Convert.ToString(row[0]) ?? "";
                             string kill = ServerMonitor.KillSql(engine, sid);
                             if (kill.Length == 0) { status.Text = "该引擎不支持终止会话。"; return; }
-                            if (!await owner.ConfirmAsync($"确定终止会话 {sid} 吗？该会话未提交的事务将回滚。")) return;
+                            if (!await owner.ConfirmAsync($"确定终止会话 {sid} 吗？该会话未提交的事务将回滚。", "终止")) return;
                             try
                             {
                                 await provider.Execute(db, kill);

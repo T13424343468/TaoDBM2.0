@@ -22,7 +22,15 @@ public static class RecoveryDialog
 
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var tableBox = new TextBox { PlaceholderText = "表名", MinWidth = 200, Text = info.Kind == NodeKind.Table ? info.Name : "" };
+        // 整改三批三-7：表名手填改可编辑下拉——进入时异步拉表清单，失败回落手填
+        var tableBox = new ComboBox { IsEditable = true, MinWidth = 200, PlaceholderText = "表名（可选下拉或输入）" };
+        if (info.Kind == NodeKind.Table) tableBox.Text = info.Name;
+        _ = Safe.RunAsync(async () =>
+        {
+            var tables = await prov.GetChildren(CurrentDb(info));
+            foreach (var t in tables) tableBox.Items.Add(t);
+            if (info.Kind == NodeKind.Table && !tables.Contains(info.Name)) tableBox.Items.Insert(0, info.Name);
+        }, "误删恢复");
         var pkBox = new TextBox { PlaceholderText = "主键列（留空自动识别）", MinWidth = 200 };
         var limitBox = new TextBox { PlaceholderText = "最多捕获行数", Text = "1000", MinWidth = 90 };
 

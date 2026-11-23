@@ -83,6 +83,8 @@ public static class RoutinesDialog
         // 工具条：查看定义 / 断点调试 / 引用查找 / 删除（原稿 §1 按钮组）＋ 新建
         var btnNew = new Button { Content = "新建", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var btnDef = new Button { Content = "查看定义", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        // 整改三批三-8：例程定义「编辑到查询窗口」入口（处理器在下方 btnDef.Click 之后挂）
+        var btnToQuery = new Button { Content = "编辑到查询窗口", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         bool dbg = RoutineManager.DebugSupported(info.Profile.Engine);
         var btnDebug = new Button
         {
@@ -102,9 +104,8 @@ public static class RoutinesDialog
             : new TextBlock { Text = RoutineManager.DebugUnsupportedText, Foreground = Ant.TextSub, FontSize = AntTokens.FontCaption, VerticalAlignment = VerticalAlignment.Center };
 
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        foreach (var b in new[] { btnNew, btnDef, btnDebug, btnRef, btnDel }) bar.Children.Add(b);
+        foreach (var b in new[] { btnNew, btnDef, btnToQuery, btnDebug, btnRef, btnDel }) bar.Children.Add(b);
         bar.Children.Add(debugNote);
-
         var status = new TextBlock { Text = "", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
 
         var grid = new Grid
@@ -271,6 +272,17 @@ public static class RoutinesDialog
             await LoadDefAsync(sel);
         };
 
+        // 整改三批三-8：定义原文转发查询页签，连接上下文带入
+        btnToQuery.Click += (_, _) =>
+        {
+            var sel = Sel();
+            if (sel is null) { status.Text = "先在左侧选中一个例程。"; return; }
+            if (defBox.Text.Length == 0) { status.Text = "先「查看定义」再转发。"; return; }
+            owner.OpenQueryWithSql(defBox.Text, info);
+            status.Text = $"已把 {sel.Kind}「{sel.Name}」定义转到查询窗口。";
+            Core.AppLog.Write($"[例程] 编辑到查询窗口 kind={sel.Kind} name={sel.Name}");
+        };
+
         btnDebug.Click += (_, _) =>
         {
             var sel = Sel();
@@ -311,7 +323,7 @@ public static class RoutinesDialog
             var sel = Sel();
             if (sel is null) { status.Text = "先在左侧选中一个例程。"; return; }
             // 高风险显式确认（原稿 §20 分级确认）：删除为不可逆操作，弹确认。
-            if (!await owner.ConfirmAsync($"确定删除{sel.Kind}「{sel.Name}」？此操作不可恢复。")) return;
+            if (!await owner.ConfirmAsync($"确定删除{sel.Kind}「{sel.Name}」？此操作不可恢复。", "删除")) return;
             try
             {
                 var sql = RoutineManager.BuildDropSql(info.Profile.Engine, sel.KindEnum, sel.Name,

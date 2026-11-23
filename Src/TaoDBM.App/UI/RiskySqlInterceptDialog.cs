@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 本会话不再拦截（二次确认+留痕）。确认后由调用方继续执行，本窗不代执行。</summary>
 public static class RiskySqlInterceptDialog
 {
-    /// <summary>会话级豁免（engine|db）：勾选「本会话不再拦截」并二次确认后生效，进程内有效。</summary>
+    /// <summary>会话级豁免（engine|db|table|op，整改三批三-6 粒度细化）：勾选「本会话不再拦截」并二次确认后生效，进程内有效。</summary>
     public static readonly HashSet<string> SessionBypass = new();
 
     public sealed record Result(bool Proceed, string SqlToRun, bool Bypassed);
@@ -18,12 +18,13 @@ public static class RiskySqlInterceptDialog
     /// <summary>执行前闸：返回 Proceed=false 表示用户取消或未解除拦截。</summary>
     public static async Task<Result> GateAsync(MainWindow owner, IDbProvider prov, string db, string sql)
     {
-        var key = $"{prov.EngineName}|{db}";
-        if (SessionBypass.Contains(key)) return new Result(true, sql, false);
-
         var checks = RiskySqlGuard.InspectScript(sql, prov.Profile.Engine, prov.Quote);
         var worst = RiskySqlGuard.Worst(checks);
         if (worst.Level == "ok") return new Result(true, sql, false);
+
+        // 整改三批三-6：豁免粒度 engine|db → engine|db|table|op——先算检查结论再查豁免，只放行同表同操作
+        var key = $"{prov.EngineName}|{db}|{worst.Table}|{worst.Kind}";
+        if (SessionBypass.Contains(key)) return new Result(true, sql, false);
 
         bool proceed = false;
         string runSql = sql;
@@ -52,21 +53,38 @@ public static class RiskySqlInterceptDialog
             },
         });
 
+        // 整改三批三-5：预估改按钮触发——打开弹窗不再自动打库，点了「预估影响行数」才跑
         var estimateText = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        head.Children.Add(estimateText);
         if (worst.EstimateSql is not null)
         {
-            try
+            var estBtn = new Button
             {
-                var rows = await prov.Execute(db, worst.EstimateSql);
-                var count = rows.Count > 0 && rows[0].Rows.Count > 0 ? rows[0].Rows[0].FirstOrDefault() : "";
-                estimateText.Text = $"影响行数预估：{count}（目标：{db}{(string.IsNullOrEmpty(worst.Table) ? "" : "." + worst.Table)}）";
-            }
-            catch (Exception ex)
+                Content = "预估影响行数",
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                FontSize = AntTokens.FontMinor,
+            };
+            estBtn.Click += async (_, _) =>
             {
-                estimateText.Text = "影响行数预估失败：" + ex.Message;
-            }
+                estBtn.IsEnabled = false;
+                estimateText.Text = "预估中…";
+                try
+                {
+                    var rows = await prov.Execute(db, worst.EstimateSql);
+                    var count = rows.Count > 0 && rows[0].Rows.Count > 0 ? rows[0].Rows[0].FirstOrDefault() : "";
+                    estimateText.Text = $"影响行数预估：{count}（目标：{db}{(string.IsNullOrEmpty(worst.Table) ? "" : "." + worst.Table)}）";
+                }
+                catch (Exception ex)
+                {
+                    estimateText.Text = "影响行数预估失败：" + ex.Message;
+                }
+                finally
+                {
+                    estBtn.IsEnabled = true;
+                }
+            };
+            head.Children.Add(estBtn);
         }
+        head.Children.Add(estimateText);
 
         var unlockBox = new TextBox { PlaceholderText = $"输入库名 {db} 解除拦截…", FontSize = AntTokens.FontMinor };
         head.Children.Add(unlockBox);
@@ -116,7 +134,8 @@ public static class RiskySqlInterceptDialog
                 Title = "本会话不再拦截",
                 Content = new TextBlock
                 {
-                    Text = $"将跳过本会话（{prov.EngineName} · {db}）的全部拦截。确认请输入库名 {db}：",
+                    // 整改三批三-6：豁免粒度细化——文案列明表与操作，只豁免同表同操作
+                    Text = $"将跳过本会话（{prov.EngineName} · {db}）对{(string.IsNullOrEmpty(worst.Table) ? "未识别目标表" : $"表 {worst.Table}")}的「{worst.Kind}」拦截，其他表或操作仍会拦截。确认请输入库名 {db}：",
                     FontSize = AntTokens.FontMinor,
                     TextWrapping = TextWrapping.Wrap,
                 },
@@ -128,7 +147,7 @@ public static class RiskySqlInterceptDialog
             var panel = new StackPanel { Spacing = 8 };
             panel.Children.Add(new TextBlock
             {
-                Text = $"将跳过本会话（{prov.EngineName} · {db}）的全部拦截。确认请输入库名 {db}：",
+                Text = $"将跳过本会话（{prov.EngineName} · {db}）对{(string.IsNullOrEmpty(worst.Table) ? "未识别目标表" : $"表 {worst.Table}")}的「{worst.Kind}」拦截，其他表或操作仍会拦截。确认请输入库名 {db}：",
                 FontSize = AntTokens.FontMinor,
                 TextWrapping = TextWrapping.Wrap,
             });
@@ -139,7 +158,7 @@ public static class RiskySqlInterceptDialog
                 bypass = true;
                 SessionBypass.Add(key);
                 proceed = true;
-                AppLog.Write($"[拦截留痕] 会话豁免 engine={prov.EngineName} db={db} sql={sql.Replace('\r', ' ').Replace('\n', ' ')}");
+                AppLog.Write($"[拦截留痕] 会话豁免 engine={prov.EngineName} db={db} table={worst.Table} op={worst.Kind} sql={sql.Replace('\r', ' ').Replace('\n', ' ')}");
             }
         }
 

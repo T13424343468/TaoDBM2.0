@@ -584,7 +584,7 @@ public partial class WorkTab : Grid
     private async Task DeleteKeyAsync()
     {
         if (_provider is not RedisProvider rp) return;
-        bool ok = await _owner.ConfirmAsync($"确定删除键“{_child}”吗？删除后数据不可自动恢复，请确认不再需要这个键。");
+        bool ok = await _owner.ConfirmAsync($"确定删除键“{_child}”吗？删除后数据不可自动恢复，请确认不再需要这个键。", "删除");
         if (!ok) return;
         try
         {

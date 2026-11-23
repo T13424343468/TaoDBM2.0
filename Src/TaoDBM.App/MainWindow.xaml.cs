@@ -90,6 +90,19 @@ public partial class MainWindow : Window
             var f11 = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.F11 };
             f11.Invoked += (_, args) => { args.Handled = true; ToggleFocusMode(); };
             rootGrid.KeyboardAccelerators.Add(f11);
+            // 整改三批三-2：快捷键三件套——Ctrl+N 新建查询 / Ctrl+W 关当前页签 / Ctrl+Tab(+Shift) 循环切页签
+            var ctrlN = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.N };
+            ctrlN.Invoked += (_, args) => { args.Handled = true; OnNewQuerySel(null!); Core.AppLog.Write("[快捷键] n 新建查询"); };
+            rootGrid.KeyboardAccelerators.Add(ctrlN);
+            var ctrlW = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.W };
+            ctrlW.Invoked += (_, args) => { args.Handled = true; CloseCurrentTab(); };
+            rootGrid.KeyboardAccelerators.Add(ctrlW);
+            var ctrlTab = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.Tab };
+            ctrlTab.Invoked += (_, args) => { args.Handled = true; CycleWorkTab(forward: true); };
+            rootGrid.KeyboardAccelerators.Add(ctrlTab);
+            var ctrlShiftTab = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control | Windows.System.VirtualKeyModifiers.Shift, Key = Windows.System.VirtualKey.Tab };
+            ctrlShiftTab.Invoked += (_, args) => { args.Handled = true; CycleWorkTab(forward: false); };
+            rootGrid.KeyboardAccelerators.Add(ctrlShiftTab);
         }
         RestoreFocusMode();
         SizeChanged += EnforceMinimumSize;
@@ -294,7 +307,7 @@ public partial class MainWindow : Window
         foreach (var name in groupNames)
         {
             var gInfo = new NodeInfo { Kind = NodeKind.Category, Name = $"group:{name}" };
-            var gNode = new TreeViewNode { IsExpanded = false, Content = $"📁 {name}" };
+            var gNode = new TreeViewNode { IsExpanded = false, Content = NodeIconText("group", name) };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(gNode, $"ConnGroup_{name}");
             _nodeMap[gNode] = gInfo;
             ConnTree.RootNodes.Add(gNode);
@@ -331,19 +344,37 @@ public partial class MainWindow : Window
     }
 
     /// <summary>格18：根节点内容——无状态纯文本；Connected 绿点 / Failed 红点前缀（颜色随主题语义色）。</summary>
+    /// <summary>整改三批三-4：对象树图标 Fluent 化——emoji 改 Segoe MDL2/Fluent 字形，跨 Windows 版本渲染一致。</summary>
+    private static readonly System.Collections.Generic.Dictionary<string, string> NodeGlyphs = new()
+    {
+        ["conn"] = "\uE717",    // World——连接
+        ["group"] = "\uE8B7",   // Folder——分组/库
+        ["table"] = "\uE8A5",   // Document——表/集合
+    };
+
+    private static readonly FontFamily IconFont = new("Segoe MDL2 Assets");
+
+    private static StackPanel NodeIconText(string glyphKey, string text)
+    {
+        var host = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+        host.Children.Add(new FontIcon { Glyph = NodeGlyphs[glyphKey], FontFamily = IconFont, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub });
+        host.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        return host;
+    }
+
     private static void SetNodeContent(TreeViewNode node, NodeInfo info)
     {
-        string text = $"🗄️ {info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";
-        if (info.ConnState.Length == 0) { node.Content = text; return; }
-        var host = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-        host.Children.Add(new TextBlock
+        string text = $"{info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";
+        if (info.ConnState.Length == 0) { node.Content = NodeIconText("conn", text); return; }
+        var host = NodeIconText("conn", text);
+        var dot = new TextBlock
         {
             Text = "●",
             FontSize = 10,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = info.ConnState == "Connected" ? Ant.Success : Ant.Error,
-        });
-        host.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        };
+        host.Children.Insert(1, dot);   // 状态点插在图标与文本之间
         node.Content = host;
     }
 
@@ -733,7 +764,7 @@ public partial class MainWindow : Window
                             Kind = NodeKind.Database,
                             Profile = info.Profile, Provider = info.Provider, Name = db, Db = db,
                         };
-                        var childNode = new TreeViewNode { Content = $"📁 {db}" };
+                        var childNode = new TreeViewNode { Content = NodeIconText("group", db) };
                         childNode.Children.Add(new TreeViewNode { Content = "…" });
                         _nodeMap[childNode] = childInfo;
                         node.Children.Add(childNode);
@@ -754,7 +785,7 @@ public partial class MainWindow : Window
                             Kind = NodeKind.Table, // Mongo 集合 / Redis 键统一走 Table 语义
                             Profile = info.Profile, Provider = prov, Name = c, Db = info.Db,
                         };
-                        var cNode = new TreeViewNode { Content = (prov.IsNoSql ? "🗂️ " : "📋 ") + c };
+                        var cNode = new TreeViewNode { Content = NodeIconText("table", c) };
                         _nodeMap[cNode] = cInfo;
                         node.Children.Add(cNode);
                     }
@@ -917,9 +948,10 @@ public partial class MainWindow : Window
 
     private void OnAbout(object sender, RoutedEventArgs e)
     {
+        // 整改三批三-3：版本对齐标题栏 2.0；引擎清单更新为七库＋国产六家口径
         _ = new UI.MessageDialogHelper(this).Show(
-            "TaoDBM v1.0",
-            "WinUI3 + .NET 8 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n\n道生一，一生二，二生三，三生万物。数据即万物。");
+            "TaoDBM v2.0",
+            "WinUI3 + .NET 8 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n以及 OceanBase / GaussDB / 达梦 / 金仓 / PolarDB / TDSQL\n\n道生一，一生二，二生三，三生万物。数据即万物。");
     }
 
     /// <summary>操作手册（2026-11-20 老板令）：顶栏「手册」/ 左上菜单「操作手册」/ 全局 F1 三入口，内容离线内置。</summary>
@@ -935,7 +967,7 @@ public partial class MainWindow : Window
             TextWrapping = TextWrapping.Wrap,
             FontSize = AntTokens.FontEmphasis,
             Foreground = UI.Ant.TextSub,
-            Text = "欢迎使用 TaoDBM。\n\n1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。\n2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。\n3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。\n\n支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis",
+            Text = "欢迎使用 TaoDBM。\n\n1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。\n2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。\n3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。\n\n支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL",
         };
         var tab = new TabViewItem
         {
@@ -1073,6 +1105,26 @@ public partial class MainWindow : Window
         }
         sender.TabItems.Remove(args.Tab);
         if (_workTabs.Remove(args.Tab)) SaveSession();
+    }
+
+    /// <summary>整改三批三-2：Ctrl+W 关当前页签——复用 OnTabClose 链路（脏页签三选确认不绕过）。</summary>
+    private void CloseCurrentTab()
+    {
+        if (WorkTabs.SelectedItem is not TabViewItem tab || WorkTabs.TabItems.Count <= 1) return;
+        OnTabClose(WorkTabs, new TabViewTabCloseRequestedEventArgs(tab, tab));
+        Core.AppLog.Write("[快捷键] w 关页签");
+    }
+
+    /// <summary>整改三批三-2：Ctrl+Tab(+Shift) 循环切页签。</summary>
+    private void CycleWorkTab(bool forward)
+    {
+        int n = WorkTabs.TabItems.Count;
+        if (n <= 1) return;
+        int cur = WorkTabs.SelectedIndex;
+        if (cur < 0) cur = 0;
+        int next = forward ? (cur + 1) % n : (cur - 1 + n) % n;
+        WorkTabs.SelectedIndex = next;
+        Core.AppLog.Write($"[快捷键] tab 切页签 idx={next}");
     }
 
     /// <summary>P1-02：关脏页签三选确认。保存被取消（另存未选文件）则留在页签。</summary>
@@ -1248,15 +1300,20 @@ public partial class MainWindow : Window
         return Task.CompletedTask;
     }
 
-    public async Task<bool> ConfirmAsync(string msg)
+    public async Task<bool> ConfirmAsync(string msg, string verb = "删除")
     {
         var dlg = new ContentDialog
         {
             Content = new TextBlock { Text = msg, TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = "删除",
+            PrimaryButtonText = verb,
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = Content.XamlRoot,
+        };
+        // 整改三批三-1：危险确认统一组件——主按钮红字随动作、默认焦点在取消
+        dlg.PrimaryButtonStyle = new Style(typeof(Button))
+        {
+            Setters = { new Setter(Button.ForegroundProperty, Ant.Error) },
         };
         return await dlg.ShowThemedAsync() == ContentDialogResult.Primary;
     }
