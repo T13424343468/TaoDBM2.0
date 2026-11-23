@@ -37,7 +37,7 @@ JOIN users u2 ON u1.id = u2.id
 WHERE u1.city = u2.city
 AND u1.id < u2.id;
 
-[ Prompt: 25.9 t/s | Generation: 5.1 t/s ]
+[ Prompt: 20.6 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

@@ -37,7 +37,7 @@ FROM users
 WHERE city = $1;
 $$ LANGUAGE sql;
 
-[ Prompt: 27.0 t/s | Generation: 5.1 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

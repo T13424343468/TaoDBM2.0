@@ -33,9 +33,10 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.id, u.name, u.city, o.created_at, ROW_NUMBER() OVER (PARTITION BY u.id ORDER BY o.created_at DESC) AS rank
 FROM users u
-JOIN orders o ON u.id = o.user_id;
+JOIN orders o ON u.id = o.user_id
+ORDER BY rank;
 
-[ Prompt: 26.6 t/s | Generation: 5.2 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

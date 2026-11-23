@@ -39,7 +39,7 @@ WHERE o.user_id = 1
 ORDER BY pa.amount DESC
 LIMIT 2;
 
-[ Prompt: 27.7 t/s | Generation: 5.1 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

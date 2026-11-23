@@ -41,9 +41,9 @@ INSERT INTO users (id, name, city, created_at) VALUES
 (7, 'Grace', 'Austin', CURRENT_TIMESTAMP),
 (8, 'Helen', 'Dallas', CURRENT_TIMESTAMP),
 (9, 'Ian', 'Seattle', CURRENT_TIMESTAMP),
-(10, 'Jack', 'San Antonio', CURRENT_TIMESTAMP);
+(10, 'Jack', 'San Jose', CURRENT_TIMESTAMP);
 
-[ Prompt: 25.9 t/s | Generation: 5.0 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

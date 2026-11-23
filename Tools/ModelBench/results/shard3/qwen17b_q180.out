@@ -31,12 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT orders.id, orders.user_id, orders.status, orders.created_at, order_items.product_id, order_items.quantity, order_items.unit_price
-FROM orders
-LEFT JOIN order_items ON orders.id = order_items.order_id
-WHERE LEFT(orders.created_at, 3) = '2021';
+SELECT name FROM users LEFT JOIN order_items ON users.id = order_items.user_id LEFT JOIN payments ON order_items.order_id = payments.order_id WHERE LEFT(name, 3) = 'John';
 
-[ Prompt: 25.1 t/s | Generation: 4.7 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

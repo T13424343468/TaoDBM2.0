@@ -36,11 +36,11 @@ ON SCHEDULE EVERY 1 MONTH
 STARTS CURRENT_TIME
 DO
 BEGIN
-  DELETE FROM orders
-  WHERE created_at < CURRENT_DATE - INTERVAL 30 DAY;
+    DELETE FROM orders
+    WHERE created_at < CURRENT_DATE - INTERVAL 30 DAY;
 END;
 
-[ Prompt: 25.3 t/s | Generation: 5.1 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

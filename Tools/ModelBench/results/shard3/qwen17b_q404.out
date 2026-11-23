@@ -33,9 +33,9 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT unit_price
 FROM order_items
-WHERE unit_price = EXP(price);
+WHERE e^price = unit_price;
 
-[ Prompt: 27.7 t/s | Generation: 4.7 t/s ]
+[ Prompt: 21.2 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

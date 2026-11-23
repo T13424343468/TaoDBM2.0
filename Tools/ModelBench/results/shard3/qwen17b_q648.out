@@ -31,15 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT u.name, SUM(p.amount) AS total_amount
-FROM users u
-JOIN orders o ON u.id = o.user_id
-JOIN payments p ON o.id = p.order_id
-GROUP BY u.id
-ORDER BY SUM(p.amount) DESC
+SELECT name, SUM(unit_price * quantity) AS total_amount
+FROM order_items
+JOIN orders ON order_items.order_id = orders.id
+JOIN users ON orders.user_id = users.id
+GROUP BY users.id
+ORDER BY total_amount DESC
 LIMIT 4;
 
-[ Prompt: 26.9 t/s | Generation: 5.2 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...
