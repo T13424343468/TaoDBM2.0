@@ -13,6 +13,15 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -
   if [ "$head" != "efbbbf" ]; then echo "[GATE] 缺 UTF-8 BOM: $f"; fail=1; fi
 done
 
+# 1.5) App 层 Core 类型 using 检查（#247 教训：本地沙箱编不了 App XAML，缺 using 只能云测首验才爆——
+#      引用 Core 静态/实体类型的 App 源文件必须显式 using TaoDBM.Core，机器替人注意）
+for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E '^Src/TaoDBM.App/.*\.cs$' || true); do
+  if grep -qE '\b(SqlFolder|SqlFindReplace|SqlFindOptions|SqlStatementLocator|SqlBeautifier|SqlCommentToggler|SqlSnippets|SqlBracketMatcher|ExplainPlanEngine|ClipboardStack|AppLog)\b' "$f" \
+     && ! grep -q 'using TaoDBM.Core;' "$f"; then
+    echo "[GATE] 引用 Core 类型但缺 using TaoDBM.Core: $f"; fail=1
+  fi
+done
+
 export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
 export PATH="$DOTNET_ROOT:$PATH"
 

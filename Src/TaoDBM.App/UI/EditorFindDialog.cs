@@ -1,4 +1,8 @@
-﻿namespace TaoDBM.UI;
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using TaoDBM.Core;
+
+namespace TaoDBM.UI;
 
 /// <summary>编辑器查找替换对话框（批次一）：正则＋全字＋区分大小写，查找下一个、替换预览、全部替换。</summary>
 public static class EditorFindDialog
