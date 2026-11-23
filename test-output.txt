@@ -34443,6 +34443,56 @@
   ✓ Tunnel.幂等关闭
   ✓ Tunnel.Hex往返
 
+== 批次四五 纯逻辑用例（2026-11-23）==
+  ✓ Excel.行数一致
+  ✓ Excel.表头一致
+  ✓ Excel.数字往返
+  ✓ Excel.布尔往返
+  ✓ Excel.NULL跳格
+  ✓ Xml.良构解析
+  ✓ Xml.NULL写nil
+  ✓ Xml.特殊字符转义
+  ✓ Xml.SafeName净化
+  ✓ Html.含表结构
+  ✓ Xml.流式行数
+  ✓ Html.流式行数
+  ✓ Backup.计数
+  ✓ Backup.保留建表
+  ✓ Backup.保留插入原序
+  ✓ Backup.丢弃杂句
+  ✓ BackupHistory.最新在前
+  ✓ BackupHistory.字段完整
+  ✓ BackupHistory.清空
+  ✓ Ddl.实体数
+  ✓ Ddl.列与类型
+  ✓ Ddl.行内主键
+  ✓ Ddl.表级主键
+  ✓ Ddl.外键解析
+  ✓ Model.往返非空
+  ✓ Model.三层各自独立
+  ✓ Model.当前层保持
+  ✓ Model.边符号保持
+  ✓ Model.Of取层
+  ✓ ModelCompare.差异计数
+  ✓ ModelCompare.类型变更
+  ✓ ModelCompare.缺表
+  ✓ ModelCompare.一致零差异
+  ✓ Faker.四类模板
+  ✓ Faker.预设命中[name]
+  ✓ Faker.预设命中[phone]
+  ✓ Faker.预设命中[idcard]
+  ✓ Faker.预设命中[address]
+  ✓ Faker.未命中零行
+  ✓ Erd.符号往返
+  ✓ Erd.推断自动标注
+  ✓ Dict.索引段
+  ✓ Dict.外键段
+  ✓ Dict.Word段
+  ✓ Odbc.连接串
+  ✓ Odbc.库覆盖DSN
+  ✓ Odbc.最小连接串
+  ✓ Odbc.引擎注册
+
 == 批次F 宽表列按需加载 ColumnLazyStore（2026-11-20）==
   ✓ COL-构造-零拷贝全物化
   ✓ COL-窄表-非宽表
@@ -34469,7 +34519,7 @@
 
 ========== 制度补齐层 ==========
 == 行为探针（测试规范三.5：类型全装载+构造冒烟）==
-  ✓ 行为探针-类型全装载与构造冒烟零断裂(541 型)
+  ✓ 行为探针-类型全装载与构造冒烟零断裂(580 型)
 == 版本锚（测试规范三.6：Windows 交付版本一致性）==
   ✓ 版本锚-App 三版本一致
 == 跨平台路径双分隔符回归（测试规范三.1）==
@@ -34657,9 +34707,9 @@
 == 分层结果 ==
 单元: 391 / 391
 集成: 1027 / 1027
-系统: 33053 / 33053
+系统: 33101 / 33101
 暴力: 59 / 59
 万链: 6 / 6
 制度补齐: 27 / 27
 
-通过 34563 / 34563
+通过 34611 / 34611
