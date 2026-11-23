@@ -36,7 +36,7 @@ FROM payments p
 WHERE p.paid_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
 AND p.paid_at < CURDATE();
 
-[ Prompt: 31.5 t/s | Generation: 10.1 t/s ]
+[ Prompt: 61.8 t/s | Generation: 15.0 t/s ]
 
 
 Exiting...

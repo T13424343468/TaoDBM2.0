@@ -40,7 +40,7 @@ JOIN
 WHERE 
     orders.id = 1;
 
-[ Prompt: 37.2 t/s | Generation: 9.3 t/s ]
+[ Prompt: 60.5 t/s | Generation: 16.4 t/s ]
 
 
 Exiting...

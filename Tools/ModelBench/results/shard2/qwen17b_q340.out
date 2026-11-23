@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT ROUND(unit_price, 0) AS rounded_price FROM order_items;
 
-[ Prompt: 32.1 t/s | Generation: 9.2 t/s ]
+[ Prompt: 60.1 t/s | Generation: 15.5 t/s ]
 
 
 Exiting...

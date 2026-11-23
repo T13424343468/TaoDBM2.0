@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT unit_price FROM order_items WHERE order_id IN (SELECT order_id FROM payments WHERE amount = (SELECT price FROM products));
 
-[ Prompt: 32.6 t/s | Generation: 10.3 t/s ]
+[ Prompt: 66.7 t/s | Generation: 13.5 t/s ]
 
 
 Exiting...

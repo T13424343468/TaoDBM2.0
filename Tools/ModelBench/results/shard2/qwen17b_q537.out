@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT TO_DATE(created_at, 'UNIX') FROM users;
 
-[ Prompt: 34.4 t/s | Generation: 9.7 t/s ]
+[ Prompt: 71.6 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

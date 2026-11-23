@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT CONVERT(INT, CAST(created_at AS DATETIME)) AS unix_timestamp
 FROM users;
 
-[ Prompt: 35.2 t/s | Generation: 9.5 t/s ]
+[ Prompt: 80.1 t/s | Generation: 14.4 t/s ]
 
 
 Exiting...

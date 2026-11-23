@@ -36,7 +36,7 @@ FROM users u
 JOIN orders o ON u.id = o.user_id
 GROUP BY u.name;
 
-[ Prompt: 35.1 t/s | Generation: 7.9 t/s ]
+[ Prompt: 52.7 t/s | Generation: 11.1 t/s ]
 
 
 Exiting...

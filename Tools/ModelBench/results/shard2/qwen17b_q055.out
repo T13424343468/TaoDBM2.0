@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 GRANT ALL ON *.* TO 'a'@'%';
 
-[ Prompt: 36.8 t/s | Generation: 8.1 t/s ]
+[ Prompt: 65.7 t/s | Generation: 14.3 t/s ]
 
 
 Exiting...

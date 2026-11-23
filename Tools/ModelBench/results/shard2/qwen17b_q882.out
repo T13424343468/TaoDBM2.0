@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT CASE WHEN SUM(stock) < 0 THEN 1 ELSE 0 END FROM products
 
-[ Prompt: 36.5 t/s | Generation: 8.8 t/s ]
+[ Prompt: 69.9 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

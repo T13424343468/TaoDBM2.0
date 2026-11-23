@@ -39,7 +39,7 @@ WHERE p.status = 'paid'
 ORDER BY p.amount DESC
 LIMIT 2;
 
-[ Prompt: 34.3 t/s | Generation: 9.5 t/s ]
+[ Prompt: 67.4 t/s | Generation: 13.9 t/s ]
 
 
 Exiting...

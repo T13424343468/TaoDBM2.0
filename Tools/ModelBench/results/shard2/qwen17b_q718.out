@@ -36,7 +36,7 @@ FROM orders o
 LEFT JOIN order_items oi ON o.id = oi.order_id
 LEFT JOIN products p ON oi.product_id = p.id;
 
-[ Prompt: 35.6 t/s | Generation: 8.1 t/s ]
+[ Prompt: 57.6 t/s | Generation: 13.1 t/s ]
 
 
 Exiting...

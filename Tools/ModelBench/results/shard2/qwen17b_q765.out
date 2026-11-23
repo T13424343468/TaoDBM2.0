@@ -38,7 +38,7 @@ WHERE o.id NOT IN (
     FROM payments
 )
 
-[ Prompt: 35.6 t/s | Generation: 9.4 t/s ]
+[ Prompt: 67.0 t/s | Generation: 14.0 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT CONCAT(name, '(', city, ')') AS combined_name_city FROM users;
 
-[ Prompt: 33.3 t/s | Generation: 8.0 t/s ]
+[ Prompt: 62.3 t/s | Generation: 17.1 t/s ]
 
 
 Exiting...

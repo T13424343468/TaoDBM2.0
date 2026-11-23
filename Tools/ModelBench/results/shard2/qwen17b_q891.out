@@ -35,7 +35,7 @@ EXECUTE AS OWNER OF 'archival_procedure';
 GO
 EXEC [archival_procedure];
 
-[ Prompt: 35.5 t/s | Generation: 8.5 t/s ]
+[ Prompt: 46.8 t/s | Generation: 12.2 t/s ]
 
 
 Exiting...

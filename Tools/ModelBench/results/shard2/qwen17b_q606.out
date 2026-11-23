@@ -35,7 +35,7 @@ SELECT u.id, u.name, u.city, o.created_at, ROW_NUMBER() OVER (PARTITION BY u.id 
 FROM users u
 JOIN orders o ON u.id = o.user_id;
 
-[ Prompt: 36.0 t/s | Generation: 9.3 t/s ]
+[ Prompt: 70.4 t/s | Generation: 13.3 t/s ]
 
 
 Exiting...

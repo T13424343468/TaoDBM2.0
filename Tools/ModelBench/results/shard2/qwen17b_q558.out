@@ -36,7 +36,7 @@ FROM orders AS orders1
 JOIN orders AS orders2 ON orders1.id = orders2.id
 WHERE orders1.created_at < orders2.created_at;
 
-[ Prompt: 32.9 t/s | Generation: 9.3 t/s ]
+[ Prompt: 71.2 t/s | Generation: 14.4 t/s ]
 
 
 Exiting...

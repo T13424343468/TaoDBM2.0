@@ -38,7 +38,7 @@ GROUP BY p.category
 HAVING COUNT(*) > 1
 ORDER BY count DESC;
 
-[ Prompt: 43.7 t/s | Generation: 12.6 t/s ]
+[ Prompt: 83.3 t/s | Generation: 17.4 t/s ]
 
 
 Exiting...

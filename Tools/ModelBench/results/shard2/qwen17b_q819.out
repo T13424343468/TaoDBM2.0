@@ -36,7 +36,7 @@ SELECT id, name, city, created_at
 FROM users 
 WHERE id = 1;
 
-[ Prompt: 33.4 t/s | Generation: 10.9 t/s ]
+[ Prompt: 64.5 t/s | Generation: 13.9 t/s ]
 
 
 Exiting...

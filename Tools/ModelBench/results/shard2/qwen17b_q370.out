@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT p.stock + CASE WHEN p.price * p.stock < 0 THEN 0 ELSE 1 END AS abs_stock
 FROM products p;
 
-[ Prompt: 37.8 t/s | Generation: 8.9 t/s ]
+[ Prompt: 60.5 t/s | Generation: 16.1 t/s ]
 
 
 Exiting...

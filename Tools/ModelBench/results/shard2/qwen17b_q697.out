@@ -36,7 +36,7 @@ FROM users u
 JOIN orders o ON u.id = o.user_id
 JOIN order_items oi ON o.id = oi.order_id;
 
-[ Prompt: 36.1 t/s | Generation: 9.0 t/s ]
+[ Prompt: 50.9 t/s | Generation: 14.5 t/s ]
 
 
 Exiting...

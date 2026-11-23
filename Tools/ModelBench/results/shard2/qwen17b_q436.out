@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT YEAR(created_at) AS year FROM users;
 
-[ Prompt: 33.4 t/s | Generation: 9.6 t/s ]
+[ Prompt: 65.7 t/s | Generation: 13.6 t/s ]
 
 
 Exiting...

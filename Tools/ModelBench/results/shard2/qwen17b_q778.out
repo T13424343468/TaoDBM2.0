@@ -36,7 +36,7 @@ FROM order_items o
 JOIN products p ON o.product_id = p.id
 WHERE o.order_id = (SELECT order_id FROM orders WHERE created_at = (SELECT MAX(created_at) FROM orders));
 
-[ Prompt: 36.7 t/s | Generation: 8.2 t/s ]
+[ Prompt: 70.7 t/s | Generation: 14.5 t/s ]
 
 
 Exiting...

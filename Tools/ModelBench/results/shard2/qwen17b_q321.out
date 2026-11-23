@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT ROUND(price, 2) FROM products;
 
-[ Prompt: 32.5 t/s | Generation: 8.0 t/s ]
+[ Prompt: 65.7 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

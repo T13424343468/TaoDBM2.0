@@ -38,7 +38,7 @@ UPDATE orders SET status = 'paid', paid_at = GETDATE() WHERE id = 1;
 
 COMMIT;
 
-[ Prompt: 37.4 t/s | Generation: 8.7 t/s ]
+[ Prompt: 72.0 t/s | Generation: 15.2 t/s ]
 
 
 Exiting...

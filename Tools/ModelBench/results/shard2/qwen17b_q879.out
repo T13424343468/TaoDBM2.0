@@ -36,7 +36,7 @@ BEGIN
     RETURN (SELECT id, name, city FROM users WHERE city = @city)
 END
 
-[ Prompt: 32.3 t/s | Generation: 9.8 t/s ]
+[ Prompt: 60.2 t/s | Generation: 14.3 t/s ]
 
 
 Exiting...

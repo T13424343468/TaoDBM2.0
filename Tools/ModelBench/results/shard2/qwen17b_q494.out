@@ -35,7 +35,7 @@ SELECT YEAR(created_at) AS year, MONTH(created_at) AS month, COUNT(*) AS order_c
 FROM orders
 GROUP BY YEAR(created_at), MONTH(created_at);
 
-[ Prompt: 32.9 t/s | Generation: 9.0 t/s ]
+[ Prompt: 62.3 t/s | Generation: 14.2 t/s ]
 
 
 Exiting...

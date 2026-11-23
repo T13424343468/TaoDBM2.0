@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT AVG(price) FROM products WHERE city = 'New York';
 
-[ Prompt: 57.3 t/s | Generation: 16.7 t/s ]
+[ Prompt: 101.1 t/s | Generation: 21.9 t/s ]
 
 
 Exiting...

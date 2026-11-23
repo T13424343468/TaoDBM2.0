@@ -35,7 +35,7 @@ SELECT p.name, p.price, (COUNT(*) * 100.0) / (SELECT COUNT(*) FROM products) AS 
 FROM products p
 GROUP BY p.name, p.price;
 
-[ Prompt: 33.9 t/s | Generation: 8.9 t/s ]
+[ Prompt: 60.1 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

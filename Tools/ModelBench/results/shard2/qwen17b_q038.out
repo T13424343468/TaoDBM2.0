@@ -38,7 +38,7 @@ GROUP BY p.id
 ORDER BY total_quantity DESC
 LIMIT 1;
 
-[ Prompt: 37.0 t/s | Generation: 8.7 t/s ]
+[ Prompt: 60.5 t/s | Generation: 13.9 t/s ]
 
 
 Exiting...

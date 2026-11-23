@@ -36,7 +36,7 @@ FROM users u
 JOIN order_items oi ON u.id = oi.user_id
 GROUP BY u.id, u.name;
 
-[ Prompt: 34.6 t/s | Generation: 9.6 t/s ]
+[ Prompt: 63.5 t/s | Generation: 14.0 t/s ]
 
 
 Exiting...

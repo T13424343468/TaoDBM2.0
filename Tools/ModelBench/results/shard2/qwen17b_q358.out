@@ -48,7 +48,7 @@ WHERE
             paid_at = (SELECT MIN(paid_at) FROM payments)
     );
 
-[ Prompt: 34.4 t/s | Generation: 8.8 t/s ]
+[ Prompt: 63.7 t/s | Generation: 14.8 t/s ]
 
 
 Exiting...

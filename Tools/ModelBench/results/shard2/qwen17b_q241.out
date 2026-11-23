@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name REPLACE 'a' WITH 'x' FROM users;
 
-[ Prompt: 36.5 t/s | Generation: 11.2 t/s ]
+[ Prompt: 63.9 t/s | Generation: 13.8 t/s ]
 
 
 Exiting...

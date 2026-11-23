@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 INSERT INTO dbo.schedules (schedule_name, cron_expression) VALUES ('archive_job', '0 2 * * *');
 
-[ Prompt: 36.6 t/s | Generation: 9.3 t/s ]
+[ Prompt: 67.3 t/s | Generation: 14.2 t/s ]
 
 
 Exiting...

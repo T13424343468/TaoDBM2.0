@@ -38,7 +38,7 @@ JOIN products p ON pi.product_id = p.id
 JOIN payments pa ON o.id = pa.order_id
 WHERE o.id = 1;
 
-[ Prompt: 35.7 t/s | Generation: 9.4 t/s ]
+[ Prompt: 63.2 t/s | Generation: 13.0 t/s ]
 
 
 Exiting...

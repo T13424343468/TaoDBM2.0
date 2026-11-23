@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT COALESCE(NULL, 5) AS user_id_filled FROM users;
 
-[ Prompt: 39.6 t/s | Generation: 9.1 t/s ]
+[ Prompt: 56.0 t/s | Generation: 13.0 t/s ]
 
 
 Exiting...

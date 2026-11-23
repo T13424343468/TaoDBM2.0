@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name FROM users WHERE name LIKE substr(name, 1, 3);
 
-[ Prompt: 33.7 t/s | Generation: 8.6 t/s ]
+[ Prompt: 64.6 t/s | Generation: 15.1 t/s ]
 
 
 Exiting...

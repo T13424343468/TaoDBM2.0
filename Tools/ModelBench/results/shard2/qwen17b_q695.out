@@ -44,7 +44,7 @@ user_order_details AS (
 )
 SELECT * FROM user_order_details;
 
-[ Prompt: 37.8 t/s | Generation: 9.0 t/s ]
+[ Prompt: 60.2 t/s | Generation: 12.4 t/s ]
 
 
 Exiting...
