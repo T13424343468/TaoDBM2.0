@@ -37,7 +37,7 @@ JOIN orders o ON u.id = o.user_id
 JOIN payments p ON o.id = p.order_id
 WHERE p.amount > 10000;
 
-[ Prompt: 68.4 t/s | Generation: 14.1 t/s ]
+[ Prompt: 17.9 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

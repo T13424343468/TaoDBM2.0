@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT CAST(name AS VARCHAR) FROM users;
+SELECT CAST(name AS VARCHAR(50)) FROM users;
 
-[ Prompt: 64.6 t/s | Generation: 15.9 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

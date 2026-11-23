@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT o.id FROM orders o JOIN payments p ON o.id = p.order_id WHERE o.id = p.order_id;
 
-[ Prompt: 57.9 t/s | Generation: 15.3 t/s ]
+[ Prompt: 20.8 t/s | Generation: 6.8 t/s ]
 
 
 Exiting...

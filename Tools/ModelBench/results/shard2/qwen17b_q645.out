@@ -31,12 +31,10 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.name, (p.price - AVG(p.price) FILTER (WHERE p.id = order_items.product_id) ) AS diff
-FROM products p
-JOIN order_items ON p.id = order_items.product_id
-GROUP BY p.id, p.name, p.price;
+SELECT p.name, p.price - AVG(p.price) OVER (PARTITION BY p.category) AS diff
+FROM products p;
 
-[ Prompt: 56.8 t/s | Generation: 13.2 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

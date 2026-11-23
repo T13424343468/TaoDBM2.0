@@ -34,10 +34,10 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT o.id, o.user_id, o.status, o.created_at, oi.product_id, oi.quantity, oi.unit_price
 FROM orders o
 FULL JOIN order_items oi ON o.id = oi.order_id
-FULL JOIN payments p ON o.id = p.order_id
-WHERE o.id IS NULL OR oi.id IS NULL;
+FULL JOIN products p ON oi.product_id = p.id
+FULL JOIN users u ON o.user_id = u.id;
 
-[ Prompt: 53.7 t/s | Generation: 12.9 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.2 t/s ]
 
 
 Exiting...

@@ -31,12 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT p.stock + p.price * p.quantity AS total_stock
-FROM products p
-JOIN order_items o ON p.id = o.product_id
-WHERE o.order_id = 1;
+SELECT p.stock + p.price * p.quantity AS total_stock FROM products p JOIN order_items oi ON p.id = oi.product_id;
 
-[ Prompt: 66.0 t/s | Generation: 13.0 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

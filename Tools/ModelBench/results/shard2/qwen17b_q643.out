@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT p.price - AVG(p.price) FROM products p
 WHERE p.category = 'electronics';
 
-[ Prompt: 61.3 t/s | Generation: 13.9 t/s ]
+[ Prompt: 21.6 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

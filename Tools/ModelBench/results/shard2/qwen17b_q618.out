@@ -31,15 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT p.name, p.amount
-FROM payments p
+SELECT p.name, p.price * p.quantity AS total, p.method, p.amount
+FROM order_items p
 JOIN orders o ON p.order_id = o.id
-JOIN users u ON o.user_id = u.id
-WHERE p.status = 'paid'
+JOIN payments pa ON p.order_id = pa.order_id
+WHERE o.user_id = (SELECT id FROM users WHERE name = '张三')
 ORDER BY p.amount DESC
 LIMIT 2;
 
-[ Prompt: 49.8 t/s | Generation: 15.4 t/s ]
+[ Prompt: 20.1 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

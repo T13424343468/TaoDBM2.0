@@ -35,7 +35,7 @@ SELECT p.name, p.category, p.price
 FROM products p
 WHERE p.price > (SELECT AVG(price) FROM products WHERE category = p.category);
 
-[ Prompt: 56.2 t/s | Generation: 14.1 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

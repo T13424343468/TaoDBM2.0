@@ -31,9 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT name FROM users LEFT JOIN order_items ON users.id = order_items.user_id LEFT JOIN payments ON order_items.order_id = payments.order_id WHERE LEFT(name, 3) = 'John';
+SELECT o.id, o.user_id, o.status, o.created_at
+FROM orders o
+LEFT JOIN order_items oi ON o.id = oi.order_id
+LEFT JOIN payments p ON o.id = p.order_id
+WHERE LEFT(o.created_at, 3) = '2023';
 
-[ Prompt: 59.1 t/s | Generation: 14.6 t/s ]
+[ Prompt: 21.4 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT COUNT(*) AS quarter_order_count
+SELECT strftime('%Q', created_at) AS quarter, COUNT(*) AS order_count
 FROM orders
-WHERE EXTRACT(QQ FROM created_at) = EXTRACT(QQ FROM CURRENT_DATE);
+GROUP BY quarter;
 
-[ Prompt: 66.2 t/s | Generation: 14.4 t/s ]
+[ Prompt: 20.7 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

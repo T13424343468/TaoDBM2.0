@@ -31,9 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT city FROM users GROUP BY city;
+SELECT city, COUNT(*) AS user_count
+FROM users
+GROUP BY city;
 
-[ Prompt: 66.6 t/s | Generation: 13.2 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

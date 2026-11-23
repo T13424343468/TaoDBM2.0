@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT product_id, AVG(price) OVER (ORDER BY price ASC) AS percentile_rank
 FROM products;
 
-[ Prompt: 65.9 t/s | Generation: 15.1 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

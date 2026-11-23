@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM users LIMIT 10
 
-[ Prompt: 111.4 t/s | Generation: 19.2 t/s ]
+[ Prompt: 38.7 t/s | Generation: 11.0 t/s ]
 
 
 Exiting...

@@ -31,12 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-CREATE PROCEDURE get_stock_out(IN user_id INT, OUT stock INT)
-BEGIN
-    SELECT stock INTO OUT stock FROM products WHERE id = user_id;
+CREATE PROCEDURE get_stock_out(IN p_order_id INT, OUT p_stock INT) BEGIN
+    SELECT stock INTO p_stock FROM products WHERE id = p_order_id;
 END;
 
-[ Prompt: 54.7 t/s | Generation: 17.5 t/s ]
+[ Prompt: 21.0 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...
