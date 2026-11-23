@@ -26,36 +26,36 @@ public partial class WorkTab : Grid
     private readonly RichEditBox _editor = new()
     {
         TextWrapping = TextWrapping.NoWrap,
-        FontSize = 13,
+        FontSize = AntTokens.FontBody,
         MinHeight = 160,
         PlaceholderText = "在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行",
     };
     private readonly DispatcherQueueTimer _hlTimer;
     private bool _applying;
-    private readonly Button _runBtn = new() { Content = "▶ 执行", Background = Ant.Primary, Foreground = Ant.OnPrimary, BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(4), Padding = new Thickness(14, 5, 14, 5) };
-    private readonly Button _stopBtn = new() { Content = "■ 停止", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4), IsEnabled = false };
+    private readonly Button _runBtn = new() { Content = "▶ 执行", Background = Ant.Primary, Foreground = Ant.OnPrimary, BorderThickness = new Thickness(0), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(14, 5, 14, 5) };
+    private readonly Button _stopBtn = new() { Content = "■ 停止", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4), IsEnabled = false };
     private CancellationTokenSource? _runCts;
-    private readonly Button _csvBtn = new() { Content = "导出 CSV", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _insBtn = new() { Content = "导出 INSERT", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _csvBtn = new() { Content = "导出 CSV", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _insBtn = new() { Content = "导出 INSERT", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
     // 批次四格1/格2（2026-11-23）：导出格式组——Excel（xlsx）/ XML / HTML
-    private readonly Button _exportMoreBtn = new() { Content = "导出 ▾", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _structBtn = new() { Content = "结构", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _addRowBtn = new() { Content = "新增行", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _importBtn = new() { Content = "导入", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _designBtn = new() { Content = "设计表", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _fakerBtn = new() { Content = "拟真数据", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _histBtn = new() { Content = "历史", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _reportBtn = new() { Content = "报表", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _assistBtn = new() { Content = "设计辅助", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };   // 格15：结果上下文入口
-    private readonly Button _delKeyBtn = new() { Content = "删除此键", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _favBtn = new() { Content = "收藏", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _exportMoreBtn = new() { Content = "导出 ▾", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _structBtn = new() { Content = "结构", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _addRowBtn = new() { Content = "新增行", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _importBtn = new() { Content = "导入", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _designBtn = new() { Content = "设计表", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _fakerBtn = new() { Content = "拟真数据", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _histBtn = new() { Content = "历史", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _reportBtn = new() { Content = "报表", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _assistBtn = new() { Content = "设计辅助", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };   // 格15：结果上下文入口
+    private readonly Button _delKeyBtn = new() { Content = "删除此键", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _favBtn = new() { Content = "收藏", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
     // 批次二格1：表单视图切换（浏览模式）；格4：粘贴数据（浏览模式）
-    private readonly Button _formBtn = new() { Content = "表单", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
-    private readonly Button _pasteBtn = new() { Content = "粘贴数据", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _formBtn = new() { Content = "表单", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+    private readonly Button _pasteBtn = new() { Content = "粘贴数据", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
     private bool _formMode;
-    private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = 12 };
-    private readonly Button _prevBtn = new() { Content = "◀ 上一页", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
-    private readonly Button _nextBtn = new() { Content = "下一页 ▶", BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 3, 8, 3) };
+    private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor };
+    private readonly Button _prevBtn = new() { Content = "◀ 上一页", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(8, 3, 8, 3) };
+    private readonly Button _nextBtn = new() { Content = "下一页 ▶", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(8, 3, 8, 3) };
 
     private readonly ScrollViewer _resultsHost = new()
     {
@@ -67,7 +67,7 @@ public partial class WorkTab : Grid
         IsReadOnly = true,
         TextWrapping = TextWrapping.Wrap,
         FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
-        FontSize = 12,
+        FontSize = AntTokens.FontMinor,
         MinHeight = 64,
         MaxHeight = 140,
         PlaceholderText = "消息",
@@ -88,7 +88,7 @@ public partial class WorkTab : Grid
     {
         IsTextSelectionEnabled = true,
         TextWrapping = TextWrapping.Wrap,
-        FontSize = 12.5,
+        FontSize = AntTokens.FontMinor,
         VerticalAlignment = VerticalAlignment.Center,
         Margin = new Thickness(6, 0, 0, 0),
     };
@@ -97,14 +97,14 @@ public partial class WorkTab : Grid
         Content = "复制详情",
         Padding = new Thickness(10, 2, 10, 2),
         VerticalAlignment = VerticalAlignment.Center,
-        FontSize = 12,
+        FontSize = AntTokens.FontMinor,
     };
     private readonly Border _errorBanner = new()
     {
         Visibility = Visibility.Collapsed,
         Padding = new Thickness(10, 6, 10, 6),
         Margin = new Thickness(0, 0, 0, 4),
-        CornerRadius = new CornerRadius(6),
+        CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
     };
 
     private bool _dirty;
@@ -210,7 +210,7 @@ public partial class WorkTab : Grid
             Margin = new Thickness(8, 4, 8, 8),
             BorderBrush = Ant.Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
         };
         // P1-01 错误横幅：浅红底＋Ant.Error 左边条，消息全文可选中，附「复制详情」
         _errorBanner.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x1A, 0xB4, 0x55, 0x2E));
@@ -722,7 +722,7 @@ public partial class WorkTab : Grid
     }
 
     /// <summary>格7：把已加载的懒加载存储按行分页枚举成流式页序列（页大小 5000，边枚举边报进度）。</summary>
-    private static IEnumerable<Core.Streaming.QueryPage> EnumerateStorePages(ColumnLazyStore store, IProgress<long>? progress = null)
+    private static IEnumerable<Core.Streaming.QueryPage> EnumerateStorePages(Core.Streaming.ColumnLazyStore store, IProgress<long>? progress = null)
     {
         const int pageSize = 5000;
         long written = 0;
@@ -1277,7 +1277,7 @@ public partial class WorkTab : Grid
             var empty = new ContentDialog
             {
                 Title = "查询收藏",
-                Content = new TextBlock { Text = "还没有收藏。把编辑器里的 SQL 写好后，点「收藏」→「保存当前 SQL」即可。", Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap },
+                Content = new TextBlock { Text = "还没有收藏。把编辑器里的 SQL 写好后，点「收藏」→「保存当前 SQL」即可。", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "好的",
                 XamlRoot = _owner.Content.XamlRoot,
             };
@@ -1286,7 +1286,7 @@ public partial class WorkTab : Grid
         }
 
         var nameBox = new TextBox { PlaceholderText = "给这段 SQL 起个名字", Text = $"SQL {DateTime.Now:MM-dd HH:mm}" };
-        var saveBtn = new Button { Content = "保存当前 SQL", CornerRadius = new CornerRadius(4) };
+        var saveBtn = new Button { Content = "保存当前 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var panel = new StackPanel { Spacing = 8 };
         var saveRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         saveRow.Children.Add(nameBox);
@@ -1335,7 +1335,7 @@ public partial class WorkTab : Grid
             var empty = new ContentDialog
             {
                 Title = "查询历史",
-                Content = new TextBlock { Text = "还没有历史记录。执行过的语句会出现在这里。", Foreground = Ant.TextSub, FontSize = 12, TextWrapping = TextWrapping.Wrap },
+                Content = new TextBlock { Text = "还没有历史记录。执行过的语句会出现在这里。", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "好的",
                 XamlRoot = _owner.Content.XamlRoot,
             };
@@ -1392,11 +1392,11 @@ public partial class WorkTab : Grid
                 MaxWidth = 560,
             });
         }
-        var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = new CornerRadius(4) };
-        var dictBtn = new Button { Content = "导出数据字典（HTML / Word）", CornerRadius = new CornerRadius(4) };
+        var exportBtn = new Button { Content = "导出 HTML 报表", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var dictBtn = new Button { Content = "导出数据字典（HTML / Word）", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(dictBtn, "DataDictExport");   // 批次四格7 验收锚点
         var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = 12 });
+        panel.Children.Add(new TextBlock { Text = $"共 {rows} 行 · {qr.Columns.Count} 列", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor });
         panel.Children.Add(lv);
         panel.Children.Add(exportBtn);
         panel.Children.Add(dictBtn);

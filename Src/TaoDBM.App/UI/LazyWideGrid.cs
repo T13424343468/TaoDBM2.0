@@ -86,7 +86,7 @@ public static class LazyWideGrid
         return scroll;
     }
 
-    private static Grid BuildHeader(ColumnLazyStore store, string? sourceSql, string? engine)
+    private static Grid BuildHeader(Core.Streaming.ColumnLazyStore store, string? sourceSql, string? engine)
     {
         var header = new Grid { Background = Ant.HeadBg };
         for (int i = 0; i < store.TotalColumns; i++)
@@ -109,7 +109,7 @@ public static class LazyWideGrid
         return header;
     }
 
-    private static Grid BuildRow(ColumnLazyStore store, int rowIdx, int colFrom, int colTo, Action<int>? onRowTap, double rowH)
+    private static Grid BuildRow(Core.Streaming.ColumnLazyStore store, int rowIdx, int colFrom, int colTo, Action<int>? onRowTap, double rowH)
     {
         var rowGrid = new Grid { Background = rowIdx % 2 == 1 ? Ant.AltRow : null, Height = rowH };
         for (int i = colFrom; i <= colTo; i++)
