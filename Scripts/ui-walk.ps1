@@ -17,8 +17,51 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint); }'
 Add-Type -TypeDefinition $src
+# ---------- 3b. 真鼠标点击（恢复自 b7fefa823，合并解决方向误删） ----------
+# Tapped/DoubleTapped/ContextFlyout 只认真鼠标事件，UIA Invoke 打不进（双击表/排序/右键菜单均此路）
+$mouseSrc = @'
+using System;
+using System.Runtime.InteropServices;
+public class MouseNative {
+  [StructLayout(LayoutKind.Sequential)]
+  public struct MOUSEINPUT { public int dx; public int dy; public uint mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct INPUT { public uint type; public MOUSEINPUT mi; }
+  const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010;
+  [DllImport("user32.dll")] static extern uint SendInput(uint n, INPUT[] inputs, int size);
+  [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+  static void One(uint down, uint up) {
+    var a = new INPUT { type = 0 }; a.mi.dwFlags = down;
+    var b = new INPUT { type = 0 }; b.mi.dwFlags = up;
+    SendInput(2, new INPUT[] { a, b }, Marshal.SizeOf(typeof(INPUT)));
+  }
+  public static void Click(int x, int y, bool right, bool dbl) {
+    SetCursorPos(x, y);
+    System.Threading.Thread.Sleep(150);
+    if (right) { One(RIGHTDOWN, RIGHTUP); return; }
+    One(LEFTDOWN, LEFTUP);
+    if (dbl) { System.Threading.Thread.Sleep(120); One(LEFTDOWN, LEFTUP); }
+  }
+}
+'@
+Add-Type -TypeDefinition $mouseSrc
+
+function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
+  $r = $el.Current.BoundingRectangle
+  if ($r.IsEmpty) { throw "mouse target has empty rect" }
+  $x = [int]($r.X + $r.Width / 2)
+  $y = [int]($r.Y + $r.Height / 2)
+  [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
+}
+function Get-AppLogTail([int]$n) {
+  foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
+    if (Test-Path $lg) { return (Get-Content $lg -Tail $n) }
+  }
+  return @()
+}
+
 
 $shots = New-Object System.Collections.Generic.List[string]
 $walkLog = New-Object System.Collections.Generic.List[string]
@@ -705,6 +748,45 @@ foreach ($s in $plan.steps) {
         Push-Evidence "$id ledger-hit"
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
+      'mouse-click' {
+        # 真鼠标点击（left/right/double）：Tapped/DoubleTapped/ContextFlyout 只认实体鼠标事件
+        $el = Find-ElWait $s.find 10 $mainRoot
+        if ($null -eq $el) { throw "mouse target not found" }
+        $mode = 'left'
+        if ($s.button) { $mode = $s.button }
+        Click-ElMouse $el $mode
+        Start-Sleep -Seconds 2
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }
+      }
+      'stop-query' {
+        # #01 停止按钮实效断言：长流式查询执行中点停止 → [执行账] cancelled=1（置文走 Set-TextValue，#245 禁 ^a/DEL 叠层）
+        $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
+        if ($null -eq $ed) { throw "work-editor not found" }
+        try { $ed.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 400
+        if (-not (Set-TextValue $ed (Tpl $s.sql))) { throw "editor set value failed" }
+        Start-Sleep -Milliseconds 600
+        $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
+        if ($null -eq $run) { throw "work-run not found" }
+        Invoke-El $run
+        Push-Evidence "$id run-invoked-before-stop"
+        Start-Sleep -Seconds 2
+        $stop = Find-ElWait @{ automationId = 'work-stop' } 6 $mainRoot
+        if ($null -eq $stop) { throw "work-stop not found" }
+        Invoke-El $stop
+        Push-Evidence "$id stop-invoked"
+        $deadline = (Get-Date).AddSeconds(20)
+        $hit = $false
+        do {
+          $tail = (Get-AppLogTail 60) -join "`n"
+          if ($tail.Contains('[执行账] cancelled=1')) { $hit = $true; break }
+          Start-Sleep -Seconds 1
+        } while ((Get-Date) -lt $deadline)
+        if (-not $hit) { throw "stop not effective: no [执行账] cancelled=1 in applog" }
+        Push-Evidence "$id cancelled-hit"
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }
+      }
+
       'export-csv' {
         # S17 四连死拆步版 v2（2026-11-20 夜批①）：UIA SetFocus 对该保存对话框必现 1.2s 循环失败（聚焦手段无效，11-19 定谳）。
         # 改走 Win32 句柄直取：GetClassName 过滤 #32770/Picker 类对话框 → FindWindowExW/GetDlgItem 定位文件名编辑框
@@ -814,6 +896,100 @@ foreach ($s in $plan.steps) {
         Push-Evidence "$id pre-close"
         Close-ExtraWindows $handle
         Push-Evidence "SP closed"
+      }
+      'editor-set' {
+        # 编辑器整段置文（ValuePattern SetValue 整体替换，规避 ^a/DEL 叠层——#245 口径）
+        $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
+        if ($null -eq $ed) { throw "work-editor not found" }
+        try { $ed.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 400
+        if (-not (Set-TextValue $ed (Tpl $s.sql))) { throw "editor set value failed" }
+        Start-Sleep -Milliseconds 600
+        Push-Evidence "$id editor-set done"
+      }
+      'press-keys' {
+        # 编辑器按键（SendKeys 语法：{F6}/^f/^s/^ 空格）
+        $el = Find-ElWait @{ automationId = 'work-editor' } 8 $mainRoot
+        if ($null -eq $el) { throw "work-editor not found" }
+        try { $el.SetFocus() } catch { }
+        Start-Sleep -Milliseconds 300
+        [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
+        Start-Sleep -Seconds 1
+        Push-Evidence "$id keys-sent $($s.keys)"
+      }
+      'set-window-size' {
+        # 主窗分辨率三档走查：Win32 MoveWindow 直调（计划内非关键步，失败软 miss）
+        $w = [int]$s.width; $h = [int]$s.height
+        $hw = [IntPtr]::Zero
+        try { $script:proc.Refresh(); $hw = $script:proc.MainWindowHandle } catch { }
+        if ($hw -eq [IntPtr]::Zero) { $hw = $handle }
+        if ($hw -eq [IntPtr]::Zero) { throw "main window handle not found" }
+        if (-not [WinNative]::MoveWindow($hw, 0, 0, $w, $h, $true)) { throw "MoveWindow failed ${w}x$h" }
+        Start-Sleep -Seconds 2
+        Push-Evidence "$id winsize ${w}x$h"
+      }
+      'applog-contains' {
+        # 通用实效断言：轮询应用日志尾部等锚点行（零 UIA 读结果，与 query 对账制同路数）
+        $needles = @($s.value | ForEach-Object { Tpl ([string]$_) })
+        $nots = @()
+        if ($s.notContains) { $nots = @($s.notContains | ForEach-Object { Tpl ([string]$_) }) }
+        $timeoutSec = 15
+        if ($s.timeout) { $timeoutSec = [int]$s.timeout }
+        $deadline = (Get-Date).AddSeconds($timeoutSec)
+        $allFound = $false
+        do {
+          $tail = (Get-AppLogTail 200) -join "`n"
+          $allFound = $true
+          foreach ($v in $needles) { if (-not $tail.Contains($v)) { $allFound = $false; break } }
+          if ($allFound) {
+            foreach ($v in $nots) { if ($tail.Contains($v)) { throw "applog negative anchor hit: $v" } }
+            break
+          }
+          Start-Sleep -Seconds 1
+        } while ((Get-Date) -lt $deadline)
+        if (-not $allFound) { throw "applog anchor missing: $(($needles -join ' && '))" }
+        Push-Evidence "$id applog-hit $(($needles -join ' && '))"
+      }
+      'window-contains' {
+        # 主窗可见文本断言（弹层标题/步骤条头），支持 notContains 反断言
+        $needle = Tpl $s.value
+        $nots = @()
+        if ($s.notContains) { $nots = @($s.notContains | ForEach-Object { Tpl ([string]$_) }) }
+        $txt = ''
+        for ($i = 0; $i -lt 10; $i++) {
+          $txt = Get-ScopeText $mainRoot
+          if ($txt.Contains($needle)) { break }
+          Start-Sleep -Seconds 1
+        }
+        if (-not $txt.Contains($needle)) { throw "window text missing: $needle" }
+        foreach ($v in $nots) { if ($txt.Contains($v)) { throw "window negative anchor hit: $v" } }
+        Push-Evidence "$id window-hit $needle"
+      }
+      'menu-item' {
+        # 已开弹层中点菜单项（右键菜单/下拉菜单通用），UIA Invoke 可达
+        $item = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+        if ($null -eq $item) { $item = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
+        Invoke-El $item
+        Start-Sleep -Seconds 2
+      }
+      'tree-context' {
+        # 树节点右键 → 弹出菜单点项（连接右键菜单：任务中心/智能工具/看板管理/部署向导…）
+        $item = Find-ElWait @{ controlType = 'TreeItem'; name = (Tpl $s.prefix) } 10 $mainRoot
+        if ($null -eq $item) { throw "tree item not found: $(Tpl $s.prefix)" }
+        Click-ElMouse $item 'right'
+        Start-Sleep -Seconds 1
+        $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+        if ($null -eq $mi) { $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        if ($null -eq $mi) { throw "context item not found: $($s.itemName)" }
+        Invoke-El $mi
+        Start-Sleep -Seconds 3
+      }
+      'press-esc' {
+        # 弹层收场：ESC 关 ContentDialog/MenuFlyout，恢复主窗可操作
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+        Start-Sleep -Seconds 1
+        Close-ExtraWindows $handle
       }
       default { throw "unknown action: $action" }
     }
