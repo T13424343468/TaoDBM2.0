@@ -31,13 +31,14 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT u.id, u.name, p.name, p.category, p.price, p.stock, o.id, o.status, o.created_at, pi.id, pi.order_id, pi.product_id, pi.quantity, pi.unit_price, pa.id, pa.order_id, pa.amount, pa.method, pa.paid_at
+SELECT u.id, u.name, p.id, p.name, o.id, o.status, oi.id, oi.product_id, oi.quantity, oi.unit_price, pa.id, pa.amount, pa.method, pa.paid_at
 FROM users u
- CROSS JOIN payments pa
- CROSS JOIN orders o
- CROSS JOIN order_items pi;
+CROSS JOIN payments pa
+LEFT JOIN orders o ON u.id = o.user_id
+LEFT JOIN order_items oi ON o.id = oi.order_id
+LEFT JOIN products p ON oi.product_id = p.id;
 
-[ Prompt: 38.3 t/s | Generation: 8.6 t/s ]
+[ Prompt: 22.3 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

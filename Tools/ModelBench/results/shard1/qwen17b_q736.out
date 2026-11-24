@@ -37,7 +37,7 @@ JOIN order_items oi ON o.id = oi.order_id
 JOIN products p ON oi.product_id = p.id
 WHERE o.status = 'completed';
 
-[ Prompt: 35.1 t/s | Generation: 9.4 t/s ]
+[ Prompt: 22.1 t/s | Generation: 8.0 t/s ]
 
 
 Exiting...

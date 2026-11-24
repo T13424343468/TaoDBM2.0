@@ -36,7 +36,7 @@ FROM orders
 LEFT JOIN order_items ON orders.id = order_items.order_id
 WHERE orders.status = 'completed';
 
-[ Prompt: 39.5 t/s | Generation: 8.8 t/s ]
+[ Prompt: 21.6 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

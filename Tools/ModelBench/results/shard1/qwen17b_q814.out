@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', '2023-04-01 10:00:00') ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, name, city, created_at) VALUES (1, 'John Doe', 'New York', '2023-04-01 10:00:00') ON CONFLICT (id) DO NOTHING;
 
-[ Prompt: 33.1 t/s | Generation: 9.4 t/s ]
+[ Prompt: 22.9 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

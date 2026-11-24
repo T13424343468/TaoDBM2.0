@@ -34,9 +34,9 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT u.name, COUNT(o.id) AS order_count
 FROM users u
 JOIN orders o ON u.id = o.user_id
-GROUP BY u.name;
+GROUP BY u.id, u.name;
 
-[ Prompt: 34.7 t/s | Generation: 10.6 t/s ]
+[ Prompt: 21.8 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...

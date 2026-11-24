@@ -32,15 +32,13 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
 SELECT 
-    DATEDIFF(HOUR, orders.created_at, payments.paid_at) AS hour_diff
+    DATEADD(HOUR, DATEDIFF(HOUR, 0, created_at), created_at) AS adjusted_time
 FROM 
     orders
-JOIN 
-    payments ON orders.id = payments.order_id
 WHERE 
-    orders.id = 1;
+    created_at >= DATEADD(HOUR, -1, GETDATE())
 
-[ Prompt: 38.3 t/s | Generation: 9.0 t/s ]
+[ Prompt: 22.9 t/s | Generation: 8.2 t/s ]
 
 
 Exiting...

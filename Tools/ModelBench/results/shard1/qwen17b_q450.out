@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT DISTINCT MONTH(created_at) AS registration_month FROM users;
 
-[ Prompt: 37.0 t/s | Generation: 10.6 t/s ]
+[ Prompt: 22.6 t/s | Generation: 8.4 t/s ]
 
 
 Exiting...

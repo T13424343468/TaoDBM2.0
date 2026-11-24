@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT o.id
+SELECT o.id, o.user_id, o.status, o.created_at
 FROM orders o
 WHERE o.created_at > CURRENT_DATE;
 
-[ Prompt: 37.1 t/s | Generation: 9.3 t/s ]
+[ Prompt: 21.8 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

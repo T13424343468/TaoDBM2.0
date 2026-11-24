@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT TRIM(name) FROM users;
 
-[ Prompt: 39.6 t/s | Generation: 9.4 t/s ]
+[ Prompt: 21.4 t/s | Generation: 8.9 t/s ]
 
 
 Exiting...
