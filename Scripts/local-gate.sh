@@ -45,6 +45,40 @@ for f in $(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -
   fi
 done
 
+# 1.9) App 层重复声明扫描（#302 教训：合并残留重复 using/字段，本地沙箱编不了 App XAML 只能云测首验——
+#      逐文件按类作用域扫重复 using 与重复私有字段，机器替人注意）
+python3 - <<'PYEOF' || { echo "[GATE] App 层重复声明（见上）"; fail=1; }
+import glob, re, sys
+bad = False
+for f in glob.glob('Src/TaoDBM.App/**/*.cs', recursive=True):
+    lines = open(f, encoding='utf-8-sig').read().split('\n')
+    seen_using = set()
+    for i, line in enumerate(lines, 1):
+        m = re.match(r'\s*using\s+([\w.]+)\s*;', line)
+        if m:
+            if m.group(1) in seen_using:
+                print(f"{f}({i}): CS0105 重复 using {m.group(1)}"); bad = True
+            seen_using.add(m.group(1))
+    classes = []
+    for i, line in enumerate(lines, 1):
+        mc = re.match(r'\s*(?:public|internal|sealed|partial|static|abstract)*\s*(?:sealed |partial )*(?:class|record)\s+(\w+)', line)
+        if mc: classes.append((mc.group(1) + f"@{i}", i))
+    def owner(i):
+        o = None
+        for name, ln in classes:
+            if ln < i: o = name
+        return o
+    decls = {}
+    for i, line in enumerate(lines, 1):
+        m = re.match(r'\s*private\s+[\w?<>\[\], .]+\s+(_\w+)\s*[;=]', line)
+        if m:
+            decls.setdefault((owner(i), m.group(1)), []).append(i)
+    for (cls, name), v in decls.items():
+        if len(v) > 1:
+            print(f"{f}: 类 {cls} 重复私有字段 {name} 行 {v}"); bad = True
+sys.exit(1 if bad else 0)
+PYEOF
+
 export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
 export PATH="$DOTNET_ROOT:$PATH"
 

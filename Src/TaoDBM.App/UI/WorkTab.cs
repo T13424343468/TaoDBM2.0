@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
 using Windows.UI.Text;
@@ -84,7 +83,6 @@ public partial class WorkTab : Grid
     // 表名候选预载（融合远端 D-12 能力：补全候选含当前库表名；弹层本体用格1 键盘化实现）
     private List<string> _tables = new();
     private bool _tablesLoading;
-    private int _completeStart;
     private bool _isRelational => _provider is RelationalProvider;
     private readonly Dictionary<string, double> _colWidths = new();   // 格9：用户拖拽列宽（键=查询文本|列名 或 browse:库.表|列名）
 
