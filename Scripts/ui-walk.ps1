@@ -898,21 +898,38 @@ foreach ($s in $plan.steps) {
         Push-Evidence "SP closed"
       }
       'editor-set' {
-        # 编辑器整段置文（ValuePattern SetValue 整体替换，规避 ^a/DEL 叠层——#245 口径）
+        # 编辑器整段置文＋回读校验（#312：S63 轮执行账落 ELECT *＝首字符被吃，SetValue 竞态/回退路径静默失败）
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
         if ($null -eq $ed) { throw "work-editor not found" }
-        try { $ed.SetFocus() } catch { }
+        $want = (Tpl $s.sql)
+        $done = $false
+        foreach ($attempt in 1..3) {
+          try { $ed.SetFocus() } catch { }
+          Start-Sleep -Milliseconds 400
+          if (-not (Set-TextValue $ed $want)) { throw "editor set value failed" }
+          Start-Sleep -Milliseconds 600
+          $got = Read-EditorTextSafe $ed $mainRoot
+          if ($null -ne $got -and $got.Trim() -eq $want.Trim()) { $done = $true; break }
+          Log "$id editor-set retry $attempt (readback mismatch)"
+          Start-Sleep -Seconds 1
+        }
+        if (-not $done) { throw "editor set verify failed after retries (readback mismatch)" }
         Start-Sleep -Milliseconds 400
-        if (-not (Set-TextValue $ed (Tpl $s.sql))) { throw "editor set value failed" }
-        Start-Sleep -Milliseconds 600
         Push-Evidence "$id editor-set done"
       }
       'press-keys' {
-        # 编辑器按键（SendKeys 语法：{F6}/^f/^s/^ 空格）
+        # 编辑器按键＋焦点护栏（#312：F6 发出后 45s 才执行＝焦点不在编辑器，按键落空）；不在编辑器则真鼠标点入再发
         $el = Find-ElWait @{ automationId = 'work-editor' } 8 $mainRoot
         if ($null -eq $el) { throw "work-editor not found" }
         try { $el.SetFocus() } catch { }
         Start-Sleep -Milliseconds 300
+        $focusedOk = $false
+        try { $fe = [System.Windows.Automation.AutomationElement]::FocusedElement; if ($null -ne $fe -and $fe.AutomationId -eq 'work-editor') { $focusedOk = $true } } catch { }
+        if (-not $focusedOk) {
+          Log "$id keys focus-guard: focus not on editor, mouse-click into editor"
+          try { Click-ElMouse $el 'left' } catch { try { $el.SetFocus() } catch { } }
+          Start-Sleep -Milliseconds 400
+        }
         [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
         Start-Sleep -Seconds 1
         Push-Evidence "$id keys-sent $($s.keys)"
