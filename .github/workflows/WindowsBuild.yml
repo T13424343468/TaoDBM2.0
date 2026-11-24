@@ -888,6 +888,7 @@ jobs:
           git fetch --depth 1 origin ui-smoke-${{ matrix.seg.name }}-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B ui-smoke-${{ matrix.seg.name }}-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ui-smoke-${{ matrix.seg.name }}-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ev-shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
@@ -1344,6 +1345,7 @@ jobs:
           Copy-Item ..\mssql-evidence.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\mssql-phases.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\shot-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ev-shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
