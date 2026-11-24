@@ -55,7 +55,7 @@ feature-level coverage account:
 [U014] 巡检-表数据页签工具栏 => pass
 [U015] 巡检-表结构按钮 => pass
 [U016] 巡检-表结构收场 => pass
-[U017] 巡检-表单视图按钮 => miss
+[U017] 巡检-表单视图按钮 => pass
 [U018] 巡检-表单视图收场 => pass
 [U019] 巡检-拟真数据按钮 => pass
 [U020] 巡检-拟真数据收场 => pass
@@ -69,7 +69,7 @@ feature-level coverage account:
 [U033] 巡检-导出CSV收场 => pass
 [U034] 巡检-导出INSERT按钮 => pass
 [U035] 巡检-导出INSERT收场 => pass
-[U036] 巡检-导出更多菜单 => miss
+[U036] 巡检-导出更多菜单 => pass
 [U037] 巡检-导出更多收场 => pass
 [U038] 巡检-查询收藏 => pass
 [U039] 巡检-收藏收场 => pass
@@ -79,7 +79,8 @@ feature-level coverage account:
 [U043] 巡检-报表收场 => pass
 [U044] 巡检-设计辅助 => pass
 [U045] 巡检-设计辅助收场 => pass
-[U046] 巡检-编辑器右键菜单 => miss
+[U046a] 巡检-编辑器右键打开菜单 => pass
+[U046] 巡检-编辑器右键菜单 => pass
 [U047] 巡检-右键菜单收场 => pass
 [U050] 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
 [U058] 巡检-数据传输与同步 => pass
@@ -91,7 +92,9 @@ feature-level coverage account:
 [U078] 巡检-在库中搜索 => pass
 [U079] 巡检-库搜索收场 => pass
 [U088] 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
-[U104] 巡检-设置对话框 => pass
+[U104] 巡检-设置入口真拍 => pass
+[U104a] 巡检-设置菜单项点击 => pass
+[U104b] 巡检-设置收场 => pass
 [U105] 巡检-手册 => pass
 [U106] 巡检-手册收场 => pass
 [U107] 巡检-关于 => pass
