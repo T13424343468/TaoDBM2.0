@@ -966,7 +966,13 @@ foreach ($s in $plan.steps) {
       'press-keys' {
         # 编辑器按键＋焦点护栏（#312：F6 发出后 45s 才执行＝焦点不在编辑器，按键落空）；不在编辑器则真鼠标点入再发
         $el = Find-ElWait @{ automationId = 'work-editor' } 8 $mainRoot
-        if ($null -eq $el) { throw "work-editor not found" }
+        if ($null -eq $el) {
+          # #321 定谳：查询页签丢失（欢迎页实锤）——先补开新页签恢复，再继续按键
+          Log "$id work-editor missing, open fresh query tab to recover"
+          Push-Evidence "$id editor-recover-fresh-tab"
+          $fresh = Open-FreshQueryTab $mainRoot
+          if ($null -ne $fresh) { $el = $fresh } else { throw "work-editor not found and fresh tab failed" }
+        }
         # #320 定谳加固：长走查中云机前台漂移，SendKeys 落空（红步屏面正常而 applog 零打点）——发键前强制回前台
         try { [WinNative]::SetForegroundWindow($handle) | Out-Null; Start-Sleep -Milliseconds 250 } catch { }
         try { $el.SetFocus() } catch { }
@@ -1005,6 +1011,16 @@ foreach ($s in $plan.steps) {
             Start-Sleep -Milliseconds 300
             [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
             Start-Sleep -Seconds 1
+          }
+          # #321 仍零到达：改走确定性通道——UIA 直点执行按钮（计划声明 fallbackInvokeId），键入降级如实留痕
+          if ((-not $arrived) -and $s.fallbackInvokeId) {
+            $fb = Find-ElWait @{ automationId = (Tpl ([string]$s.fallbackInvokeId)) } 6 $mainRoot
+            if ($null -ne $fb) {
+              Log "$id keys still not arrived, fallback invoke $($s.fallbackInvokeId)"
+              Push-Evidence "$id keys-fallback-invoke"
+              Invoke-El $fb
+              Start-Sleep -Seconds 1
+            }
           }
         }
         Push-Evidence "$id keys-sent $($s.keys)"

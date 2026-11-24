@@ -258,7 +258,8 @@
       "action": "press-keys",
       "keys": "{F6}",
       "critical": true,
-      "arrivalLog": "[编辑器] run-selection"
+      "arrivalLog": "[编辑器] run-selection",
+      "fallbackInvokeId": "work-run"
     },
     {
       "id": "S57b",
@@ -414,7 +415,8 @@
       "action": "press-keys",
       "keys": "{F6}",
       "critical": true,
-      "arrivalLog": "[编辑器] run-selection"
+      "arrivalLog": "[编辑器] run-selection",
+      "fallbackInvokeId": "work-run"
     },
     {
       "id": "S63c",
@@ -447,7 +449,8 @@
       "action": "press-keys",
       "keys": "{F6}",
       "critical": true,
-      "arrivalLog": "[编辑器] run-selection"
+      "arrivalLog": "[编辑器] run-selection",
+      "fallbackInvokeId": "work-run"
     },
     {
       "id": "S63g",
