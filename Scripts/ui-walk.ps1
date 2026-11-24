@@ -657,6 +657,27 @@ foreach ($s in $plan.steps) {
         Invoke-El $item
         Push-Evidence "menu-item-invoked"
         Start-Sleep -Seconds 3
+        # #320 到达复核：计划声明 arrivalLog 时轮询 applog，未到达则回前台重开菜单补点一发（只补一次）
+        if ($s.arrivalLog) {
+          $needle = Tpl ([string]$s.arrivalLog)
+          $arrived = $false
+          for ($ai = 0; $ai -lt 5; $ai++) {
+            if (((Get-AppLogTail 60) -join "`n").Contains($needle)) { $arrived = $true; break }
+            Start-Sleep -Seconds 1
+          }
+          if (-not $arrived) {
+            Log "$id menu arrival missing, retry once with foreground"
+            Push-Evidence "$id menu-arrival-retry"
+            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Start-Sleep -Milliseconds 400
+            Invoke-El $btn
+            Start-Sleep -Milliseconds 600
+            $item2 = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
+            if ($null -eq $item2) { $item2 = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+            if ($null -ne $item2) { Invoke-El $item2; Push-Evidence "$id menu-item-reinvoked" }
+            Start-Sleep -Seconds 3
+          }
+        }
       }
       'query' {
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
@@ -946,6 +967,8 @@ foreach ($s in $plan.steps) {
         # 编辑器按键＋焦点护栏（#312：F6 发出后 45s 才执行＝焦点不在编辑器，按键落空）；不在编辑器则真鼠标点入再发
         $el = Find-ElWait @{ automationId = 'work-editor' } 8 $mainRoot
         if ($null -eq $el) { throw "work-editor not found" }
+        # #320 定谳加固：长走查中云机前台漂移，SendKeys 落空（红步屏面正常而 applog 零打点）——发键前强制回前台
+        try { [WinNative]::SetForegroundWindow($handle) | Out-Null; Start-Sleep -Milliseconds 250 } catch { }
         try { $el.SetFocus() } catch { }
         Start-Sleep -Milliseconds 300
         $focusedOk = $false
@@ -965,6 +988,25 @@ foreach ($s in $plan.steps) {
         }
         [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
         Start-Sleep -Seconds 1
+        # #320 到达复核：计划声明 arrivalLog 时轮询 applog，未到达则回前台＋回焦点补发一发（只补一次，杜绝静默落空）
+        if ($s.arrivalLog) {
+          $needle = Tpl ([string]$s.arrivalLog)
+          $arrived = $false
+          for ($ai = 0; $ai -lt 6; $ai++) {
+            if (((Get-AppLogTail 60) -join "`n").Contains($needle)) { $arrived = $true; break }
+            Start-Sleep -Seconds 1
+          }
+          if (-not $arrived) {
+            Log "$id keys arrival missing, retry once with foreground+focus"
+            Push-Evidence "$id keys-arrival-retry"
+            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Start-Sleep -Milliseconds 300
+            try { $el.SetFocus() } catch { }
+            Start-Sleep -Milliseconds 300
+            [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
+            Start-Sleep -Seconds 1
+          }
+        }
         Push-Evidence "$id keys-sent $($s.keys)"
       }
       'set-window-size' {

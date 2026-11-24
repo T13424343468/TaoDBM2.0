@@ -257,7 +257,8 @@
       "feature": "批次一-F6执行当前语句",
       "action": "press-keys",
       "keys": "{F6}",
-      "critical": true
+      "critical": true,
+      "arrivalLog": "[编辑器] run-selection"
     },
     {
       "id": "S57b",
@@ -412,7 +413,8 @@
       "feature": "P1-01 错误横幅-F6执行",
       "action": "press-keys",
       "keys": "{F6}",
-      "critical": true
+      "critical": true,
+      "arrivalLog": "[编辑器] run-selection"
     },
     {
       "id": "S63c",
@@ -444,7 +446,8 @@
       "feature": "P1-01 错误横幅-成功执行",
       "action": "press-keys",
       "keys": "{F6}",
-      "critical": true
+      "critical": true,
+      "arrivalLog": "[编辑器] run-selection"
     },
     {
       "id": "S63g",
@@ -472,7 +475,8 @@
       "action": "menu",
       "buttonAutomationId": "BtnLogo",
       "itemName": "查看数据",
-      "critical": true
+      "critical": true,
+      "arrivalLog": "[引导提示]"
     },
     {
       "id": "S64b",
