@@ -760,7 +760,7 @@ public partial class WorkTab : Grid
     /// 无敏感列时原样透传页序列，不复制不缓冲；有敏感列时逐页生成打码副本。</summary>
     private static IEnumerable<Core.Streaming.QueryPage> MaskPages(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns)
     {
-        var rules = columns.Select(MaskEngine.InferRule).ToList();
+        var rules = columns.Select(c => MaskEngine.InferRule(c)).ToList();
         bool any = rules.Any(x => x != MaskRule.None);
         foreach (var p in pages)
         {
