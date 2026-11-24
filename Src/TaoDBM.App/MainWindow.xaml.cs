@@ -1014,7 +1014,7 @@ public partial class MainWindow : Window
     /// <summary>整改三批三-15：弹窗改页面——备份可用性演练从模态弹窗升级为内嵌主窗口页签。</summary>
     public void OpenBackupDrillTab(NodeInfo info)
     {
-        var tab = new TabViewItem { Header = $"备份演练 · {info.Db.Length > 0 ? info.Db : info.Profile.Database}" };
+        var tab = new TabViewItem { Header = $"备份演练 · {(info.Db.Length > 0 ? info.Db : info.Profile.Database)}" };
         tab.Content = new UI.BackupDrillTab(this, info);
         WorkTabs.TabItems.Add(tab);
         SaveSession();
