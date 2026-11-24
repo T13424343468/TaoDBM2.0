@@ -997,7 +997,11 @@ foreach ($s in $plan.steps) {
           }
           Start-Sleep -Seconds 1
         } while ((Get-Date) -lt $deadline)
-        if (-not $allFound) { throw "applog anchor missing: $(($needles -join ' && '))" }
+        if (-not $allFound) {
+          $got = ($tail -replace "\r?\n", ' | ')
+          if ($got.Length -gt 300) { $got = $got.Substring($got.Length - 300) }
+          throw "applog anchor missing: $(($needles -join ' && ')) got-tail=[$got]"
+        }
         Push-Evidence "$id applog-hit $(($needles -join ' && '))"
       }
       'window-contains' {
@@ -1011,7 +1015,11 @@ foreach ($s in $plan.steps) {
           if ($txt.Contains($needle)) { break }
           Start-Sleep -Seconds 1
         }
-        if (-not $txt.Contains($needle)) { throw "window text missing: $needle" }
+        if (-not $txt.Contains($needle)) {
+          $got = ($txt -replace "\s+", ' ')
+          if ($got.Length -gt 200) { $got = $got.Substring($got.Length - 200) }
+          throw "window text missing: $needle got-tail=[$got]"
+        }
         foreach ($v in $nots) { if ($txt.Contains($v)) { throw "window negative anchor hit: $v" } }
         Push-Evidence "$id window-hit $needle"
       }
@@ -1055,7 +1063,11 @@ foreach ($s in $plan.steps) {
     }
     Close-ExtraWindows $handle
     # 红账当场落证据分支：不等下一步 step-start 捎带（机器死在步间会丢红）
-    if ($outcome -eq 'fail') { Push-Evidence "red $id" }
+    if ($outcome -eq 'fail') {
+      # 失败屏面截图随红账上分支：对照屏面与 UIA 读账，定谳"应用没显示"还是"显示没读到"
+      try { Save-Shot "ev-shot-fail-$id.png" } catch { }
+      Push-Evidence "red $id"
+    }
   }
   Cov $id $feature $outcome
   $proc.Refresh()
