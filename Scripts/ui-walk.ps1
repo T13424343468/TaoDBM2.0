@@ -56,6 +56,33 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
   $y = [int]($r.Y + $r.Height / 2)
   [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
 }
+function Click-TreeItemText([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
+  # 子级树节点右键定谳（2026-11-24 二轮）：UIA TreeItem BoundingRectangle 是整行宽度，行中心点落在文本右侧空白＝点在树背景上，菜单不开；
+  # 连接节点文本长、行中心恰在文本上才侥幸成功。改为优先点节点内 Text 子元素中心，兜底点左缘+60px；先 ScrollIntoView 防虚拟化偏移。
+  try {
+    ($el.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)).ScrollIntoView()
+    Start-Sleep -Milliseconds 400
+  } catch { }
+  $r = $el.Current.BoundingRectangle
+  if ($r.IsEmpty) { throw "mouse target has empty rect" }
+  $tx = $null
+  try {
+    $texts = $el.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)))
+    foreach ($t in $texts) {
+      $tr = $t.Current.BoundingRectangle
+      if (-not $tr.IsEmpty -and $tr.Width -gt 1) { $tx = $tr; break }
+    }
+  } catch { }
+  if ($null -ne $tx) {
+    $x = [int]($tx.X + $tx.Width / 2)
+    $y = [int]($tx.Y + $tx.Height / 2)
+  } else {
+    $x = [int]($r.X + [Math]::Min($r.Width / 2, 60))
+    $y = [int]($r.Y + $r.Height / 2)
+  }
+  [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
+}
+
 function Get-AppLogTail([int]$n) {
   foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
     if (Test-Path $lg) { return (Get-Content $lg -Tail $n) }
@@ -225,15 +252,15 @@ function Open-TreeContextFlyout([System.Windows.Automation.AutomationElement]$tr
   # 右键弹层三段式（2026-11-24 二轮定谳）：直接右键 → 左键选中再右键 → Shift+F10；每段失败记录屏上窗口名，弹层开没开当场留证
   for ($attempt = 1; $attempt -le 3; $attempt++) {
     if ($attempt -eq 1) {
-      Click-ElMouse $treeItem 'right'
+      Click-TreeItemText $treeItem 'right'
     } elseif ($attempt -eq 2) {
       Log "ctx retry $label : select-then-rightclick"
-      try { Invoke-El $treeItem } catch { }
+      try { Invoke-El $treeItem | Out-Null } catch { }
       Start-Sleep -Milliseconds 600
-      Click-ElMouse $treeItem 'right'
+      Click-TreeItemText $treeItem 'right'
     } else {
       Log "ctx retry $label : shift-f10"
-      try { Invoke-El $treeItem } catch { }
+      try { Invoke-El $treeItem | Out-Null } catch { }
       Start-Sleep -Milliseconds 600
       [System.Windows.Forms.SendKeys]::SendWait("+{F10}")
     }
@@ -1173,18 +1200,20 @@ foreach ($s in $plan.steps) {
           $idx++
           $shotName = "{0}-{1:d2}.png" -f $s.tourPrefix, $idx
           try {
-            $sub = Open-TreeContextFlyout $treeItem $group "$s.tourPrefix-$idx"
-            if ($null -eq $sub) { throw "tour group not found: $group" }
-            $expanded = $false
-            try {
-              $ec = $sub.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
-              $ec.Expand(); $expanded = $true
-            } catch { }
-            if (-not $expanded) { Invoke-El $sub }
-            Start-Sleep -Milliseconds 900
+            $sub = Open-TreeContextFlyout $treeItem $group "$($s.tourPrefix)-$idx"
+            if ($null -ne $sub) {
+              $expanded = $false
+              try {
+                $ec = $sub.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+                $ec.Expand(); $expanded = $true
+              } catch { }
+              if (-not $expanded) { Invoke-El $sub | Out-Null }
+              Start-Sleep -Milliseconds 900
+            }
+            # 分组缺失兜底：菜单项可能平铺在一级（无「库工具」分组），直接找项
             $mi = Find-ElWait @{ name = $name } 6 $mainRoot
             if ($null -eq $mi) { $mi = Find-ElWait @{ name = $name } 4 $null }
-            if ($null -eq $mi) { throw "tour item not found: $name" }
+            if ($null -eq $mi) { throw "tour item not found: $name (group=$group opened=$($null -ne $sub))" }
             Invoke-El $mi
             Start-Sleep -Seconds 3
             Save-Shot $shotName
