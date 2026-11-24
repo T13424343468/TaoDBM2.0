@@ -366,7 +366,7 @@ public partial class MainWindow : Window
     private static StackPanel NodeIconText(string glyphKey, string text)
     {
         var host = new NodePanel { NodeName = text, Orientation = Orientation.Horizontal, Spacing = 5 };
-        host.Children.Add(new FontIcon { Glyph = NodeGlyphs[glyphKey], FontFamily = IconFont, FontSize = Ant.FontMinor, VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub });
+        host.Children.Add(new FontIcon { Glyph = NodeGlyphs[glyphKey], FontFamily = IconFont, FontSize = AntTokens.FontMinor, VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub });
         host.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
         return host;
     }
@@ -379,7 +379,7 @@ public partial class MainWindow : Window
         var dot = new TextBlock
         {
             Text = "●",
-            FontSize = Ant.FontTiny,
+            FontSize = AntTokens.FontTiny,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = info.ConnState == "Connected" ? Ant.Success : Ant.Error,
         };
@@ -609,7 +609,7 @@ public partial class MainWindow : Window
             mi.Click += h;
             _curSub.Items.Add(mi);
         }
-        void Sub(string text, Action<MenuFlyoutSubItem> fill)
+        void SubGroup(string text, Action<MenuFlyoutSubItem> fill)
         {
             var sub = new MenuFlyoutSubItem { Text = text };
             _curSub = sub;
@@ -626,7 +626,7 @@ public partial class MainWindow : Window
                 Item("移到分组", async (_, _) => await MoveToGroup(info));   // 批次二格6
                 Item("移出分组", (_, _) => { ConnectionGroups.MoveTo(info.Profile.Id, ""); RebuildRoots(); SetStatus($"已把 {info.Profile.DisplayName} 移出分组"); });   // 批次二格6
                 Sep();
-                Sub("工具与向导", sub =>
+                SubGroup("工具与向导", sub =>
                 {
                     SubItem("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
                     SubItem("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
@@ -663,7 +663,7 @@ public partial class MainWindow : Window
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
                 Sep();
-                Sub("库工具", sub =>
+                SubGroup("库工具", sub =>
                 {
                     SubItem("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
                     SubItem("备份演练", (_, _) => OpenBackupDrillTab(info));   // 三-15：弹窗改页面，升级内嵌页签
