@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM orders WHERE created_at < CURRENT_TIME - INTERVAL '1 day' AND status = 'completed';
 
-[ Prompt: 21.3 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.1 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...

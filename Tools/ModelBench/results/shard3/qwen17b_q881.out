@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT COUNT(*) FROM products WHERE stock < 10;
+SELECT CASE WHEN SUM(stock) < 0 THEN '不足' ELSE '充足' END FROM products;
 
-[ Prompt: 20.6 t/s | Generation: 7.3 t/s ]
+[ Prompt: 35.4 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

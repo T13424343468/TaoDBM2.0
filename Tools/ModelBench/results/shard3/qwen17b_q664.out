@@ -36,7 +36,7 @@ FROM payments p
 JOIN orders o ON p.order_id = o.id
 WHERE o.status = 'paid';
 
-[ Prompt: 20.5 t/s | Generation: 7.7 t/s ]
+[ Prompt: 38.4 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

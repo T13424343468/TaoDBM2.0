@@ -34,10 +34,9 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT o.id, o.user_id, o.status, o.created_at, p.name, p.category, p.price, p.stock
 FROM orders o
 LEFT JOIN order_items oi ON o.id = oi.order_id
-LEFT JOIN products p ON oi.product_id = p.id
-LEFT JOIN payments p2 ON o.id = p2.order_id;
+LEFT JOIN products p ON oi.product_id = p.id;
 
-[ Prompt: 21.3 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.2 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

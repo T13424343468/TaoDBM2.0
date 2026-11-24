@@ -35,7 +35,7 @@ SELECT CAST(created_at AS TIME) AS hour, COUNT(*) AS order_count
 FROM orders
 GROUP BY CAST(created_at AS TIME)
 
-[ Prompt: 21.3 t/s | Generation: 7.6 t/s ]
+[ Prompt: 34.3 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

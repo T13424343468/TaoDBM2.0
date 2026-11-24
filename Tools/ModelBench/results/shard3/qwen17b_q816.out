@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 INSERT INTO users (id, name, city, created_at) VALUES (1, 'Alice', 'New York', CURRENT_TIMESTAMP) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, city = EXCLUDED.city, created_at = EXCLUDED.created_at;
 
-[ Prompt: 20.6 t/s | Generation: 7.8 t/s ]
+[ Prompt: 39.5 t/s | Generation: 8.5 t/s ]
 
 
 Exiting...

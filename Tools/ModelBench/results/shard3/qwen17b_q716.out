@@ -31,14 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT o.id, o.user_id, o.status, p.name, p.category, p.price, p.stock, p.id as product_id, i.quantity, i.unit_price, p.id as product_id2, p.name as product_name, p.category as product_category, p.price as product_price, p.stock as product_stock, i.id as item_id, i.order_id, i.product_id, i.quantity, i.unit_price
-FROM orders o
-JOIN order_items i ON o.id = i.order_id
-JOIN products p ON i.product_id = p.id
-JOIN payments pa ON o.id = pa.order_id
-WHERE o.id = pa.order_id;
+SELECT o.id as order_id, p.name as product_name, o.status, p.category, o.created_at, p.price, o.created_at, p.stock, p.id as product_id, p.price, p.stock, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category, p.price, p.stock, p.id, p.name, p.category,
 
-[ Prompt: 20.2 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.0 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...
