@@ -570,13 +570,71 @@ public partial class WorkTab : Grid
         _last = new List<QueryResult> { r };
         FrameworkElement el;
         if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
+        else if (editable && _isRelational)
+        {
+            // 2026-11-24 老板令「不要弹窗，直接在结果集里改」：浏览网格挂就地编辑钩子，
+            // 双击单元格原位改、Enter 落库；弹层只留右键「编辑整行」一条路
+            el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo(), editHook: BuildEditHook());
+        }
         else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
-                : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 单击行编辑 / 删除" : ""));
+                : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 双击单元格就地编辑 · 右键设 NULL / 编辑整行" : ""));
+    }
+
+    /// <summary>就地编辑钩子（2026-11-24 老板令）：浏览页结果集直接改，主键定位 + 单列 UPDATE，
+    /// 字面量转义与行编辑弹层同一套出口（Exporter.Literal），不另起写库逻辑。</summary>
+    private GridEditHook BuildEditHook()
+    {
+        int keyIdx = KeyCol is null ? -1 : _cols.IndexOf(KeyCol);
+        return new GridEditHook
+        {
+            CanEdit = (rowIdx, colIdx) =>
+                _isRelational && KeyCol is not null && keyIdx >= 0
+                && _browseResult is not null && rowIdx < _browseResult.Rows.Count
+                && colIdx >= 0 && colIdx < _cols.Count && !_cols[colIdx].IsKey,
+            EditText = (rowIdx, colIdx) =>
+            {
+                var v = _browseResult!.Rows[rowIdx][colIdx];
+                return v is null or DBNull ? "" : Exporter.Format(v);
+            },
+            CommitAsync = (rowIdx, colIdx, text) => CommitCellEditAsync(rowIdx, colIdx, text),
+            EditWholeRow = idx => _ = EditRow(idx),
+        };
+    }
+
+    /// <summary>就地提交单列修改：text=null 表示设为 NULL；留空按列类型落 NULL（数字）/空串（文本），与弹层同语义。
+    /// 返回 null 表示成功（内部已刷新网格），失败返回错误消息（网格还原原值）。</summary>
+    private async Task<string?> CommitCellEditAsync(int rowIdx, int colIdx, string? text)
+    {
+        if (!_isRelational) return "该引擎不支持行内编辑。";
+        if (KeyCol is null) return "该表没有主键列，无法安全编辑（避免误改整表）。";
+        var keyCol = KeyCol;   // 局部捕获：属性空态经方法调用后失效，统一走局部变量
+        if (_browseResult is null || rowIdx >= _browseResult.Rows.Count || colIdx >= _cols.Count) return "数据已刷新，请重新双击编辑。";
+        var col = _cols[colIdx];
+        if (col.IsKey) return "主键列不可修改。";
+        string val;
+        if (text is null) val = "NULL";
+        else if (text.Length == 0) val = CsvImporter.IsNumeric(col.DataType) ? "NULL" : "''";
+        else val = Exporter.Literal(col, text);
+        int keyIdx = _cols.IndexOf(keyCol);
+        if (keyIdx < 0 || keyIdx >= _browseResult.Rows[rowIdx].Length) return "主键列缺失，无法定位该行。";
+        string keyText = Exporter.Format(_browseResult.Rows[rowIdx][keyIdx]);
+        string sql = $"UPDATE {_provider.Quote(_child)} SET {_provider.Quote(col.Name)} = {val} WHERE {_provider.Quote(keyCol.Name)} = {Exporter.Literal(keyCol, keyText)}";
+        try
+        {
+            await _provider.Execute(_db, sql);
+            _owner.SetStatus($"已保存 {col.Name} 修改");
+            await RunOrRefresh();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write($"[就地编辑] fail col={col.Name} err={ex.Message}");
+            return ex.Message;
+        }
     }
 
     /// <summary>Redis 键列表：单击某键 → 打开该键详情页。</summary>

@@ -10,7 +10,8 @@ namespace TaoDBM.UI;
 public static class GridBuilder
 {
     public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
-        Dictionary<string, double>? colWidths = null, string? widthKey = null, MainWindow? owner = null, NodeInfo? info = null)
+        Dictionary<string, double>? colWidths = null, string? widthKey = null, MainWindow? owner = null, NodeInfo? info = null,
+        GridEditHook? editHook = null)
     {
         // 批次F：宽表懒加载结果（列数超虚拟阈值）走等宽占位网格，横向滚动增量拉列
         if (r is LazyQueryResult lz && lz.Store.TotalColumns > 64)
@@ -34,7 +35,7 @@ public static class GridBuilder
         if (r.Rows.Count > VirtualThreshold)
         {
             // 虚拟滚动（2026-11-20 夜批②）：大数据量窗口化渲染，万行级不卡；列宽规则与普通渲染一致
-            return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine, owner, info);
+            return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine, owner, info, editHook);
         }
 
         // 整改二批 #03（2026-11-23）：表头点击循环排序（内存序，不回库）＋表头冻结（滚动时钉在视口顶部）
@@ -112,7 +113,7 @@ public static class GridBuilder
             rowsHost.Children.Clear();
             int shown = Math.Min(r.Rows.Count, 1000);
             for (int d = 0; d < shown; d++)
-                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine, widths: widths, owner: owner, info: info));
+                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine, widths: widths, owner: owner, info: info, editHook: editHook));
         }
         PopulateRows();
 
@@ -169,7 +170,8 @@ public static class GridBuilder
     /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。
     /// 整改二批 #03：单元格一律挂右键菜单（复制该行/单元格/全部＋分析）；displayIdx 提供时按显示位次取隔行底色（排序后斑马纹不乱）。</summary>
     public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null,
-        string? sourceSql = null, string? engine = null, int? displayIdx = null, double[]? widths = null, MainWindow? owner = null, NodeInfo? info = null)
+        string? sourceSql = null, string? engine = null, int? displayIdx = null, double[]? widths = null, MainWindow? owner = null, NodeInfo? info = null,
+        GridEditHook? editHook = null)
     {
         var row = r.Rows[rowIdx];
         var rowGrid = new Grid { Background = (displayIdx ?? rowIdx) % 2 == 1 ? Ant.AltRow : null };
@@ -188,7 +190,19 @@ public static class GridBuilder
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
-            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, rowIdx, owner, info);   // #03：复制该行/单元格/全部 ＋ 分析/钉住；三-10 设计助手入口
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, rowIdx, owner, info, editHook);   // #03：复制该行/单元格/全部 ＋ 分析/钉住；就地编辑钩子追加 设NULL/编辑整行
+            if (editHook is not null && editHook.CanEdit(rowIdx, i))
+            {
+                // 2026-11-24 老板令「不要弹窗，直接在结果集里改」：双击单元格就地进编辑
+                var host = cell;
+                var original = tb;
+                int colIdx = i;
+                host.DoubleTapped += (_, e) =>
+                {
+                    e.Handled = true;
+                    BeginCellEdit(host, original, r, rowIdx, colIdx, editHook, owner);
+                };
+            }
             Grid.SetColumn(cell, i);
             rowGrid.Children.Add(cell);
         }
@@ -198,6 +212,53 @@ public static class GridBuilder
             rowGrid.Tapped += (_, _) => onRowTap(idx);
         }
         return rowGrid;
+    }
+
+    /// <summary>就地编辑（2026-11-24 老板令）：双击后原位换 TextBox，Enter 提交（走钩子单列 UPDATE）、
+    /// Esc 或点击别处取消还原。成功时 WorkTab 整表刷新重建网格，无需还原控件。</summary>
+    private static void BeginCellEdit(Border cell, TextBlock original, QueryResult r, int rowIdx, int colIdx, GridEditHook hook, MainWindow? owner)
+    {
+        if (cell.Child is TextBox) return;   // 已在编辑，防双击重复进入
+        var box = new TextBox
+        {
+            Text = hook.EditText(rowIdx, colIdx),
+            Margin = new Thickness(6, 3, 6, 3),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = AntTokens.FontMinor,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(box, $"CellEdit_{r.Columns[colIdx]}_{rowIdx}");
+        cell.Child = box;
+        box.Focus(FocusState.Pointer);
+        box.SelectAll();
+
+        async void Commit()
+        {
+            string? err;
+            try { err = await hook.CommitAsync(rowIdx, colIdx, box.Text); }
+            catch (Exception ex) { err = ex.Message; }
+            if (err is not null)
+            {
+                if (cell.Child == box) cell.Child = original;   // 失败还原原值，数据不动
+                owner?.SetStatus("修改失败：" + err);
+                AppLog.Write($"[就地编辑] fail col={r.Columns[colIdx]} err={err}");
+            }
+            // 成功：WorkTab 刷新重建网格，控件随旧树丢弃
+        }
+
+        box.KeyDown += (_, e) =>
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                e.Handled = true;
+                Commit();
+            }
+            else if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                e.Handled = true;
+                cell.Child = original;
+            }
+        };
+        box.LostFocus += (_, _) => { if (cell.Child == box) cell.Child = original; };   // 点别处＝取消，不落库
     }
 
     /// <summary>列宽规则唯一出口：外层网格、表头、数据行共用，保证三处列宽一致；width 非 NaN 时用指定宽度（格9 用户宽度）。</summary>
