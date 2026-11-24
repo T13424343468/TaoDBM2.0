@@ -12,7 +12,7 @@ namespace TaoDBM.UI;
 public static class VirtualizedResultGrid
 {
     public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
-        MainWindow? owner = null, NodeInfo? info = null, GridEditHook? editHook = null)
+        MainWindow? owner = null, NodeInfo? info = null)
     {
         int nCols = Math.Min(r.Columns.Count, 64);
         int total = r.Rows.Count;
@@ -90,7 +90,7 @@ public static class VirtualizedResultGrid
             rowsHost.Children.Clear();
             for (int rowIdx = first; rowIdx <= last; rowIdx++)
             {
-                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx, owner: owner, info: info, editHook: editHook);
+                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx, owner: owner, info: info);
                 el.VerticalAlignment = VerticalAlignment.Top;
                 el.Margin = new Thickness(0, rowIdx * rowH, 0, 0);
                 rowsHost.Children.Add(el);
