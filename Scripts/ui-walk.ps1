@@ -220,6 +220,38 @@ function Get-ScopeText([System.Windows.Automation.AutomationElement]$scope) {
   } catch { }
   return $sb.ToString()
 }
+
+function Open-TreeContextFlyout([System.Windows.Automation.AutomationElement]$treeItem, [string]$needle, [string]$label) {
+  # 右键弹层三段式（2026-11-24 二轮定谳）：直接右键 → 左键选中再右键 → Shift+F10；每段失败记录屏上窗口名，弹层开没开当场留证
+  for ($attempt = 1; $attempt -le 3; $attempt++) {
+    if ($attempt -eq 1) {
+      Click-ElMouse $treeItem 'right'
+    } elseif ($attempt -eq 2) {
+      Log "ctx retry $label : select-then-rightclick"
+      try { Invoke-El $treeItem } catch { }
+      Start-Sleep -Milliseconds 600
+      Click-ElMouse $treeItem 'right'
+    } else {
+      Log "ctx retry $label : shift-f10"
+      try { Invoke-El $treeItem } catch { }
+      Start-Sleep -Milliseconds 600
+      [System.Windows.Forms.SendKeys]::SendWait("+{F10}")
+    }
+    Start-Sleep -Seconds 1
+    $mi = Find-ElWait @{ name = $needle } 4 $mainRoot
+    if ($null -eq $mi) { $mi = Find-ElWait @{ name = $needle } 3 $null }
+    if ($null -ne $mi) { return $mi }
+    try {
+      $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))
+      $names = @(); foreach ($w in $wins) { $names += ("[{0}]" -f $w.Current.Name) }
+      Log ("ctx miss $label attempt $attempt windows-on-screen: " + ($names -join ' '))
+      Push-Evidence ("ctx-miss $label attempt $attempt windows: " + ($names -join ' '))
+    } catch { }
+    try { [System.Windows.Forms.SendKeys]::SendWait("{ESC}") } catch { }
+    Start-Sleep -Milliseconds 500
+  }
+  return $null
+}
 function Invoke-El([System.Windows.Automation.AutomationElement]$el) {
   try { ($el.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke(); return $true } catch { }
   try { ($el.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select(); return $true } catch { }
@@ -1124,14 +1156,69 @@ foreach ($s in $plan.steps) {
         Invoke-El $item
         Start-Sleep -Seconds 2
       }
+      'context-tour' {
+        # 全页面逐页留证（2026-11-24 老板令）：右键树节点 → 展开二级分组 → 逐项打开弹窗截图 → ESC/关闭按钮收场。
+        # 单项失败只记账不中断（红绿全留痕），每项独立 try/catch；截图名 tour-{tourPrefix}-{序号}.png
+        $treeItem = $null
+        $needleItem = Tpl ([string]$s.prefix)
+        $allTree = $mainRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+        foreach ($e in $allTree) {
+          try { if ($e.Current.ControlType -eq [System.Windows.Automation.ControlType]::TreeItem -and $e.Current.Name -like "*$needleItem*") { $treeItem = $e; break } } catch { }
+        }
+        if ($null -eq $treeItem) { throw "tour tree item not found: $needleItem" }
+        $group = [string]$s.group
+        $idx = 0
+        $results = @()
+        foreach ($name in @($s.items | ForEach-Object { Tpl ([string]$_) })) {
+          $idx++
+          $shotName = "{0}-{1:d2}.png" -f $s.tourPrefix, $idx
+          try {
+            $sub = Open-TreeContextFlyout $treeItem $group "$s.tourPrefix-$idx"
+            if ($null -eq $sub) { throw "tour group not found: $group" }
+            $expanded = $false
+            try {
+              $ec = $sub.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+              $ec.Expand(); $expanded = $true
+            } catch { }
+            if (-not $expanded) { Invoke-El $sub }
+            Start-Sleep -Milliseconds 900
+            $mi = Find-ElWait @{ name = $name } 6 $mainRoot
+            if ($null -eq $mi) { $mi = Find-ElWait @{ name = $name } 4 $null }
+            if ($null -eq $mi) { throw "tour item not found: $name" }
+            Invoke-El $mi
+            Start-Sleep -Seconds 3
+            Save-Shot $shotName
+            [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+            Start-Sleep -Milliseconds 700
+            # ESC 不达兜底：点常见关闭/取消按钮（45 个弹窗无键盘收场口径的现场对策）
+            $closeBtn = Find-ElWait @{ controlType = 'Button'; name = '关闭' } 2 $mainRoot
+            if ($null -eq $closeBtn) { $closeBtn = Find-ElWait @{ controlType = 'Button'; name = '取消' } 2 $mainRoot }
+            if ($null -ne $closeBtn) { try { Invoke-El $closeBtn } catch { } }
+            Start-Sleep -Milliseconds 500
+            Close-ExtraWindows $handle
+            Assert-AppAlive "tour $name"
+            $results += "OK $name"
+            Push-Evidence "tour-ok $name $shotName"
+          } catch {
+            try { Save-Shot ("{0}-{1:d2}-fail.png" -f $s.tourPrefix, $idx) } catch { }
+            try { [System.Windows.Forms.SendKeys]::SendWait("{ESC}") } catch { }
+            Start-Sleep -Milliseconds 500
+            Close-ExtraWindows $handle
+            $results += "RED $name : $($_.Exception.Message)"
+            Push-Evidence "tour-red $name $($_.Exception.Message)"
+          }
+        }
+        Log ("tour done: " + ($results -join ' ;; '))
+        Push-Evidence ("tour-summary " + ($results -join ' ;; '))
+      }
       'tree-context' {
         # 树节点右键 → 弹出菜单点项（连接右键菜单：任务中心/智能工具/看板管理/部署向导…）
+        # 2026-11-24 二轮定谳：首轮 35 个 tree-context 全 miss——二级子菜单项未展开不在 UIA 树；
+        # 且 U078 一级项也 miss＝右键弹层本身可能没开。本版补：弹层探测＋选中后重试＋Shift+F10 兜底＋现场窗口取证。
         $item = Find-ElWait @{ controlType = 'TreeItem'; name = (Tpl $s.prefix) } 10 $mainRoot
         if ($null -eq $item) { throw "tree item not found: $(Tpl $s.prefix)" }
-        Click-ElMouse $item 'right'
-        Start-Sleep -Seconds 1
-        $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
-        if ($null -eq $mi) { $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        $needle = Tpl ([string]$s.itemName)
+        $mi = Open-TreeContextFlyout $item $needle $s.prefix
         if ($null -eq $mi) { throw "context item not found: $($s.itemName)" }
         Invoke-El $mi
         Start-Sleep -Seconds 3

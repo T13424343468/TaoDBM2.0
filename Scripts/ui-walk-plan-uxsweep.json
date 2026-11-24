@@ -145,14 +145,14 @@
       "id": "U012",
       "feature": "巡检-选中表节点",
       "action": "select",
-      "prefix": "📋 __TBL1__",
+      "prefix": "__TBL1__",
       "critical": true
     },
     {
       "id": "U013",
       "feature": "巡检-查看数据页签",
       "action": "tree-context",
-      "prefix": "📋 __TBL1__",
+      "prefix": "__TBL1__",
       "itemName": "查看数据",
       "critical": true
     },
@@ -231,7 +231,7 @@
       "id": "U023",
       "feature": "巡检-表设计器（列）",
       "action": "tree-context",
-      "prefix": "📋 __TBL1__",
+      "prefix": "__TBL1__",
       "itemName": "设计表",
       "critical": true
     },
@@ -383,58 +383,34 @@
     },
     {
       "id": "U050",
-      "feature": "巡检-智能工具",
-      "action": "tree-context",
+      "feature": "巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证）",
+      "action": "context-tour",
       "prefix": "__CONN_NAME__",
-      "itemName": "智能工具",
-      "allowMiss": true
-    },
-    {
-      "id": "U051",
-      "feature": "巡检-智能工具收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U052",
-      "feature": "巡检-任务中心",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "任务中心",
-      "allowMiss": true
-    },
-    {
-      "id": "U053",
-      "feature": "巡检-任务中心收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U054",
-      "feature": "巡检-告警中心",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "告警中心",
-      "allowMiss": true
-    },
-    {
-      "id": "U055",
-      "feature": "巡检-告警中心收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U056",
-      "feature": "巡检-服务器监控",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "服务器监控",
-      "allowMiss": true
-    },
-    {
-      "id": "U057",
-      "feature": "巡检-服务器监控收场",
-      "action": "press-esc",
+      "group": "工具与向导",
+      "items": [
+        "权限审计",
+        "主从管理面",
+        "部署向导",
+        "分片向导",
+        "一键诊断",
+        "高危 SQL 拦截",
+        "上线审查",
+        "任务中心",
+        "流式开关",
+        "读路由预演",
+        "热点检测",
+        "再均衡规划",
+        "分片键评估",
+        "迁移续传",
+        "团队合并",
+        "共享包",
+        "智能工具",
+        "看板管理",
+        "服务器监控",
+        "命令监控",
+        "仪表板"
+      ],
+      "tourPrefix": "tour-conn",
       "allowMiss": true
     },
     {
@@ -448,34 +424,6 @@
     {
       "id": "U059",
       "feature": "巡检-数据同步收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U060",
-      "feature": "巡检-分片向导",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "分片向导",
-      "allowMiss": true
-    },
-    {
-      "id": "U061",
-      "feature": "巡检-分片向导收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U062",
-      "feature": "巡检-模型设计",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "三层模型",
-      "allowMiss": true
-    },
-    {
-      "id": "U063",
-      "feature": "巡检-模型设计收场",
       "action": "press-esc",
       "allowMiss": true
     },
@@ -508,76 +456,6 @@
       "allowMiss": true
     },
     {
-      "id": "U068",
-      "feature": "巡检-备份演练",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "备份演练",
-      "allowMiss": true
-    },
-    {
-      "id": "U069",
-      "feature": "巡检-备份演练收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U070",
-      "feature": "巡检-部署向导",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "部署向导",
-      "allowMiss": true
-    },
-    {
-      "id": "U071",
-      "feature": "巡检-部署向导收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U072",
-      "feature": "巡检-看板管理",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "看板管理",
-      "allowMiss": true
-    },
-    {
-      "id": "U073",
-      "feature": "巡检-看板收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U074",
-      "feature": "巡检-一键诊断",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "一键诊断",
-      "allowMiss": true
-    },
-    {
-      "id": "U075",
-      "feature": "巡检-诊断收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U076",
-      "feature": "巡检-仪表板",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "仪表板",
-      "allowMiss": true
-    },
-    {
-      "id": "U077",
-      "feature": "巡检-仪表板收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
       "id": "U078",
       "feature": "巡检-在库中搜索",
       "action": "tree-context",
@@ -592,171 +470,28 @@
       "allowMiss": true
     },
     {
-      "id": "U080",
-      "feature": "巡检-权限审计",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "权限审计",
-      "allowMiss": true
-    },
-    {
-      "id": "U081",
-      "feature": "巡检-权限审计收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U082",
-      "feature": "巡检-快照包",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "快照包",
-      "allowMiss": true
-    },
-    {
-      "id": "U083",
-      "feature": "巡检-快照包收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U084",
-      "feature": "巡检-批量清理",
-      "action": "tree-context",
-      "prefix": "main",
-      "itemName": "批量清理",
-      "allowMiss": true
-    },
-    {
-      "id": "U085",
-      "feature": "巡检-批量清理收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U086",
-      "feature": "巡检-数据对账",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "数据对账",
-      "allowMiss": true
-    },
-    {
-      "id": "U087",
-      "feature": "巡检-对账收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
       "id": "U088",
-      "feature": "巡检-数据脱敏",
-      "action": "tree-context",
-      "prefix": "📋 __TBL1__",
-      "itemName": "数据脱敏",
-      "allowMiss": true
-    },
-    {
-      "id": "U089",
-      "feature": "巡检-脱敏收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U090",
-      "feature": "巡检-误删恢复",
-      "action": "tree-context",
-      "prefix": "📋 __TBL1__",
-      "itemName": "误删恢复",
-      "allowMiss": true
-    },
-    {
-      "id": "U091",
-      "feature": "巡检-误删恢复收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U092",
-      "feature": "巡检-例程管理",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "例程管理",
-      "allowMiss": true
-    },
-    {
-      "id": "U093",
-      "feature": "巡检-例程收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U094",
-      "feature": "巡检-命令监控",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "命令监控",
-      "allowMiss": true
-    },
-    {
-      "id": "U095",
-      "feature": "巡检-命令监控收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U096",
-      "feature": "巡检-读路由预演",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "读路由预演",
-      "allowMiss": true
-    },
-    {
-      "id": "U097",
-      "feature": "巡检-读路由收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U098",
-      "feature": "巡检-热点检测",
-      "action": "tree-context",
-      "prefix": "📋 __TBL1__",
-      "itemName": "热点检测",
-      "allowMiss": true
-    },
-    {
-      "id": "U099",
-      "feature": "巡检-热点收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U100",
-      "feature": "巡检-流式开关",
-      "action": "tree-context",
-      "prefix": "📋 __TBL1__",
-      "itemName": "流式开关",
-      "allowMiss": true
-    },
-    {
-      "id": "U101",
-      "feature": "巡检-流式开关收场",
-      "action": "press-esc",
-      "allowMiss": true
-    },
-    {
-      "id": "U102",
-      "feature": "巡检-问库（自然语言查询）",
-      "action": "tree-context",
-      "prefix": "__CONN_NAME__",
-      "itemName": "问库",
-      "allowMiss": true
-    },
-    {
-      "id": "U103",
-      "feature": "巡检-问库收场",
-      "action": "press-esc",
+      "feature": "巡检-库节点·库工具全巡览（14 弹窗逐项留证）",
+      "action": "context-tour",
+      "prefix": "main",
+      "group": "库工具",
+      "items": [
+        "备份计划",
+        "备份演练",
+        "数据脱敏",
+        "数据对账",
+        "误删恢复",
+        "留痕审计",
+        "问库",
+        "快照包",
+        "批量清理",
+        "设计辅助",
+        "例程管理",
+        "一键诊断",
+        "告警中心",
+        "三层模型"
+      ],
+      "tourPrefix": "tour-db",
       "allowMiss": true
     },
     {
