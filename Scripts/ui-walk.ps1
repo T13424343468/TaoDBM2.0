@@ -901,6 +901,13 @@ foreach ($s in $plan.steps) {
         # 编辑器整段置文＋回读校验（#312：S63 轮执行账落 ELECT *＝首字符被吃，SetValue 竞态/回退路径静默失败）
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
         if ($null -eq $ed) { throw "work-editor not found" }
+        # #313：脏编辑器上 SetValue 稳定产生回读不一致（#312 定谳的 SetValue 竞态在非空内容下复现，a/b 段跨库同型）——置文前有内容先开新查询页签（#245/query 同口径）
+        $cur = Read-EditorTextSafe $ed $mainRoot
+        if ($null -ne $cur -and $cur.Trim().Length -gt 0) {
+          Push-Evidence "$id editor-dirty, fresh tab"
+          $fresh = Open-FreshQueryTab $mainRoot
+          if ($null -ne $fresh) { $ed = $fresh }
+        }
         $want = (Tpl $s.sql)
         $done = $false
         foreach ($attempt in 1..3) {
@@ -910,10 +917,28 @@ foreach ($s in $plan.steps) {
           Start-Sleep -Milliseconds 600
           $got = Read-EditorTextSafe $ed $mainRoot
           if ($null -ne $got -and $got.Trim() -eq $want.Trim()) { $done = $true; break }
-          Log "$id editor-set retry $attempt (readback mismatch)"
-          Start-Sleep -Seconds 1
+          Log "$id editor-set retry $attempt (readback mismatch got=$got)"
+          # 读不回＝脚本不可验证，交账本裁决；读到错＝编辑器脏，开新页签剪贴板整段粘贴再试（query 同口径）
+          $fresh = Open-FreshQueryTab $mainRoot
+          if ($null -ne $fresh) { $ed = $fresh }
+          try {
+            Set-Clipboard -Value $want
+            $ed.SetFocus()
+            Start-Sleep -Milliseconds 300
+            [System.Windows.Forms.SendKeys]::SendWait("^a")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("^v")
+          } catch { }
+          Start-Sleep -Milliseconds 600
         }
-        if (-not $done) { throw "editor set verify failed after retries (readback mismatch)" }
+        if (-not $done) {
+          $got = Read-EditorTextSafe $ed $mainRoot
+          # 读不回＝脚本不可验证，交账本裁决不硬红；读到错内容才是硬红
+          if ($null -ne $got -and $got.Trim() -ne $want.Trim()) { throw "editor set verify failed after retries (readback mismatch got=$got)" }
+          if ($null -eq $got) { Log "$id editor-set final unreadable, deferring to ledger check" }
+        }
         Start-Sleep -Milliseconds 400
         Push-Evidence "$id editor-set done"
       }
@@ -929,6 +954,14 @@ foreach ($s in $plan.steps) {
           Log "$id keys focus-guard: focus not on editor, mouse-click into editor"
           try { Click-ElMouse $el 'left' } catch { try { $el.SetFocus() } catch { } }
           Start-Sleep -Milliseconds 400
+          # #313：点击后复核焦点，仍不在编辑器则 SetFocus 兜底并留证（a 段 S57 护栏点击后 F6 落空无执行账实锤）
+          try {
+            $fe2 = [System.Windows.Automation.AutomationElement]::FocusedElement
+            if ($null -eq $fe2 -or $fe2.AutomationId -ne 'work-editor') {
+              $el.SetFocus()
+              Push-Evidence "$id focus-guard fallback SetFocus"
+            }
+          } catch { Push-Evidence "$id focus-guard fallback failed" }
         }
         [System.Windows.Forms.SendKeys]::SendWait((Tpl $s.keys))
         Start-Sleep -Seconds 1
