@@ -1485,3 +1485,108 @@ jobs:
             ui-coverage.txt
             ui-walk-report.txt
             ui-walk-log.txt
+
+  ux-sweep:
+    # 全页面截图巡检（2026-11-24 老板令：按真机问题思路全页面走一遍，逐页截图带方案汇总）
+    # 只动测试工具链：-ShotAll 每步落盘 sweep-*.png；步骤全部 critical:false（导航步除外），单步失败不拦场
+    needs: msi
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout (walk script from source)
+        uses: actions/checkout@v4
+
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: taodbm-phase2-msi
+
+      - name: Silent install
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $found = Get-ChildItem -Recurse -Filter *.msi | Select-Object -First 1
+          if (-not $found) { Write-Host "::error::no msi in downloaded artifact"; exit 1 }
+          $msi = $found.FullName
+          Write-Host "[MSI] $msi size=$($found.Length) bytes"
+          $ok = $false
+          for ($try = 1; $try -le 3; $try++) {
+            $p = Start-Process msiexec -ArgumentList "/i","`"$msi`"","/qn","/norestart","/l*v","install-sweep.log" -Wait -PassThru
+            Write-Host "[INSTALL try$try] exit=$($p.ExitCode)"
+            if ($p.ExitCode -eq 0) { $ok = $true; break }
+            Start-Sleep -Seconds 20
+          }
+          if (-not $ok) { Write-Host "::error::silent install failed after 3 attempts"; exit 1 }
+          $exe = $null
+          $cand = @()
+          $arp0 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" } | Select-Object -First 1
+          if ($arp0 -and $arp0.DisplayIcon) { $cand += (($arp0.DisplayIcon -split ',')[0]) }
+          foreach ($root in @('D:\Program Files\TaoDBM','C:\Program Files\TaoDBM')) {
+            if (Test-Path $root) { $cand += (Get-ChildItem -Path $root -Recurse -Filter TaoDBM.exe -Depth 2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName) }
+          }
+          foreach ($c in $cand) { if ($c -and (Test-Path $c)) { $exe = $c; break } }
+          if (-not $exe) { Write-Host "::error::TaoDBM.exe not found after install"; exit 1 }
+          Write-Host "[OK] exe at $exe"
+          "TaoDBMExe=$exe" | Out-File -FilePath ui-smoke-env.txt -Encoding utf8
+
+      - name: Generate real SQLite test DB
+        shell: pwsh
+        run: |
+          python Scripts/gen-testdb.py --out-dir testdb
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gen-testdb failed"; exit 1 }
+          "DBFILE=$(Resolve-Path testdb/taodbm-ui.db)" | Add-Content $env:GITHUB_ENV
+          "EXPECTFILE=$(Resolve-Path testdb/expected.json)" | Add-Content $env:GITHUB_ENV
+
+      - name: Run UX sweep walk (ShotAll)
+        shell: pwsh
+        env:
+          WALK_EVIDENCE_BRANCH: ux-sweep-evidence
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $exe = ((Get-Content ui-smoke-env.txt | Select-Object -First 1)) -replace '^TaoDBMExe=',''
+          pwsh -NoProfile -File Scripts/ui-walk.ps1 -ExePath $exe -DbFile $env:DBFILE -Expected $env:EXPECTFILE -PlanPath Scripts/ui-walk-plan-uxsweep.json -ShotAll
+          # 巡检线不拦场：单步失败只记档，脚本退出码不作为 job 红绿（覆盖账为准）
+          Write-Host "[UX-SWEEP] walk exit=$LASTEXITCODE (non-blocking)"
+          exit 0
+
+      - name: Uninstall (restore clean state)
+        if: always()
+        shell: pwsh
+        run: |
+          Get-Process | Where-Object { $_.ProcessName -eq "TaoDBM" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          $arp = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*TaoDBM*" }
+          if ($arp) { $p = Start-Process msiexec -ArgumentList "/x",$($arp.PSChildName),"/qn","/norestart" -Wait -PassThru; Write-Host "[UNINSTALL] exit=$($p.ExitCode)" }
+
+      - name: Push sweep shots to public branch
+        if: always()
+        shell: pwsh
+        run: |
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force ui-repo | Out-Null
+          Set-Location ui-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch --depth 1 origin ux-sweep-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B ux-sweep-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ux-sweep-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          Copy-Item ..\sweep-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ev-shot-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-walk-report.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ui-walk-log.txt -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\stage-marker.txt -Force -ErrorAction SilentlyContinue
+          git add -A 2>$null
+          git commit --allow-empty -m "ux-sweep shots run ${{ github.run_id }}" | Out-Null
+          git push origin ux-sweep-latest --force 2>&1 | Out-Host
+          Write-Host "[PUSHED] ux-sweep-latest"
+
+      - name: Upload UX sweep files (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taodbm-ux-sweep
+          path: |
+            sweep-*.png
+            ui-coverage.txt
+            ui-walk-report.txt
+            ui-walk-log.txt

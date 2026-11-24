@@ -11,7 +11,8 @@ param(
   [string]$HostName = "localhost",
   [string]$DbUser = "",
   [string]$DbPass = "",
-  [string]$DbName = ""
+  [string]$DbName = "",
+  [switch]$ShotAll   # ux-sweep: every step saves a screenshot when set (off by default, unchanged behavior)
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -901,7 +902,10 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'soft-page' {
-        if ($s.page -eq 'theme') {
+        if ($s.page -eq 'noop') {
+          # ux-sweep: screenshot-only step (main window current state)
+          Start-Sleep -Seconds 1
+        } elseif ($s.page -eq 'theme') {
           # 2026-11-22 老板令: 切主题触发全屏重绘, 免费云机虚拟显示扛不住即被回收(#247/#249 三段同点定谳);
           # 摘除切换动作, 仅验主题入口可达+截图, 外观由逐屏对稿线兜底
           $btn = Find-ElWait @{ automationId = 'BtnTheme' } 6 $mainRoot
@@ -1109,6 +1113,7 @@ foreach ($s in $plan.steps) {
       }
       default { throw "unknown action: $action" }
     }
+    if ($ShotAll) { Start-Sleep -Seconds 1; Save-Shot "sweep-$id.png" }
   } catch {
     $outcome = 'fail'
     if ($allowMiss) { $outcome = 'miss' }
