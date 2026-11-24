@@ -33,10 +33,10 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 CREATE PROCEDURE get_user_count AS BEGIN
     SELECT COUNT(*) INTO @user_count FROM users;
-    SELECT @user_count AS user_count;
+    SELECT @user_count;
 END;
 
-[ Prompt: 20.6 t/s | Generation: 7.4 t/s ]
+[ Prompt: 37.5 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

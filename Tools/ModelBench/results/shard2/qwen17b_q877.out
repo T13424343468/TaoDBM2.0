@@ -31,11 +31,13 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-CREATE OR REPLACE FUNCTION get_users_by_city(city VARCHAR(50)) RETURNS SETOF users AS $$
-SELECT * FROM users WHERE city = $1;
+CREATE OR REPLACE FUNCTION get_users_by_city(city VARCHAR(50)) RETURNS SETOF RECORDS AS $$
+SELECT id, name, city, created_at
+FROM users
+WHERE city = $1;
 $$ LANGUAGE sql;
 
-[ Prompt: 20.0 t/s | Generation: 7.1 t/s ]
+[ Prompt: 37.2 t/s | Generation: 8.6 t/s ]
 
 
 Exiting...

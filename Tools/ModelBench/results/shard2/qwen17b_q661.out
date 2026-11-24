@@ -31,15 +31,15 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT p.name, o.created_at
+SELECT u.id, u.name, p.id AS product_id, p.name, p.category, p.price, p.stock, pi.quantity, pi.unit_price, pi.order_id, pi.payment_id
 FROM users u
 JOIN orders o ON u.id = o.user_id
-JOIN order_items oi ON o.id = oi.order_id
-JOIN payments p ON oi.id = p.id
+JOIN order_items pi ON o.id = pi.order_id
+JOIN payments p ON p.order_id = pi.order_id
 WHERE o.created_at = (SELECT MIN(created_at) FROM orders)
-AND u.id = (SELECT user_id FROM orders WHERE created_at = (SELECT MIN(created_at) FROM orders));
+AND p.paid_at = (SELECT MIN(paid_at) FROM payments)
 
-[ Prompt: 20.1 t/s | Generation: 7.5 t/s ]
+[ Prompt: 37.7 t/s | Generation: 8.6 t/s ]
 
 
 Exiting...

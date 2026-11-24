@@ -34,9 +34,9 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT DATEDIFF(HOUR, MINUTE(created_at, orders2.created_at), orders2.created_at) AS hour_diff
 FROM orders AS orders1
 JOIN orders AS orders2 ON orders1.id = orders2.id
-WHERE orders2.created_at > orders1.created_at;
+WHERE orders1.created_at < orders2.created_at;
 
-[ Prompt: 21.3 t/s | Generation: 7.5 t/s ]
+[ Prompt: 34.3 t/s | Generation: 9.5 t/s ]
 
 
 Exiting...

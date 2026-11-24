@@ -31,10 +31,12 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT ABS(SUM(CASE WHEN stock > 0 THEN 1 ELSE -1 END) * (stock - 0)) AS abs_stock_change
-FROM products;
+SELECT ABS(SUM(CASE WHEN product.stock < product.stock THEN product.stock ELSE 0 END - product.stock) ) AS abs_stock_change
+FROM products
+JOIN order_items ON products.id = order_items.product_id
+WHERE order_items.created_at >= DATEADD(DAY, -7, GETDATE());
 
-[ Prompt: 21.6 t/s | Generation: 7.6 t/s ]
+[ Prompt: 37.2 t/s | Generation: 9.3 t/s ]
 
 
 Exiting...

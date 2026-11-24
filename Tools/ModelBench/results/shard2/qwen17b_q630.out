@@ -35,9 +35,9 @@ SELECT p1.amount, p2.amount
 FROM payments p1
 JOIN payments p2 ON p2.order_id = p1.order_id
 WHERE p1.order_id = p2.order_id
-ORDER BY p1.order_id;
+AND p1.paid_at < p2.paid_at;
 
-[ Prompt: 21.5 t/s | Generation: 7.4 t/s ]
+[ Prompt: 35.8 t/s | Generation: 8.8 t/s ]
 
 
 Exiting...

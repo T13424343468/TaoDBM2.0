@@ -31,9 +31,10 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT * FROM payments WHERE amount > 1000;
+SELECT * FROM payments
+WHERE amount > 1000;
 
-[ Prompt: 20.6 t/s | Generation: 8.2 t/s ]
+[ Prompt: 33.3 t/s | Generation: 11.9 t/s ]
 
 
 Exiting...

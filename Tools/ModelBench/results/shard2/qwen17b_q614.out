@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT category, name, price, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price ASC) as rank
 FROM products;
 
-[ Prompt: 19.7 t/s | Generation: 7.5 t/s ]
+[ Prompt: 33.1 t/s | Generation: 7.9 t/s ]
 
 
 Exiting...

@@ -31,9 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id IN ... (truncated)
-SELECT name REPLACE 'a' WITH 'x' FROM users;
+SELECT name REPLACE ALL 'a' WITH 'x' FROM users;
 
-[ Prompt: 21.4 t/s | Generation: 7.6 t/s ]
+[ Prompt: 37.8 t/s | Generation: 8.7 t/s ]
 
 
 Exiting...

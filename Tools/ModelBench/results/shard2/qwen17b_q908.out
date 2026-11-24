@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
-SELECT product_id, price / stock AS price_per_unit
+SELECT product.name, product.price / COALESCE(product.stock, 1) AS price_per_unit
 FROM products
-WHERE stock > 0;
+WHERE products.stock > 0;
 
-[ Prompt: 20.1 t/s | Generation: 7.2 t/s ]
+[ Prompt: 49.5 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

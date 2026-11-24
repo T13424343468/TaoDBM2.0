@@ -36,7 +36,7 @@ FROM orders o
 RIGHT JOIN order_items oi ON o.id = oi.order_id
 WHERE o.id = 1;
 
-[ Prompt: 20.7 t/s | Generation: 7.3 t/s ]
+[ Prompt: 38.0 t/s | Generation: 9.0 t/s ]
 
 
 Exiting...

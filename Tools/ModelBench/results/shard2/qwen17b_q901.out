@@ -32,18 +32,16 @@ CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(5
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (id INT ... (truncated)
 CREATE EVENT archive_orders
-ON SCHEDULE EVERY 1 DAY
-  EVERY 1 HOUR
-  STARTS AT 23:30
+ON SCHEDULE EVERY 1 MINUTE
 DO
 BEGIN
-  INSERT INTO archive_orders
-  SELECT *
-  FROM orders
-  WHERE created_at < CURRENT_DATE - INTERVAL 30 DAY;
+    INSERT INTO archive_orders
+    SELECT *
+    FROM orders
+    WHERE created_at < CURRENT_TIMESTAMP - INTERVAL 30 MINUTE;
 END;
 
-[ Prompt: 21.1 t/s | Generation: 7.3 t/s ]
+[ Prompt: 35.1 t/s | Generation: 9.6 t/s ]
 
 
 Exiting...

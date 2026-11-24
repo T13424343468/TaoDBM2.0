@@ -35,7 +35,7 @@ SELECT p.stock
 FROM products p
 WHERE p.stock < 0;
 
-[ Prompt: 20.9 t/s | Generation: 7.4 t/s ]
+[ Prompt: 36.2 t/s | Generation: 9.8 t/s ]
 
 
 Exiting...

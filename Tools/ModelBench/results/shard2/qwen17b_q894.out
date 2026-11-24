@@ -31,10 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-EXECUTE AS @proxy_user;
-EXEC sp_archive_data;
+EXEC sp_start_job 'archive_job';
 
-[ Prompt: 27.4 t/s | Generation: 8.7 t/s ]
+[ Prompt: 44.8 t/s | Generation: 11.7 t/s ]
 
 
 Exiting...

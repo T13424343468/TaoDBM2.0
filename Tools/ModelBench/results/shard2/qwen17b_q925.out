@@ -35,7 +35,7 @@ SELECT method, COUNT(*) AS count
 FROM payments
 GROUP BY method;
 
-[ Prompt: 26.6 t/s | Generation: 8.6 t/s ]
+[ Prompt: 45.4 t/s | Generation: 12.2 t/s ]
 
 
 Exiting...

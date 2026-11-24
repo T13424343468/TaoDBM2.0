@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name FROM users LEFT JOIN order_items ON users.id = order_items.order_id LEFT JOIN payments ON order_items.order_id = payments.order_id WHERE LEFT(name, 3) = 'John';
 
-[ Prompt: 21.3 t/s | Generation: 7.5 t/s ]
+[ Prompt: 35.4 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...

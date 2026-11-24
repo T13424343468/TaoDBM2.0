@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT CAST('2026-01-01' AS DATE)
 
-[ Prompt: 21.5 t/s | Generation: 7.5 t/s ]
+[ Prompt: 34.1 t/s | Generation: 9.1 t/s ]
 
 
 Exiting...
