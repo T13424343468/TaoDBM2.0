@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint); [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach); [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags); [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo); [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId(); }'
 Add-Type -TypeDefinition $src
 # ---------- 3b. 真鼠标点击（恢复自 b7fefa823，合并解决方向误删） ----------
 # Tapped/DoubleTapped/ContextFlyout 只认真鼠标事件，UIA Invoke 打不进（双击表/排序/右键菜单均此路）
@@ -70,6 +70,36 @@ $funcCov = New-Object System.Collections.Generic.List[string]
 $hardFail = $false
 function Log([string]$m) { $walkLog.Add($m); Write-Host "[WALK] $m"; try { $walkLog | Set-Content ui-walk-log.txt -Encoding utf8 } catch { } }
 
+function Force-AppForeground([string]$why) {
+  # #322 定谳：裸 SetForegroundWindow 被前台锁静默拒绝（截图实锤宿主终端整窗盖住应用，键鼠全落终端）——AttachThreadInput 强制夺回并复核
+  for ($att = 1; $att -le 2; $att++) {
+    try {
+      $fgHwnd = [WinNative]::GetForegroundWindow()
+      if ($fgHwnd -eq $handle) { return $true }
+      $fgProcId = [uint32]0
+      $tidFg = [WinNative]::GetWindowThreadProcessId($fgHwnd, [ref]$fgProcId)
+      $tidCur = [WinNative]::GetCurrentThreadId()
+      $attached = $false
+      if ($fgHwnd -ne [IntPtr]::Zero -and $tidFg -ne $tidCur) { $attached = [WinNative]::AttachThreadInput($tidCur, $tidFg, $true) }
+      try {
+        [WinNative]::ShowWindow($handle, 9) | Out-Null
+        [WinNative]::SetWindowPos($handle, [IntPtr]::Zero, 0, 0, 0, 0, 0x0043) | Out-Null
+        [WinNative]::SetForegroundWindow($handle) | Out-Null
+      } finally {
+        if ($attached) { [WinNative]::AttachThreadInput($tidCur, $tidFg, $false) | Out-Null }
+      }
+      Start-Sleep -Milliseconds 250
+      if ([WinNative]::GetForegroundWindow() -eq $handle) { return $true }
+    } catch { }
+    # 第二发前敲一下 ALT（模拟用户输入解除前台锁限制）
+    try { [WinNative]::keybd_event(0x12, 0, 0, [IntPtr]::Zero); [WinNative]::keybd_event(0x12, 0, 2, [IntPtr]::Zero) } catch { }
+    Start-Sleep -Milliseconds 150
+  }
+  Log "foreground force failed ($why)"
+  Push-Evidence "fg-force-failed $why"
+  return $false
+}
+
 function Save-Shot([string]$name) {
   try {
     $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen
@@ -98,7 +128,7 @@ if ($handle -eq [IntPtr]::Zero) {
   exit 1
 }
 [WinNative]::ShowWindow($handle, 3) | Out-Null
-[WinNative]::SetForegroundWindow($handle) | Out-Null
+Force-AppForeground 'startup' | Out-Null
 Start-Sleep -Seconds 8
 $proc.Refresh()
 if ($proc.HasExited) { Write-Host "::error::app exited before walk code=$($proc.ExitCode)"; exit 1 }
@@ -477,6 +507,7 @@ foreach ($s in $plan.steps) {
   # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步；
   # 同时带应用内存读数并断言存活，把 S08 一带的静默死亡变成可读账
   Assert-AppAlive "step $id"
+  Force-AppForeground $id | Out-Null
   $appMem = 0
   try { $script:proc.Refresh(); $appMem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
   Write-Host ("::notice::WALK step {0} start ({1}; app={2}MB)" -f $id, $feature, $appMem)
@@ -669,7 +700,7 @@ foreach ($s in $plan.steps) {
           if (-not $arrived) {
             Log "$id menu arrival missing, retry once with foreground"
             Push-Evidence "$id menu-arrival-retry"
-            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Force-AppForeground $id | Out-Null
             Start-Sleep -Milliseconds 400
             Invoke-El $btn
             Start-Sleep -Milliseconds 600
@@ -872,7 +903,7 @@ foreach ($s in $plan.steps) {
               # 键盘导航兜底（原路保留）：前置窗口后路径键入；仍失败则落 allowMiss
               try {
                 Push-Evidence "S17d kbd-nav-attempt"
-                [WinNative]::SetForegroundWindow($h) | Out-Null
+                Force-AppForeground 'S17d' | Out-Null
                 Start-Sleep -Milliseconds 400
                 [System.Windows.Forms.SendKeys]::SendWait("^a")
                 Push-Evidence "S17d ctrl-a-sent"
@@ -978,7 +1009,7 @@ foreach ($s in $plan.steps) {
           if ($null -ne $fresh) { $el = $fresh } else { throw "work-editor not found and fresh tab failed" }
         }
         # #320 定谳加固：长走查中云机前台漂移，SendKeys 落空（红步屏面正常而 applog 零打点）——发键前强制回前台
-        try { [WinNative]::SetForegroundWindow($handle) | Out-Null; Start-Sleep -Milliseconds 250 } catch { }
+        Force-AppForeground $id | Out-Null; Start-Sleep -Milliseconds 250
         try { $el.SetFocus() } catch { }
         Start-Sleep -Milliseconds 300
         $focusedOk = $false
@@ -1009,7 +1040,7 @@ foreach ($s in $plan.steps) {
           if (-not $arrived) {
             Log "$id keys arrival missing, retry once with foreground+focus"
             Push-Evidence "$id keys-arrival-retry"
-            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Force-AppForeground $id | Out-Null
             Start-Sleep -Milliseconds 300
             try { $el.SetFocus() } catch { }
             Start-Sleep -Milliseconds 300
