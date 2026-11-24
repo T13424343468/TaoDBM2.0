@@ -698,6 +698,11 @@ public partial class WorkTab : Grid
             await StreamExportAsync(kind, EnumerateStorePages(lz.Store, progress), lz.Store.ColumnNames, savePath);
             return;
         }
+        // ㊽ 导出脱敏接线：整包导出前按列名规则打码（与 MaskPreviewDialog 同一套 MaskEngine 规则，默认开）
+        var maskedSrc = Exporter.Masked(src0);
+        if (!ReferenceEquals(maskedSrc, src0))
+            AppLog.Write("[导出] 脱敏规则已应用：敏感列按 MaskEngine 打码");   // ㊽ 验收锚点
+        src0 = maskedSrc;
         switch (kind)
         {
             case ExportKind.Csv:
@@ -751,6 +756,30 @@ public partial class WorkTab : Grid
         }
     }
 
+    /// <summary>㊽ 流式导出脱敏：按列名规则逐格打码（与 MaskPreviewDialog 同一套 MaskEngine 规则）。
+    /// 无敏感列时原样透传页序列，不复制不缓冲；有敏感列时逐页生成打码副本。</summary>
+    private static IEnumerable<Core.Streaming.QueryPage> MaskPages(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns)
+    {
+        var rules = columns.Select(MaskEngine.InferRule).ToList();
+        bool any = rules.Any(x => x != MaskRule.None);
+        foreach (var p in pages)
+        {
+            if (!any) { yield return p; continue; }
+            var rows = new object[p.Rows.Length][];
+            for (int r = 0; r < p.Rows.Length; r++)
+            {
+                var src = p.Rows[r];
+                var dst = new object[src.Length];
+                for (int c = 0; c < src.Length; c++)
+                    dst[c] = c < rules.Count && rules[c] != MaskRule.None
+                        ? MaskEngine.MaskCell(columns[c], Exporter.Format(src[c]))
+                        : src[c];
+                rows[r] = dst;
+            }
+            yield return new Core.Streaming.QueryPage { Rows = rows, HasMore = p.HasMore };
+        }
+    }
+
     /// <summary>格7：流式导出——非模态进度浮层（已写行数）＋取消（删半成品文件）。</summary>
     private async Task StreamExportAsync(ExportKind kind, IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string savePath)
     {
@@ -772,6 +801,8 @@ public partial class WorkTab : Grid
         };
         var popup = new Popup { Child = border };
         popup.IsOpen = true;
+        // ㊽ 导出脱敏接线：流式导出同样按列名规则打码（与 MaskPreviewDialog 同一套 MaskEngine 规则，默认开）
+        pages = MaskPages(pages, columns);
         long rows = 0;
         try
         {

@@ -24,11 +24,14 @@ public static class DbSearch
             || dt.Contains("enum") || dt.Contains("string") || dt == "varchar2" || dt.Contains("json");
     }
 
-    /// <summary>单表单列计数 SQL（方言无关的 LIKE 口径；转义由调用方按 provider 方言出口处理）。</summary>
+    /// <summary>单表单列计数 SQL（方言无关的 LIKE 口径）。
+    /// ㊼ LIKE 通配符转义：% _ 与转义符 ! 本身按字面匹配（ESCAPE '!' 子句，各方言通用单字符转义），
+    /// 避免「100%」这类关键词被当通配符导致命中数虚高；单引号转义保持原口径。</summary>
     public static string CountSql(string quotedTable, string quotedColumn, string keyword)
     {
         string esc = keyword.Replace("'", "''");
-        return $"SELECT COUNT(*) AS hits FROM {quotedTable} WHERE {quotedColumn} LIKE '%{esc}%'";
+        esc = esc.Replace("!", "!!").Replace("%", "!%").Replace("_", "!_");
+        return $"SELECT COUNT(*) AS hits FROM {quotedTable} WHERE {quotedColumn} LIKE '%{esc}%' ESCAPE '!'";
     }
 
     /// <summary>逐表逐文本列搜索（每列一条 COUNT，超时/取消由调用方注入 token 与表级超时）。</summary>

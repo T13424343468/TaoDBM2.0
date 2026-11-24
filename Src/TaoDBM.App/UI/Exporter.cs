@@ -23,9 +23,24 @@ public static class Exporter
     private static string EscapeCsv(string? s)
     {
         s ??= "";
+        // ㊻ CSV 公式注入防护（OWASP CSV Injection）：=+-@ 开头的单元格在 Excel 打开时会被当公式执行，
+        // 统一加前缀 ' 转义；纯数字（含负号/加号开头的数值）不算公式，保持原值不破坏数据口径。
+        if (IsFormulaRisk(s)) s = "'" + s;
         if (s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r'))
             return "\"" + s.Replace("\"", "\"\"") + "\"";
         return s;
+    }
+
+    /// <summary>㊻ 公式注入风险判定：= 与 @ 开头一律算公式；+/- 开头仅当其余部分不是纯数字才算（避免负数被误转义）。</summary>
+    private static bool IsFormulaRisk(string s)
+    {
+        if (s.Length == 0) return false;
+        return s[0] switch
+        {
+            '=' or '@' => true,
+            '+' or '-' => !double.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, out _),
+            _ => false,
+        };
     }
 
     public static string Format(object? v) => v switch
@@ -36,6 +51,26 @@ public static class Exporter
         System.DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss"),
         _ => v.ToString() ?? "",
     };
+
+    /// <summary>㊽ 导出脱敏接线：按列名规则对整包结果打码（与 MaskPreviewDialog 同一套 MaskCell/MaskRow 规则）。
+    /// 无敏感列时原样返回不复制；有敏感列时返回打码副本（列名与行数不变，敏感列值按档位打码）。</summary>
+    public static QueryResult Masked(QueryResult r)
+    {
+        if (r.Columns.Count == 0) return r;
+        var rules = r.Columns.Select(c => MaskEngine.InferRule(c)).ToList();
+        if (rules.All(x => x == MaskRule.None)) return r;
+        var masked = new QueryResult { Columns = r.Columns, Title = r.Title };
+        foreach (var row in r.Rows)
+        {
+            var cells = new object?[row.Length];
+            for (int i = 0; i < row.Length; i++)
+                cells[i] = i < rules.Count && rules[i] != MaskRule.None
+                    ? MaskEngine.MaskCell(r.Columns[i], Format(row[i]))
+                    : row[i];
+            masked.Rows.Add(cells);
+        }
+        return masked;
+    }
 
     /// <summary>整改二批格8：网格显示口径——NULL 显示 (NULL) 而非空白；二进制超 64 字节只显体积（B/KB/MB，阈值 1024 一位小数），
     /// 小 BLOB（≤64B）仍可见 hex；其余走原 Format。CSV/INSERT 导出仍用 Format（空串/hex 口径不变）。</summary>

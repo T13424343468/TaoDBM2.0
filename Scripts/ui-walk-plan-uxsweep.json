@@ -185,8 +185,9 @@
       "action": "click",
       "find": {
         "controlType": "Button",
-        "name": "表单视图"
+        "name": "表单"
       },
+      "note": "㉜脚本修准：实际按钮名「表单」非「表单视图」，且仅关系库浏览页显示（SQLite 场景不出现，allowMiss 承接分支断言）",
       "allowMiss": true
     },
     {
@@ -294,8 +295,9 @@
       "action": "click",
       "find": {
         "controlType": "Button",
-        "name": "导出 ▼"
+        "name": "导出 ▾"
       },
+      "note": "㉜脚本修准：实际按钮字符为 U+25BE（▾），原目标 U+25BC（▼）与控件不符",
       "allowMiss": true
     },
     {
@@ -369,10 +371,22 @@
       "allowMiss": true
     },
     {
+      "id": "U046a",
+      "feature": "巡检-编辑器右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-editor"
+      },
+      "button": "right",
+      "note": "㉜脚本修准：U046 原 menu-item 假定菜单已开，实为右键从未命中——补真实右键（实体鼠标事件）打开编辑器上下文菜单",
+      "allowMiss": true
+    },
+    {
       "id": "U046",
       "feature": "巡检-编辑器右键菜单",
       "action": "menu-item",
       "itemName": "美化 SQL",
+      "note": "㉜脚本修准：菜单项源码存在（EditorOps），右键命中后按名点击；坐标命中复验随本轮走查",
       "allowMiss": true
     },
     {
@@ -496,9 +510,26 @@
     },
     {
       "id": "U104",
-      "feature": "巡检-设置对话框",
-      "action": "soft-page",
-      "page": "noop",
+      "feature": "巡检-设置入口真拍",
+      "action": "click",
+      "find": {
+        "automationId": "BtnLogo"
+      },
+      "note": "㉗巡检补真实点击：原 soft-page noop 假步骤改为点开主菜单",
+      "allowMiss": true
+    },
+    {
+      "id": "U104a",
+      "feature": "巡检-设置菜单项点击",
+      "action": "menu-item",
+      "itemName": "设置",
+      "note": "㉗巡检补真实点击：主菜单中点「设置」打开设置对话框",
+      "allowMiss": true
+    },
+    {
+      "id": "U104b",
+      "feature": "巡检-设置收场",
+      "action": "press-esc",
       "allowMiss": true
     },
     {
@@ -522,6 +553,8 @@
       "feature": "巡检-关于",
       "action": "soft-page",
       "page": "about",
+      "shot": "ux-u107-about.png",
+      "note": "㉗巡检补真实点击：about 分支本就真点 BtnAbout，补截图留证",
       "allowMiss": true
     },
     {
@@ -529,6 +562,8 @@
       "feature": "巡检-主题入口",
       "action": "soft-page",
       "page": "theme",
+      "shot": "ux-u108-theme.png",
+      "note": "㉗巡检留证：主题切换动作按 2026-11-22 老板令摘除（云机扛不住全屏重绘），保留入口可达真验＋截图，外观由逐屏对稿线兜底",
       "allowMiss": true
     },
     {

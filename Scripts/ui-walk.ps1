@@ -1182,6 +1182,7 @@ foreach ($s in $plan.steps) {
         if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
         Invoke-El $item
         Start-Sleep -Seconds 2
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }   # ㉗ 菜单项点击留证（与 click 动作同口径）
       }
       'context-tour' {
         # 全页面逐页留证（2026-11-24 老板令）：右键树节点 → 展开二级分组 → 逐项打开弹窗截图 → ESC/关闭按钮收场。

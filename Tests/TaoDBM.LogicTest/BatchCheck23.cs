@@ -35,6 +35,13 @@ public static class BatchCheck23
         // 空关键词/空表名不炸
         var sql2 = DbSearch.CountSql("\"t\"", "\"c\"", "");
         d("DbSearch.空关键词", sql2.Contains("LIKE '%%'"), sql2);
+        // ㊼ LIKE 通配符转义：% _ 与转义符 ! 按字面匹配（ESCAPE '!'），「100%」不再当通配符
+        var sql3 = DbSearch.CountSql("[t1]", "[c1]", "100%");
+        d("DbSearch.通配符转义", sql3.Contains("100!%") && sql3.EndsWith("ESCAPE '!'"), sql3);
+        var sql4 = DbSearch.CountSql("[t1]", "[c1]", "a_b!c");
+        d("DbSearch.转义符自身转义", sql4.Contains("a!_b!!c") && sql4.EndsWith("ESCAPE '!'"), sql4);
+        var sql5 = DbSearch.CountSql("[t1]", "[c1]", "普通词");
+        d("DbSearch.普通词不受影响", sql5.Contains("LIKE '%普通词%'") && sql5.EndsWith("ESCAPE '!'"), sql5);
     }
 
     static void RunMonitor(CheckD d)
