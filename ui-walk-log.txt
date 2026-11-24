@@ -1,211 +1,219 @@
 probe quiet-watch start (10s, no UIA)
 probe quiet-watch done
-shot shot-01-start.png 41769 bytes
+shot shot-01-start.png 41776 bytes
 coverage: 17 named elements in main window
-shot sweep-U000.png 41765 bytes
+shot sweep-U000.png 41781 bytes
 coverage-func U000 巡检-主窗口初始态（欢迎页） => pass
-shot sweep-U001.png 42133 bytes
+shot sweep-U001.png 53888 bytes
 coverage-func U001 巡检-新建连接对话框 => pass
-shot sweep-U002.png 53876 bytes
+shot sweep-U002.png 53888 bytes
 coverage-func U002 巡检-连接对话框引擎切换MySQL => pass
-shot sweep-U003.png 53978 bytes
+shot sweep-U003.png 53991 bytes
 coverage-func U003 巡检-连接对话框引擎切换PostgreSQL => pass
-shot sweep-U004.png 53890 bytes
+shot sweep-U004.png 53902 bytes
 coverage-func U004 巡检-连接对话框引擎切换SQLServer => pass
-shot sweep-U005.png 54530 bytes
+shot sweep-U005.png 54535 bytes
 coverage-func U005 巡检-连接对话框引擎切换MongoDB => pass
-shot sweep-U006.png 53785 bytes
+shot sweep-U006.png 53789 bytes
 coverage-func U006 巡检-连接对话框引擎切换Redis => pass
-shot sweep-U007.png 42143 bytes
+shot sweep-U007.png 42150 bytes
 coverage-func U007 巡检-连接对话框收场 => pass
-step U010 巡检-展开连接 => fail : tree item not found: ui-auto-sqlite
-shot ev-shot-fail-U010.png 42143 bytes
-coverage-func U010 巡检-展开连接 => fail
-step U011 巡检-展开数据库 => fail : tree item not found: ui-auto-sqlite
-shot ev-shot-fail-U011.png 42143 bytes
-coverage-func U011 巡检-展开数据库 => fail
+shot sweep-U007a.png 53888 bytes
+coverage-func U007a 巡检-新建连接对话框（建连） => pass
+shot sweep-U007b.png 63335 bytes
+coverage-func U007b 巡检-连接选择SQLite引擎 => pass
+shot sweep-U007c.png 62989 bytes
+coverage-func U007c 巡检-连接填写名称 => pass
+shot sweep-U007d.png 64928 bytes
+coverage-func U007d 巡检-连接填写数据库文件 => pass
+shot sweep-U007e.png 44185 bytes
+coverage-func U007e 巡检-连接保存 => pass
+shot sweep-U010.png 43716 bytes
+coverage-func U010 巡检-展开连接 => pass
+shot sweep-U011.png 46950 bytes
+coverage-func U011 巡检-展开数据库 => pass
 step U012 巡检-选中表节点 => fail : tree item not found: 📋 orders
-shot ev-shot-fail-U012.png 42131 bytes
+shot ev-shot-fail-U012.png 46950 bytes
 coverage-func U012 巡检-选中表节点 => fail
 step U013 巡检-查看数据页签 => fail : tree item not found: 📋 orders
-shot ev-shot-fail-U013.png 42131 bytes
+shot ev-shot-fail-U013.png 46950 bytes
 coverage-func U013 巡检-查看数据页签 => fail
-shot sweep-U014.png 42131 bytes
+shot sweep-U014.png 46897 bytes
 coverage-func U014 巡检-表数据页签工具栏 => pass
 step U015 巡检-表结构按钮 => miss : target not found
 coverage-func U015 巡检-表结构按钮 => miss
-shot sweep-U016.png 42131 bytes
+shot sweep-U016.png 46897 bytes
 coverage-func U016 巡检-表结构收场 => pass
 step U017 巡检-表单视图按钮 => miss : target not found
 coverage-func U017 巡检-表单视图按钮 => miss
-shot sweep-U018.png 42131 bytes
+shot sweep-U018.png 46897 bytes
 coverage-func U018 巡检-表单视图收场 => pass
 step U019 巡检-拟真数据按钮 => miss : target not found
 coverage-func U019 巡检-拟真数据按钮 => miss
-shot sweep-U020.png 42147 bytes
+shot sweep-U020.png 46941 bytes
 coverage-func U020 巡检-拟真数据收场 => pass
 step U021 巡检-粘贴数据按钮 => miss : target not found
 coverage-func U021 巡检-粘贴数据按钮 => miss
-shot sweep-U022.png 42147 bytes
+shot sweep-U022.png 46941 bytes
 coverage-func U022 巡检-粘贴数据收场 => pass
 step U023 巡检-表设计器（列） => fail : tree item not found: 📋 orders
-shot ev-shot-fail-U023.png 42147 bytes
+shot ev-shot-fail-U023.png 46941 bytes
 coverage-func U023 巡检-表设计器（列） => fail
-shot sweep-U024.png 42147 bytes
+shot sweep-U024.png 46941 bytes
 coverage-func U024 巡检-表设计器收场 => pass
-shot sweep-U030.png 41816 bytes
+shot sweep-U030.png 41850 bytes
 coverage-func U030 巡检-新建查询页签 => pass
-shot sweep-U031.png 41816 bytes
+shot sweep-U031.png 41845 bytes
 coverage-func U031 巡检-查询页工具栏全貌 => pass
-shot sweep-U032.png 42647 bytes
+shot sweep-U032.png 42708 bytes
 coverage-func U032 巡检-导出CSV按钮 => pass
-shot sweep-U033.png 42647 bytes
+shot sweep-U033.png 42708 bytes
 coverage-func U033 巡检-导出CSV收场 => pass
-shot sweep-U034.png 42770 bytes
+shot sweep-U034.png 42840 bytes
 coverage-func U034 巡检-导出INSERT按钮 => pass
-shot sweep-U035.png 42770 bytes
+shot sweep-U035.png 42840 bytes
 coverage-func U035 巡检-导出INSERT收场 => pass
 step U036 巡检-导出更多菜单 => miss : target not found
 coverage-func U036 巡检-导出更多菜单 => miss
-shot sweep-U037.png 42770 bytes
+shot sweep-U037.png 42840 bytes
 coverage-func U037 巡检-导出更多收场 => pass
-shot sweep-U038.png 51789 bytes
+shot sweep-U038.png 53935 bytes
 coverage-func U038 巡检-查询收藏 => pass
-shot sweep-U039.png 41816 bytes
+shot sweep-U039.png 41860 bytes
 coverage-func U039 巡检-收藏收场 => pass
-shot sweep-U040.png 51950 bytes
+shot sweep-U040.png 52956 bytes
 coverage-func U040 巡检-查询历史 => pass
-shot sweep-U041.png 41718 bytes
+shot sweep-U041.png 41765 bytes
 coverage-func U041 巡检-历史收场 => pass
-shot sweep-U042.png 43166 bytes
+shot sweep-U042.png 43222 bytes
 coverage-func U042 巡检-报表 => pass
-shot sweep-U043.png 43166 bytes
+shot sweep-U043.png 43222 bytes
 coverage-func U043 巡检-报表收场 => pass
-shot sweep-U044.png 71119 bytes
+shot sweep-U044.png 73494 bytes
 coverage-func U044 巡检-设计辅助 => pass
-shot sweep-U045.png 42041 bytes
+shot sweep-U045.png 42110 bytes
 coverage-func U045 巡检-设计辅助收场 => pass
 step U046 巡检-编辑器右键菜单 => miss : menu item not found: 美化 SQL
 coverage-func U046 巡检-编辑器右键菜单 => miss
-shot sweep-U047.png 42041 bytes
+shot sweep-U047.png 42110 bytes
 coverage-func U047 巡检-右键菜单收场 => pass
-step U050 巡检-智能工具 => miss : tree item not found: ui-auto-sqlite
+step U050 巡检-智能工具 => miss : context item not found: 智能工具
 coverage-func U050 巡检-智能工具 => miss
-shot sweep-U051.png 42041 bytes
+shot sweep-U051.png 42837 bytes
 coverage-func U051 巡检-智能工具收场 => pass
-step U052 巡检-任务中心 => miss : tree item not found: ui-auto-sqlite
+step U052 巡检-任务中心 => miss : context item not found: 任务中心
 coverage-func U052 巡检-任务中心 => miss
-shot sweep-U053.png 42006 bytes
+shot sweep-U053.png 42837 bytes
 coverage-func U053 巡检-任务中心收场 => pass
-step U054 巡检-告警中心 => miss : tree item not found: ui-auto-sqlite
+step U054 巡检-告警中心 => miss : context item not found: 告警中心
 coverage-func U054 巡检-告警中心 => miss
-shot sweep-U055.png 42006 bytes
+shot sweep-U055.png 42837 bytes
 coverage-func U055 巡检-告警中心收场 => pass
-step U056 巡检-服务器监控 => miss : tree item not found: ui-auto-sqlite
+step U056 巡检-服务器监控 => miss : context item not found: 服务器监控
 coverage-func U056 巡检-服务器监控 => miss
-shot sweep-U057.png 42006 bytes
+shot sweep-U057.png 42837 bytes
 coverage-func U057 巡检-服务器监控收场 => pass
-shot sweep-U058.png 53991 bytes
+shot sweep-U058.png 56250 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
-shot sweep-U059.png 42667 bytes
+shot sweep-U059.png 43326 bytes
 coverage-func U059 巡检-数据同步收场 => pass
-step U060 巡检-分片向导 => miss : tree item not found: ui-auto-sqlite
+step U060 巡检-分片向导 => miss : context item not found: 分片向导
 coverage-func U060 巡检-分片向导 => miss
-shot sweep-U061.png 42667 bytes
+shot sweep-U061.png 42848 bytes
 coverage-func U061 巡检-分片向导收场 => pass
-step U062 巡检-模型设计 => miss : tree item not found: ui-auto-sqlite
+step U062 巡检-模型设计 => miss : context item not found: 三层模型
 coverage-func U062 巡检-模型设计 => miss
-shot sweep-U063.png 42667 bytes
+shot sweep-U063.png 42848 bytes
 coverage-func U063 巡检-模型设计收场 => pass
-shot sweep-U064.png 54100 bytes
+shot sweep-U064.png 53300 bytes
 coverage-func U064 巡检-ER图 => pass
-shot sweep-U065.png 42670 bytes
+shot sweep-U065.png 43314 bytes
 coverage-func U065 巡检-ER图收场 => pass
-shot sweep-U066.png 44303 bytes
+shot sweep-U066.png 62833 bytes
 coverage-func U066 巡检-备份恢复向导 => pass
-shot sweep-U067.png 44303 bytes
+shot sweep-U067.png 43314 bytes
 coverage-func U067 巡检-备份收场 => pass
-step U068 巡检-备份演练 => miss : tree item not found: ui-auto-sqlite
+step U068 巡检-备份演练 => miss : context item not found: 备份演练
 coverage-func U068 巡检-备份演练 => miss
-shot sweep-U069.png 44303 bytes
+shot sweep-U069.png 42837 bytes
 coverage-func U069 巡检-备份演练收场 => pass
-step U070 巡检-部署向导 => miss : tree item not found: ui-auto-sqlite
+step U070 巡检-部署向导 => miss : context item not found: 部署向导
 coverage-func U070 巡检-部署向导 => miss
-shot sweep-U071.png 44302 bytes
+shot sweep-U071.png 42859 bytes
 coverage-func U071 巡检-部署向导收场 => pass
-step U072 巡检-看板管理 => miss : tree item not found: ui-auto-sqlite
+step U072 巡检-看板管理 => miss : context item not found: 看板管理
 coverage-func U072 巡检-看板管理 => miss
-shot sweep-U073.png 44302 bytes
+shot sweep-U073.png 42859 bytes
 coverage-func U073 巡检-看板收场 => pass
-step U074 巡检-一键诊断 => miss : tree item not found: ui-auto-sqlite
+step U074 巡检-一键诊断 => miss : context item not found: 一键诊断
 coverage-func U074 巡检-一键诊断 => miss
-shot sweep-U075.png 44302 bytes
+shot sweep-U075.png 42859 bytes
 coverage-func U075 巡检-诊断收场 => pass
-step U076 巡检-仪表板 => miss : tree item not found: ui-auto-sqlite
+step U076 巡检-仪表板 => miss : context item not found: 仪表板
 coverage-func U076 巡检-仪表板 => miss
-shot sweep-U077.png 44302 bytes
+shot sweep-U077.png 42868 bytes
 coverage-func U077 巡检-仪表板收场 => pass
-step U078 巡检-在库中搜索 => miss : tree item not found: main
+step U078 巡检-在库中搜索 => miss : context item not found: 在库中搜索
 coverage-func U078 巡检-在库中搜索 => miss
-shot sweep-U079.png 44300 bytes
+shot sweep-U079.png 42301 bytes
 coverage-func U079 巡检-库搜索收场 => pass
-step U080 巡检-权限审计 => miss : tree item not found: ui-auto-sqlite
+step U080 巡检-权限审计 => miss : context item not found: 权限审计
 coverage-func U080 巡检-权限审计 => miss
-shot sweep-U081.png 44300 bytes
+shot sweep-U081.png 42868 bytes
 coverage-func U081 巡检-权限审计收场 => pass
-step U082 巡检-快照包 => miss : tree item not found: ui-auto-sqlite
+step U082 巡检-快照包 => miss : context item not found: 快照包
 coverage-func U082 巡检-快照包 => miss
-shot sweep-U083.png 44300 bytes
+shot sweep-U083.png 43174 bytes
 coverage-func U083 巡检-快照包收场 => pass
-step U084 巡检-批量清理 => miss : tree item not found: main
+step U084 巡检-批量清理 => miss : context item not found: 批量清理
 coverage-func U084 巡检-批量清理 => miss
-shot sweep-U085.png 44311 bytes
+shot sweep-U085.png 42262 bytes
 coverage-func U085 巡检-批量清理收场 => pass
-step U086 巡检-数据对账 => miss : tree item not found: ui-auto-sqlite
+step U086 巡检-数据对账 => miss : context item not found: 数据对账
 coverage-func U086 巡检-数据对账 => miss
-shot sweep-U087.png 44311 bytes
+shot sweep-U087.png 42789 bytes
 coverage-func U087 巡检-对账收场 => pass
 step U088 巡检-数据脱敏 => miss : tree item not found: 📋 orders
 coverage-func U088 巡检-数据脱敏 => miss
-shot sweep-U089.png 44311 bytes
+shot sweep-U089.png 42789 bytes
 coverage-func U089 巡检-脱敏收场 => pass
 step U090 巡检-误删恢复 => miss : tree item not found: 📋 orders
 coverage-func U090 巡检-误删恢复 => miss
-shot sweep-U091.png 44295 bytes
+shot sweep-U091.png 42789 bytes
 coverage-func U091 巡检-误删恢复收场 => pass
-step U092 巡检-例程管理 => miss : tree item not found: ui-auto-sqlite
+step U092 巡检-例程管理 => miss : context item not found: 例程管理
 coverage-func U092 巡检-例程管理 => miss
-shot sweep-U093.png 44295 bytes
+shot sweep-U093.png 42789 bytes
 coverage-func U093 巡检-例程收场 => pass
-step U094 巡检-命令监控 => miss : tree item not found: ui-auto-sqlite
+step U094 巡检-命令监控 => miss : context item not found: 命令监控
 coverage-func U094 巡检-命令监控 => miss
-shot sweep-U095.png 44295 bytes
+shot sweep-U095.png 42826 bytes
 coverage-func U095 巡检-命令监控收场 => pass
-step U096 巡检-读路由预演 => miss : tree item not found: ui-auto-sqlite
+step U096 巡检-读路由预演 => miss : context item not found: 读路由预演
 coverage-func U096 巡检-读路由预演 => miss
-shot sweep-U097.png 44310 bytes
+shot sweep-U097.png 42826 bytes
 coverage-func U097 巡检-读路由收场 => pass
 step U098 巡检-热点检测 => miss : tree item not found: 📋 orders
 coverage-func U098 巡检-热点检测 => miss
-shot sweep-U099.png 44310 bytes
+shot sweep-U099.png 42826 bytes
 coverage-func U099 巡检-热点收场 => pass
 step U100 巡检-流式开关 => miss : tree item not found: 📋 orders
 coverage-func U100 巡检-流式开关 => miss
-shot sweep-U101.png 44310 bytes
+shot sweep-U101.png 42821 bytes
 coverage-func U101 巡检-流式开关收场 => pass
-step U102 巡检-问库（自然语言查询） => miss : tree item not found: ui-auto-sqlite
+step U102 巡检-问库（自然语言查询） => miss : context item not found: 问库
 coverage-func U102 巡检-问库（自然语言查询） => miss
-shot sweep-U103.png 44310 bytes
+shot sweep-U103.png 42821 bytes
 coverage-func U103 巡检-问库收场 => pass
-shot sweep-U104.png 44324 bytes
+shot sweep-U104.png 42821 bytes
 coverage-func U104 巡检-设置对话框 => pass
-shot sweep-U105.png 64425 bytes
+shot sweep-U105.png 64599 bytes
 coverage-func U105 巡检-手册 => pass
-shot sweep-U106.png 43420 bytes
+shot sweep-U106.png 43189 bytes
 coverage-func U106 巡检-手册收场 => pass
-shot sweep-U107.png 43426 bytes
+shot sweep-U107.png 43187 bytes
 coverage-func U107 巡检-关于 => pass
-shot sweep-U108.png 43426 bytes
+shot sweep-U108.png 43187 bytes
 coverage-func U108 巡检-主题入口 => pass
-shot sweep-U109.png 43426 bytes
+shot sweep-U109.png 43187 bytes
 coverage-func U109 巡检-收尾主窗口 => pass

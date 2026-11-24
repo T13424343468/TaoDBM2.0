@@ -43,8 +43,13 @@ feature-level coverage account:
 [U005] 巡检-连接对话框引擎切换MongoDB => pass
 [U006] 巡检-连接对话框引擎切换Redis => pass
 [U007] 巡检-连接对话框收场 => pass
-[U010] 巡检-展开连接 => fail
-[U011] 巡检-展开数据库 => fail
+[U007a] 巡检-新建连接对话框（建连） => pass
+[U007b] 巡检-连接选择SQLite引擎 => pass
+[U007c] 巡检-连接填写名称 => pass
+[U007d] 巡检-连接填写数据库文件 => pass
+[U007e] 巡检-连接保存 => pass
+[U010] 巡检-展开连接 => pass
+[U011] 巡检-展开数据库 => pass
 [U012] 巡检-选中表节点 => fail
 [U013] 巡检-查看数据页签 => fail
 [U014] 巡检-表数据页签工具栏 => pass
