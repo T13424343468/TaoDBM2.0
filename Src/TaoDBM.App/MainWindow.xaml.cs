@@ -666,7 +666,7 @@ public partial class MainWindow : Window
                 Sub("库工具", sub =>
                 {
                     SubItem("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
-                    SubItem("备份演练", async (_, _) => await UI.BackupDrillDialog.Show(this, info));
+                    SubItem("备份演练", (_, _) => OpenBackupDrillTab(info));   // 三-15：弹窗改页面，升级内嵌页签
                     SubItem("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
                     SubItem("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
                     SubItem("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
@@ -1006,6 +1006,16 @@ public partial class MainWindow : Window
     {
         var tab = new TabViewItem { Header = table == null ? $"新建表 · {db}" : $"设计 · {table}" };
         tab.Content = new UI.TableDesignerTab(this, prov, db, table, existing);
+        WorkTabs.TabItems.Add(tab);
+        SaveSession();
+        WorkTabs.SelectedItem = tab;
+    }
+
+    /// <summary>整改三批三-15：弹窗改页面——备份可用性演练从模态弹窗升级为内嵌主窗口页签。</summary>
+    public void OpenBackupDrillTab(NodeInfo info)
+    {
+        var tab = new TabViewItem { Header = $"备份演练 · {info.Db.Length > 0 ? info.Db : info.Profile.Database}" };
+        tab.Content = new UI.BackupDrillTab(this, info);
         WorkTabs.TabItems.Add(tab);
         SaveSession();
         WorkTabs.SelectedItem = tab;

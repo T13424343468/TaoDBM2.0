@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+﻿﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Diagnostics;
@@ -8,100 +8,151 @@ using TaoDBM.Infrastructure;
 
 namespace TaoDBM.UI;
 
-/// <summary>备份可用性演练：选备份文件 → 恢复到临时库（SQLite 拷贝+文件头校验；服务端走既有连接层建临时库恢复）
-/// → 逐表计数与备份时点对账 → 出验证报告。全程只碰临时库/临时副本，不动原库。</summary>
-public static class BackupDrillDialog
+/// <summary>
+/// 备份可用性演练（整改三批三-15：弹窗改页面——重功能从模态弹窗升级为内嵌主窗口页签，参照 U2 D-13 表设计器口径）。
+/// 选备份文件 → 恢复到临时库（SQLite 拷贝+文件头校验；服务端走既有连接层建临时库恢复）
+/// → 逐表计数与备份时点对账 → 出验证报告。全程只碰临时库/临时副本，不动原库。
+/// </summary>
+public class BackupDrillTab : Grid
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    private readonly NodeInfo _info;
+    private readonly string _db;
+    private readonly TextBox _fileBox = new() { PlaceholderText = "备份文件路径（.db/.sqlite 副本 / mysqldump / pg_dump / .bak）", MinWidth = 520 };
+    private readonly TextBox _countsBox = new()
     {
+        PlaceholderText = "对账清单，每行 表名=行数，如 orders=5000（# 开头为注释）",
+        AcceptsReturn = true,
+        TextWrapping = TextWrapping.Wrap,
+        Height = 110,
+        FontFamily = new FontFamily("Consolas"),
+        FontSize = AntTokens.FontMinor,
+    };
+    private readonly TextBox _output = new()
+    {
+        IsReadOnly = true,
+        AcceptsReturn = true,
+        TextWrapping = TextWrapping.Wrap,
+        Height = 320,
+        FontFamily = new FontFamily("Consolas"),
+        FontSize = AntTokens.FontMinor,
+    };
+    private readonly TextBlock _status = new() { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+    private readonly Button _runBtn = new() { Content = "开始演练", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+
+    public BackupDrillTab(MainWindow owner, NodeInfo info)
+    {
+        _info = info;
+        _db = info.Db.Length > 0 ? info.Db : info.Profile.Database;
         var engine = info.Profile.Engine;
-        if (!BackupTools.Supported(engine))
+
+        Margin = new Thickness(16);
+        RowSpacing = 10;
+
+        var supported = BackupTools.Supported(engine);
+        var runBtn = _runBtn;
+        runBtn.IsEnabled = supported;
+        runBtn.Click += async (_, _) => await RunAsync();
+
+        // 三-14：演示式接真实数据——对账清单从当前连接真实表行数生成，不再只靠手填。
+        var genBtn = new Button { Content = "从当前连接读对账清单", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(genBtn, "从当前连接读对账清单");
+        genBtn.Click += async (_, _) => await RunRealCountsAsync();
+        var genRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        genRow.Children.Add(genBtn);
+
+        var runRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        runRow.Children.Add(runBtn);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(runBtn, "开始演练");
+
+        if (!supported)
         {
-            await new MessageDialogHelper(owner).Show("备份演练", BackupTools.UnsupportedReason(engine));
-            return;
+            _status.Text = BackupTools.UnsupportedReason(engine);
         }
 
-        string db = info.Db.Length > 0 ? info.Db : info.Profile.Database;
-
-        var fileBox = new TextBox
+        Children.Add(BuildRow(new TextBlock
         {
-            PlaceholderText = engine == DbEngine.SQLite ? "备份文件路径（.db/.sqlite 副本）" : "备份文件路径（mysqldump / pg_dump / .bak）",
-            MinWidth = 420,
-        };
-        var countsBox = new TextBox
-        {
-            PlaceholderText = "对账清单，每行 表名=行数，如 orders=5000（# 开头为注释）",
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            Height = 90,
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = AntTokens.FontMinor,
-        };
-        var output = new TextBox
-        {
-            IsReadOnly = true,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            Height = 260,
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = AntTokens.FontMinor,
-            Text = engine == DbEngine.SQLite
-                ? "填备份文件路径与对账清单后点「开始演练」。演练只在临时副本上操作。"
-                : "填备份文件路径与对账清单后点「开始演练」。演练只建/删临时库，不动原库。",
-        };
-        var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
-        var runBtn = new Button { Content = "开始演练", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        runBtn.Click += async (_, _) => await Run(owner, info, db, fileBox.Text.Trim(), countsBox.Text, output, status, runBtn);
-
-        var panel = new StackPanel { Spacing = 10, MinWidth = 640 };
-        panel.Children.Add(new TextBlock
-        {
-            Text = "恢复到临时库并逐表对账，验证备份真的可用；过程不触碰原库。",
+            Text = $"备份可用性演练 — {_db}@{engine}：恢复到临时库并逐表对账，验证备份真的可用；过程不触碰原库。",
             FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
-        });
-        panel.Children.Add(fileBox);
-        panel.Children.Add(countsBox);
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(runBtn);
-        panel.Children.Add(row);
-        panel.Children.Add(output);
-        panel.Children.Add(status);
-
-        var dlg = new ContentDialog
-        {
-            Title = $"备份演练 — {db}@{engine}",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        }));
+        Children.Add(BuildRow(_fileBox));
+        Children.Add(BuildRow(_countsBox));
+        Children.Add(BuildRow(genRow));
+        Children.Add(BuildRow(runRow));
+        Children.Add(BuildRow(_output));
+        Children.Add(BuildRow(_status));
+        _output.Text = supported
+            ? "填备份文件路径与对账清单后点「开始演练」。演练只在临时副本/临时库上操作。"
+            : "当前引擎不支持备份演练。";
     }
 
-    private static async Task Run(MainWindow owner, NodeInfo info, string db, string backupFile,
-        string countsText, TextBox output, TextBlock status, Button runBtn)
+    private static FrameworkElement BuildRow(FrameworkElement child)
     {
-        var engine = info.Profile.Engine;
-        var (expected, parseIssues) = BackupDrill.ParseExpectedCounts(countsText);
-        runBtn.IsEnabled = false;
-        status.Text = "演练进行中…";
+        child.HorizontalAlignment = HorizontalAlignment.Stretch;
+        return child;
+    }
+
+    private async Task RunAsync()
+    {
+        var engine = _info.Profile.Engine;
+        var (expected, parseIssues) = BackupDrill.ParseExpectedCounts(_countsBox.Text);
+        _runBtn.IsEnabled = false;
+        _status.Text = "演练进行中…";
         try
         {
             var report = engine == DbEngine.SQLite
-                ? await RunSqliteAsync(info, backupFile, expected, parseIssues)
-                : await RunServerAsync(info, db, backupFile, expected, parseIssues);
-            output.Text = report.Render($"备份演练（{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}，{backupFile}）");
-            status.Text = report.Pass ? "演练通过：备份可用。" : "演练未通过，见报告明细。";
+                ? await RunSqliteAsync(_info, _fileBox.Text.Trim(), expected, parseIssues)
+                : await RunServerAsync(_info, _db, _fileBox.Text.Trim(), expected, parseIssues);
+            _output.Text = report.Render($"备份演练（{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}，{_fileBox.Text.Trim()}）");
+            _status.Text = report.Pass ? "演练通过：备份可用。" : "演练未通过，见报告明细。";
+            AppLog.Write($"[备份演练页签] db={_db} pass={report.Pass}");
         }
         catch (Exception ex)
         {
-            status.Text = "演练失败：" + ex.Message;
-            output.Text += $"\n[中止] {ex.Message}";
+            _status.Text = "演练失败：" + ex.Message;
+            _output.Text += $"\n[中止] {ex.Message}";
+            AppLog.Write($"[备份演练页签] error={ex.Message}");
         }
         finally
         {
-            runBtn.IsEnabled = true;
+            _runBtn.IsEnabled = true;
+        }
+    }
+
+    /// <summary>三-14：真实对账清单——读当前连接的表清单与行数，按「表名=行数」回填对账清单框。</summary>
+    private async Task RunRealCountsAsync()
+    {
+        try
+        {
+            var provider = _info.Provider ?? ProviderFactory.Create(_info.Profile);
+            var tables = await provider.GetChildren(_db);
+            if (tables.Count == 0) { _status.Text = $"未读到 {_db} 的表清单。"; return; }
+
+            var lines = new List<string>();
+            int taken = 0;
+            foreach (var t in tables)
+            {
+                if (taken >= 12) break;   // 行数采样上限：前 12 张表，避免大库全量扫描
+                try
+                {
+                    var rs = await provider.Execute(_db, $"SELECT COUNT(*) FROM {provider.Quote(t)}");
+                    var stat = rs.FirstOrDefault(x => x.Rows.Count > 0);
+                    if (stat is null) continue;
+                    lines.Add($"{t}={Convert.ToInt64(stat.Rows[0][0])}");
+                    taken++;
+                }
+                catch { /* 单表计数失败不阻断其余表 */ }
+            }
+            if (lines.Count == 0) { _status.Text = "行数采样未得到可用表目（均不可计数）。"; return; }
+            _countsBox.Text = string.Join("\n", lines);
+            _status.Text = $"对账清单已回填（{lines.Count} 张表），填备份文件路径后点「开始演练」。";
+            AppLog.Write($"[备份对账清单] db={_db} tables={lines.Count}");
+        }
+        catch (Exception ex)
+        {
+            _status.Text = "对账清单生成失败：" + ex.Message;
+            AppLog.Write($"[备份对账清单] error={ex.Message}");
         }
     }
 

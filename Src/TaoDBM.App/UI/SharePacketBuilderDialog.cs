@@ -32,6 +32,11 @@ public static class SharePacketBuilderDialog
         var verifyBtn = new Button { Content = "验包", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var saveBtn = new Button { Content = "另存包文件", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
 
+        // 整改三批三-13（2026-11-24 老板令「抓紧时间」）：演示式接真实数据——共享条目从当前连接档案生成，
+        // 载荷只含连接元信息（引擎/主机/端口/库/用户名），密码与 DPAPI 密文不入包，再过一遍净化黑名单兜底。
+        var genBtn = new Button { Content = "从当前连接生成条目", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        genBtn.Click += async (_, _) => await RunRealItemsAsync(info, itemsBox, report, status);
+
         buildBtn.Click += async (_, _) =>
         {
             report.Children.Clear();
@@ -93,7 +98,7 @@ public static class SharePacketBuilderDialog
         };
 
         var row1 = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row1.Children.Add(buildBtn); row1.Children.Add(verifyBtn); row1.Children.Add(chunkBox); row1.Children.Add(saveBtn);
+        row1.Children.Add(buildBtn); row1.Children.Add(verifyBtn); row1.Children.Add(chunkBox); row1.Children.Add(saveBtn); row1.Children.Add(genBtn);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 680 };
         panel.Children.Add(new TextBlock
@@ -115,6 +120,44 @@ public static class SharePacketBuilderDialog
             XamlRoot = owner.Content.XamlRoot,
         };
         _ = dlg.ShowThemedAsync();
+        await Task.CompletedTask;
+    }
+
+    /// <summary>三-13：真实条目生成——从当前连接档案出一条 Kind=connection 的共享条目回填条目框。
+    /// 载荷只含连接元信息，密码与 DPAPI 密文不入包；生成后再过净化黑名单兜底。</summary>
+    private static async Task RunRealItemsAsync(NodeInfo info, TextBox itemsBox, StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        try
+        {
+            var p = info.Profile;
+            var payload = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                displayName = p.DisplayName,
+                engine = p.Engine.ToString(),
+                host = p.Host,
+                port = p.Port,
+                database = p.Database,
+                user = p.User,
+            });
+            var item = new ShareItem(
+                $"conn-{p.Id}", "connection", payload, DateTimeOffset.Now,
+                string.IsNullOrWhiteSpace(Environment.UserName) ? "taodbm" : Environment.UserName);
+            var (clean, dropped) = TeamShareMerge.Sanitize(item);
+            if (dropped.Count > 0)
+                AddLine(report, $"⚠ 载荷命中凭据黑名单并已剔除：{string.Join(", ", dropped)}", Ant.Warn, 1);
+            itemsBox.Text = System.Text.Json.JsonSerializer.Serialize(
+                new[] { clean }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            AddSection(report, $"真实条目：连接「{p.DisplayName}」");
+            AddLine(report, "  条目已回填：载荷仅连接元信息（无凭据），点「封包」出指纹头。");
+            status.Text = "条目生成完成。";
+            AppLog.Write($"[共享条目] conn={p.DisplayName} dropped={dropped.Count}");
+        }
+        catch (Exception ex)
+        {
+            status.Text = "条目生成失败：" + ex.Message;
+            AppLog.Write($"[共享条目] error={ex.Message}");
+        }
         await Task.CompletedTask;
     }
 

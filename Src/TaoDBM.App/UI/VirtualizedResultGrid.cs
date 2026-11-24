@@ -11,7 +11,8 @@ namespace TaoDBM.UI;
 /// 整改二批 #03（2026-11-23）：表头点击循环排序（内存序映射，不回库）＋表头冻结（滚动时钉在视口顶部）。</summary>
 public static class VirtualizedResultGrid
 {
-    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null)
+    public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
+        MainWindow? owner = null, NodeInfo? info = null)
     {
         int nCols = Math.Min(r.Columns.Count, 64);
         int total = r.Rows.Count;
@@ -63,7 +64,7 @@ public static class VirtualizedResultGrid
             });
             headPanel.Children.Add(arrow);
             var cell = new Border { Child = headPanel, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1), Background = Ant.HeadBg };
-            ResultGridMenu.Attach(cell, r, i, sourceSql, engine);   // 列头右键 → 分析/钉住
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, null, owner, info);   // 列头右键 → 分析/钉住；三-10 设计助手入口
             int colIdx = i;
             cell.Tapped += (_, _) => CycleSort(colIdx);
             Grid.SetColumn(cell, i);
@@ -89,7 +90,7 @@ public static class VirtualizedResultGrid
             rowsHost.Children.Clear();
             for (int rowIdx = first; rowIdx <= last; rowIdx++)
             {
-                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx);
+                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx, owner: owner, info: info);
                 el.VerticalAlignment = VerticalAlignment.Top;
                 el.Margin = new Thickness(0, rowIdx * rowH, 0, 0);
                 rowsHost.Children.Add(el);

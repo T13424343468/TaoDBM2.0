@@ -32,9 +32,15 @@ public static class ReadRouterDialog
         routeBtn.Click += async (_, _) => await RunRouteAsync(nodesBox.Text, lagBox.Text, report, status);
         toggleBtn.Click += async (_, _) => await RunToggleAsync(nodesBox.Text, lagBox.Text, report, status);
 
+        // 整改三批三-11（2026-11-24 老板令「抓紧时间」）：演示式接真实数据——副本画像从当前连接的复制状态读取，
+        // 不再只靠手填。只读查询（SHOW REPLICA STATUS / pg_stat_replication），失败如实提示不阻断手填路径。
+        var realBtn = new Button { Content = "从当前连接读复制画像", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        realBtn.Click += async (_, _) => await RunRealReplicaAsync(info, nodesBox, report, status);
+
         var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         btnRow.Children.Add(routeBtn);
         btnRow.Children.Add(toggleBtn);
+        btnRow.Children.Add(realBtn);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 620 };
         panel.Children.Add(new TextBlock
@@ -118,6 +124,75 @@ public static class ReadRouterDialog
         };
         _ = dlg.ShowThemedAsync();
         return Task.CompletedTask;
+    }
+
+    /// <summary>三-11：从当前连接读复制画像——MySQL 走 SHOW REPLICA STATUS（旧版退 SHOW SLAVE STATUS），
+    /// PostgreSQL 走 pg_stat_replication；其余引擎如实提示暂无只读画像查询。结果回填副本框。</summary>
+    private static async Task RunRealReplicaAsync(NodeInfo info, TextBox nodesBox, StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        try
+        {
+            var provider = info.Provider ?? ProviderFactory.Create(info.Profile);
+            string db = info.Kind == NodeKind.Table ? info.Db : (info.Db.Length > 0 ? info.Db : info.Name);
+            var lines = new List<string>();
+            if (provider.EngineName.Contains("MySQL", StringComparison.OrdinalIgnoreCase))
+            {
+                var rs = await TryQuery(provider, db, "SHOW REPLICA STATUS")
+                         ?? await TryQuery(provider, db, "SHOW SLAVE STATUS");
+                if (rs is null) { status.Text = "当前连接未返回复制状态（可能不是主库或无权限）。"; return; }
+                var cols = rs.Columns;
+                int Host() => IndexOfCol(cols, "Source_Host", "Host", "Master_Host");
+                int Lag() => IndexOfCol(cols, "Seconds_Behind_Source", "Seconds_Behind_Source", "Seconds_Behind_Master");
+                int Io() => IndexOfCol(cols, "Source_IO_Running", "Slave_IO_Running");
+                foreach (var row in rs.Rows)
+                {
+                    string name = Host() >= 0 ? $"{row[Host()]}" : $"副本{lines.Count + 1}";
+                    string lagRaw = Lag() >= 0 ? $"{row[Lag()]}" : "NULL";
+                    int lag = int.TryParse(lagRaw, out var l) ? l : 0;   // NULL＝未启动，按 0 秒但健康置 0
+                    string healthy = Io() >= 0 && $"{row[Io()]}".Equals("Yes", StringComparison.OrdinalIgnoreCase) && lagRaw != "NULL" ? "1" : "0";
+                    lines.Add($"{name},{lag},{healthy}");
+                }
+            }
+            else if (provider.EngineName.Contains("Postgre", StringComparison.OrdinalIgnoreCase))
+            {
+                var rs = await TryQuery(provider, db,
+                    "SELECT COALESCE(application_name, client_addr::text, '副本') AS name, " +
+                    "COALESCE(EXTRACT(EPOCH FROM (now() - write_lag))::bigint, 0) AS lag_s, 1 FROM pg_stat_replication");
+                if (rs is null || rs.Rows.Count == 0) { status.Text = "pg_stat_replication 无副本连接（当前库可能不是主库）。"; return; }
+                foreach (var row in rs.Rows)
+                    lines.Add($"{row[0]},{Convert.ToInt64(row[1])},1");
+            }
+            else
+            {
+                status.Text = $"{provider.EngineName} 暂无只读复制画像查询，请手填画像。";
+                return;
+            }
+            if (lines.Count == 0) { status.Text = "未读到任何副本。"; return; }
+            nodesBox.Text = string.Join("\n", lines);
+            AddSection(report, "真实复制画像已回填副本框");
+            status.Text = $"读到 {lines.Count} 个副本，点「路由一次读请求」出结论。";
+            AppLog.Write($"[读路由采样] replicas={lines.Count}");
+        }
+        catch (Exception ex)
+        {
+            status.Text = "读取复制画像失败：" + ex.Message;
+            AppLog.Write($"[读路由采样] error={ex.Message}");
+        }
+    }
+
+    static async Task<QueryResult?> TryQuery(IDbProvider provider, string db, string sql)
+    {
+        try { return (await provider.Execute(db, sql)).FirstOrDefault(x => x.Rows.Count > 0 || x.Columns.Count > 0); }
+        catch { return null; }
+    }
+
+    static int IndexOfCol(System.Collections.Generic.IReadOnlyList<string> cols, params string[] names)
+    {
+        foreach (var n in names)
+            for (int i = 0; i < cols.Count; i++)
+                if (cols[i].Equals(n, StringComparison.OrdinalIgnoreCase)) return i;
+        return -1;
     }
 
     private static async Task RunRouteAsync(string nodesText, string lagText, StackPanel report, TextBlock status)

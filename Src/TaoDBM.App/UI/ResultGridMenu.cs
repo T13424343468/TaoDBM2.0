@@ -13,8 +13,11 @@ namespace TaoDBM.UI;
 public static class ResultGridMenu
 {
     /// <summary>给表头或行单元格挂右键菜单；host 须已入可视树（XamlRoot 就绪）。
-    /// rowIdx 非空＝数据单元格（追加复制项）；空＝表头（只分析/钉住）。</summary>
-    public static void Attach(FrameworkElement host, QueryResult r, int colIdx, string? sourceSql, string? engine, int? rowIdx = null)
+    /// rowIdx 非空＝数据单元格（追加复制项）；空＝表头（只分析/钉住）。
+    /// 整改三批三-10（2026-11-24 老板令「抓紧时间」）：owner/info 齐备时追加设计助手两入口——
+    /// 图表规范（本结果快照预填）与表单构建（当前连接上下文），免开对话框再找入口。</summary>
+    public static void Attach(FrameworkElement host, QueryResult r, int colIdx, string? sourceSql, string? engine, int? rowIdx = null,
+        MainWindow? owner = null, NodeInfo? info = null)
     {
         if (colIdx < 0 || colIdx >= r.Columns.Count) return;
         var menu = new MenuFlyout();
@@ -28,6 +31,12 @@ public static class ResultGridMenu
         menu.Items.Add(MenuItem("分析本列", () => _ = ShowAnalysisAsync(host, r, colIdx)));
         if (!string.IsNullOrWhiteSpace(sourceSql))
             menu.Items.Add(MenuItem("钉住到看板", () => _ = ShowPinAsync(host, r, colIdx, sourceSql, engine)));
+        if (owner is not null && info is not null)
+        {
+            menu.Items.Add(MenuItem("设计助手：图表规范（带本结果）", () => DesignAssistDialog.Show(owner, info, last: r)));   // 三-10：结果快照直进图表输入
+            menu.Items.Add(MenuItem("设计助手：表单构建", () => DesignAssistDialog.Show(owner, info)));   // 三-10：连接上下文进表单构建
+            AppLog.Write("[设计助手] grid-context entry");
+        }
         menu.PinTheme();
         host.ContextFlyout = menu;
     }

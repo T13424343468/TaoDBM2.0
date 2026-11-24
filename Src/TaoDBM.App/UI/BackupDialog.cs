@@ -8,7 +8,7 @@ using Windows.Storage.Pickers;
 namespace TaoDBM.UI;
 
 /// <summary>备份 / 恢复四步向导（设计稿 §5）：① 选库/表 → ② 备份点 → ③ 目标 → ④ 执行确认。
-/// 恢复属高危不可逆：影响范围预览、默认勾选恢复前自动备份、输入目标库名点亮开始恢复；演练入口接 BackupDrillDialog。</summary>
+/// 恢复属高危不可逆：影响范围预览、默认勾选恢复前自动备份、输入目标库名点亮开始恢复；演练入口接备份演练页签（三-15）。</summary>
 public static class BackupDialog
 {
     private static readonly string[] StepNames = { "选库/表", "备份点", "目标", "执行确认" };
@@ -190,7 +190,7 @@ public static class BackupDialog
             Text = "恢复前建议先做恢复演练：把备份恢复到临时库验证可用，再对真实库执行。",
         };
         var drillBtn = new Button { Content = "打开恢复演练", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-        drillBtn.Click += (_, _) => _ = BackupDrillDialog.Show(owner, info);
+        drillBtn.Click += (_, _) => owner.OpenBackupDrillTab(info);   // 三-15：弹窗改页面，升级内嵌页签
         var startBtn = new Button
         {
             Content = "开始备份",

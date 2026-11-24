@@ -38,6 +38,15 @@ public static class ShardKeyEvaluatorDialog
         hashBtn.Click += async (_, _) => await RunHashAsync(hashKeyBox.Text, shardCountBox.Text, report, status);
         rangeBtn.Click += async (_, _) => await RunRangeAsync(rangeValueBox.Text, rangeBoundBox.Text, report, status);
 
+        // 整改三批三-11（2026-11-24 老板令「抓紧时间」）：演示式接真实数据——候选键画像从真实表结构采样，
+        // 不再只靠手填。只读查询（COUNT/COUNT DISTINCT），带行数上限保护，失败如实提示不阻断手填路径。
+        var sampleTableBox = new TextBox { PlaceholderText = "真实表名（留空用当前上下文）", MinWidth = 220 };
+        var sampleBtn = new Button { Content = "从真实表采样画像", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        sampleBtn.Click += async (_, _) => await RunRealSampleAsync(owner, info, sampleTableBox.Text, candBox, report, status);
+        var sampleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        sampleRow.Children.Add(sampleTableBox);
+        sampleRow.Children.Add(sampleBtn);
+
         var hashRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         hashRow.Children.Add(hashKeyBox);
         hashRow.Children.Add(shardCountBox);
@@ -58,6 +67,14 @@ public static class ShardKeyEvaluatorDialog
         });
         panel.Children.Add(candBox);
         panel.Children.Add(evalBtn);
+        panel.Children.Add(new TextBlock
+        {
+            Text = "接真实数据：填表名（留空用当前上下文表）点采样，画像按真实行数/去重数生成后回填候选框。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            FontSize = AntTokens.FontMinor,
+        });
+        panel.Children.Add(sampleRow);
         panel.Children.Add(hashRow);
         panel.Children.Add(rangeRow);
         panel.Children.Add(new ScrollViewer
@@ -77,6 +94,56 @@ public static class ShardKeyEvaluatorDialog
         };
         _ = dlg.ShowThemedAsync();
         return Task.CompletedTask;
+    }
+
+    /// <summary>三-11：真实表采样——读真实列结构，对每列跑只读 COUNT/COUNT DISTINCT 生成画像行回填候选框。</summary>
+    private static async Task RunRealSampleAsync(MainWindow owner, NodeInfo info, string tableText, TextBox candBox, StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        try
+        {
+            var provider = info.Provider ?? ProviderFactory.Create(info.Profile);
+            string table = (tableText ?? "").Trim();
+            if (table.Length == 0 && info.Kind == NodeKind.Table) table = info.Name;
+            if (table.Length == 0) { status.Text = "请先填表名（或选中表后再进本窗口）。"; return; }
+            string db = info.Kind == NodeKind.Table ? info.Db : (info.Db.Length > 0 ? info.Db : info.Name);
+            var cols = await provider.GetColumns(db, table);
+            if (cols.Count == 0) { status.Text = $"未读到 {table} 的列结构。"; return; }
+
+            var lines = new List<string>();
+            int sampled = 0;
+            foreach (var c in cols)
+            {
+                if (sampled >= 8) break;   // 采样上限：前 8 列，避免大表全列扫描
+                string q = provider.Quote(c.Name);
+                QueryResult? stat = null;
+                try
+                {
+                    var rs = await provider.Execute(db, $"SELECT COUNT(*) AS cnt, COUNT(DISTINCT {q}) AS dist FROM {provider.Quote(table)}");
+                    stat = rs.FirstOrDefault(x => x.Rows.Count > 0);
+                }
+                catch { /* 单列采样失败不阻断其余列 */ }
+                if (stat is null) continue;
+                long total = Convert.ToInt64(stat.Rows[0][0]);
+                long dist = Convert.ToInt64(stat.Rows[0][1]);
+                if (total == 0) continue;
+                double skew = Math.Round((double)total / Math.Max(dist, 1), 2);
+                // 谓词命中/单调不可廉价采样，如实填 0 并在说明里标注「未采样」
+                lines.Add($"{c.Name},{dist},{skew},0,0");
+                sampled++;
+            }
+            if (lines.Count == 0) { status.Text = "采样未得到可用画像（空表或列均不可采样）。"; return; }
+            candBox.Text = string.Join("\n", lines);
+            AddSection(report, $"真实采样：{table}（前 {sampled} 列）");
+            AddLine(report, "  画像已回填候选框：倾斜比＝平均重复度（行数/去重数）；谓词命中与单调未采样，填 0。");
+            status.Text = "采样完成，点「评估分片键」出结论。";
+            AppLog.Write($"[分片键采样] table={table} cols={sampled}");
+        }
+        catch (Exception ex)
+        {
+            status.Text = "采样失败：" + ex.Message;
+            AppLog.Write($"[分片键采样] error={ex.Message}");
+        }
     }
 
     private static async Task RunEvaluateAsync(string text, StackPanel report, TextBlock status)

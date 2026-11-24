@@ -30,6 +30,11 @@ public static class MigrationResumeDialog
         var planBtn = new Button { Content = "重算续传计划", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var saveBtn = new Button { Content = "另存状态 JSON", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
 
+        // 整改三批三-12（2026-11-24 老板令「抓紧时间」）：演示式接真实数据——清单从当前连接真实表清单与行数生成，
+        // 不再只靠手填。只读查询（表清单 + COUNT），失败如实提示不阻断手填路径。
+        var genBtn = new Button { Content = "从当前连接生成清单", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        genBtn.Click += async (_, _) => await RunRealManifestAsync(owner, info, manifestBox, report, status);
+
         planBtn.Click += async (_, _) =>
         {
             report.Children.Clear();
@@ -103,7 +108,7 @@ public static class MigrationResumeDialog
         };
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(planBtn); row.Children.Add(saveBtn);
+        row.Children.Add(planBtn); row.Children.Add(saveBtn); row.Children.Add(genBtn);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 680 };
         panel.Children.Add(new TextBlock
@@ -126,6 +131,55 @@ public static class MigrationResumeDialog
         };
         _ = dlg.ShowThemedAsync();
         await Task.CompletedTask;
+    }
+
+    /// <summary>三-12：真实清单生成——读当前连接的表清单与行数，生成 MigrationManifest JSON 回填清单框。</summary>
+    private static async Task RunRealManifestAsync(MainWindow owner, NodeInfo info, TextBox manifestBox, StackPanel report, TextBlock status)
+    {
+        report.Children.Clear();
+        try
+        {
+            var provider = info.Provider ?? ProviderFactory.Create(info.Profile);
+            string db = info.Db.Length > 0 ? info.Db : (info.Profile.Database.Length > 0 ? info.Profile.Database : info.Name);
+            if (db.Length == 0) { status.Text = "未定位到当前库，请先选中库或表再进本窗口。"; return; }
+            var tables = await provider.GetChildren(db);
+            if (tables.Count == 0) { status.Text = $"未读到 {db} 的表清单。"; return; }
+
+            var entries = new List<MigrationTable>();
+            int taken = 0;
+            foreach (var t in tables)
+            {
+                if (taken >= 12) break;   // 行数采样上限：前 12 张表，避免大库全量扫描
+                long rows = -1;
+                try
+                {
+                    var rs = await provider.Execute(db, $"SELECT COUNT(*) FROM {provider.Quote(t)}");
+                    var stat = rs.FirstOrDefault(x => x.Rows.Count > 0);
+                    if (stat is not null) rows = Convert.ToInt64(stat.Rows[0][0]);
+                }
+                catch { /* 单表计数失败不阻断其余表 */ }
+                if (rows < 0) continue;
+                int batches = (int)Math.Max(1, (rows + 9999) / 10000);   // 每万行一批，与引擎批内水位口径一致
+                entries.Add(new MigrationTable(t, rows, batches));
+                taken++;
+            }
+            if (entries.Count == 0) { status.Text = "行数采样未得到可用表目（均不可计数）。"; return; }
+
+            var manifest = new MigrationManifest(
+                $"mf-{DateTimeOffset.Now:yyyyMMdd-HHmmss}",
+                info.Profile.DisplayName, "（待填目标连接）", DateTimeOffset.Now, entries);
+            manifestBox.Text = System.Text.Json.JsonSerializer.Serialize(manifest,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            AddSection(report, $"真实清单：{db}（{entries.Count} 张表，共 {entries.Sum(e => e.SourceRows)} 行）");
+            AddLine(report, "  清单已回填：目标连接待填，点「重算续传计划」预演。");
+            status.Text = "清单生成完成。";
+            AppLog.Write($"[迁移清单] db={db} tables={entries.Count}");
+        }
+        catch (Exception ex)
+        {
+            status.Text = "清单生成失败：" + ex.Message;
+            AppLog.Write($"[迁移清单] error={ex.Message}");
+        }
     }
 
     private static void AddLine(StackPanel p, string text, Brush? brush = null, int indent = 0)

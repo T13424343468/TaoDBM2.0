@@ -549,7 +549,7 @@ public partial class WorkTab : Grid
         QueryResult? errResult = null;
         foreach (var r in list)
         {
-            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey()));   // 批次E：结果网格右键分析/钉住；格9 用户列宽
+            panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo()));   // 批次E：右键分析/钉住；格9 用户列宽；三-10 设计助手入口
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
             // P1-01：流式/分页通道不抛异常，SQL 错误以「错误：」前缀落在结果消息里——识别后转错误横幅，与异常路径同口径
             if (errResult is null && r.Message.StartsWith("错误：", StringComparison.Ordinal)) errResult = r;
@@ -564,13 +564,16 @@ public partial class WorkTab : Grid
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
     }
 
+    /// <summary>整改三批三-10：结果网格右键设计助手入口的连接上下文（与 _assistBtn 同构）。</summary>
+    private NodeInfo AssistInfo() => new() { Kind = NodeKind.Database, Profile = _provider.Profile, Provider = _provider, Db = _db, Name = _db };
+
     private void ShowResult(QueryResult r, bool editable = false, Action<int>? onRowTap = null)
     {
         _last = new List<QueryResult> { r };
         FrameworkElement el;
-        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey());
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey());
-        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey());
+        if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
+        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
+        else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
