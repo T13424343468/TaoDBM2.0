@@ -1,252 +1,165 @@
 probe quiet-watch start (10s, no UIA)
 probe quiet-watch done
-shot shot-01-start.png 41736 bytes
+shot shot-01-start.png 41698 bytes
 coverage: 17 named elements in main window
-shot sweep-U000.png 41736 bytes
+shot sweep-U000.png 41698 bytes
 coverage-func U000 巡检-主窗口初始态（欢迎页） => pass
-shot sweep-U001.png 53849 bytes
+shot sweep-U001.png 53814 bytes
 coverage-func U001 巡检-新建连接对话框 => pass
-shot sweep-U002.png 53849 bytes
+shot sweep-U002.png 53814 bytes
 coverage-func U002 巡检-连接对话框引擎切换MySQL => pass
-shot sweep-U003.png 53929 bytes
+shot sweep-U003.png 53915 bytes
 coverage-func U003 巡检-连接对话框引擎切换PostgreSQL => pass
-shot sweep-U004.png 53842 bytes
+shot sweep-U004.png 53827 bytes
 coverage-func U004 巡检-连接对话框引擎切换SQLServer => pass
-shot sweep-U005.png 54469 bytes
+shot sweep-U005.png 54453 bytes
 coverage-func U005 巡检-连接对话框引擎切换MongoDB => pass
-shot sweep-U006.png 53726 bytes
+shot sweep-U006.png 53709 bytes
 coverage-func U006 巡检-连接对话框引擎切换Redis => pass
-shot sweep-U007.png 42084 bytes
+shot sweep-U007.png 42066 bytes
 coverage-func U007 巡检-连接对话框收场 => pass
-shot sweep-U007a.png 53829 bytes
+shot sweep-U007a.png 53811 bytes
 coverage-func U007a 巡检-新建连接对话框（建连） => pass
-shot sweep-U007b.png 63264 bytes
+shot sweep-U007b.png 63249 bytes
 coverage-func U007b 巡检-连接选择SQLite引擎 => pass
-shot sweep-U007c.png 62921 bytes
+shot sweep-U007c.png 62905 bytes
 coverage-func U007c 巡检-连接填写名称 => pass
-shot sweep-U007d.png 64859 bytes
+shot sweep-U007d.png 64841 bytes
 coverage-func U007d 巡检-连接填写数据库文件 => pass
-shot sweep-U007e.png 44123 bytes
+shot sweep-U007e.png 44104 bytes
 coverage-func U007e 巡检-连接保存 => pass
-shot sweep-U010.png 43691 bytes
+shot sweep-U010.png 43670 bytes
 coverage-func U010 巡检-展开连接 => pass
-shot sweep-U011.png 46934 bytes
+shot sweep-U011.png 46929 bytes
 coverage-func U011 巡检-展开数据库 => pass
-shot sweep-U012.png 46947 bytes
+shot sweep-U012.png 46942 bytes
 coverage-func U012 巡检-选中表节点 => pass
-ctx miss __TBL1__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry __TBL1__ : select-then-rightclick
-ctx miss __TBL1__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry __TBL1__ : shift-f10
-ctx miss __TBL1__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-step U013 巡检-查看数据页签 => fail : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement".
-shot ev-shot-fail-U013.png 46702 bytes
-coverage-func U013 巡检-查看数据页签 => fail
-shot sweep-U014.png 46716 bytes
+shot sweep-U013.png 58168 bytes
+coverage-func U013 巡检-查看数据页签 => pass
+shot sweep-U014.png 58168 bytes
 coverage-func U014 巡检-表数据页签工具栏 => pass
-step U015 巡检-表结构按钮 => miss : target not found
-coverage-func U015 巡检-表结构按钮 => miss
-shot sweep-U016.png 46716 bytes
+shot sweep-U015.png 47863 bytes
+coverage-func U015 巡检-表结构按钮 => pass
+shot sweep-U016.png 47863 bytes
 coverage-func U016 巡检-表结构收场 => pass
 step U017 巡检-表单视图按钮 => miss : target not found
 coverage-func U017 巡检-表单视图按钮 => miss
-shot sweep-U018.png 46716 bytes
+shot sweep-U018.png 47863 bytes
 coverage-func U018 巡检-表单视图收场 => pass
-step U019 巡检-拟真数据按钮 => miss : target not found
-coverage-func U019 巡检-拟真数据按钮 => miss
-shot sweep-U020.png 46716 bytes
+shot sweep-U019.png 47280 bytes
+coverage-func U019 巡检-拟真数据按钮 => pass
+shot sweep-U020.png 47280 bytes
 coverage-func U020 巡检-拟真数据收场 => pass
-step U021 巡检-粘贴数据按钮 => miss : target not found
-coverage-func U021 巡检-粘贴数据按钮 => miss
-shot sweep-U022.png 46702 bytes
+shot sweep-U021.png 47302 bytes
+coverage-func U021 巡检-粘贴数据按钮 => pass
+shot sweep-U022.png 47302 bytes
 coverage-func U022 巡检-粘贴数据收场 => pass
-ctx miss __TBL1__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry __TBL1__ : select-then-rightclick
-ctx miss __TBL1__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry __TBL1__ : shift-f10
-ctx miss __TBL1__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-step U023 巡检-表设计器（列） => fail : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement".
-shot ev-shot-fail-U023.png 46702 bytes
-coverage-func U023 巡检-表设计器（列） => fail
-shot sweep-U024.png 46702 bytes
+shot sweep-U023.png 64960 bytes
+coverage-func U023 巡检-表设计器（列） => pass
+shot sweep-U024.png 64960 bytes
 coverage-func U024 巡检-表设计器收场 => pass
-shot sweep-U030.png 41240 bytes
+shot sweep-U030.png 43032 bytes
 coverage-func U030 巡检-新建查询页签 => pass
-shot sweep-U031.png 41240 bytes
+shot sweep-U031.png 43032 bytes
 coverage-func U031 巡检-查询页工具栏全貌 => pass
-shot sweep-U032.png 42111 bytes
+shot sweep-U032.png 43910 bytes
 coverage-func U032 巡检-导出CSV按钮 => pass
-shot sweep-U033.png 42111 bytes
+shot sweep-U033.png 43910 bytes
 coverage-func U033 巡检-导出CSV收场 => pass
-shot sweep-U034.png 42249 bytes
+shot sweep-U034.png 44039 bytes
 coverage-func U034 巡检-导出INSERT按钮 => pass
-shot sweep-U035.png 42249 bytes
+shot sweep-U035.png 44039 bytes
 coverage-func U035 巡检-导出INSERT收场 => pass
 step U036 巡检-导出更多菜单 => miss : target not found
 coverage-func U036 巡检-导出更多菜单 => miss
-shot sweep-U037.png 42249 bytes
+shot sweep-U037.png 44040 bytes
 coverage-func U037 巡检-导出更多收场 => pass
-shot sweep-U038.png 53410 bytes
+shot sweep-U038.png 54997 bytes
 coverage-func U038 巡检-查询收藏 => pass
-shot sweep-U039.png 42061 bytes
+shot sweep-U039.png 43844 bytes
 coverage-func U039 巡检-收藏收场 => pass
-shot sweep-U040.png 52443 bytes
+shot sweep-U040.png 54020 bytes
 coverage-func U040 巡检-查询历史 => pass
-shot sweep-U041.png 41983 bytes
+shot sweep-U041.png 43757 bytes
 coverage-func U041 巡检-历史收场 => pass
-shot sweep-U042.png 42637 bytes
+shot sweep-U042.png 44399 bytes
 coverage-func U042 巡检-报表 => pass
-shot sweep-U043.png 42637 bytes
+shot sweep-U043.png 44399 bytes
 coverage-func U043 巡检-报表收场 => pass
-shot sweep-U044.png 71925 bytes
+shot sweep-U044.png 73635 bytes
 coverage-func U044 巡检-设计辅助 => pass
-shot sweep-U045.png 42337 bytes
+shot sweep-U045.png 44096 bytes
 coverage-func U045 巡检-设计辅助收场 => pass
 step U046 巡检-编辑器右键菜单 => miss : menu item not found: 美化 SQL
 coverage-func U046 巡检-编辑器右键菜单 => miss
-shot sweep-U047.png 42337 bytes
+shot sweep-U047.png 44096 bytes
 coverage-func U047 巡检-右键菜单收场 => pass
-shot tour-conn-01.png 53780 bytes
-shot tour-conn-02.png 52327 bytes
-shot tour-conn-03.png 56072 bytes
-shot tour-conn-04.png 51493 bytes
-shot tour-conn-05.png 64095 bytes
-shot tour-conn-06.png 58819 bytes
-shot tour-conn-07.png 57781 bytes
-shot tour-conn-08.png 60835 bytes
-shot tour-conn-09.png 67807 bytes
-shot tour-conn-10.png 64887 bytes
-shot tour-conn-11.png 57608 bytes
-shot tour-conn-12.png 57669 bytes
-shot tour-conn-13.png 67912 bytes
-shot tour-conn-14.png 63039 bytes
-shot tour-conn-15.png 60157 bytes
-shot tour-conn-16.png 62414 bytes
-shot tour-conn-17.png 70000 bytes
-shot tour-conn-18.png 54981 bytes
-shot tour-conn-19.png 54674 bytes
-shot tour-conn-20.png 58640 bytes
-shot tour-conn-21.png 52732 bytes
+shot tour-conn-01.png 55353 bytes
+shot tour-conn-02.png 53955 bytes
+shot tour-conn-03.png 57671 bytes
+shot tour-conn-04.png 53134 bytes
+shot tour-conn-05.png 65895 bytes
+shot tour-conn-06.png 60498 bytes
+shot tour-conn-07.png 59406 bytes
+shot tour-conn-08.png 62655 bytes
+shot tour-conn-09.png 69585 bytes
+shot tour-conn-10.png 66096 bytes
+shot tour-conn-11.png 59218 bytes
+shot tour-conn-12.png 59265 bytes
+shot tour-conn-13.png 68898 bytes
+shot tour-conn-14.png 64961 bytes
+shot tour-conn-15.png 62066 bytes
+shot tour-conn-16.png 64172 bytes
+shot tour-conn-17.png 70803 bytes
+shot tour-conn-18.png 56599 bytes
+shot tour-conn-19.png 56291 bytes
+shot tour-conn-20.png 60415 bytes
+shot tour-conn-21.png 53464 bytes
 tour done: OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 分片向导 ;; OK 一键诊断 ;; OK 高危 SQL 拦截 ;; OK 上线审查 ;; OK 任务中心 ;; OK 流式开关 ;; OK 读路由预演 ;; OK 热点检测 ;; OK 再均衡规划 ;; OK 分片键评估 ;; OK 迁移续传 ;; OK 团队合并 ;; OK 共享包 ;; OK 智能工具 ;; OK 看板管理 ;; OK 服务器监控 ;; OK 命令监控 ;; OK 仪表板
-shot sweep-U050.png 42220 bytes
+shot sweep-U050.png 44189 bytes
 coverage-func U050 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
-shot sweep-U058.png 55689 bytes
+shot sweep-U058.png 57290 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
-shot sweep-U059.png 42681 bytes
+shot sweep-U059.png 44601 bytes
 coverage-func U059 巡检-数据同步收场 => pass
-shot sweep-U064.png 53294 bytes
+shot sweep-U064.png 53983 bytes
 coverage-func U064 巡检-ER图 => pass
-shot sweep-U065.png 42681 bytes
+shot sweep-U065.png 44601 bytes
 coverage-func U065 巡检-ER图收场 => pass
-shot sweep-U066.png 62860 bytes
+shot sweep-U066.png 64645 bytes
 coverage-func U066 巡检-备份恢复向导 => pass
-shot sweep-U067.png 42681 bytes
+shot sweep-U067.png 44601 bytes
 coverage-func U067 巡检-备份收场 => pass
-ctx miss main attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry main : select-then-rightclick
-ctx miss main attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry main : shift-f10
-ctx miss main attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-step U078 巡检-在库中搜索 => miss : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement".
-coverage-func U078 巡检-在库中搜索 => miss
-shot sweep-U079.png 41515 bytes
+shot sweep-U078.png 57055 bytes
+coverage-func U078 巡检-在库中搜索 => pass
+shot sweep-U079.png 44121 bytes
 coverage-func U079 巡检-库搜索收场 => pass
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-1 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-1 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-1 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-1 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-1 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-01-fail.png 41511 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-2 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-2 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-2 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-2 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-2 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-02-fail.png 41511 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-3 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-3 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-3 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-3 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-3 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-03-fail.png 41518 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-4 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-4 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-4 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-4 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-4 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-04-fail.png 41518 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-5 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-5 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-5 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-5 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-5 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-05-fail.png 41532 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-6 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-6 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-6 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-6 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-6 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-06-fail.png 41518 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-7 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-7 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-7 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-7 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-7 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-07-fail.png 41518 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-8 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-8 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-8 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-8 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-8 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-08-fail.png 41476 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-9 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-9 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-9 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-9 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-9 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-09-fail.png 41513 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-10 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-10 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-10 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-10 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-10 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-10-fail.png 41513 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-11 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-11 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-11 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-11 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-11 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-11-fail.png 41511 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-12 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-12 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-12 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-12 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-12 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-12-fail.png 41498 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-13 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-13 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-13 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-13 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-13 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-13-fail.png 41498 bytes
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-14 attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-14 : select-then-rightclick
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-14 attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-ctx retry @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-14 : shift-f10
-ctx miss @{id=U088; feature=巡检-库节点·库工具全巡览（14 弹窗逐项留证）; action=context-tour; prefix=main; group=库工具; items=System.Object[]; tourPrefix=tour-db; allowMiss=True}.tourPrefix-14 attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
-shot tour-db-14-fail.png 41495 bytes
-tour done: RED 备份计划 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 备份演练 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 数据脱敏 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 数据对账 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 误删恢复 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 留痕审计 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 问库 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 快照包 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 批量清理 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 设计辅助 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 例程管理 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 一键诊断 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 告警中心 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement". ;; RED 三层模型 : Cannot process argument transformation on parameter 'el'. Cannot convert the "System.Object[]" value of type "System.Object[]" to type "System.Windows.Automation.AutomationElement".
-shot sweep-U088.png 41495 bytes
+shot tour-db-01.png 58602 bytes
+shot tour-db-02.png 50375 bytes
+shot tour-db-03.png 60297 bytes
+shot tour-db-04.png 59591 bytes
+shot tour-db-05.png 63721 bytes
+shot tour-db-06.png 63047 bytes
+shot tour-db-07.png 62095 bytes
+shot tour-db-08.png 65083 bytes
+shot tour-db-09.png 66461 bytes
+shot tour-db-10.png 76184 bytes
+shot tour-db-11.png 59071 bytes
+shot tour-db-12.png 69170 bytes
+shot tour-db-13.png 67248 bytes
+shot tour-db-14.png 54618 bytes
+tour done: OK 备份计划 ;; OK 备份演练 ;; OK 数据脱敏 ;; OK 数据对账 ;; OK 误删恢复 ;; OK 留痕审计 ;; OK 问库 ;; OK 快照包 ;; OK 批量清理 ;; OK 设计辅助 ;; OK 例程管理 ;; OK 一键诊断 ;; OK 告警中心 ;; OK 三层模型
+shot sweep-U088.png 50594 bytes
 coverage-func U088 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
-shot sweep-U104.png 41495 bytes
+shot sweep-U104.png 50594 bytes
 coverage-func U104 巡检-设置对话框 => pass
-shot sweep-U105.png 64590 bytes
+shot sweep-U105.png 64270 bytes
 coverage-func U105 巡检-手册 => pass
-shot sweep-U106.png 42521 bytes
+shot sweep-U106.png 50857 bytes
 coverage-func U106 巡检-手册收场 => pass
-shot sweep-U107.png 42525 bytes
+shot sweep-U107.png 50854 bytes
 coverage-func U107 巡检-关于 => pass
-shot sweep-U108.png 42525 bytes
+shot sweep-U108.png 50854 bytes
 coverage-func U108 巡检-主题入口 => pass
-shot sweep-U109.png 42549 bytes
+shot sweep-U109.png 50854 bytes
 coverage-func U109 巡检-收尾主窗口 => pass
