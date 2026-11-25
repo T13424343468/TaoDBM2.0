@@ -132,10 +132,20 @@ public static class SettingsDialog
             Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
         });
 
+        // 发现83：设置项增长后超出弹窗高度，底部选项（补全开关等）够不着——套 ScrollViewer 兜底，超出即滚动
+        var scroll = new ScrollViewer
+        {
+            Content = panel,
+            MaxHeight = 520,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 4, 0),
+        };
+
         var dlg = new ContentDialog
         {
             Title = "设置",
-            Content = panel,
+            Content = scroll,
             PrimaryButtonText = "保存",
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
