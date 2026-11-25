@@ -346,7 +346,17 @@ public partial class MainWindow : Window
         // 组内连接被筛选隐藏时组节点仍显示（组是视图），空组如实标注
         foreach (var g in groupNodes) if (g.Value.Children.Count == 0) g.Value.Children.Add(new TreeViewNode { Content = "（空分组）" });
         SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接 · {groupNames.Count} 个分组" + (hiddenList.Count > 0 ? $" · 已隐藏 {hiddenList.Count}" : ""));
+        UpdateConnCount();   // Navicat 口径：状态栏右侧常驻连接计数
         AppLog.Write($"[连接树] filter={filter} shown={shown} groups={groupNames.Count} hidden={hiddenList.Count}");   // 格18：走查 S85 断言锚点
+    }
+
+    /// <summary>状态栏右侧连接计数（Navicat「N 连接」口径）：N=配置数，M=已连上（绿点）数。</summary>
+    private void UpdateConnCount()
+    {
+        int live = _nodeMap.Values
+            .Where(i => i.Kind == NodeKind.Connection && i.ConnState == "Connected")
+            .Select(i => i.Profile.Id).Distinct().Count();
+        ConnCountText.Text = $"{_profiles.Count} 连接 · {live} 已连接";
     }
 
     /// <summary>格18：筛选框输入即过滤（清空恢复全部）；XAML 解析期 TextChanged 可能早于树就绪，判空防崩。</summary>
@@ -782,6 +792,7 @@ public partial class MainWindow : Window
         info.Loaded = false;
         info.ConnState = "";   // 格18：断开置回未知，状态点消失
         SetNodeContent(node, info);
+        UpdateConnCount();
         node.Children.Clear();
         node.Children.Add(new TreeViewNode { Content = "…" });
         node.IsExpanded = false;
@@ -812,6 +823,7 @@ public partial class MainWindow : Window
                     var dbs = await info.Provider.GetDatabases();
                     info.ConnState = "Connected";   // 格18：展开成功置绿点
                     SetNodeStateDot(node, info);
+                    UpdateConnCount();
                     // #154 S09 取证先行：连接装载零打点致 MSSQL 红账无法定谳，装载链路入应用日志
                     Core.AppLog.Write($"[对象树] 连接展开 engine={info.Profile.Engine} dbs={dbs.Count} [{string.Join(",", dbs.Take(8))}]");
                     foreach (var db in dbs)
@@ -937,6 +949,7 @@ public partial class MainWindow : Window
             node.Children.Clear();
             node.Children.Add(new TreeViewNode { Content = "⚠ " + HumanError.Say(ex, "刷新") + "（点击刷新重试）" });
             if (info.Kind == NodeKind.Connection) { info.ConnState = "Failed"; SetNodeStateDot(node, info); }   // 格18：展开失败置红点
+            UpdateConnCount();
             // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
             Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
             SetStatus(HumanError.Say(ex, "加载失败"));

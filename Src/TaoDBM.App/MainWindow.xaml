@@ -115,9 +115,12 @@
                      TabCloseRequested="OnTabClose" AddTabButtonClick="OnTabAdd"/>
         </Grid>
 
-        <!-- 状态栏 -->
+        <!-- 状态栏（Navicat 口径：左侧状态文案，右侧连接计数） -->
         <Border x:Name="StatusBorder" Grid.Row="2" Background="{ThemeResource AntCard}" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,1,0,0">
-            <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="status-text" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text="就绪"/>
+            <Grid>
+                <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="status-text" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text="就绪"/>
+                <TextBlock x:Name="ConnCountText" AutomationProperties.AutomationId="conn-count" HorizontalAlignment="Right" Margin="12,4" FontSize="12" Foreground="{ThemeResource AntTextSub}" Text=""/>
+            </Grid>
         </Border>
     </Grid>
 </Window>
