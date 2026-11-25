@@ -67,6 +67,16 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
             [MouseNative]::Move([int]($tr.X + $tr.Width / 2), [int]($tr.Y + $tr.Height / 2))
             Start-Sleep -Milliseconds 800
             $r = $el.Current.BoundingRectangle
+            # 云346 追修：悬停后对原元素回读仍空（UIA 缓存不刷新，346 mysql-b 实锤）——对悬停页签重新 FindAll Button，取非空矩形者替换点击目标
+            if ($r.IsEmpty) {
+              try {
+                $btns2 = $anc.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)))
+                foreach ($b2 in $btns2) {
+                  $br2 = $b2.Current.BoundingRectangle
+                  if (-not $br2.IsEmpty -and $br2.Width -gt 1 -and $br2.Height -gt 1) { $el = $b2; $r = $br2; break }
+                }
+              } catch { }
+            }
           }
           break
         }
@@ -1392,9 +1402,15 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Seconds 1
         Close-ExtraWindows $handle
         # 云345 追修（mysql c2b 实锤：另存 SQL 文件对话框 Esc 后仍开着，模态挡住后续确认框）——
-        # 扫应用进程的 Win32 对话框窗（#32770），仍在则直发 WM_CLOSE 再扫，3 轮后仍开才红
+        # 扫应用进程的 Win32 对话框窗（#32770/Picker），见即 WM_CLOSE
+        # 云346 追修（346 十段同因，红场截图实锤另存框仍开）：另存对话框冷机首启慢，固定 3 轮扫完即退＝
+        # 对话框还没出现就收工，弹出后无人再关。改为持续清扫窗：15 秒内每 0.8 秒扫一次，
+        # 见框即关；连续 5 扫无框且已关过至少一个才收工，超时仍开则留红账注记
         $appPid = $script:proc.Id
-        foreach ($round in 1..3) {
+        $scanDeadline = (Get-Date).AddSeconds(15)
+        $closedCount = 0
+        $quietScans = 0
+        while ((Get-Date) -lt $scanDeadline) {
           $dlgHwnd = [IntPtr]::Zero
           try {
             $hScan = [IntPtr]::Zero
@@ -1405,16 +1421,55 @@ foreach ($s in $plan.steps) {
                 [void][WinNative]::GetClassNameW($hScan, $cls2, 256)
                 $wpid2 = [uint32]0
                 [void][WinNative]::GetWindowThreadProcessId($hScan, [ref]$wpid2)
-                if ($cls2.ToString() -eq '#32770' -and $wpid2 -eq $appPid) { $dlgHwnd = $hScan; break }
+                $cls2s = $cls2.ToString()
+                if (($cls2s -eq '#32770' -or $cls2s -match 'Picker') -and $wpid2 -eq $appPid) { $dlgHwnd = $hScan; break }
               }
             } while ($hScan -ne [IntPtr]::Zero)
           } catch { }
-          if ($dlgHwnd -eq [IntPtr]::Zero) { break }
-          Log "$id press-esc: app dialog still open (round $round), send WM_CLOSE"
+          if ($dlgHwnd -eq [IntPtr]::Zero) {
+            $quietScans++
+            if ($closedCount -gt 0 -and $quietScans -ge 8) { break }
+            if ($closedCount -eq 0 -and $quietScans -ge 8) { break }
+            Start-Sleep -Milliseconds 800
+            continue
+          }
+          $closedCount++
+          $quietScans = 0
+          Log "$id press-esc: app dialog still open (close $closedCount), send WM_CLOSE"
           Push-Evidence "$id esc-dialog-still-open"
           try { $res2 = [IntPtr]::Zero; [void][WinNative]::SendMessageTimeoutW($dlgHwnd, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero, 0x0002, 1000, [ref]$res2) } catch { }
           Start-Sleep -Milliseconds 900
         }
+        # 云346 追修②：Win32 类名扫不中时的 UIA 兜底——桌面根找应用进程对话框窗，点其 Cancel/取消（真实用户动作）
+        try {
+          $desk = [System.Windows.Automation.AutomationElement]::RootElement
+          $wins3 = $desk.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+          foreach ($w3 in $wins3) {
+            try {
+              $h3 = [IntPtr]$w3.Current.NativeWindowHandle
+              if ($h3 -eq [IntPtr]::Zero) { continue }
+              $wpid3 = [uint32]0
+              [void][WinNative]::GetWindowThreadProcessId($h3, [ref]$wpid3)
+              if ($wpid3 -ne $appPid) { continue }
+              $cls3 = New-Object System.Text.StringBuilder 256
+              [void][WinNative]::GetClassNameW($h3, $cls3, 256)
+              if ($cls3.ToString() -notmatch '32770|Picker') { continue }
+              $cancel3 = $null
+              foreach ($nm in @('Cancel','取消')) {
+                $cancel3 = $w3.FindFirst([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $nm)))
+                if ($null -ne $cancel3) { break }
+              }
+              if ($null -ne $cancel3) {
+                ($cancel3.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke()
+                $closedCount++
+                Log "$id press-esc: UIA fallback clicked Cancel on app dialog"
+                Push-Evidence "$id esc-dialog-uia-cancel"
+                Start-Sleep -Milliseconds 900
+              }
+            } catch { }
+          }
+        } catch { }
+        if ($closedCount -gt 0) { Log "$id press-esc: closed $closedCount app dialog(s) in persistence window" }
       }
       default { throw "unknown action: $action" }
     }
