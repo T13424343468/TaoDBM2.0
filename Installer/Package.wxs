@@ -34,12 +34,12 @@
     <Property Id="NETDESKREG">
       <RegistrySearch Id="NetDesktopRegSrch" Root="HKLM"
                       Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost"
-                      Name="Version" Type="raw" Win64="yes" />
+                      Name="Version" Type="raw" Bitness="always64" />
     </Property>
     <Property Id="NETDESKDIR">
       <DirectorySearch Id="NetDesktopDirSrch"
                        Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App"
-                       Win64="yes" />
+                       Bitness="always64" />
     </Property>
 
     <UI Id="TaoDBMInstallUI">
@@ -92,12 +92,13 @@
       <Dialog Id="VerifyReadyDlg" Width="440" Height="130" Title="[ProductName] 安装程序">
         <Control Id="ReadyText" Type="Text" X="20" Y="30" Width="400" Height="24"
                  Text="准备安装 TaoDBM，点击“安装”开始。" />
-        <!-- ㊳ 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动） -->
+        <!-- ㊳ 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动）。
+             WiX5 无 Control/Condition 子元素，改 SetProperty＋属性化文本：双查皆空置警示文案，否则属性空即不显示。 -->
+        <SetProperty Id="RuntimeWarnText" After="AppSearch" Sequence="both"
+                     Value="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。"
+                     Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
         <Control Id="RuntimeWarn" Type="Text" X="20" Y="56" Width="400" Height="14"
-                 Text="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。">
-          <Condition Action="show">NOT NETDESKREG AND NOT NETDESKDIR</Condition>
-          <Condition Action="hide">NETDESKREG OR NETDESKDIR</Condition>
-        </Control>
+                 Text="[RuntimeWarnText]" />
         <Control Id="BackBtn" Type="PushButton" X="270" Y="95" Width="70" Height="22" Text="返回">
           <Publish Event="NewDialog" Value="MainDlg" />
         </Control>
