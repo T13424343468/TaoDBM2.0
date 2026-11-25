@@ -55,7 +55,13 @@ jobs:
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $exe = ((Get-Content navicat-env.txt | Select-Object -First 1)) -replace '^NavicatExe=',''
+          # v8：v6/v7 实锤 ExePath 经 env 文件交接后传空，Navicat 从未启动；改为直接重找 exe 并落诊断日志
+          "env-exists=$(Test-Path navicat-env.txt)" | Out-File walk-log.txt -Append -Encoding utf8
+          if (Test-Path navicat-env.txt) { Get-Content navicat-env.txt | Out-File walk-log.txt -Append -Encoding utf8 }
+          $found = Get-ChildItem "C:\Navicat","C:\Program Files\PremiumSoft" -Recurse -Filter "navicat.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $found) { Write-Host "::error::navicat.exe not found in record step"; exit 1 }
+          $exe = $found.FullName
+          "exe=[$exe]" | Out-File walk-log.txt -Append -Encoding utf8
           # 录屏：整桌面 10fps，最长 9 分钟保险
           $ff = Start-Process -FilePath "$PWD\ffmpeg.exe" -ArgumentList '-y','-f','gdigrab','-framerate','10','-i','desktop','-c:v','libx264','-preset','veryfast','-crf','28','-pix_fmt','yuv420p','-g','20','-movflags','+frag_keyframe+empty_moov','-t','540','nav-walk.mp4' -PassThru -WindowStyle Hidden
           Start-Sleep -Seconds 3
