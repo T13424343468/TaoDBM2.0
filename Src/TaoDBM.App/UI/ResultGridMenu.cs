@@ -30,7 +30,10 @@ public static class ResultGridMenu
         }
         menu.Items.Add(MenuItem("分析本列", () => _ = ShowAnalysisAsync(host, r, colIdx)));
         if (!string.IsNullOrWhiteSpace(sourceSql))
+        {
             menu.Items.Add(MenuItem("钉住到看板", () => _ = ShowPinAsync(host, r, colIdx, sourceSql, engine)));
+            menu.Items.Add(MenuItem("钉到报表页", () => PinToReportPage(r, colIdx, sourceSql, engine, info)));   // ㉘：点选出图即钉住
+        }
         if (owner is not null && info is not null)
         {
             menu.Items.Add(MenuItem("设计助手：图表规范（带本结果）", () => DesignAssistDialog.Show(owner, info, last: r)));   // 三-10：结果快照直进图表输入
@@ -149,6 +152,17 @@ public static class ResultGridMenu
         foreach (var c in sql) { h = h * 31 + c; }
         foreach (var c in column) { h = h * 31 + c; }
         return $"pin-{h & 0x7FFFFFFF:X8}";
+    }
+
+    /// <summary>㉘ 钉到报表页（2026-11-25 设计稿冻结）：点选列名即出图——RecommendType 自动选型，卡上可手动切换图型与聚合列。</summary>
+    static void PinToReportPage(QueryResult r, int colIdx, string sourceSql, string? engine, NodeInfo? info)
+    {
+        string column = r.Columns[colIdx];
+        string type = ChartSpecBuilder.RecommendType(r, column);
+        string cardId = "rp-" + PinIdOf(sourceSql, column)[4..];   // 同 SQL 同列同卡：重复钉住即更新
+        ReportPageStore.Upsert(new ReportPageStore.Card(
+            cardId, $"{column} · {Summarize(sourceSql)}", sourceSql, engine ?? "SQLite", column, type, info?.Db, DateTimeOffset.UtcNow));
+        AppLog.Write($"[报表页] 钉住 卡={cardId} 列={column} 型={type}");   // ㉘ 落账锚点
     }
 
     static string Summarize(string sql)

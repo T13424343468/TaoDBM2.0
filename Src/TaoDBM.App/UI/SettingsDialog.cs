@@ -114,7 +114,16 @@ public static class SettingsDialog
             Margin = new Thickness(0, 12, 0, 0),
         };
 
+        // ㉔ SQL 补全开关（2026-11-25 设计稿冻结）：输入即弹默认开，Ctrl+Space 兜底不受影响
+        var chkComplete = new CheckBox
+        {
+            Content = "SQL 编辑器输入时自动弹出补全（Ctrl+Space 兜底）",
+            IsChecked = Core.SqlCompletePrefs.Load(),
+            Margin = new Thickness(0, 8, 0, 0),
+        };
+
         panel.Children.Add(chkSqlLatest);
+        panel.Children.Add(chkComplete);
         panel.Children.Add(new TextBlock
         {
             Text = "设置保存即生效。主题、连接、收藏等沿用各自入口。",
@@ -136,6 +145,7 @@ public static class SettingsDialog
             vm.SaveCommand.Execute(null);
             SaveNotify();
             Core.SqlOpenPrefs.Save(chkSqlLatest.IsChecked == true);
+            Core.SqlCompletePrefs.Save(chkComplete.IsChecked == true);   // ㉔：补全开关保存即生效
         }
     }
 

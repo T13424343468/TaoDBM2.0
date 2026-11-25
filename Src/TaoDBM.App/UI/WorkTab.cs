@@ -183,6 +183,7 @@ public partial class WorkTab : Grid
         if (mode == WorkMode.Query)
         {
             _editor.TextChanged += (_, _) => { if (!_applying) { _hlTimer.Stop(); _hlTimer.Start(); SetDirty(true); } };
+            _editor.TextChanged += OnAutoCompleteTextChanged;   // ㉔：输入即弹（设置页开关默认开，Ctrl+Space 兜底不变）
             _editor.Loaded += (_, _) => SetEditorFont();
             Ant.ThemeApplied += OnThemeApplied;
             Unloaded += (_, _) => Ant.ThemeApplied -= OnThemeApplied;
@@ -1864,19 +1865,20 @@ public partial class WorkTab : Grid
         finally { _applying = false; }
     }
 
-    // ---------- SQL 补全（Ctrl+Space，格1：非模态浮层，键盘直达） ----------
+    // ---------- SQL 补全（㉔ 设计稿冻结 2026-11-25：输入即弹＋Ctrl+Space 兜底，候选三层，别名感知） ----------
 
-    /// <summary>表名候选懒加载：一次取当前库子对象清单后缓存（融合远端 D-12 能力）。</summary>
+    /// <summary>表名候选懒加载：一次取当前库子对象清单后缓存（融合远端 D-12 能力）；60 秒过期重取（设计稿口径）。</summary>
     private void EnsureTables()
     {
-        if (_tables.Count > 0 || _tablesLoading) return;
+        if (_tablesLoading) return;
+        if (_tables.Count > 0 && DateTimeOffset.UtcNow - _tablesAt < TimeSpan.FromSeconds(SqlComplete.MetaCacheSeconds)) return;
         _tablesLoading = true;
         _ = EnsureTablesAsync();
     }
 
     private async Task EnsureTablesAsync()
     {
-        try { var kids = await _provider.GetChildren(_db); _tables = kids.ToList(); }
+        try { var kids = await _provider.GetChildren(_db); _tables = kids.ToList(); _tablesAt = DateTimeOffset.UtcNow; }
         catch { /* 元数据取不到就只用关键字＋列 */ }
         finally { _tablesLoading = false; }
     }
@@ -1894,6 +1896,10 @@ public partial class WorkTab : Grid
     private ListView? _completeList;
     private int _completeStart;
     private List<string> _completeAll = new();
+    private DateTimeOffset _tablesAt = DateTimeOffset.MinValue;   // ㉔：表名缓存水位（60 秒过期）
+    private readonly Dictionary<string, (List<string> Cols, DateTimeOffset At)> _colCache = new();   // ㉔：别名/表名字段缓存
+    private readonly HashSet<string> _colLoading = new();
+    private bool _inserting;   // ㉔：补全插入中，挡住自动弹出（插入走 GetRange 定点编辑，保撤销）
     // 格7：流式导出进度与取消
     private TextBlock? _exportProgressText;
     private CancellationTokenSource? _exportCts;
@@ -1903,32 +1909,92 @@ public partial class WorkTab : Grid
     private void ShowComplete()
     {
         int caret = _editor.Document?.Selection?.StartPosition ?? 0;
-        string text = EditorText;
-        int start = caret;
-        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
-        string word = text[start..caret];
-
-        var candidates = CompleteCandidates(word);
-        if (candidates.Count == 0) { AppLog.Write($"[补全] 无候选 词={word}"); return; }
+        var candidates = ComputeCandidates(EditorText, caret, out int start, out string word);
+        if (candidates is null || candidates.Count == 0) { CloseCompletePopup(); return; }
         _completeStart = start;
         _completeAll = candidates;
         OpenCompletePopup();
         AppLog.Write($"[补全] 打开 候选={candidates.Count} 词={word}");
     }
 
-    private List<string> CompleteCandidates(string word) => Keywords
-        .Concat(_tables)   // 融合远端 D-12：候选含当前库表名
-        .Concat(_cols.Select(c => c.Name))
-        .Where(k => k.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
-                    !k.Equals(word, StringComparison.OrdinalIgnoreCase))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .Take(30).ToList();
+    /// <summary>输入即弹（㉔）：弹层未开时，光标前是词根字符或限定点才弹；开关关、程序写文本、插入中一律不弹。</summary>
+    private void OnAutoCompleteTextChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_applying || _inserting || _mode != WorkMode.Query) return;
+        if (_completePopup is { IsOpen: true }) return;   // 已开：走 OnCompleteTextChanged 重过滤
+        if (!SqlCompletePrefs.Load()) return;
+        int caret = _editor.Document?.Selection?.StartPosition ?? 0;
+        string text = EditorText;
+        if (caret < 1 || caret > text.Length) return;
+        char prev = text[caret - 1];
+        if (!(char.IsLetterOrDigit(prev) || prev == '_' || prev == '.')) return;
+        ShowComplete();
+    }
+
+    /// <summary>候选三层（㉔ 设计稿）：限定词 x. → 该表字段（60 秒缓存，未命中异步装载）；否则关键字＋表名＋当前列。</summary>
+    private List<string>? ComputeCandidates(string text, int caret, out int start, out string word)
+    {
+        start = caret;
+        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
+        word = text[start..caret];
+
+        string? qualTable = SqlComplete.QualifierTable(text, caret);
+        if (qualTable is not null)
+        {
+            var cols = CachedColumns(qualTable);
+            return cols is null ? null : SqlComplete.Filter(cols, word);   // null＝装载中，本轮不出候选
+        }
+        if (word.Length == 0) return new List<string>();   // 无词根无限定词不弹（避免全量噪音）
+        EnsureTables();
+        return SqlComplete.Filter(Keywords.Concat(_tables).Concat(_cols.Select(c => c.Name)), word);
+    }
+
+    /// <summary>字段缓存命中返回清单；未命中触发异步装载（60 秒过期，失败静默降级空集）。</summary>
+    private List<string>? CachedColumns(string table)
+    {
+        if (_colCache.TryGetValue(table, out var hit) &&
+            DateTimeOffset.UtcNow - hit.At < TimeSpan.FromSeconds(SqlComplete.MetaCacheSeconds))
+            return hit.Cols;
+        if (_colLoading.Add(table))
+        {
+            _ = LoadColumnsAsync(table);
+            AppLog.Write($"[补全] 字段装载中 表={table}");
+        }
+        return null;
+    }
+
+    private async Task LoadColumnsAsync(string table)
+    {
+        try
+        {
+            var cols = await _provider.GetColumns(_db, table);
+            _colCache[table] = (cols.Select(c => c.Name).ToList(), DateTimeOffset.UtcNow);
+            // 装载完成：浮层开着就重刷候选；没开且光标仍停在限定点后，就地补弹
+            Safe.Run(() =>
+            {
+                if (_completePopup is { IsOpen: true }) RefreshCompleteList();
+                else if (_mode == WorkMode.Query && !_inserting) ShowComplete();
+            }, "补全刷新");
+        }
+        catch { _colCache[table] = (new List<string>(), DateTimeOffset.UtcNow); }   // 元数据失败静默降级
+        finally { _ = _colLoading.Remove(table); }
+    }
+
+    private void RefreshCompleteList()
+    {
+        int caret = _editor.Document?.Selection?.StartPosition ?? 0;
+        var candidates = ComputeCandidates(EditorText, caret, out int start, out _);
+        if (candidates is null || candidates.Count == 0) { CloseCompletePopup(); return; }
+        _completeStart = start;
+        _completeAll = candidates;
+        if (_completeList is not null) { FillCompleteItems(_completeList); _completeList.SelectedIndex = 0; }
+    }
 
     private void OpenCompletePopup()
     {
         CloseCompletePopup();
         var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, Height = 280, MaxWidth = 380 };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(lv, "CompleteList");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(lv, "SqlCompleteList");
         FillCompleteItems(lv);
         lv.SelectedIndex = 0;
         lv.DoubleTapped += (_, _) => InsertComplete();
@@ -1941,7 +2007,7 @@ public partial class WorkTab : Grid
             BorderThickness = new Thickness(1),
             CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(border, "CompletePopup");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(border, "SqlCompletePopup");
         var popup = new Popup { Child = border, IsLightDismissEnabled = true };
         // 光标矩形定位：编辑器在窗口内的原点＋光标矩形偏移；取不到时退编辑器左上
         try
@@ -2004,29 +2070,29 @@ public partial class WorkTab : Grid
 
     private void OnCompleteTextChanged(object? sender, RoutedEventArgs e)
     {
-        // 继续输入重过滤；插入路径由 _applying 挡住（高亮定时器同款口径）
-        if (_completePopup is null || !_completePopup.IsOpen || _applying) return;
-        int caret = _editor.Document?.Selection?.StartPosition ?? 0;
-        string text = EditorText;
-        int start = caret;
-        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
-        string word = text[start..caret];
-        _completeStart = start;
-        var candidates = CompleteCandidates(word);
-        if (candidates.Count == 0) { CloseCompletePopup(); return; }
-        _completeAll = candidates;
-        if (_completeList is not null) { FillCompleteItems(_completeList); _completeList.SelectedIndex = 0; }
+        // 继续输入重过滤；插入路径由 _applying/_inserting 挡住（高亮定时器同款口径）
+        if (_completePopup is null || !_completePopup.IsOpen || _applying || _inserting) return;
+        RefreshCompleteList();
     }
 
     private void InsertComplete()
     {
         if (_completeList is null || _completeList.SelectedIndex < 0) { CloseCompletePopup(); return; }
         string pick = _completeAll[_completeList.SelectedIndex];
-        string text = EditorText;
-        int start = Math.Min(_completeStart, text.Length);
-        EditorText = text[..start] + pick + text[start..];
-        _editor.Document?.Selection?.SetRange(start + pick.Length, start + pick.Length);
-        CloseCompletePopup();
+        // ㉔：特殊字符表/字段自动 Provider.Quote；插入走 GetRange 定点替换词根，保撤销（发现 56 同口径）
+        string insert = SqlComplete.NeedsQuote(pick) ? _provider.Quote(pick) : pick;
+        var doc = _editor.Document;
+        if (doc is null) { CloseCompletePopup(); return; }
+        int caret = doc.Selection?.StartPosition ?? 0;
+        int start = Math.Min(_completeStart, caret);
+        CloseCompletePopup();   // 先摘钩再改文本，插入不触发补全重弹
+        _inserting = true;
+        try
+        {
+            doc.GetRange(start, caret - start).Text = insert;
+            doc.Selection?.SetRange(start + insert.Length, start + insert.Length);
+        }
+        finally { _inserting = false; }
         AppLog.Write($"[补全] 插入 {pick}");
         _editor.Focus(FocusState.Programmatic);
     }

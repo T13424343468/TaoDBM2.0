@@ -664,6 +664,7 @@ public partial class MainWindow : Window
                     SubItem("服务器监控", (_, _) => UI.ServerMonitorDialog.Show(this, info));   // 批次三格2
                     SubItem("命令监控", (_, _) => UI.CommandMonitorDialog.Show(this, info));   // 批次三格3
                     SubItem("仪表板", (_, _) => UI.DashboardDialog.Show(this, info));   // 批次五格6
+                    SubItem("报表页", (_, _) => UI.ReportPageDialog.Show(this, info));   // ㉘：点选出图即钉住（2026-11-25 设计稿冻结）
                 });
                 Sep();
                 Item("关闭连接", (_, _) => CloseConnection(info, node));

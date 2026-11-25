@@ -4235,6 +4235,7 @@ TaoDBM.LogicTest.KanbanAnalysis.RunAll(Check);   // 批次E：点选式分析 + 
 TaoDBM.LogicTest.BatchCheck23.RunAll(Check);   // 批次二三：库搜索/监控/INSERT 复制/计划 Kind/连接分组/隧道生命周期
 TaoDBM.LogicTest.BatchCheck45.RunAll(Check);   // 批次四五：xlsx/XML/HTML/备份SQL/账本/DdlParser/三层模型/比较/预设/ERD符号/字典/ODBC
 TaoDBM.LogicTest.ColumnLazyCheck.RunAll(Check);   // 批次F：宽表列按需加载（2026-11-20 全覆盖令）
+TaoDBM.LogicTest.SqlCompleteCheck.RunAll(Check);   // ㉔㉘：SQL补全别名感知/报表页卡片存储（2026-11-25 设计稿冻结落码）
 
 // 制度补齐层：tao-testing-standard 标准测试项与 v3.3 新增把尺逐项落测（2026-11-18 老板令「按制度全覆盖无死角补齐」）
 Layer("制度补齐");
