@@ -10,6 +10,8 @@
             </ResourceDictionary.MergedDictionaries>
             <!-- A2 强调色族随象：accent 全族（含浅/深变体）由 UI/Ant 运行时挂会变色画刷，勿在此写死色值 -->
             <x:Double x:Key="AntRadius">8</x:Double>
+            <!-- D①：弹窗宽度上限统一 900（原 548 大弹窗裁切） -->
+            <x:Double x:Key="ContentDialogMaxWidth">900</x:Double>
             <FontFamily x:Key="AntMono">Consolas, Cascadia Mono, Courier New</FontFamily>
         </ResourceDictionary>
     </Application.Resources>

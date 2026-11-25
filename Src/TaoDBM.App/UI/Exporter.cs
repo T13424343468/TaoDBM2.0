@@ -81,9 +81,7 @@ public static class Exporter
         _ => Format(v),
     };
 
-    static string HumanSize(int n) => n < 1024 ? $"{n} B"
-        : n < 1024 * 1024 ? $"{n / 1024.0:0.#} KB"
-        : $"{n / 1024.0 / 1024.0:0.#} MB";
+    static string HumanSize(int n) => Core.HumanSize.Of(n);
 
     /// <summary>导出为 INSERT 语句（需要表名）。</summary>
     public static string InsertSql(QueryResult r, string table)

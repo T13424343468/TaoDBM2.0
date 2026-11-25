@@ -88,7 +88,7 @@ public partial class WorkTab
             AppLog.Write("[编辑器] run-selection current=" + (selLen > 0 ? "selection" : "statement"));
             await RunOrRefresh(stmt);
         }
-        catch (Exception ex) { ShowError("执行失败：" + ex.Message); }
+        catch (Exception ex) { ShowError(HumanError.Say(ex, "执行失败")); }
     }
 
     private void BeautifySql()
@@ -155,7 +155,7 @@ public partial class WorkTab
         AppLog.Write($"[编辑器] explain engine={_provider.EngineName}");
         string planSql;
         try { planSql = ExplainPlanEngine.PlanSql(_provider.Profile.Engine, stmt); }
-        catch (NotSupportedException ex) { _messageBox.Text = ex.Message; return; }
+        catch (NotSupportedException ex) { _messageBox.Text = HumanError.Say(ex, "执行计划"); return; }
         await RunOrRefresh(planSql);
     }
 

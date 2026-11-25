@@ -25,6 +25,14 @@ public class ConnectionProfile
     public string TunnelUrl { get; set; } = "";
     // 批次三格5：认证方式（password=账号密码 / integrated=Windows 集成；缺省兼容旧 JSON）
     public string AuthMode { get; set; } = "password";
+    // E①：Redis 哨兵模式（direct=直连 / sentinel=哨兵；缺省兼容旧 JSON）
+    public string RedisMode { get; set; } = "direct";
+    public string SentinelMaster { get; set; } = "";   // 哨兵 master 名称（如 mymaster）
+    public string SentinelNodes { get; set; } = "";    // 哨兵节点列表 host:port;host:port（分号或换行分隔）
+    // E②：连接树四件套——分组 / 星标 / 隐藏（对齐 Navicat；缺省兼容旧 JSON）
+    public string Group { get; set; } = "";
+    public bool Starred { get; set; }
+    public bool Hidden { get; set; }
 }
 
 public static class ProfileCrypto

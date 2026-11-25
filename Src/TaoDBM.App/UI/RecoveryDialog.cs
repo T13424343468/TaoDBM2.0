@@ -108,7 +108,7 @@ public static class RecoveryDialog
         }
         catch (Exception ex)
         {
-            status.Text = "读取表数据失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "读取表数据失败");
             return;
         }
         if (rs.Rows.Count == 0) { status.Text = "表为空，无需快照。"; return; }
@@ -146,7 +146,7 @@ public static class RecoveryDialog
         }
         catch (Exception ex)
         {
-            status.Text = "快照保存失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "快照保存失败");
         }
     }
 

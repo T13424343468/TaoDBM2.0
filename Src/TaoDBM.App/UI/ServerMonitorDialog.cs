@@ -75,7 +75,7 @@ public static class ServerMonitorDialog
                                 AppLog.Write("[监控] 终止=1");
                                 _ = Sample();
                             }
-                            catch (Exception ex) { status.Text = "终止失败：" + ex.Message; }
+                            catch (Exception ex) { status.Text = HumanError.Say(ex, "终止失败"); }
                         };
                         sessions.Items.Add(item);
                     }
@@ -85,7 +85,7 @@ public static class ServerMonitorDialog
             }
             catch (Exception ex)
             {
-                status.Text = "采样失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "采样失败");
             }
         }
 

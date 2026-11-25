@@ -72,7 +72,7 @@ public static class TeamShareMergeDialog
                 await System.IO.File.WriteAllTextAsync(path, TeamShareMerge.ToJson(_result.Merged));
                 status.Text = $"已保存：{path}";
             }
-            catch (Exception ex) { status.Text = "保存失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;
         };
 

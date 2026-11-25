@@ -56,6 +56,10 @@ public partial class WorkTab : Grid
     private readonly TextBlock _pageInfo = new() { VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor };
     private readonly Button _prevBtn = new() { Content = "◀ 上一页", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(8, 3, 8, 3) };
     private readonly Button _nextBtn = new() { Content = "下一页 ▶", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(8, 3, 8, 3) };
+    // D⑦：分页可调可跳页——每页行数下拉＋页码跳转；浏览筛选框（当前结果关键字过滤）
+    private readonly ComboBox _pageSizeBox = new() { Width = 110, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBox _pageJumpBox = new() { Width = 64, VerticalAlignment = VerticalAlignment.Center, PlaceholderText = "页码" };
+    private readonly TextBox _browseFilterBox = new() { Width = 150, VerticalAlignment = VerticalAlignment.Center, PlaceholderText = "筛选列/值" };
 
     private readonly ScrollViewer _resultsHost = new()
     {
@@ -72,12 +76,36 @@ public partial class WorkTab : Grid
         MaxHeight = 140,
         PlaceholderText = "消息",
     };
+    // B②：底部结果条——钉死页签底部、固定行高（行数 · 耗时 · 时间），数据多走内部滚动
+    private readonly TextBlock _resultBar = new()
+    {
+        FontSize = AntTokens.FontMinor,
+        Foreground = Ant.TextSub,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(10, 0, 10, 0),
+        TextTrimming = TextTrimming.CharacterEllipsis,
+    };
+    // B⑦：Ctrl+F 结果集查找条——按关键字过滤当前结果行，Esc 清空恢复
+    private readonly TextBox _findBox = new()
+    {
+        PlaceholderText = "查找（关键字过滤，Esc 清空）",
+        FontSize = AntTokens.FontMinor,
+        MinWidth = 260,
+    };
+    private readonly TextBlock _findHint = new()
+    {
+        FontSize = AntTokens.FontMinor,
+        Foreground = Ant.TextSub,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(8, 0, 0, 0),
+    };
+    private List<QueryResult> _lastFull = new();
 
     private List<QueryResult> _last = new();
     private QueryResult? _browseResult;
     private List<ColumnSpec> _cols = new();
     private int _offset;
-    private const int PageSize = 200;
+    private int _pageSize = 200;   // D⑦：分页可调（原写死 200）
     private bool _busy;
 
     // 表名候选预载（融合远端 D-12 能力：补全候选含当前库表名；弹层本体用格1 键盘化实现）
@@ -164,51 +192,108 @@ public partial class WorkTab : Grid
 
         // 层色底定律：标签页根板显式挂主题底色，中间内容靠网格自带层色与描边，不依赖系统纯黑
         Background = Ant.Bg;
-        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RowDefinitions.Add(new RowDefinition { Height = mode == WorkMode.Query ? GridLength.Auto : new GridLength(0) });
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 0 工具栏
+        RowDefinitions.Add(new RowDefinition { Height = mode == WorkMode.Query ? GridLength.Auto : new GridLength(0) });             // 1 编辑器
+        RowDefinitions.Add(new RowDefinition { Height = mode == WorkMode.Query ? GridLength.Auto : new GridLength(0) });             // 2 B⑤ 可拖分栏
         // D-8 修红（2026-11-22 老板令）：结果区此前挂 Auto 行随内容缩成小条、下方空 Star 行整片留白——
         // 对齐 Navicat/DBeaver 口径：结果区撑满剩余空间，数据多时出滚动条
-        RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });                                     // 3 结果区
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 4 B⑦ 查找条（默认收起）
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 5 B② 结果条（钉底固定行高）
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 6 消息区
 
-        // 工具栏
+        // 工具栏（B⑥：高频留一级，低频收「更多」分组菜单）
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(10, 8, 10, 8) };
         bar.Children.Add(_dbBox);
         bar.Children.Add(_runBtn);
         bar.Children.Add(_stopBtn);
-        bar.Children.Add(_csvBtn);
-        if (provider is not (MongoProvider or RedisProvider)) bar.Children.Add(_insBtn);
-        bar.Children.Add(_exportMoreBtn);   // 批次四格1/2：Excel / XML / HTML 导出
+        // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
+        // B⑥：低频项收进「更多 ▾」——Flyout 内保留原按钮（名称/AutomationId 不变，走查先点「更多」再点目标）
+        var morePanel = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6, Margin = new Thickness(10) };
+        var moreFlyout = new Flyout { Content = morePanel };
+        var moreBtn = new Button { Content = "更多 ▾", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(moreBtn, "work-more");
+        moreBtn.Flyout = moreFlyout;
+        void MoreLow(Button b)
+        {
+            morePanel.Children.Add(b);
+            b.Click += (_, _) => moreFlyout.Hide();
+        }
+        if (provider is not (MongoProvider or RedisProvider)) MoreLow(_insBtn);
+        bar.Children.Add(_exportMoreBtn);   // D⑤：CSV/INSERT/Excel/XML/HTML 收成一个「导出 ▾」菜单
         if (mode == WorkMode.TableData && provider.SupportsBrowse && provider.IsNoSql == false)
         {
             bar.Children.Add(_structBtn);
             bar.Children.Add(_addRowBtn);
             bar.Children.Add(_importBtn);
             bar.Children.Add(_designBtn);
-            bar.Children.Add(_fakerBtn);
-            if (provider is RelationalProvider) bar.Children.Add(_formBtn);   // 批次二格1：表单视图（关系库浏览页）
-            bar.Children.Add(_pasteBtn);   // 批次二格4：粘贴数据
+            MoreLow(_fakerBtn);
+            if (provider is RelationalProvider) MoreLow(_formBtn);   // 批次二格1：表单视图（关系库浏览页）
+            MoreLow(_pasteBtn);   // 批次二格4：粘贴数据
         }
         if (mode == WorkMode.TableData && provider is RedisProvider && child.Length > 0)
         {
             bar.Children.Add(_delKeyBtn);   // Redis 键详情页：删除当前键
             _delKeyBtn.Click += (_, _) => _ = DeleteKeyAsync();
         }
-        if (mode == WorkMode.Query) { bar.Children.Add(_favBtn); bar.Children.Add(_histBtn); }
-        bar.Children.Add(_reportBtn);
-        bar.Children.Add(_assistBtn);
+        if (mode == WorkMode.Query) { MoreLow(_favBtn); MoreLow(_histBtn); }
+        MoreLow(_reportBtn);
+        MoreLow(_assistBtn);
+        bar.Children.Add(moreBtn);
         bar.Children.Add(new TextBlock { Text = "　", Width = 8 });
         bar.Children.Add(_prevBtn);
         bar.Children.Add(_pageInfo);
         bar.Children.Add(_nextBtn);
+        bar.Children.Add(_pageSizeBox);   // D⑦：每页行数
+        bar.Children.Add(_pageJumpBox);   // D⑦：页码跳转
+        bar.Children.Add(_browseFilterBox);   // D⑦：浏览筛选（当前结果关键字过滤）
         Children.Add(bar);
         SetRow(bar, 0);
 
-        if (mode == WorkMode.Query) { Children.Add(_editor); SetRow(_editor, 1); _editor.Height = 170; }
+        if (mode == WorkMode.Query)
+        {
+            Children.Add(_editor); SetRow(_editor, 1); _editor.Height = 170;
+            // B⑤：编辑器与结果区之间可拖分栏——悬停高亮＋↕光标，拖完即用（会话随页签）
+            var vsplit = new Border
+            {
+                Height = 6,
+                Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+            };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(vsplit, "work-vsplit");
+            bool vDrag = false; double vStartY = 0, vStartH = 0;
+            vsplit.PointerEntered += (_, _) =>
+            {
+                vsplit.Background = Ant.Primary;
+                vsplit.ProtectedCursor = Microsoft.UI.Input.InputCursor.Create(Windows.UI.Core.CoreCursorType.SizeNorthSouth);
+            };
+            vsplit.PointerExited += (_, _) => { if (!vDrag) vsplit.Background = new SolidColorBrush(Windows.UI.Colors.Transparent); };
+            vsplit.PointerPressed += (_, e) => { vDrag = true; vStartY = e.GetCurrentPoint(vsplit).Position.Y; vStartH = _editor.Height; vsplit.CapturePointer(e.Pointer); e.Handled = true; };
+            vsplit.PointerMoved += (_, e) =>
+            {
+                if (!vDrag) return;
+                double dy = e.GetCurrentPoint(vsplit).Position.Y - vStartY;
+                _editor.Height = Math.Clamp(vStartH + dy, 60, 600);
+                e.Handled = true;
+            };
+            vsplit.PointerReleased += (_, e) =>
+            {
+                if (!vDrag) return;
+                vDrag = false;
+                vsplit.ReleasePointerCapture(e.Pointer);
+                vsplit.Background = new SolidColorBrush(Windows.UI.Colors.Transparent);
+                vsplit.ProtectedCursor = null;
+                e.Handled = true;
+            };
+            Children.Add(vsplit);
+            SetRow(vsplit, 2);
+            // 分栏插入后结果区/结果条/消息区顺延一行
+        }
 
         _resultsHost.Padding = new Thickness(4);
         Children.Add(_resultsHost);
-        SetRow(_resultsHost, 2);
+        SetRow(_resultsHost, 3);
 
         var msgBorder = new Border
         {
@@ -243,7 +328,48 @@ public partial class WorkTab : Grid
         msgArea.Children.Add(_errorBanner);
         msgArea.Children.Add(msgBorder);
         Children.Add(msgArea);
-        SetRow(msgArea, 3);   // D-8 修红：消息区随结果区上移一行
+        SetRow(msgArea, 6);   // D-8 修红：消息区随结果区上移；B② 结果条占第 5 行钉底
+
+        // B②：底部结果条钉死页签底部、固定行高——行数 · 耗时 · 时间，数据多走内部滚动
+        var resultBarHost = new Border
+        {
+            Child = _resultBar,
+            Height = 26,
+            Background = Ant.Card,
+            BorderBrush = Ant.Border,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+        };
+        Children.Add(resultBarHost);
+        SetRow(resultBarHost, 5);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_resultBar, "work-result-bar");
+
+        // B⑦：Ctrl+F 结果集查找条——默认收起，Ctrl+F 唤起，Esc 清空恢复
+        var findBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Padding = new Thickness(8, 4, 8, 4) };
+        findBar.Children.Add(_findBox);
+        findBar.Children.Add(_findHint);
+        var findHost = new Border { Child = findBar, Background = Ant.Card, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 1, 0, 1), Visibility = Visibility.Collapsed };
+        Children.Add(findHost);
+        SetRow(findHost, 4);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_findBox, "work-find-box");
+        _findBox.TextChanged += (_, _) => ApplyFindFilter();
+        _findBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                _findBox.Text = "";
+                findHost.Visibility = Visibility.Collapsed;
+                _editor?.Focus(FocusState.Programmatic);
+                e.Handled = true;
+            }
+        };
+        var ctrlF = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Microsoft.UI.Xaml.Input.VirtualModifiers.Control, Key = Windows.System.VirtualKey.F };
+        KeyboardAccelerators.Add(ctrlF);
+        ctrlF.Invoked += (_, args) =>
+        {
+            findHost.Visibility = Visibility.Visible;
+            _findBox.Focus(FocusState.Programmatic);
+            args.Handled = true;
+        };
 
         // UIA 自动化标识（界面自动化走查定位用）
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_editor, "work-editor");
@@ -256,9 +382,7 @@ public partial class WorkTab : Grid
 
         _runBtn.Click += (_, _) => _ = RunOrRefresh();
         _stopBtn.Click += (_, _) => _runCts?.Cancel();
-        _csvBtn.Click += (_, _) => _ = ExportAsync(ExportKind.Csv);
-        _insBtn.Click += (_, _) => _ = ExportAsync(ExportKind.InsertSql);
-        // 批次四格1/2：导出格式组（Excel / XML / HTML），AutomationId=ExportExcel/ExportXml/ExportHtml
+        // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
         var exportMenu = new MenuFlyout();
         MenuFlyoutItem ExportItem(string text, string id, ExportKind kind)
         {
@@ -268,6 +392,8 @@ public partial class WorkTab : Grid
             exportMenu.Items.Add(it);
             return it;
         }
+        ExportItem("导出 CSV（.csv）", "ExportCsv", ExportKind.Csv);
+        ExportItem("导出 INSERT SQL（.sql）", "ExportInsert", ExportKind.InsertSql);
         ExportItem("导出 Excel（xlsx）", "ExportExcel", ExportKind.Excel);
         ExportItem("导出 XML", "ExportXml", ExportKind.Xml);
         ExportItem("导出 HTML", "ExportHtml", ExportKind.Html);
@@ -305,8 +431,26 @@ public partial class WorkTab : Grid
             var info = new NodeInfo { Kind = NodeKind.Database, Profile = _provider.Profile, Provider = _provider, Db = _db, Name = _db };
             UI.DesignAssistDialog.Show(_owner, info, table: _child.Length > 0 ? _child : null, last: _last?.Count > 0 ? _last[0] : null);
         };
-        _prevBtn.Click += (_, _) => { if (_offset >= PageSize) { _offset -= PageSize; _ = RunOrRefresh(); } };
-        _nextBtn.Click += (_, _) => { _offset += PageSize; _ = RunOrRefresh(); };
+        _prevBtn.Click += (_, _) => { if (_offset >= _pageSize) { _offset -= _pageSize; _ = RunOrRefresh(); } };
+        _nextBtn.Click += (_, _) => { _offset += _pageSize; _ = RunOrRefresh(); };
+        // D⑦：分页可调可跳页——每页行数下拉＋页码跳转；表浏览筛选框（当前页关键字过滤）
+        _pageSizeBox.ItemsSource = new[] { "每页 50", "每页 100", "每页 200", "每页 500" };
+        _pageSizeBox.SelectedIndex = 2;
+        _pageSizeBox.SelectionChanged += (_, _) =>
+        {
+            if (_pageSizeBox.SelectedItem is ComboBoxItem ci && ci.Tag is int n) { _pageSize = n; _offset = 0; _ = RunOrRefresh(); }
+        };
+        _pageJumpBox.KeyDown += (_, e) =>
+        {
+            if (e.Key != Windows.System.VirtualKey.Enter) return;
+            if (int.TryParse(_pageJumpBox.Text?.Trim(), out var page) && page >= 1)
+            {
+                _offset = (page - 1) * _pageSize;
+                _ = RunOrRefresh();
+            }
+            e.Handled = true;
+        };
+        _browseFilterBox.TextChanged += (_, _) => ApplyBrowseFilter();
         AddAccelerator(Windows.System.VirtualKey.F5, Windows.System.VirtualKeyModifiers.None, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Enter, Windows.System.VirtualKeyModifiers.Control, RunNow);
         AddAccelerator(Windows.System.VirtualKey.Space, Windows.System.VirtualKeyModifiers.Control, ShowComplete);
@@ -347,7 +491,7 @@ public partial class WorkTab : Grid
         {
             _dbBox.ItemsSource = new List<string> { string.IsNullOrEmpty(currentDb) ? "(默认)" : currentDb };
             _dbBox.SelectedIndex = 0;
-            ShowError("库列表加载失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "库列表加载失败"));
             AppLog.Write("[库下拉] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
     }
@@ -412,7 +556,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("保存失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "保存失败"));
         }
     }
 
@@ -427,7 +571,32 @@ public partial class WorkTab : Grid
         _prevBtn.Visibility = browse || _mode == WorkMode.TableData ? Visibility.Visible : Visibility.Collapsed;
         _nextBtn.Visibility = _prevBtn.Visibility;
         _pageInfo.Visibility = _prevBtn.Visibility;
+        _pageSizeBox.Visibility = browse ? Visibility.Visible : Visibility.Collapsed;   // D⑦：分页控件随浏览态显隐
+        _pageJumpBox.Visibility = _pageSizeBox.Visibility;
+        _browseFilterBox.Visibility = _pageSizeBox.Visibility;
         _prevBtn.IsEnabled = _offset > 0;
+    }
+
+    // D⑦：浏览分页显示收拢——三分支共用（显示＋分页按钮态＋页码文案）；hits=筛选命中总数
+    private void ShowBrowsePage(QueryResult r, Action<int>? onRowTap = null, bool editable = false, string unit = "行", string suffix = "", int? hits = null)
+    {
+        ShowResult(r, editable: editable, onRowTap: onRowTap);
+        _pageInfo.Text = r.TotalRows is long t
+            ? $"共 {t:N0} {unit} · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} {unit}{suffix}"
+            : $"{r.Rows.Count} {unit}";
+        if (hits is int h && h > r.Rows.Count) _pageInfo.Text += $" · 筛选命中 {h:N0}";
+        _prevBtn.IsEnabled = _offset > 0;
+        _nextBtn.IsEnabled = _offset + _pageSize < (r.TotalRows ?? long.MaxValue);
+    }
+
+    // D⑦：浏览筛选——空串还原整页；否则对当前浏览结果做关键字过滤（列名或单元格命中）
+    private void ApplyBrowseFilter()
+    {
+        if (_browseResult is null) return;
+        var q = _browseFilterBox.Text?.Trim() ?? "";
+        if (q.Length == 0) { ShowBrowsePage(_browseResult); return; }
+        var filtered = FilterResult(_browseResult, q);
+        ShowBrowsePage(filtered, hits: _browseResult.Rows.Count);
     }
 
     private async Task RunOrRefresh(string? sqlOverride = null)
@@ -447,36 +616,21 @@ public partial class WorkTab : Grid
                     _messageBox.Text = "该引擎不支持表/集合网格浏览。";
                     return;
                 }
-                r = await _provider.Browse(_db, _child, _offset, PageSize);
+                r = await _provider.Browse(_db, _child, _offset, _pageSize);
                 _browseResult = r;
                 if (_provider is RedisProvider)
                 {
                     bool isKeyDetail = _child.Length > 0;
-                    ShowResult(r, onRowTap: isKeyDetail ? null : idx => OpenKeyDetail(idx));
-                    _pageInfo.Text = r.TotalRows is long kt
-                        ? $"共 {kt:N0} 个键 · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} 个" + (isKeyDetail ? "" : " · 双击键查看详情")
-                        : $"{r.Rows.Count} 行";
-                    _prevBtn.IsEnabled = _offset > 0;
-                    _nextBtn.IsEnabled = _offset + PageSize < (r.TotalRows ?? long.MaxValue);
+                    ShowBrowsePage(r, onRowTap: isKeyDetail ? null : idx => OpenKeyDetail(idx), unit: "个键", suffix: isKeyDetail ? "" : " · 双击键查看详情");
                 }
                 else if (_isRelational)
                 {
                     try { _cols = await _provider.GetColumns(_db, _child); } catch { _cols.Clear(); }
-                    ShowResult(r, editable: true);
-                    _pageInfo.Text = r.TotalRows is long t
-                        ? $"共 {t:N0} 行 · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} 行 · 单击行可编辑"
-                        : $"{r.Rows.Count} 行";
-                    _prevBtn.IsEnabled = _offset > 0;
-                    _nextBtn.IsEnabled = _offset + PageSize < (r.TotalRows ?? long.MaxValue);
+                    ShowBrowsePage(r, editable: true, unit: "行", suffix: " · 单击行可编辑");
                 }
                 else
                 {
-                    ShowResult(r);
-                    _pageInfo.Text = r.TotalRows is long m
-                        ? $"共 {m:N0} 条 · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} 条"
-                        : $"{r.Rows.Count} 条";
-                    _prevBtn.IsEnabled = _offset > 0;
-                    _nextBtn.IsEnabled = _offset + PageSize < (r.TotalRows ?? long.MaxValue);
+                    ShowBrowsePage(r, unit: "条");
                 }
             }
             else
@@ -522,7 +676,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("执行失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "执行失败"));
             _owner.SetStatus("执行出错");
             AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
@@ -542,6 +696,37 @@ public partial class WorkTab : Grid
     private void ShowResults(List<QueryResult> list)
     {
         _last = list;
+        _lastFull = list;   // B⑦：全量留存供查找过滤
+        RenderResults(list);
+    }
+
+    /// <summary>B⑦：按查找关键字过滤当前结果集（空关键字恢复全量）。</summary>
+    private void ApplyFindFilter()
+    {
+        var q = _findBox.Text;
+        if (q.Length == 0)
+        {
+            _findHint.Text = "";
+            RenderResults(_lastFull);
+            return;
+        }
+        var filtered = _lastFull.Select(r => FilterResult(r, q)).ToList();
+        _findHint.Text = $"共 {_lastFull.Sum(x => x.Rows.Count)} 行 · 命中 {filtered.Sum(x => x.Rows.Count)} 行";
+        RenderResults(filtered);
+    }
+
+    private static QueryResult FilterResult(QueryResult r, string q)
+    {
+        var fr = new QueryResult { Title = r.Title, Message = r.Message, Elapsed = r.Elapsed, Affected = r.Affected, TotalRows = r.TotalRows };
+        fr.Columns.AddRange(r.Columns);
+        foreach (var row in r.Rows)
+            if (row.Any(c => (Convert.ToString(c) ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)))
+                fr.Rows.Add(row);
+        return fr;
+    }
+
+    private void RenderResults(List<QueryResult> list)
+    {
         var panel = new StackPanel { Spacing = 12 };
         var msgs = new System.Text.StringBuilder();
         QueryResult? errResult = null;
@@ -550,7 +735,8 @@ public partial class WorkTab : Grid
             panel.Children.Add(GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo()));   // 批次E：右键分析/钉住；格9 用户列宽；三-10 设计助手入口
             if (r.Message.Length > 0) msgs.AppendLine($"[{r.Title}] {r.Message}");
             // P1-01：流式/分页通道不抛异常，SQL 错误以「错误：」前缀落在结果消息里——识别后转错误横幅，与异常路径同口径
-            if (errResult is null && r.Message.StartsWith("错误：", StringComparison.Ordinal)) errResult = r;
+            // ㊴ 统一错误文案层后 Provider 侧消息为「执行没成功：…」人话格式，两种口径都识别
+            if (errResult is null && (r.Message.StartsWith("错误：", StringComparison.Ordinal) || r.Message.Contains("没成功："))) errResult = r;
         }
         _resultsHost.Content = panel;
         if (errResult is not null)
@@ -560,6 +746,7 @@ public partial class WorkTab : Grid
         }
         ClearError();
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
+        _resultBar.Text = $"{list.Sum(x => x.Rows.Count)} 行 · {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
     }
 
     /// <summary>整改三批三-10：结果网格右键设计助手入口的连接上下文（与 _assistBtn 同构）。</summary>
@@ -568,6 +755,7 @@ public partial class WorkTab : Grid
     private void ShowResult(QueryResult r, bool editable = false, Action<int>? onRowTap = null)
     {
         _last = new List<QueryResult> { r };
+        _lastFull = _last;   // B⑦：全量留存供查找过滤
         FrameworkElement el;
         if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
         else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
@@ -577,6 +765,7 @@ public partial class WorkTab : Grid
             : (onRowTap is not null
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
                 : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 单击行编辑 / 删除" : ""));
+        _resultBar.Text = $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
     }
 
     /// <summary>Redis 键列表：单击某键 → 打开该键详情页。</summary>
@@ -603,7 +792,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("错误：" + ex.Message);
+            ShowError(HumanError.Say(ex, "错误"));
         }
     }
 
@@ -662,7 +851,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("导出失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "导出失败"));
         }
     }
 
@@ -845,7 +1034,7 @@ public partial class WorkTab : Grid
         catch (Exception ex)
         {
             TryDeleteHalfWritten(savePath);
-            ShowError("导出失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "导出失败"));
         }
         finally
         {
@@ -878,7 +1067,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("读取结构失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "读取结构失败"));
         }
     }
 
@@ -1090,13 +1279,13 @@ public partial class WorkTab : Grid
             // 空页守卫：删除后当前页可能变空，回退一页再刷，避免停在空页。
             if (_browseResult is { Rows.Count: 0 } && _offset > 0)
             {
-                _offset = Math.Max(0, _offset - PageSize);
+                _offset = Math.Max(0, _offset - _pageSize);
                 await RunOrRefresh();
             }
         }
         catch (Exception ex)
         {
-            ShowError("执行失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "执行失败"));
         }
     }
 
@@ -1127,7 +1316,7 @@ public partial class WorkTab : Grid
             if (isXlsx)
             {
                 try { (headers, rows) = ExcelReader.Read(path); }
-                catch (Exception ex) { ShowError("xlsx 读取失败：" + ex.Message); return; }
+                catch (Exception ex) { ShowError(HumanError.Say(ex, "xlsx 读取失败")); return; }
                 if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "xlsx 首个工作表为空或没有表头行。"; return; }
                 AppLog.Write($"[导入] xlsx rows={rows.Count}");   // 批次四格1 验收锚点
             }
@@ -1216,7 +1405,7 @@ public partial class WorkTab : Grid
                         var list = await _provider.Execute(_db, s);
                         foreach (var qr in list)
                         {
-                            if (qr.Message.StartsWith("错误", StringComparison.Ordinal))
+                            if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
                             {
                                 errs.AppendLine(qr.Message);
                                 if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
@@ -1253,7 +1442,7 @@ public partial class WorkTab : Grid
                             var list = await _provider.Execute(_db, s);
                             foreach (var qr in list)
                             {
-                                if (qr.Message.StartsWith("错误", StringComparison.Ordinal))
+                                if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
                                 {
                                     errs.AppendLine(qr.Message);
                                     if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
@@ -1288,7 +1477,7 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError("导入失败：" + ex.Message);
+            ShowError(HumanError.Say(ex, "导入失败"));
         }
     }
 
@@ -1472,7 +1661,7 @@ public partial class WorkTab : Grid
                 await Windows.Storage.FileIO.WriteTextAsync(file, ReportBuilder.ToHtml(qr, qr.Title));
                 _messageBox.Text = "报表已导出到 " + file.Path;
             }
-            catch (Exception ex) { ShowError("导出失败：" + ex.Message); }
+            catch (Exception ex) { ShowError(HumanError.Say(ex, "导出失败")); }
         };
         // 数据字典完整导出：当前连接的库逐表取列，HTML / Word 双口径（对账表第五章收口）
         dictBtn.Click += async (_, _) =>
@@ -1551,7 +1740,7 @@ public partial class WorkTab : Grid
                 await Windows.Storage.FileIO.WriteTextAsync(file, content);
                 _messageBox.Text = $"数据字典已导出（{tables.Count} 张表）到 " + file.Path;
             }
-            catch (Exception ex) { ShowError("字典导出失败：" + ex.Message); }
+            catch (Exception ex) { ShowError(HumanError.Say(ex, "字典导出失败")); }
         };
         await dlg.ShowThemedAsync();
     }

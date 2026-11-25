@@ -1,4 +1,5 @@
-﻿using StackExchange.Redis;
+﻿using System.Net;
+using StackExchange.Redis;
 
 namespace TaoDBM.Core;
 
@@ -23,15 +24,40 @@ public class RedisProvider : IDbProvider
         if (_conn is not null) return _conn;
         var cfg = new ConfigurationOptions
         {
-            EndPoints = { { Profile.Host, Profile.Port > 0 ? Profile.Port : 6379 } },
             ConnectTimeout = 8000,
             SyncTimeout = 8000,
             AbortOnConnectFail = false,
         };
         if (!string.IsNullOrEmpty(Profile.User)) cfg.User = Profile.User;
         if (!string.IsNullOrEmpty(Profile.Password)) cfg.Password = Profile.Password;
+        // E①：哨兵模式——ServiceName 走哨兵服务发现，主从切换自动跟随；直连保持原口径
+        if (Profile.RedisMode == "sentinel" && Profile.SentinelMaster.Length > 0)
+        {
+            cfg.ServiceName = Profile.SentinelMaster;
+            foreach (var ep in ParseEndpoints(Profile.SentinelNodes))
+                cfg.EndPoints.Add(ep);
+            if (cfg.EndPoints.Count == 0)
+                cfg.EndPoints.Add(new DnsEndPoint(Profile.Host, Profile.Port > 0 ? Profile.Port : 26379));
+        }
+        else
+        {
+            cfg.EndPoints.Add(new DnsEndPoint(Profile.Host, Profile.Port > 0 ? Profile.Port : 6379));
+        }
         _conn = ConnectionMultiplexer.Connect(cfg);
         return _conn;
+    }
+
+    /// <summary>E①：解析哨兵节点列表——分号 / 逗号 / 换行分隔的 host:port。</summary>
+    private static IEnumerable<DnsEndPoint> ParseEndpoints(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) yield break;
+        foreach (var piece in raw.Split(new[] { ';', ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var sep = piece.LastIndexOf(':');
+            if (sep <= 0) continue;
+            if (!int.TryParse(piece[(sep + 1)..], out int port)) continue;
+            yield return new DnsEndPoint(piece[..sep], port);
+        }
     }
 
     private IDatabase DB(string? db)

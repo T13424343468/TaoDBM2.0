@@ -78,7 +78,7 @@ public static class BlobEditorDialog
             }
             catch (Exception ex)
             {
-                img.Children.Add(new TextBlock { Text = $"图像预览失败：{ex.Message}", Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+                img.Children.Add(new TextBlock { Text = HumanError.Say(ex, "图像预览失败"), Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
             }
         }
         else img.Children.Add(new TextBlock { Text = "该值不是 PNG/JPG/BMP 图像（魔数不符），无法预览。", Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });

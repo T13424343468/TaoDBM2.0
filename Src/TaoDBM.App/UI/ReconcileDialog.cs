@@ -137,7 +137,7 @@ public static class ReconcileDialog
         }
         catch (Exception ex)
         {
-            status.Text = "读取源表列信息失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "读取源表列信息失败");
             return null;
         }
         if (cols.Count == 0) { status.Text = "源表没有可用列，无法对账。"; return null; }
@@ -178,7 +178,7 @@ public static class ReconcileDialog
         }
         catch (Exception ex)
         {
-            status.Text = "对账失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "对账失败");
             return null;
         }
     }

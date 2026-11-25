@@ -38,6 +38,10 @@ public class ConnectionDialog
     private readonly TextBox _tunnelUrl = new() { Header = "HTTP 隧道端点（可选，如 https://主机/tunnel.php）", PlaceholderText = "留空不启用" };
     // 批次三格5：认证方式（账号密码 / Windows 集成）
     private readonly ComboBox _auth = new() { Header = "认证方式", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new List<string> { "账号密码", "Windows 集成（免密）" } };
+    // E①：Redis 哨兵模式——直连走主机/端口，哨兵走 Master 名称＋节点列表
+    private readonly ComboBox _redisMode = new() { Header = "连接模式", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new List<string> { "直连", "哨兵（主从自动切换）" }, Visibility = Visibility.Collapsed };
+    private readonly TextBox _sentinelMaster = new() { Header = "Master 名称", PlaceholderText = "如 mymaster", Visibility = Visibility.Collapsed };
+    private readonly TextBox _sentinelNodes = new() { Header = "哨兵节点列表（每行一个 host:port）", AcceptsReturn = true, Height = 84, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
 
     public ConnectionDialog(ConnectionProfile profile)
     {
@@ -85,6 +89,14 @@ public class ConnectionDialog
         _auth.SelectedIndex = profile.AuthMode == "integrated" ? 1 : 0;
         _auth.SelectionChanged += (_, _) => OnAuthChanged();
         OnAuthChanged();
+        // E①：Redis 哨兵回填——节点列表分号串还原为每行一个
+        _redisMode.SelectedIndex = profile.RedisMode == "sentinel" ? 1 : 0;
+        _sentinelMaster.Text = profile.SentinelMaster;
+        _sentinelNodes.Text = profile.SentinelNodes.Replace(";", "\r\n");
+        _redisMode.SelectionChanged += (_, _) => OnEngineChanged();   // 模式切换复用引擎可见性联动
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_redisMode, "conn-redis-mode");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_sentinelMaster, "conn-sentinel-master");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_sentinelNodes, "conn-sentinel-nodes");
         _dsnList.SelectionChanged += (_, _) =>
         {
             if (_dsnList.SelectedItem is string dsn) _database.Text = dsn;   // 批次四格3：选中即回填
@@ -147,6 +159,12 @@ public class ConnectionDialog
         }
         _params.Visibility = e == DbEngine.Oracle ? Visibility.Visible : Visibility.Visible; // Oracle service name 也走这一行
         _params.Header = e == DbEngine.Oracle ? "服务名（如 orcl）" : "附加参数（k=v;k2=v2）";
+        // E①：Redis 哨兵——模式选择可见；哨兵时隐藏主机/端口，改走 Master 名称＋节点列表
+        bool isRedis = e == DbEngine.Redis;
+        _redisMode.Visibility = isRedis ? Visibility.Visible : Visibility.Collapsed;
+        bool sentinel = isRedis && _redisMode.SelectedIndex == 1;
+        _sentinelMaster.Visibility = _sentinelNodes.Visibility = sentinel ? Visibility.Visible : Visibility.Collapsed;
+        if (sentinel) { _host.Visibility = Visibility.Collapsed; _port.Visibility = Visibility.Collapsed; }
         _tnsBtn.Visibility = e == DbEngine.Oracle ? Visibility.Visible : Visibility.Collapsed;
         if (e != DbEngine.Oracle) _tnsList.Visibility = Visibility.Collapsed;
         if (_port.Text.Length == 0)
@@ -164,7 +182,9 @@ public class ConnectionDialog
         _hint.Text = e switch
         {
             DbEngine.SQLite => "本地文件即数据库，例如 D:\\data\\app.db；不存在时首次连接会自动创建。",
-            DbEngine.Redis => "默认扫描 db0-db15；连接后左侧树中可切换库并浏览键。",
+            DbEngine.Redis => _redisMode.SelectedIndex == 1
+                ? "哨兵模式：填 Master 名称与哨兵节点列表，主从切换自动跟随；杀主节点自动切从。"
+                : "默认扫描 db0-db15；连接后左侧树中可切换库并浏览键。",
             DbEngine.MongoDB => "MongoDB 无需固定表结构，选中集合后可按 JSON 过滤器查询文档。",
             DbEngine.Odbc => "从下拉选择本机已配置的 ODBC 数据源（DSN）；账号密码可选，附加参数可带 k=v 连接串属性。",
             // 批次七：国产六家提示语（说人话口径）
@@ -193,7 +213,7 @@ public class ConnectionDialog
         }
         catch (Exception ex)
         {
-            _dsnList.Header = "本机数据源（枚举失败：" + ex.Message + "）";
+            _dsnList.Header = HumanError.Say(ex, "本机数据源（枚举失败") + "）";
         }
     }
 
@@ -213,6 +233,9 @@ public class ConnectionDialog
         panel.Children.Add(_dsnList);   // 批次四格3：ODBC DSN 下拉
         panel.Children.Add(_file);
         panel.Children.Add(_params);
+        panel.Children.Add(_redisMode);   // E①：Redis 连接模式（直连/哨兵）
+        panel.Children.Add(_sentinelMaster);   // E①：哨兵 Master 名称
+        panel.Children.Add(_sentinelNodes);   // E①：哨兵节点列表
         panel.Children.Add(_tnsBtn);
         panel.Children.Add(_tnsList);
         panel.Children.Add(_auth);   // 批次三格5：认证方式
@@ -293,7 +316,7 @@ public class ConnectionDialog
         }
         catch (Exception ex)
         {
-            _hint.Text = "tnsnames.ora 解析失败：" + ex.Message;
+            _hint.Text = HumanError.Say(ex, "tnsnames.ora 解析失败");
         }
     }
 
@@ -316,6 +339,10 @@ public class ConnectionDialog
         Profile.SshPassword = _sshPass.Password;
         Profile.TunnelUrl = _tunnelUrl.Text.Trim();   // 批次三格4
         Profile.AuthMode = _auth.SelectedIndex == 1 ? "integrated" : "password";   // 批次三格5
+        // E①：Redis 哨兵——节点列表每行一个，落盘为分号串
+        Profile.RedisMode = Profile.Engine == DbEngine.Redis && _redisMode.SelectedIndex == 1 ? "sentinel" : "direct";
+        Profile.SentinelMaster = _sentinelMaster.Text.Trim();
+        Profile.SentinelNodes = _sentinelNodes.Text.Trim().Replace("\r\n", ";").Replace('\n', ';');
     }
 
     private async Task<bool> TestConn()
@@ -332,7 +359,7 @@ public class ConnectionDialog
             var err = new ContentDialog
             {
                 Title = "连接失败",
-                Content = new TextBlock { Text = ex.Message, TextWrapping = TextWrapping.Wrap },
+                Content = new TextBlock { Text = HumanError.Say(ex, "连接测试"), TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "知道了",
                 XamlRoot = App.Shell!.Content.XamlRoot,
             };

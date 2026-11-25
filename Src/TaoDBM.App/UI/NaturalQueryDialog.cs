@@ -68,7 +68,7 @@ public static class NaturalQueryDialog
             try { cols = await prov.GetColumns(db, table); }
             catch (Exception ex)
             {
-                interpretText.Text = "读取表结构失败：" + ex.Message;
+                interpretText.Text = HumanError.Say(ex, "读取表结构失败");
                 interpretText.Foreground = Ant.Warn;
                 return;
             }
@@ -125,7 +125,7 @@ public static class NaturalQueryDialog
             catch (Exception ex)
             {
                 resultHost.Children.Clear();
-                resultHost.Children.Add(new TextBlock { Text = "执行失败：" + ex.Message, FontSize = AntTokens.FontMinor, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+                resultHost.Children.Add(new TextBlock { Text = HumanError.Say(ex, "执行失败"), FontSize = AntTokens.FontMinor, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
             }
         }
 

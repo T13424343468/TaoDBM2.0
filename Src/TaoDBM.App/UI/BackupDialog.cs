@@ -73,7 +73,7 @@ public static class BackupDialog
                 var tables = await prov.GetChildren(db);
                 scopeInfo.Text = $"整库口径：{db} 共 {tables.Count} 张表；备份 / 恢复按整库进行。";
             }
-            catch (Exception ex) { scopeInfo.Text = $"表清单读取失败：{ex.Message}（不影响备份 / 恢复执行）。"; }
+            catch (Exception ex) { scopeInfo.Text = HumanError.Say(ex, "表清单读取") + "（不影响备份 / 恢复执行）。"; }
         }
         dbBox.SelectionChanged += (_, _) => LoadScope();
 
@@ -122,7 +122,7 @@ public static class BackupDialog
             {
                 var fi = new FileInfo(file);
                 fileInfo.Text = fi.Exists
-                    ? $"备份点：时间 {fi.LastWriteTime:yyyy-MM-dd HH:mm} · 大小 {fi.Length / 1024.0:N1} KB"
+                    ? $"备份点：时间 {fi.LastWriteTime:yyyy-MM-dd HH:mm} · 大小 {Core.HumanSize.Of(fi.Length)}"
                     : "文件尚不存在：备份将新建该文件；还原请选择已有备份文件。";
             }
             catch { fileInfo.Text = ""; }
@@ -176,7 +176,7 @@ public static class BackupDialog
                 if (tables.Count > shown) lines.Add($"· …另有 {tables.Count - shown} 张表未估算。");
                 impactBox.Text = string.Join('\n', lines);
             }
-            catch (Exception ex) { impactBox.Text = $"影响预览失败：{ex.Message}"; }
+            catch (Exception ex) { impactBox.Text = HumanError.Say(ex, "影响预览失败"); }
         }
         impactBtn.Click += (_, _) => LoadImpact();
 
@@ -315,7 +315,7 @@ public static class BackupDialog
                     var spec = BackupTools.MysqlDump(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
-                        ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
+                        ? $"备份完成：{file}（{Core.HumanSize.Of(new FileInfo(file).Length)}）"
                         : $"退出码 {code}\n{text}";
                 }
                 case DbEngine.PostgreSQL:
@@ -324,7 +324,7 @@ public static class BackupDialog
                     var spec = BackupTools.PgDump(h, p, profile.User, profile.Password, db, file);
                     var (code, text) = await RunTool(spec, ct, progress);
                     return code == 0 && text.Trim().Length == 0
-                        ? $"备份完成：{file}（{new FileInfo(file).Length / 1024.0:N1} KB）"
+                        ? $"备份完成：{file}（{Core.HumanSize.Of(new FileInfo(file).Length)}）"
                         : $"退出码 {code}\n{text}";
                 }
                 case DbEngine.SqlServer:
@@ -332,7 +332,7 @@ public static class BackupDialog
                     var sql = BackupTools.SqlServerBackupSql(db, file);
                     ct.ThrowIfCancellationRequested(); // 格10：T-SQL 执行前检查点
                     var list = await prov.Execute("", sql);
-                    var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    var err = list.FirstOrDefault(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")));
                     return err is null ? $"备份完成：服务器已写入 {file}" : err.Message;
                 }
                 case DbEngine.SQLite:
@@ -379,7 +379,7 @@ public static class BackupDialog
                     var sql = BackupTools.SqlServerRestoreSql(db, file);
                     ct.ThrowIfCancellationRequested(); // 格10：T-SQL 执行前检查点
                     var list = await prov.Execute("", sql);
-                    var err = list.FirstOrDefault(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    var err = list.FirstOrDefault(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")));
                     return err is null ? $"还原完成：{db} 已从 {file} 恢复" : err.Message;
                 }
                 case DbEngine.SQLite:
@@ -474,7 +474,7 @@ public static class BackupDialog
             {
                 output.Text = (ex is System.ComponentModel.Win32Exception
                     ? "未找到命令行工具。请安装 MySQL / PostgreSQL 客户端工具并加入 PATH 后重试。\n"
-                    : "") + "失败：" + ex.Message;
+                    : "") + HumanError.Say(ex, "失败");
             }
             finally
             {

@@ -25,6 +25,23 @@
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
     <Property Id="ADD_TO_PATH" Value="1" />
 
+    <!-- ㊳ .NET 运行时前置检测（2026-11-25 安装器新标准）：MSI 不内置运行时，安装序列前置双查——
+         ① 注册表查 .NET 主机安装记录（dotnet Setup sharedhost Version，64 位视图）；
+         ② 捆绑/落盘查桌面运行时共享目录（ProgramFiles\dotnet\shared\Microsoft.WindowsDesktop.App）。
+         两查皆空才判缺失（任一命中即视为已装，避免误拦 zip 解压等安装方式）。
+         检测只挂属性与 VerifyReadyDlg 门禁，不触碰 MainDlg 任何元素。
+         取证分支按运行号独立（本条只记不实现）。 -->
+    <Property Id="NETDESKREG">
+      <RegistrySearch Id="NetDesktopRegSrch" Root="HKLM"
+                      Key="SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost"
+                      Name="Version" Type="raw" Win64="yes" />
+    </Property>
+    <Property Id="NETDESKDIR">
+      <DirectorySearch Id="NetDesktopDirSrch"
+                       Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App"
+                       Win64="yes" />
+    </Property>
+
     <UI Id="TaoDBMInstallUI">
       <TextStyle Id="DlgFont" FaceName="微软雅黑" Size="9" />
       <TextStyle Id="TitleFont" FaceName="微软雅黑" Size="13" Bold="yes" />
@@ -75,12 +92,43 @@
       <Dialog Id="VerifyReadyDlg" Width="440" Height="130" Title="[ProductName] 安装程序">
         <Control Id="ReadyText" Type="Text" X="20" Y="30" Width="400" Height="24"
                  Text="准备安装 TaoDBM，点击“安装”开始。" />
+        <!-- ㊳ 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动） -->
+        <Control Id="RuntimeWarn" Type="Text" X="20" Y="56" Width="400" Height="14"
+                 Text="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。">
+          <Condition Action="show">NOT NETDESKREG AND NOT NETDESKDIR</Condition>
+          <Condition Action="hide">NETDESKREG OR NETDESKDIR</Condition>
+        </Control>
         <Control Id="BackBtn" Type="PushButton" X="270" Y="95" Width="70" Height="22" Text="返回">
           <Publish Event="NewDialog" Value="MainDlg" />
         </Control>
         <Control Id="InstallBtn" Type="PushButton" X="350" Y="95" Width="70" Height="22"
                  Default="yes" Text="安装">
-          <Publish Event="EndDialog" Value="Return" />
+          <!-- ㊳ 双查皆空先弹运行时提示，不进入执行序列；装好运行时重检后条件通过即放行（装完可继续） -->
+          <Publish Event="SpawnDialog" Value="RuntimeCheckDlg" Order="1"
+                   Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
+          <Publish Event="EndDialog" Value="Return" Order="2"
+                   Condition="NETDESKREG OR NETDESKDIR" />
+        </Control>
+      </Dialog>
+
+      <!-- ㊳ 运行时缺失提示：明确说「需要安装 .NET 运行时」并引导联网装统一目录，含断网文案；重新检测重跑 AppSearch 后可继续 -->
+      <Dialog Id="RuntimeCheckDlg" Width="440" Height="170" Title="[ProductName] 安装程序">
+        <Control Id="RtTitle" Type="Text" X="20" Y="14" Width="400" Height="18"
+                 Text="{\TitleFont}需要安装 .NET 运行时" />
+        <Control Id="RtLine1" Type="Text" X="20" Y="42" Width="400" Height="14"
+                 Text="本机未检测到 .NET 桌面运行时 10.0（x64），TaoDBM 装完将无法启动。" />
+        <Control Id="RtLine2" Type="Text" X="20" Y="60" Width="400" Height="26"
+                 Text="请联网打开统一下载目录 dotnet.microsoft.com/download/dotnet/10.0，下载「.NET Desktop Runtime · Windows x64」安装包并安装。" />
+        <Control Id="RtLine3" Type="Text" X="20" Y="90" Width="400" Height="26"
+                 Text="断网时请先联网，或在有网的机器下载安装包拷贝到本机安装。装好后点「重新检测」继续安装。" />
+        <Control Id="ReDetectBtn" Type="PushButton" X="180" Y="132" Width="90" Height="22" Text="重新检测">
+          <!-- 重跑 AppSearch 刷新双查属性；回到上一页再点「安装」即按新结果放行 -->
+          <Publish Event="DoAction" Value="AppSearch" Order="1" />
+          <Publish Event="EndDialog" Value="Return" Order="2" />
+        </Control>
+        <Control Id="ExitBtn" Type="PushButton" X="350" Y="132" Width="70" Height="22"
+                 Cancel="yes" Text="退出">
+          <Publish Event="EndDialog" Value="Exit" />
         </Control>
       </Dialog>
 

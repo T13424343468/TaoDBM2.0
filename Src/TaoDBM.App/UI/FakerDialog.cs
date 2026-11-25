@@ -211,7 +211,7 @@ public static class FakerDialog
             }
             catch (Exception ex)
             {
-                statusText.Text = "生成失败：" + ex.Message;
+                statusText.Text = HumanError.Say(ex, "生成失败");
                 statusText.Foreground = Ant.Error;
                 previewed = false;
                 dlg.IsPrimaryButtonEnabled = false;
@@ -305,7 +305,7 @@ public static class FakerDialog
                                 ? $"TRUNCATE TABLE {SeedPlan.QuoteIdent(engine, st.Name)};"
                                 : $"DELETE FROM {SeedPlan.QuoteIdent(engine, st.Name)};";
                             try { await provider.Execute(db, truncate); }
-                            catch (Exception ex) { errors.Add($"{st.Name} 清空失败：{ex.Message}"); }
+                            catch (Exception ex) { errors.Add(HumanError.Say(ex, $"{st.Name} 清空失败")); }
                         }
                         if (provider is MongoProvider mp)
                         {
@@ -342,7 +342,7 @@ public static class FakerDialog
             }
             catch (Exception ex)
             {
-                statusText.Text = "写入失败：" + ex.Message + $"（已完成 {doneRows:N0} 行）";
+                statusText.Text = HumanError.Say(ex, "写入失败") + $"（已完成 {doneRows:N0} 行）";
                 statusText.Foreground = Ant.Error;
                 sender.IsPrimaryButtonEnabled = true;
             }
@@ -381,7 +381,7 @@ public static class FakerDialog
         var errors = new List<string>();
         List<string> children;
         try { children = await provider.GetChildren(db); }
-        catch (Exception ex) { return (tables, new List<string> { $"读取表清单失败：{ex.Message}" }); }
+        catch (Exception ex) { return (tables, new List<string> { HumanError.Say(ex, "读取表清单失败") }); }
         foreach (var child in children.Take(200))
         {
             try
@@ -390,7 +390,7 @@ public static class FakerDialog
                     .Where(c => !c.Name.StartsWith("(document)", StringComparison.Ordinal)).ToList();
                 if (cs.Count > 0) tables.Add(new SeedTable { Name = child, Columns = cs, Rows = 0 });
             }
-            catch (Exception ex) { errors.Add($"{child}: {ex.Message}"); }
+            catch (Exception ex) { errors.Add($"{child}: " + HumanError.Say(ex, "写入")); }
         }
         if (tables.Count > 0)
         {

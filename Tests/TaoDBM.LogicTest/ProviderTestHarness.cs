@@ -115,7 +115,7 @@ public static class ProviderTestHarness
 
             // 查询流式：多语句脚本、写账、大结果、分页、中文、NULL、聚合、标识符引用
             var rs = prov.Execute(db, $"INSERT INTO {prov.Quote(Tbl)} (id, name, val) VALUES (1, {nlit}道生一', 3.14), (2, {nlit}αβγ', 2.71), (3, {nlit}tai', 1.61)").Result;
-            check($"[{tag}:S1] 查询-INSERT 落账无错误", rs.All(r => !r.Message.StartsWith("错误：")),
+            check($"[{tag}:S1] 查询-INSERT 落账无错误", rs.All(r => (!r.Message.StartsWith("错误：") && !r.Message.Contains("没成功："))),
                 string.Join(";", rs.Select(r => r.Message)));
             var rSel = prov.Execute(db, $"SELECT id, name, val FROM {prov.Quote(Tbl)} ORDER BY id").Result.Last();
             static decimal Dec(object? v) => decimal.Parse(Convert.ToString(v)!.Trim(), CultureInfo.InvariantCulture);
@@ -204,7 +204,7 @@ public static class ProviderTestHarness
 
             // 执行计划：EXPLAIN 包装 → 真库执行 → 解析/标注全链（与执行计划面板同数据链）
             var planRs = prov.Execute(db, ExplainPlanEngine.PlanSql(engine, $"SELECT * FROM {prov.Quote("products")}")).Result;
-            check($"[{tag}:S2] 计划-EXPLAIN 执行无错误", planRs.All(r => !r.Message.StartsWith("错误：")),
+            check($"[{tag}:S2] 计划-EXPLAIN 执行无错误", planRs.All(r => (!r.Message.StartsWith("错误：") && !r.Message.Contains("没成功："))),
                 string.Join(";", planRs.Select(r => r.Message)));
             var planText = string.Join("\n", planRs.Last().Rows.Select(r => string.Join(" ", r)));
             var plan = ExplainPlanEngine.Parse(planText);
@@ -417,7 +417,7 @@ public static class ProviderTestHarness
             {
                 var hashPlan = ShardingWizard.HashPartitionSql(engine, ptTbl, "k", 4);
                 var rs = prov.Execute(db, hashPlan[0]).Result;
-                check($"[{tag}:S4] 分区-哈希分区真执行", rs.All(r => !r.Message.StartsWith("错误：")), string.Join(";", rs.Select(r => r.Message)));
+                check($"[{tag}:S4] 分区-哈希分区真执行", rs.All(r => (!r.Message.StartsWith("错误：") && !r.Message.Contains("没成功："))), string.Join(";", rs.Select(r => r.Message)));
                 var info = prov.Execute(db, ShardingWizard.PartitionsInfoSql(engine, db, ptTbl)).Result.Last();
                 var parts = info.Rows.Select(r => (Convert.ToString(r[0]) ?? "", Convert.ToInt64(r[1]))).ToList();
                 var (_, skewed) = ShardingWizard.AnalyzeDistribution(parts);

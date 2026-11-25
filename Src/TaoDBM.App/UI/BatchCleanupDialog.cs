@@ -77,7 +77,7 @@ public static class BatchCleanupDialog
                 AddLine(report, "执行策略：默认每次执行 1 批，跑完复核行数再继续；全部语句都要逐条勾选确认。");
                 status.Text = "计划就绪：确认无误后点「按批执行」。";
             }
-            catch (Exception ex) { status.Text = "计划失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "计划失败"); }
             await Task.CompletedTask;
         };
         execBtn.Click += async (_, _) =>

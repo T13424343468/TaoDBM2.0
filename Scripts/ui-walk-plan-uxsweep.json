@@ -180,6 +180,17 @@
       "allowMiss": true
     },
     {
+      "id": "U017a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
       "id": "U017",
       "feature": "巡检-表单视图按钮",
       "action": "click",
@@ -210,6 +221,17 @@
       "id": "U020",
       "feature": "巡检-拟真数据收场",
       "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U021a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
       "allowMiss": true
     },
     {
@@ -258,14 +280,26 @@
       "allowMiss": true
     },
     {
+      "id": "U032open",
+      "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "导出 ▾"
+      },
+      "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
+      "allowMiss": true
+    },
+    {
       "id": "U032",
       "feature": "巡检-导出CSV按钮",
       "action": "click",
       "find": {
-        "controlType": "Button",
-        "name": "导出 CSV"
+        "controlType": "MenuItem",
+        "name": "导出 CSV（.csv）"
       },
-      "allowMiss": true
+      "allowMiss": true,
+      "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
     },
     {
       "id": "U033",
@@ -274,14 +308,37 @@
       "allowMiss": true
     },
     {
+      "id": "U034a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U034open",
+      "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "导出 ▾"
+      },
+      "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
+      "allowMiss": true
+    },
+    {
       "id": "U034",
       "feature": "巡检-导出INSERT按钮",
       "action": "click",
       "find": {
-        "controlType": "Button",
-        "name": "导出 INSERT"
+        "controlType": "MenuItem",
+        "name": "导出 INSERT SQL（.sql）"
       },
-      "allowMiss": true
+      "allowMiss": true,
+      "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
     },
     {
       "id": "U035",
@@ -307,6 +364,17 @@
       "allowMiss": true
     },
     {
+      "id": "U038a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
       "id": "U038",
       "feature": "巡检-查询收藏",
       "action": "click",
@@ -323,6 +391,17 @@
       "allowMiss": true
     },
     {
+      "id": "U040a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
       "id": "U040",
       "feature": "巡检-查询历史",
       "action": "click",
@@ -336,6 +415,17 @@
       "id": "U041",
       "feature": "巡检-历史收场",
       "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U042a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
       "allowMiss": true
     },
     {

@@ -41,7 +41,7 @@ public static class DeploymentWizardDialog
         }
 
         void Fail(string step, Exception ex) =>
-            status.Text = $"【{step}】失败，已停止：{ex.Message}\n排查项：确认账号有 REPLICATION SLAVE/CLIENT 权限；确认主从网络互相可达（ping/端口）；确认 mysqldump 在 PATH；密码含特殊字符时检查转义。";
+            status.Text = HumanError.Say(ex, $"【{step}】执行") + "\n排查项：确认账号有 REPLICATION SLAVE/CLIENT 权限；确认主从网络互相可达（ping/端口）；确认 mysqldump 在 PATH；密码含特殊字符时检查转义。";
 
         // 草稿预览确认（P0 整改 06）：写库动作执行前统一过一遍，与全局安全口径一致
         static async Task<bool> ConfirmDraft(Window owner, string title, string detail)

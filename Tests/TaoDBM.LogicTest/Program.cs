@@ -116,6 +116,26 @@ Console.WriteLine("== Exporter ==");
     Check("CSV 普通文本原样", csv.Contains(",普通文本"), csv);
 }
 {
+    // ㊴ 统一错误文案层：人话模板映射＋原始异常不上屏（只进 AppLog）
+    var deadlock = HumanError.Say(new Exception("MySqlException: Deadlock found when trying to get lock; try restarting transaction"), "回滚失败");
+    Check("人话-死锁映射", deadlock.Contains("抢锁") && deadlock.StartsWith("回滚没成功："), deadlock);
+    Check("人话-原始异常不上屏", !deadlock.Contains("MySqlException") && !deadlock.Contains("Deadlock found"), deadlock);
+    var timeout = HumanError.Say(new Exception("The operation was cancelled due to timeout"), "查询");
+    Check("人话-超时映射", timeout.Contains("超时"), timeout);
+    var conn = HumanError.Say(new Exception("Unable to connect to any of the specified MySQL hosts"), "连接测试");
+    Check("人话-连接映射", conn.Contains("连不上"), conn);
+    var auth = HumanError.Say(new Exception("Access denied for user 'x'@'localhost'"), "登录");
+    Check("人话-登录映射", auth.Contains("登录被拒"), auth);
+    var fallback = HumanError.Say(new Exception("some weird internal detail xyzzy"), "导出");
+    Check("人话-兜底不带原始细节", !fallback.Contains("xyzzy") && fallback.Contains("日志"), fallback);
+    // ㊵ 统一容量口径：自适应 B/KB/MB/GB 一位小数
+    Check("容量-B", HumanSize.Of(999) == "999 B", HumanSize.Of(999));
+    Check("容量-KB", HumanSize.Of(1536) == "1.5 KB", HumanSize.Of(1536));
+    Check("容量-MB", HumanSize.Of(1536 * 1024) == "1.5 MB", HumanSize.Of(1536 * 1024));
+    Check("容量-GB", HumanSize.Of(1610612736) == "1.5 GB", HumanSize.Of(1610612736));
+    Check("容量-零", HumanSize.Of(0) == "0 B", HumanSize.Of(0));
+}
+{
     var r = new QueryResult { Columns = { "id", "name" } };
     r.Rows.Add(new object?[] { 1, "O'Brien" });
     r.Rows.Add(new object?[] { 2, DBNull.Value });
@@ -3976,7 +3996,8 @@ Console.WriteLine("== NotificationDispatcher ==");
         failTc.TaskCompleted += s => { if (s.State == "failed") failSrc.TrySetResult(s.Message); };
         failTc.Submit(new TaoDBM.Core.Streaming.TaskSpec { Title = "失败测试", Sql = "SELECT 1" });
         var failMsg = await failSrc.Task.WaitAsync(TimeSpan.FromSeconds(15));
-        Check("N31 任务失败事件带错误信息", failMsg.Contains("炸了"));
+        // ㊴ 统一错误文案层：失败事件用户可见文案说人话，原始异常（炸了）只进 AppLog 不上屏
+        Check("N31 任务失败事件带错误信息", failMsg.Contains("任务执行没成功") && !failMsg.Contains("炸了"), failMsg);
 
         var cancelSrc = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var slowTc = new TaoDBM.Core.Streaming.TaskCenter

@@ -86,7 +86,7 @@ public static class MigrationResumeDialog
                     ? "已按全新状态预演：全部表整表拷贝。全新状态可另存为 JSON，迁移时逐表推进。"
                     : "续传计划就绪：以上为重算结果，仅预演，不执行。";
             }
-            catch (ArgumentException ex) { status.Text = "续传计划失败：" + ex.Message; }
+            catch (ArgumentException ex) { status.Text = HumanError.Say(ex, "续传计划失败"); }
             await Task.CompletedTask;
         };
 
@@ -103,7 +103,7 @@ public static class MigrationResumeDialog
                 await System.IO.File.WriteAllTextAsync(path, MigrationResume.ToJson(st));
                 status.Text = $"已保存：{path}";
             }
-            catch (Exception ex) { status.Text = "保存失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;
         };
 
@@ -177,7 +177,7 @@ public static class MigrationResumeDialog
         }
         catch (Exception ex)
         {
-            status.Text = "清单生成失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "清单生成失败");
             AppLog.Write($"[迁移清单] error={ex.Message}");
         }
     }

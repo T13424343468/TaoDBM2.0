@@ -75,8 +75,13 @@
 
             <!-- 左侧连接树：仅显示连接 / 库 / 表；顶部挂元数据失败重试条（s2） -->
             <Border x:Name="TreeBorder" Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
-                <StackPanel>
-                    <InfoBar x:Name="MetaRetryBar" IsOpen="False" Severity="Warning"
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <InfoBar x:Name="MetaRetryBar" Grid.Row="0" IsOpen="False" Severity="Warning"
                              Title="元数据加载失败" Message=""
                              IsClosable="True" Margin="4,4,4,0">
                         <InfoBar.ActionButton>
@@ -84,26 +89,30 @@
                         </InfoBar.ActionButton>
                     </InfoBar>
                     <!-- 格18：连接树筛选框——输入即过滤根节点（名称/主机包含匹配），清空恢复全部 -->
-                    <TextBox x:Name="ConnFilter" AutomationProperties.AutomationId="ConnFilter"
+                    <TextBox x:Name="ConnFilter" Grid.Row="1" AutomationProperties.AutomationId="ConnFilter"
                              PlaceholderText="筛选连接（名称 / 主机）" Margin="4,4,4,0" TextChanged="OnConnFilterChanged"/>
-                    <TreeView x:Name="ConnTree" AutomationProperties.AutomationId="ConnTree"
+                    <!-- C①：树占满剩余高度内部滚动生效；滚动条常显（超高可发现） -->
+                    <TreeView x:Name="ConnTree" Grid.Row="2" AutomationProperties.AutomationId="ConnTree"
                               Expanding="OnNodeExpanding"
                               SelectionChanged="OnTreeSelection"
                               RightTapped="OnTreeRightTapped"
-                              DoubleTapped="OnTreeDoubleTapped"/>
-                </StackPanel>
+                              DoubleTapped="OnTreeDoubleTapped"
+                              ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                </Grid>
             </Border>
 
-            <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复） -->
+            <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复）；
+                 C② affordance：悬停高亮＋加宽＋↔光标，拖完记忆宽度 -->
             <Border x:Name="TreeSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Left"
                     Background="Transparent" PointerPressed="OnSplitterPointerPressed"
                     PointerMoved="OnSplitterPointerMoved" PointerReleased="OnSplitterPointerReleased"
-                    PointerCaptureLost="OnSplitterPointerReleased"/>
+                    PointerCaptureLost="OnSplitterPointerReleased"
+                    PointerEntered="OnSplitterPointerEntered" PointerExited="OnSplitterPointerExited"/>
 
             <!-- 右侧工作区 -->
             <TabView x:Name="WorkTabs" Grid.Column="2" Background="{ThemeResource AntBg}"
                      TabWidthMode="SizeToContent" CanDragTabs="False"
-                     TabCloseRequested="OnTabClose"/>
+                     TabCloseRequested="OnTabClose" AddTabButtonClick="OnTabAdd"/>
         </Grid>
 
         <!-- 状态栏 -->

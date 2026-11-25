@@ -224,7 +224,7 @@ public abstract class RelationalProvider : IDbProvider
             }
             catch (Exception ex)
             {
-                qr.Message = "错误：" + ex.Message;
+                qr.Message = HumanError.Say(ex, "执行");
             }
             sw.Stop();
             qr.Elapsed = sw.Elapsed;
@@ -267,7 +267,7 @@ public abstract class RelationalProvider : IDbProvider
         }
         catch (Exception ex)
         {
-            qr.Message = "错误：" + ex.Message;
+            qr.Message = HumanError.Say(ex, "执行");
         }
         sw.Stop();
         qr.Elapsed = sw.Elapsed;

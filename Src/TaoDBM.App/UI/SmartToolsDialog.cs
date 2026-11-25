@@ -177,7 +177,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "诊断失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "诊断失败");
         }
     }
 
@@ -224,7 +224,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "重测失败：" + ex.Message + "（请确认是可在当前连接执行的 SELECT）";
+            status.Text = HumanError.Say(ex, "重测失败") + "（请确认是可在当前连接执行的 SELECT）";
         }
     }
 
@@ -259,7 +259,7 @@ public static class SmartToolsDialog
         {
             var f = CapacityForecaster.Forecast(samples);
             AddSection(report, "容量趋势（线性回归）");
-            AddLine(report, $"日增长：{f.GrowthPerDay / 1048576.0:F1} MB/天");
+            AddLine(report, $"日增长：{Core.HumanSize.Of((long)f.GrowthPerDay)}/天");
             AddLine(report, $"拟合优度 R²：{f.RSquared:F3}（越接近 1 越可信）");
             if (f.DaysToThreshold is { } days)
                 AddLine(report, $"按当前增速，约 {days:F0} 天到达阈值。");
@@ -269,7 +269,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "预估失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "预估失败");
         }
     }
 
@@ -303,7 +303,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "打包失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "打包失败");
         }
     }
 
@@ -329,7 +329,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "校验失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "校验失败");
         }
     }
 
@@ -369,7 +369,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "登记时基准计时失败（不影响登记）：" + ex.Message;
+            status.Text = HumanError.Say(ex, "登记时基准计时失败（不影响登记）");
         }
         finally
         {
@@ -436,7 +436,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "复测失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "复测失败");
         }
     }
 
@@ -463,7 +463,7 @@ public static class SmartToolsDialog
         }
         catch (Exception ex)
         {
-            status.Text = "并入失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "并入失败");
         }
     }
 

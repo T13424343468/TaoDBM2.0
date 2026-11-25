@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.IO;
+using TaoDBM.Core;
 
 namespace TaoDBM;
 
@@ -38,7 +39,7 @@ public partial class MainWindow
         catch (Exception ex)
         {
             Core.AppLog.Write($".sql 装载: {ex.GetType().Name}: {ex.Message}");
-            _ = InfoAsync($"装载失败：{ex.Message}");
+            _ = InfoAsync(HumanError.Say(ex, "装载失败"));
         }
     }
 

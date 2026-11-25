@@ -129,7 +129,7 @@ public static class DiagnosticsDialog
         }
         catch (Exception ex)
         {
-            AddLine(report, "✕ 连接失败：" + ex.Message, Ant.Error);
+            AddLine(report, HumanError.Say(ex, "✕ 连接失败"), Ant.Error);
             status.Text = "诊断中止：连接不可用。";
             return;
         }
@@ -195,7 +195,7 @@ public static class DiagnosticsDialog
         }
         catch (Exception ex)
         {
-            AddLine(report, "规模 / 版本信息采集受限：" + ex.Message, Ant.Primary);
+            AddLine(report, HumanError.Say(ex, "规模 / 版本信息采集受限"), Ant.Primary);
         }
 
         // 3. 锁等待与死锁检出（LockAnalyzer；口径来自诊断目录引擎）
@@ -255,7 +255,7 @@ public static class DiagnosticsDialog
         }
         catch (Exception ex)
         {
-            AddLine(report, "锁等待快照不可用（权限或版本原因）：" + ex.Message, Ant.Primary);
+            AddLine(report, HumanError.Say(ex, "锁等待快照不可用（权限或版本原因）"), Ant.Primary);
             return;
         }
 
@@ -326,7 +326,7 @@ public static class DiagnosticsDialog
             AppLog.Write($"[锁冻结快照] waits={waits.Count} file={Path.GetFileName(file)}");
             status.Text = "冻结快照已落盘：" + file;
         }
-        catch (Exception ex) { status.Text = "冻结快照失败：" + ex.Message; }
+        catch (Exception ex) { status.Text = HumanError.Say(ex, "冻结快照失败"); }
     }
 
     /// <summary>s16 终止会话：高风险操作，显式输入会话 ID 解除（分级确认），执行后留痕。</summary>
@@ -361,7 +361,7 @@ public static class DiagnosticsDialog
             AppLog.Write($"[终止会话] engine={info.Profile.Engine} session={sessionId}");
             status.Text = $"会话 {sessionId} 已终止（回滚由数据库自行进行）。";
         }
-        catch (Exception ex) { status.Text = "终止会话失败：" + ex.Message; }
+        catch (Exception ex) { status.Text = HumanError.Say(ex, "终止会话失败"); }
     }
 
     /// <summary>s16 复制诊断包：复制状态 + 锁等待现场打包落盘，供贴给 DBA 排查。</summary>
@@ -384,7 +384,7 @@ public static class DiagnosticsDialog
                     sb.AppendLine(string.Join("\t", r.Columns));
                     foreach (var row in r.Rows) sb.AppendLine(string.Join("\t", row.Select(S)));
                 }
-                catch (Exception ex) { sb.AppendLine("（查询失败：" + ex.Message + "）"); }
+                catch (Exception ex) { sb.AppendLine(HumanError.Say(ex, "（查询失败") + "）"); }
             }
             sb.AppendLine("## 锁等待现场");
             foreach (var w in waits) sb.AppendLine($"{w.Waiter}\t等\t{w.Holder}\t{w.Resource}");
@@ -393,7 +393,7 @@ public static class DiagnosticsDialog
             AppLog.Write($"[复制诊断包] file={Path.GetFileName(file)}");
             status.Text = "复制诊断包已落盘：" + file;
         }
-        catch (Exception ex) { status.Text = "复制诊断包失败：" + ex.Message; }
+        catch (Exception ex) { status.Text = HumanError.Say(ex, "复制诊断包失败"); }
     }
 
     private static async Task SampleHealth(IDbProvider prov, DbEngine engine, string dbName,
@@ -499,7 +499,7 @@ public static class DiagnosticsDialog
         }
         catch (Exception ex)
         {
-            AddLine(report, "执行计划诊断失败：" + ex.Message, Ant.Error);
+            AddLine(report, HumanError.Say(ex, "执行计划诊断失败"), Ant.Error);
             status.Text = "执行计划诊断失败，详见报告区。";
         }
     }

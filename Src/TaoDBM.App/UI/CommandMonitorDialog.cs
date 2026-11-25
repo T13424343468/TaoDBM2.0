@@ -55,7 +55,7 @@ public static class CommandMonitorDialog
                 status.Text += $" · 库端实时 {r.Rows.Count} 会话。";
                 AppLog.Write($"[命令监控] 历史={hist.Items.Count} 实时={r.Rows.Count}");
             }
-            catch (Exception ex) { status.Text += " · 库端实时查询失败：" + ex.Message; }
+            catch (Exception ex) { status.Text += HumanError.Say(ex, " · 库端实时查询失败"); }
         }
 
         var dlg = new ContentDialog

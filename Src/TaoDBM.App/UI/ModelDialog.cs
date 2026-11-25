@@ -177,7 +177,7 @@ public static class ModelDialog
             Place(m);
             _hint.Text = $"已生成 {m.Tables.Count} 张表、{m.Edges.Count} 条关系线（{ModelLayerInfo.Name(_doc.Current)}层）。";
         }
-        catch (Exception ex) { _hint.Text = "生成失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "生成失败"); }
     }
 
     /// <summary>批次五格4：从 SQL 导入——DdlParser 全量解析 CREATE TABLE（列/类型/主键/外键），并入当前层模型。</summary>
@@ -289,7 +289,7 @@ public static class ModelDialog
             }.ShowThemedAsync();
             _hint.Text = $"模型比较完成：{diffs.Count} 条差异（{ModelLayerInfo.Name(_doc.Current)}层 vs {_db}）。";
         }
-        catch (Exception ex) { _hint.Text = "模型比较失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "模型比较失败"); }
     }
 
     /// <summary>批次五格1：保存三层模型文档（DataModelDoc JSON，与 ERD 布局文件同源格式）。</summary>
@@ -311,7 +311,7 @@ public static class ModelDialog
             await Windows.Storage.FileIO.WriteTextAsync(f, _doc.ToJson());
             _hint.Text = "模型已保存：" + f.Path;
         }
-        catch (Exception ex) { _hint.Text = "保存失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "保存失败"); }
     }
 
     /// <summary>批次五格1：打开三层模型文档，载入后停在文档记录的当前层。</summary>
@@ -332,7 +332,7 @@ public static class ModelDialog
             Place(_doc.CurrentModel);
             _hint.Text = $"已载入模型，当前层 {ModelLayerInfo.Name(_doc.Current)}：{_doc.CurrentModel.Tables.Count} 张表、{_doc.CurrentModel.Edges.Count} 条关系线。";
         }
-        catch (Exception ex) { _hint.Text = "打开失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "打开失败"); }
     }
 
     /// <summary>批次五格5：打印——当前层模型转 HTML（内联样式，实体表＋关系清单），写临时文件后系统打开打印。</summary>
@@ -368,7 +368,7 @@ public static class ModelDialog
             AppLog.Write("[模型] 打印");   // 批次五格5 验收锚点
             _hint.Text = "已生成打印页并在系统默认浏览器打开（Ctrl+P 打印，画布完整不裁切）。";
         }
-        catch (Exception ex) { _hint.Text = "打印失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "打印失败"); }
     }
 
     /// <summary>批次五格1：物理层 DDL 只读预览（复用 ErdForward 正向生成）。</summary>

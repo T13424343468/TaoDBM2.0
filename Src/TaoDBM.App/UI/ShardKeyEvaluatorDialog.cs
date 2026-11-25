@@ -141,7 +141,7 @@ public static class ShardKeyEvaluatorDialog
         }
         catch (Exception ex)
         {
-            status.Text = "采样失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "采样失败");
             AppLog.Write($"[分片键采样] error={ex.Message}");
         }
     }

@@ -102,7 +102,7 @@ public static class MaskPreviewDialog
         }
         catch (Exception ex)
         {
-            status.Text = "读取列信息失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "读取列信息失败");
             return;
         }
 
@@ -121,7 +121,7 @@ public static class MaskPreviewDialog
         }
         catch (Exception ex)
         {
-            status.Text = "读取数据失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "读取数据失败");
             return;
         }
 

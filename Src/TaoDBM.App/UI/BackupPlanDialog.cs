@@ -79,7 +79,7 @@ public static class BackupPlanDialog
             }
             catch (Exception ex)
             {
-                status.Text = "生成失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "生成失败");
             }
         }
 

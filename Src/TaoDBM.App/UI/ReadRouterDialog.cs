@@ -176,7 +176,7 @@ public static class ReadRouterDialog
         }
         catch (Exception ex)
         {
-            status.Text = "读取复制画像失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "读取复制画像失败");
             AppLog.Write($"[读路由采样] error={ex.Message}");
         }
     }

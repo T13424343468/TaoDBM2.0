@@ -108,7 +108,7 @@ public static class TaskCenterDialog
                 await System.IO.File.WriteAllTextAsync(path, Shared.ExportStates());
                 status.Text = $"快照已保存：{path}";
             }
-            catch (Exception ex) { status.Text = "导出失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "导出失败"); }
             await Task.CompletedTask;
         };
 
@@ -190,10 +190,10 @@ public static class TaskCenterDialog
                 if (!int.TryParse(ivBox.Text?.Trim(), out int iv)) { status.Text = "间隔请填数字（分钟）。"; return; }
                 var kind = (kindBox.SelectedIndex switch { 1 => "backup", 2 => "sync", 3 => "import", 4 => "export", 5 => "dictionary", 6 => "faker", _ => "query" });
                 var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv, kind);
-                status.Text = $"已新增定时任务 {e.Name}（{e.Id}，{e.Kind}），下次执行 {e.NextRunAt:HH:mm}。";
+                status.Text = $"已新增定时任务 {e.Name}（{e.Id}，{e.Kind}），下次执行 {e.NextRunAt:MM-dd HH:mm}。";
                 RefreshSched(list, prov, status);
             }
-            catch (Exception ex) { status.Text = "新增失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "新增失败"); }
             await Task.CompletedTask;
         };
         runDueBtn.Click += async (_, _) =>
@@ -208,7 +208,7 @@ public static class TaskCenterDialog
                     // 批次三格1：按 Kind 分派——query 走 Execute；backup/sync/dictionary 等引擎函数类任务
                     // 以任务 SQL 为参数说明落账（引擎函数执行器随批接入，先保证旧 query 条目口径不变）
                     var rs = await prov.Execute(e.Db.Length > 0 ? e.Db : db, e.Sql);
-                    bool bad = rs.Any(r => r.Message.StartsWith("错误", StringComparison.Ordinal));
+                    bool bad = rs.Any(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")));
                     SqlScheduler.RecordResult(e.Id, bad ? "failed" : "done");
                     if (!bad) ok++;
                 }

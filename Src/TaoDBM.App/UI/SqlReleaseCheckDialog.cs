@@ -50,7 +50,7 @@ public static class SqlReleaseCheckDialog
                 }
                 status.Text = "审查完成：本对话框只读审查，不执行脚本。";
             }
-            catch (Exception ex) { status.Text = "审查失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "审查失败"); }
             await Task.CompletedTask;
         };
 

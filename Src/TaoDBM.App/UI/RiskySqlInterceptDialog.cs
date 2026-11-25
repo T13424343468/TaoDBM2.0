@@ -75,7 +75,7 @@ public static class RiskySqlInterceptDialog
                 }
                 catch (Exception ex)
                 {
-                    estimateText.Text = "影响行数预估失败：" + ex.Message;
+                    estimateText.Text = HumanError.Say(ex, "影响行数预估失败");
                 }
                 finally
                 {

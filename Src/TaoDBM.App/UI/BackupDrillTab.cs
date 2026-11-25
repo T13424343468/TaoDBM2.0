@@ -110,7 +110,7 @@ public class BackupDrillTab : Grid
         }
         catch (Exception ex)
         {
-            _status.Text = "演练失败：" + ex.Message;
+            _status.Text = HumanError.Say(ex, "演练失败");
             _output.Text += $"\n[中止] {ex.Message}";
             AppLog.Write($"[备份演练页签] error={ex.Message}");
         }
@@ -151,7 +151,7 @@ public class BackupDrillTab : Grid
         }
         catch (Exception ex)
         {
-            _status.Text = "对账清单生成失败：" + ex.Message;
+            _status.Text = HumanError.Say(ex, "对账清单生成失败");
             AppLog.Write($"[备份对账清单] error={ex.Message}");
         }
     }
@@ -182,7 +182,7 @@ public class BackupDrillTab : Grid
                 }
                 catch (Exception ex)
                 {
-                    issues.Add($"计数失败 {table}：{ex.Message}");
+                    issues.Add(HumanError.Say(ex, $"计数失败 {table}"));
                 }
             }
             return BackupDrill.VerifyCounts(expected, actual, issues);
@@ -241,13 +241,13 @@ public class BackupDrillTab : Grid
                 try
                 {
                     var qr = await prov.ExecuteSingle(tempDb, BackupDrill.CountSql(engine, table));
-                    if (qr.Message.StartsWith("错误", StringComparison.Ordinal))
+                    if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
                         throw new InvalidOperationException(qr.Message);
                     actual[table] = qr.Rows.Count > 0 ? Convert.ToInt64(qr.Rows[0][0]) : -1;
                 }
                 catch (Exception ex)
                 {
-                    issues.Add($"计数失败 {table}：{ex.Message}");
+                    issues.Add(HumanError.Say(ex, $"计数失败 {table}"));
                 }
             }
         }

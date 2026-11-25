@@ -152,7 +152,7 @@ public static class ReplicationDialog
             }
             catch (Exception ex)
             {
-                status.Text = "拓扑采集失败：" + ex.Message + "（无复制管理权限或该库未配置主从时属正常）";
+                status.Text = HumanError.Say(ex, "拓扑采集失败") + "（无复制管理权限或该库未配置主从时属正常）";
             }
         }
 

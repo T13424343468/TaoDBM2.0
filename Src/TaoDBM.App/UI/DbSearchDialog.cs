@@ -75,7 +75,7 @@ public static class DbSearchDialog
             }
             catch (Exception ex)
             {
-                status.Text = "搜索失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "搜索失败");
             }
             finally { progress.Visibility = Visibility.Collapsed; }
         }

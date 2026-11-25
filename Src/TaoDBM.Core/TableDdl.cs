@@ -11,6 +11,8 @@ public class TableColumnDesign
     public bool AutoIncrement { get; set; }
     /// <summary>默认值表达式，空表示不设置。</summary>
     public string DefaultValue { get; set; } = "";
+    /// <summary>列注释：MySQL 内联进列定义（MODIFY 显式带回不丢）；PG/Oracle 走独立 COMMENT ON 语句；SQLite 不支持。</summary>
+    public string Comment { get; set; } = "";
 
     public bool SameNameAs(string? other) => Name.Equals(other, StringComparison.OrdinalIgnoreCase);
 }
@@ -39,6 +41,10 @@ public class TableForeignKeyDesign
 public class TableDesign
 {
     public string TableName { get; set; } = "";
+    /// <summary>表注释（仅 MySQL 落 DDL；空表示不设置 / 改表时未变更）。</summary>
+    public string Comment { get; set; } = "";
+    /// <summary>字符集（仅 MySQL 落 DDL；空表示不设置 / 改表时未变更）。</summary>
+    public string Charset { get; set; } = "";
     public List<TableColumnDesign> Columns { get; set; } = new();
     public List<TableIndexDesign> Indexes { get; set; } = new();
     public List<TableForeignKeyDesign> ForeignKeys { get; set; } = new();
@@ -77,7 +83,14 @@ public static class TableDdl
             lines.Add("  PRIMARY KEY (" + string.Join(", ", pks) + ")");
         foreach (var fk in t.ForeignKeys.Where(FkValid))
             lines.Add("  " + FkClause(fk, quote));
-        return $"CREATE TABLE {quote(t.TableName)} (\n{string.Join(",\n", lines)}\n)";
+        // 表级属性（仅 MySQL）：字符集 / 表注释，空不落
+        var tail = "";
+        if (engine == DbEngine.MySQL)
+        {
+            if (t.Charset.Trim().Length > 0) tail += $" DEFAULT CHARSET={t.Charset.Trim()}";
+            if (t.Comment.Trim().Length > 0) tail += $" COMMENT='{Esc(t.Comment.Trim())}'";
+        }
+        return $"CREATE TABLE {quote(t.TableName)} (\n{string.Join(",\n", lines)}\n){tail}";
     }
 
     /// <summary>生成索引 DDL（CREATE INDEX，全引擎通用；空名/空列跳过）。</summary>
@@ -184,8 +197,35 @@ public static class TableDdl
             foreach (var name in existingNames.Where(n => n.Length > 0 && !keep.Contains(n)))
                 stmts.Add($"ALTER TABLE {table} DROP COLUMN {quote(name)}");
 
+        // 表级属性变更（仅 MySQL）：Comment / Charset 非空才落（调用方只在有变更时填）
+        if (engine == DbEngine.MySQL)
+        {
+            if (t.Comment.Trim().Length > 0) stmts.Add($"ALTER TABLE {table} COMMENT='{Esc(t.Comment.Trim())}'");
+            if (t.Charset.Trim().Length > 0) stmts.Add($"ALTER TABLE {table} CHARACTER SET = {t.Charset.Trim()}");
+        }
+
         return (stmts.Where(s => s.Length > 0).ToList(), skipped);
     }
+
+    /// <summary>列注释独立语句（PG / Oracle 用 COMMENT ON COLUMN；MySQL 内联在列定义里无需；SQLite 不支持返回空）。
+    /// onlyNames 非空时只为这些列出语句（改表场景：新增＋被修改的列）。</summary>
+    public static List<string> BuildColumnComments(TableDesign t, DbEngine engine, Func<string, string> quote, IEnumerable<string>? onlyNames = null)
+    {
+        var stmts = new List<string>();
+        if (engine is not (DbEngine.PostgreSQL or DbEngine.Oracle)) return stmts;
+        var only = onlyNames?.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var table = quote(t.TableName);
+        foreach (var c in t.Columns)
+        {
+            if (c.Name.Trim().Length == 0 || c.Comment.Trim().Length == 0) continue;
+            if (only != null && !only.Contains(c.Name.Trim())) continue;
+            stmts.Add($"COMMENT ON COLUMN {table}.{quote(c.Name.Trim())} IS '{Esc(c.Comment.Trim())}'");
+        }
+        return stmts;
+    }
+
+    /// <summary>DDL 字符串字面量转义（注释 / 默认值共用）。</summary>
+    private static string Esc(string s) => s.Replace("'", "''");
 
     private static string TypeOr(TableColumnDesign c, DbEngine e) =>
         string.IsNullOrWhiteSpace(c.SqlType) ? DefaultType(e) : c.SqlType.Trim();
@@ -223,6 +263,8 @@ public static class TableDdl
             else if (!c.Nullable) parts.Add("NOT NULL");
         }
         if (c.DefaultValue.Trim().Length > 0) parts.Add("DEFAULT " + FormatDefault(c.DefaultValue.Trim()));
+        // 列注释内联（仅 MySQL）：MODIFY COLUMN 显式带回原注释，改表不丢属性
+        if (e == DbEngine.MySQL && c.Comment.Trim().Length > 0) parts.Add($"COMMENT '{Esc(c.Comment.Trim())}'");
         return string.Join(" ", parts);
     }
 

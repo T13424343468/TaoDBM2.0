@@ -36,7 +36,30 @@ public partial class MainWindow
     {
         if (!_splitterDragging) return;
         _splitterDragging = false;
-        if (sender is FrameworkElement fe) fe.ReleasePointerCapture(e.Pointer);
+        if (sender is FrameworkElement fe)
+        {
+            fe.ReleasePointerCapture(e.Pointer);
+            fe.Width = 6;
+            if (fe is Border b) b.Background = Microsoft.UI.Xaml.Media.Brushes.Transparent;
+            fe.ProtectedCursor = null;
+        }
         SaveWindowState();
+    }
+
+    // C② affordance：悬停高亮＋加宽＋↔光标（ProtectedCursor），拖完记忆宽度由 SaveWindowState 承担
+    private void OnSplitterPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Border b) return;
+        b.Width = 8;
+        b.Background = Ant.Primary;
+        b.ProtectedCursor = Microsoft.UI.Input.InputCursor.Create(Windows.UI.Core.CoreCursorType.SizeWestEast);
+    }
+
+    private void OnSplitterPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Border b || _splitterDragging) return;
+        b.Width = 6;
+        b.Background = Microsoft.UI.Xaml.Media.Brushes.Transparent;
+        b.ProtectedCursor = null;
     }
 }

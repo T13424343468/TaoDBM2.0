@@ -98,7 +98,7 @@ public static class XmlExporter
 
     /// <summary>显示口径：大二进制（&gt;64B）只显体积，其余同 Fmt（同 App Exporter.DisplayFormat）。</summary>
     internal static string Disp(object v) => v is byte[] b && b.Length > 64
-        ? (b.Length < 1024 * 1024 ? $"{b.Length / 1024.0:0.#} KB" : $"{b.Length / 1024.0 / 1024.0:0.#} MB")
+        ? HumanSize.Of(b.Length)
         : Fmt(v);
 }
 

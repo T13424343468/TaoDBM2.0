@@ -40,7 +40,7 @@ public static class DataSyncDialog
                 foreach (var d in await prov.GetDatabases()) dbBox.Items.Add(d);
                 if (dbBox.Items.Count > 0) dbBox.SelectedIndex = 0;
             }
-            catch (Exception ex) { outBox.Text = "读取库列表失败：" + ex.Message; }
+            catch (Exception ex) { outBox.Text = HumanError.Say(ex, "读取库列表失败"); }
         }
 
         var tableList = new ListView { SelectionMode = ListViewSelectionMode.None, Height = 200 };
@@ -108,7 +108,7 @@ public static class DataSyncDialog
                 }
                 output.Text = $"已加载 {(tableList.Items.Count)} 个表 / 对象。";
             }
-            catch (Exception ex) { output.Text = "读取表列表失败：" + ex.Message; }
+            catch (Exception ex) { output.Text = HumanError.Say(ex, "读取表列表失败"); }
         };
         chkAll.Checked += (_, _) => { foreach (var i in tableList.Items) if (i is CheckBox cb) cb.IsChecked = true; };
         chkAll.Unchecked += (_, _) => { foreach (var i in tableList.Items) if (i is CheckBox cb) cb.IsChecked = false; };
@@ -261,7 +261,7 @@ public static class DataSyncDialog
                     catch (Exception ex)
                     {
                         failed++;
-                        output.Text += $"▶ {t}  失败：{ex.Message}\n";
+                        output.Text += $"▶ {t}  " + HumanError.Say(ex, "执行") + "\n";
                     }
                 }
                 output.Text += $"完成：成功 {done}，失败 {failed}。";

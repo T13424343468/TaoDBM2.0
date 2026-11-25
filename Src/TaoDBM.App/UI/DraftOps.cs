@@ -47,7 +47,7 @@ public static class DraftOps
         }
         catch (Exception ex)
         {
-            status.Text = "执行失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "执行失败");
         }
     }
 }

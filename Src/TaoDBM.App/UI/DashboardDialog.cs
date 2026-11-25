@@ -153,7 +153,7 @@ public static class DashboardDialog
             {
                 host.Opacity = 1.0;
                 host.Children.Clear();
-                host.Children.Add(new TextBlock { Text = $"刷新失败：{ex.Message}", FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+                host.Children.Add(new TextBlock { Text = HumanError.Say(ex, "刷新失败"), FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
                 failed++;
             }
         }

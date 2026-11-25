@@ -168,7 +168,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "出图失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "出图失败");
         }
     }
 
@@ -261,7 +261,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "生成表单失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "生成表单失败");
         }
     }
 
@@ -303,7 +303,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "校验失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "校验失败");
         }
     }
 
@@ -335,7 +335,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "生成写入语句失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "生成写入语句失败");
             return;
         }
 
@@ -365,7 +365,7 @@ public static class DesignAssistDialog
         try
         {
             var list = await draft.Prov.Execute(draft.Db, literal);
-            var errs = list.Where(r => r.Message.StartsWith("错误", StringComparison.Ordinal)).ToList();
+            var errs = list.Where(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："))).ToList();
             if (errs.Count == 0)
             {
                 QueryHistory.Add(draft.Prov.EngineName, draft.Db, "-- 表单录入：" + draft.Table + "\n" + literal);
@@ -382,7 +382,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "写入失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "写入失败");
         }
     }
 
@@ -492,7 +492,7 @@ public static class DesignAssistDialog
         }
         catch (Exception ex)
         {
-            status.Text = "追溯失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "追溯失败");
         }
     }
 

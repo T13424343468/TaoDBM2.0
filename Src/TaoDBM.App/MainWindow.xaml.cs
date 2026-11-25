@@ -313,7 +313,9 @@ public partial class MainWindow : Window
             ConnTree.RootNodes.Add(gNode);
             groupNodes[name] = gNode;
         }
-        foreach (var p in _profiles)
+        // E②：星标置顶（保持原相对顺序）；隐藏连接不进常规树，收进「已隐藏」折叠组
+        var hiddenList = new List<(TreeViewNode Node, NodeInfo Info)>();
+        foreach (var p in _profiles.OrderByDescending(p => p.Starred ? 1 : 0))
         {
             // 格18：筛选——DisplayName/Host 不区分大小写包含匹配；清空恢复全部
             if (filter.Length > 0 &&
@@ -326,14 +328,25 @@ public partial class MainWindow : Window
             SetNodeContent(node, info);   // 格18：状态点着色（绿=Connected / 红=Failed），无状态保持纯文本
             node.Children.Add(new TreeViewNode { Content = "…" }); // 占位，展开时填充
             _nodeMap[node] = info;
-            var groupName = ConnectionGroups.GroupOf(p.Id);
+            if (p.Hidden) { hiddenList.Add((node, info)); continue; }   // E②：隐藏连接进「已隐藏」组
+            var groupName = p.Group.Length > 0 ? p.Group : ConnectionGroups.GroupOf(p.Id);   // E②：档案分组字段优先，虚拟分组兜底
             if (groupName.Length > 0 && groupNodes.TryGetValue(groupName, out var gNode)) gNode.Children.Add(node);
             else ConnTree.RootNodes.Add(node);
         }
+        // E②：「已隐藏（N）」折叠组——隐藏连接不删配置，可右键找回
+        if (hiddenList.Count > 0)
+        {
+            var hInfo = new NodeInfo { Kind = NodeKind.Category, Name = "hidden" };
+            var hNode = new TreeViewNode { IsExpanded = false, Content = NodeIconText("group", $"已隐藏（{hiddenList.Count}）") };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(hNode, "ConnHidden");
+            _nodeMap[hNode] = hInfo;
+            foreach (var (hn, _) in hiddenList) hNode.Children.Add(hn);
+            ConnTree.RootNodes.Add(hNode);
+        }
         // 组内连接被筛选隐藏时组节点仍显示（组是视图），空组如实标注
         foreach (var g in groupNodes) if (g.Value.Children.Count == 0) g.Value.Children.Add(new TreeViewNode { Content = "（空分组）" });
-        SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接 · {groupNames.Count} 个分组");
-        AppLog.Write($"[连接树] filter={filter} shown={shown} groups={groupNames.Count}");   // 格18：走查 S85 断言锚点
+        SetStatus(filter.Length > 0 ? $"筛选「{filter}」：{shown}/{_profiles.Count} 个连接" : $"共 {_profiles.Count} 个连接 · {groupNames.Count} 个分组" + (hiddenList.Count > 0 ? $" · 已隐藏 {hiddenList.Count}" : ""));
+        AppLog.Write($"[连接树] filter={filter} shown={shown} groups={groupNames.Count} hidden={hiddenList.Count}");   // 格18：走查 S85 断言锚点
     }
 
     /// <summary>格18：筛选框输入即过滤（清空恢复全部）；XAML 解析期 TextChanged 可能早于树就绪，判空防崩。</summary>
@@ -373,7 +386,7 @@ public partial class MainWindow : Window
 
     private static void SetNodeContent(TreeViewNode node, NodeInfo info)
     {
-        string text = $"{info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";
+        string text = (info.Profile.Starred ? "⭐ " : "") + $"{info.Profile.DisplayName}（{EngineInfo.Name(info.Profile.Engine)}）";   // E②：星标前缀置顶标识
         if (info.ConnState.Length == 0) { node.Content = NodeIconText("conn", text); return; }
         var host = NodeIconText("conn", text);
         var dot = new TextBlock
@@ -625,6 +638,8 @@ public partial class MainWindow : Window
                 Item("编辑连接", async (_, _) => await EditConnection(info));
                 Item("移到分组", async (_, _) => await MoveToGroup(info));   // 批次二格6
                 Item("移出分组", (_, _) => { ConnectionGroups.MoveTo(info.Profile.Id, ""); RebuildRoots(); SetStatus($"已把 {info.Profile.DisplayName} 移出分组"); });   // 批次二格6
+                Item(info.Profile.Starred ? "取消星标" : "星标", (_, _) => { info.Profile.Starred = !info.Profile.Starred; ConnectionStore.Save(_profiles); RebuildRoots(); });   // E②：星标置顶
+                Item(info.Profile.Hidden ? "取消隐藏" : "隐藏", (_, _) => { info.Profile.Hidden = !info.Profile.Hidden; ConnectionStore.Save(_profiles); RebuildRoots(); });   // E②：隐藏不删配置，进「已隐藏」组可找回
                 Sep();
                 SubGroup("工具与向导", sub =>
                 {
@@ -919,14 +934,14 @@ public partial class MainWindow : Window
         {
             info.Loaded = false;
             node.Children.Clear();
-            node.Children.Add(new TreeViewNode { Content = "⚠ " + ex.Message + "（点击刷新重试）" });
+            node.Children.Add(new TreeViewNode { Content = "⚠ " + HumanError.Say(ex, "刷新") + "（点击刷新重试）" });
             if (info.Kind == NodeKind.Connection) { info.ConnState = "Failed"; SetNodeStateDot(node, info); }   // 格18：展开失败置红点
             // #154 S09 取证先行：装载异常此前静默吞掉（应用日志零行），红账无法分辨「查询异常 vs 未触发」
             Core.AppLog.Write($"[对象树] 装载异常 kind={info.Kind} name={info.Name} db={info.Db} {ex.GetType().Name}: {ex.Message}");
-            SetStatus("加载失败：" + ex.Message);
+            SetStatus(HumanError.Say(ex, "加载失败"));
             // s2 失败重试条：元数据加载失败时顶部亮重试条，点重试即重载该节点
             _metaRetryNode = node;
-            MetaRetryBar.Message = $"{info.Name}：{ex.Message}";
+            MetaRetryBar.Message = HumanError.Say(ex, $"{info.Name}");
             MetaRetryBar.IsOpen = true;
         }
     }
@@ -991,7 +1006,7 @@ public partial class MainWindow : Window
         {
             List<ColumnSpec> cols;
             try { cols = await info.Provider.GetColumns(info.Db, info.Name); }
-            catch (Exception ex) { await InfoAsync("读取表结构失败：" + ex.Message); return; }
+            catch (Exception ex) { await InfoAsync(HumanError.Say(ex, "读取表结构失败")); return; }
             OpenDesignerTab(info.Provider, info.Db, info.Name, cols);
         }
         else if (info.Kind == NodeKind.Database)
@@ -1116,7 +1131,7 @@ public partial class MainWindow : Window
         {
             // #88 S11 红场（0xC000027B）：首跑云路径异常不得带崩整个应用——落账＋界面提示，走查按 work-editor 缺席定谳
             Core.AppLog.Write($"[新建查询] {ex.GetType().Name}: {ex.Message}");
-            _ = InfoAsync($"新建查询失败：{ex.Message}");
+            _ = InfoAsync(HumanError.Say(ex, "新建查询失败"));
         }
     }
 
@@ -1144,7 +1159,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Core.AppLog.Write($"[ERD] DDL 进查询窗口失败 {ex.GetType().Name}: {ex.Message}");
-            _ = InfoAsync($"打开查询窗口失败：{ex.Message}");
+            _ = InfoAsync(HumanError.Say(ex, "打开查询窗口失败"));
         }
     }
 
@@ -1194,6 +1209,10 @@ public partial class MainWindow : Window
 
     private void OnTabClose(TabView sender, TabViewTabCloseRequestedEventArgs args)
         => CloseTabItem(sender, args.Tab);
+
+    /// <summary>B①：页签「＋」接新开空白查询页签（Navicat 主流做法）——有连接上下文按上下文开，无则开无连接查询页。</summary>
+    private void OnTabAdd(TabView sender, object args)
+        => OnNewQuerySel(this, new RoutedEventArgs());
 
     /// <summary>关页签公共链路：脏页签三选确认不绕过，干净页签直接关并落会话。</summary>
     private void CloseTabItem(TabView tabView, TabViewItem tab)
@@ -1256,11 +1275,28 @@ public partial class MainWindow : Window
     private void WireDirtyHeader(TabViewItem tab, UI.WorkTab wt)
     {
         var baseHeader = tab.Header?.ToString() ?? "";
-        wt.DirtyChanged += () =>
+        // B④：页签标题取 SQL 首行（截 24 字）或表名并动态更新；SQL 为空回退原「查询 · 连接名」
+        void Refresh()
         {
-            try { tab.Header = (wt.IsDirty ? "● " : "") + baseHeader; }
+            try
+            {
+                var header = baseHeader;
+                var sql = (wt.EditorText ?? "").Trim();
+                if (sql.Length > 0)
+                {
+                    var first = sql.Split('\n', 2)[0].Trim().TrimEnd(';');
+                    if (first.Length == 0) first = sql.Split('\n', 2)[^1].Trim();
+                    if (first.Length > 0)
+                    {
+                        if (first.Length > 24) first = first[..24] + "…";
+                        header = $"查询 · {first}";
+                    }
+                }
+                tab.Header = (wt.IsDirty ? "● " : "") + header;
+            }
             catch { /* 标题更新失败不影响业务 */ }
-        };
+        }
+        wt.DirtyChanged += Refresh;
     }
 
     // ---------- 标签会话保持 ----------
@@ -1336,7 +1372,7 @@ public partial class MainWindow : Window
             SetStatus($"已载入 {info.Name} 定义");
             return ddl;
         }
-        catch (Exception ex) { await InfoAsync("读取定义失败：" + ex.Message); return null; }
+        catch (Exception ex) { await InfoAsync(HumanError.Say(ex, "读取定义失败")); return null; }
     }
 
     /// <summary>B2：查看对象定义。视图/例程/触发器弹等宽只读 DDL 预览（可打开到查询窗口），索引/外键无 DDL 直接展示目录行详情。</summary>

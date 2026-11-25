@@ -178,7 +178,7 @@ public static class RoutinesDialog
                 rightHost.Children.Clear();
                 rightHost.Children.Add(defBox);
                 defBox.Text = "";
-                status.Text = "读取定义失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "读取定义失败");
                 return null;
             }
         }
@@ -252,7 +252,7 @@ public static class RoutinesDialog
             {
                 leftHost.Children.Clear();
                 leftHost.Children.Add(tree);
-                status.Text = "目录加载失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "目录加载失败");
             }
         }
 
@@ -314,7 +314,7 @@ public static class RoutinesDialog
             }
             catch (Exception ex)
             {
-                status.Text = "引用查找失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "引用查找失败");
             }
         };
 
@@ -330,14 +330,14 @@ public static class RoutinesDialog
                     sel.KindEnum == RoutineKind.Trigger && info.Profile.Engine == DbEngine.MySQL ? db : null,
                     sel.KindEnum == RoutineKind.Trigger ? sel.Table : null);
                 var qr = await prov.ExecuteSingle(db, sql);
-                status.Text = qr.Message.StartsWith("错误", StringComparison.Ordinal)
+                status.Text = q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："))
                     ? "删除失败：" + qr.Message
                     : $"已删除 {sel.Name}。";
                 await ReloadAsync();
             }
             catch (Exception ex)
             {
-                status.Text = "删除失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "删除失败");
             }
         };
 

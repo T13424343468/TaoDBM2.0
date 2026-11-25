@@ -54,7 +54,7 @@ public static class RiskySqlGuardDialog
                     ? "检查完成：存在高危语句，请逐条确认后再执行。"
                     : worst.Level == "warn" ? "检查完成：存在警告项，建议复核。" : "检查完成：全部通过。";
             }
-            catch (Exception ex) { status.Text = "检查失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "检查失败"); }
             await Task.CompletedTask;
         };
 

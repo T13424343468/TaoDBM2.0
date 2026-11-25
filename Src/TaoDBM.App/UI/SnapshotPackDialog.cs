@@ -52,7 +52,7 @@ public static class SnapshotPackDialog
                 }
                 status.Text = "快照就绪：可另存为 JSON 归档，或留作比对。";
             }
-            catch (Exception ex) { status.Text = "采集失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "采集失败"); }
             await Task.CompletedTask;
         };
         saveBtn.Click += async (_, _) =>
@@ -68,7 +68,7 @@ public static class SnapshotPackDialog
                 await System.IO.File.WriteAllTextAsync(path, json);
                 status.Text = $"已保存：{path}";
             }
-            catch (Exception ex) { status.Text = "保存失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;
         };
 

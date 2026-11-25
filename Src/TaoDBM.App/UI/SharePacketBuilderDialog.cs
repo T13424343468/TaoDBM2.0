@@ -53,7 +53,7 @@ public static class SharePacketBuilderDialog
                     AddLine(report, $"分块预演：{SharePacketBuilder.Chunk(packet, cc).Count} 块（每块 {cc} 字符，按序重装后整体验签）", null, 1);
                 status.Text = "封包完成：指纹头已生成，可另存包文件交同事搬运，或留作验包对照。";
             }
-            catch (Exception ex) { status.Text = "封包失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "封包失败"); }
             await Task.CompletedTask;
         };
 
@@ -93,7 +93,7 @@ public static class SharePacketBuilderDialog
                 await System.IO.File.WriteAllTextAsync(path, json);
                 status.Text = $"已保存：{path}";
             }
-            catch (Exception ex) { status.Text = "保存失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;
         };
 
@@ -155,7 +155,7 @@ public static class SharePacketBuilderDialog
         }
         catch (Exception ex)
         {
-            status.Text = "条目生成失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "条目生成失败");
             AppLog.Write($"[共享条目] error={ex.Message}");
         }
         await Task.CompletedTask;

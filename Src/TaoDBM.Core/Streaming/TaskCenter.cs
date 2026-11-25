@@ -174,7 +174,7 @@ public sealed class TaskCenter
             }
             catch (Exception ex)
             {
-                Complete(h.TaskId, "failed", "错误：" + ex.Message);
+                Complete(h.TaskId, "failed", HumanError.Say(ex, "任务执行"));
             }
             h.Cts.Dispose();
         }

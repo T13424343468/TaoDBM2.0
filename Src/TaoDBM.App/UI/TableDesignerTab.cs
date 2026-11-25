@@ -587,7 +587,7 @@ public class TableDesignerTab : Grid
                 try
                 {
                     var list = await _prov.Execute(_db, stmts[i] + ";");
-                    var errs = list.Where(r => r.Message.StartsWith("错误", StringComparison.Ordinal)).ToList();
+                    var errs = list.Where(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："))).ToList();
                     if (errs.Count > 0)
                     {
                         okAll = false;
@@ -611,7 +611,7 @@ public class TableDesignerTab : Grid
                 catch (Exception ex)
                 {
                     okAll = false;
-                    _status.Text = $"[表设计] stmt={i + 1}/{stmts.Count} 失败：{ex.Message}";
+                    _status.Text = HumanError.Say(ex, $"[表设计] stmt={i + 1}/{stmts.Count} 失败");
                     _status.Foreground = Ant.Error;
                     if (i < stmts.Count - 1)
                     {
@@ -639,7 +639,7 @@ public class TableDesignerTab : Grid
         }
         catch (Exception ex)
         {
-            _status.Text = "执行失败：" + ex.Message;
+            _status.Text = HumanError.Say(ex, "执行失败");
             _status.Foreground = Ant.Error;
         }
         finally

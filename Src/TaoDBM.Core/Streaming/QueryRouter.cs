@@ -47,7 +47,7 @@ public static class QueryRouter
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                qr.Message = "错误：" + ex.Message;
+                qr.Message = HumanError.Say(ex, "执行");
             }
             sw.Stop();
             qr.Elapsed = sw.Elapsed;
@@ -121,7 +121,7 @@ public static class QueryRouter
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                qr.Message = "错误：" + ex.Message;
+                qr.Message = HumanError.Say(ex, "执行");
             }
             sw.Stop();
             qr.Elapsed = sw.Elapsed;

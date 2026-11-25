@@ -152,7 +152,7 @@ public static class ShardingWizardDialog
                 foreach (var t in tables) tableBox.Items.Add(new ComboBoxItem { Content = t, Tag = t });
                 status.Text = tables.Count == 0 ? "当前库没有可分片的表。" : $"共 {tables.Count} 张表可选。";
             }
-            catch (Exception ex) { status.Text = "表清单获取失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "表清单获取失败"); }
         }
         tableBox.SelectionChanged += async (_, _) =>
         {
@@ -185,7 +185,7 @@ public static class ShardingWizardDialog
                     Safe.Run(() => File.AppendAllLines(TaoPaths.FilePath("permops.log"),
                         new[] { $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\t{ShardingWizard.UnlockAudit(table, "熟手开关解锁全部字段（选表后补记）")}" }), "分片键解锁审计");
             }
-            catch (Exception ex) { status.Text = "列与索引元数据获取失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "列与索引元数据获取失败"); }
         }
 
         void FillKeyBox(IEnumerable<string> allCols)
@@ -304,7 +304,7 @@ public static class ShardingWizardDialog
             }
             catch (Exception ex)
             {
-                st.Text = "输入有误：" + ex.Message;
+                st.Text = HumanError.Say(ex, "输入有误");
                 return false;
             }
 
@@ -411,7 +411,7 @@ public static class ShardingWizardDialog
             }
             catch (Exception ex)
             {
-                status.Text = "分区现状查询失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "分区现状查询失败");
             }
         };
 
@@ -491,7 +491,7 @@ public static class ShardingWizardDialog
             catch (Exception ex)
             {
                 linkCheck.IsChecked = false;
-                status.Text = "分片计划保存失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "分片计划保存失败");
             }
         };
 
@@ -515,7 +515,7 @@ public static class ShardingWizardDialog
             catch (Exception ex)
             {
                 routeText.Text = "";
-                status.Text = "路由预览失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "路由预览失败");
             }
         };
 
@@ -557,7 +557,7 @@ public static class ShardingWizardDialog
                 }
                 catch (Exception ex)
                 {
-                    status.Text = "在线改表计划生成失败：" + ex.Message;
+                    status.Text = HumanError.Say(ex, "在线改表计划生成失败");
                 }
             };
             openQryBtn.Click += (_, _) =>

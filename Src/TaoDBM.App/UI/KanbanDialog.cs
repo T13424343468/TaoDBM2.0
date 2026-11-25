@@ -136,9 +136,9 @@ public static class KanbanDialog
             {
                 host.Opacity = 1.0;
                 host.Children.Clear();
-                host.Children.Add(new TextBlock { Text = $"刷新失败：{ex.Message}", FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+                host.Children.Add(new TextBlock { Text = HumanError.Say(ex, "刷新失败"), FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
             }
-            status.Text = $"「{pin.Title}」刷新失败：{ex.Message}";
+            status.Text = HumanError.Say(ex, $"「{pin.Title}」刷新失败");
         }
     }
 

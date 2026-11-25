@@ -68,7 +68,7 @@ public static class UserPermissionDialog
                 accountBox.Items.Clear();
                 accountBox.SelectedIndex = -1;
                 accountBox.IsEnabled = false;
-                status.Text = "账号清单读取失败：" + ex.Message;
+                status.Text = HumanError.Say(ex, "账号清单读取失败");
             }
         }
 
@@ -94,7 +94,7 @@ public static class UserPermissionDialog
             }
             catch (Exception ex)
             {
-                status.Text = $"授权读取失败（{label}）：" + ex.Message;
+                status.Text = HumanError.Say(ex, $"授权读取失败（{label}）");
                 return null;
             }
         }
@@ -252,12 +252,12 @@ public static class UserPermissionDialog
                 bool ok;
                 string err = "";
                 try { await ProviderFactory.Create(verify).TestConnection(); ok = true; }
-                catch (Exception ex) { ok = false; err = ex.Message; }
+                catch (Exception ex) { ok = false; err = HumanError.Say(ex, "新会话验证"); }
                 status.Text = ok
                     ? $"改密已执行，新会话用新口令连接验证通过（{u}）。"
                     : $"改密语句已执行，但新会话验证失败：{err}。请核对口令策略/来源主机限制。";
             }
-            catch (Exception ex) { status.Text = "改密失败：" + ex.Message; }
+            catch (Exception ex) { status.Text = HumanError.Say(ex, "改密失败"); }
         };
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 460 };

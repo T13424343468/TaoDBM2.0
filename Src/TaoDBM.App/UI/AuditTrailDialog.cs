@@ -133,7 +133,7 @@ public static class AuditTrailDialog
         }
         catch (Exception ex)
         {
-            status.Text = "回滚失败：" + ex.Message;
+            status.Text = HumanError.Say(ex, "回滚失败");
         }
     }
 }

@@ -224,7 +224,7 @@ public static class ErdDialog
             int fkReal = fkRows?.Count ?? 0;
             _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条，最多取前 40 张表）。";
         }
-        catch (Exception ex) { _hint.Text = "生成失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "生成失败"); }
     }
 
     // s6 逆向拉取：先出差异预览（新增表 / 结构变化 / 仅模型有），确认后才并入模型，不直接覆盖。
@@ -233,7 +233,7 @@ public static class ErdDialog
         if (_model.Tables.Count == 0) { _hint.Text = "当前模型为空，请先用「生成 ER 图」载入，再做逆向差异比对。"; return; }
         List<string> live;
         try { live = await prov.GetChildren(db); }
-        catch (Exception ex) { _hint.Text = "逆向拉取失败：" + ex.Message; return; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "逆向拉取失败"); return; }
 
         var byName = _model.Tables.ToDictionary(t => t.Name, t => t, StringComparer.OrdinalIgnoreCase);
         var liveSet = live.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -579,7 +579,7 @@ public static class ErdDialog
             await encoder.FlushAsync();
             _hint.Text = $"已导出：{f.Path}（{rtb.PixelWidth}x{rtb.PixelHeight}）";
         }
-        catch (Exception ex) { _hint.Text = "导出失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "导出失败"); }
     }
 
     private static async Task SaveLayout(MainWindow owner)
@@ -596,7 +596,7 @@ public static class ErdDialog
             await FileIO.WriteTextAsync(f, _model.ToJson());
             _hint.Text = "布局已保存：" + f.Path;
         }
-        catch (Exception ex) { _hint.Text = "保存失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "保存失败"); }
     }
 
     private static async Task OpenLayout(MainWindow owner)
@@ -618,6 +618,6 @@ public static class ErdDialog
             Place(_model);
             _hint.Text = $"已载入 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线。";
         }
-        catch (Exception ex) { _hint.Text = "打开失败：" + ex.Message; }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "打开失败"); }
     }
 }
