@@ -285,6 +285,20 @@ public class ConnectionDialog
                 await ok2.ShowThemedAsync();
                 continue;
             }
+            if (result == ContentDialogResult.Secondary)
+            {
+                // 发现64：保存前必填校验——非文件引擎主机不能为空（哨兵模式改查 Master 名称），留对话框提示
+                if (!EngineInfo.IsFileBased(Profile.Engine) && Profile.RedisMode != "sentinel" && Profile.Host.Length == 0)
+                {
+                    _hint.Text = "主机还没填：填服务器地址（如 127.0.0.1）再保存。";
+                    continue;
+                }
+                if (Profile.RedisMode == "sentinel" && Profile.SentinelMaster.Length == 0)
+                {
+                    _hint.Text = "Master 名称还没填：填哨兵的 master 名称再保存。";
+                    continue;
+                }
+            }
             return result == ContentDialogResult.Secondary;
         }
     }
