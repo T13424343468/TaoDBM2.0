@@ -176,6 +176,10 @@ public abstract class RelationalProvider : IDbProvider
                 DataType = r.FieldCount > 1 ? Convert.ToString(r.GetValue(1)) ?? "" : "",
                 Nullable = r.FieldCount > 2 ? Convert.ToString(r.GetValue(2)) != "NO" : true,
                 IsKey = r.FieldCount > 3 ? Convert.ToString(r.GetValue(3)) == "PRI" : false,
+                // 发现74/75：第 5 列自增标记（"1"）、第 6 列默认值原样、第 7 列注释，引擎 SQL 未给则保持默认
+                IsAutoIncrement = r.FieldCount > 4 && Convert.ToString(r.GetValue(4)) == "1",
+                DefaultValue = r.FieldCount > 5 ? Convert.ToString(r.GetValue(5)) ?? "" : "",
+                Comment = r.FieldCount > 6 ? Convert.ToString(r.GetValue(6)) ?? "" : "",
             });
         }
         return list;
@@ -225,6 +229,7 @@ public abstract class RelationalProvider : IDbProvider
             catch (Exception ex)
             {
                 qr.Message = HumanError.Say(ex, "执行");
+                qr.IsError = true;   // 发现76：结构化错误标记，判定不再靠文案子串
             }
             sw.Stop();
             qr.Elapsed = sw.Elapsed;
@@ -268,6 +273,7 @@ public abstract class RelationalProvider : IDbProvider
         catch (Exception ex)
         {
             qr.Message = HumanError.Say(ex, "执行");
+            qr.IsError = true;   // 发现76：结构化错误标记，判定不再靠文案子串
         }
         sw.Stop();
         qr.Elapsed = sw.Elapsed;

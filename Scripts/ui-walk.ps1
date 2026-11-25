@@ -45,12 +45,34 @@ public class MouseNative {
     One(LEFTDOWN, LEFTUP);
     if (dbl) { System.Threading.Thread.Sleep(120); One(LEFTDOWN, LEFTUP); }
   }
+  public static void Move(int x, int y) { SetCursorPos(x, y); }
 }
 '@
 Add-Type -TypeDefinition $mouseSrc
 
 function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
   $r = $el.Current.BoundingRectangle
+  if ($r.IsEmpty) {
+    # 发现79：TabView 关闭钮仅悬停页签时渲染，UIA 树里有节点但 BoundingRectangle 为空（云343 S66a/S66e 十段同因定谇）——先悬停页签祖先中心让关闭钮现形，再重读矩形
+    try {
+      $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
+      $anc = $walker.GetParent($el)
+      $hop = 0
+      while ($null -ne $anc -and $hop -lt 6) {
+        if ($anc.Current.ControlType.ProgrammaticName -eq 'ControlType.TabItem') {
+          $tr = $anc.Current.BoundingRectangle
+          if (-not $tr.IsEmpty) {
+            [MouseNative]::Move([int]($tr.X + $tr.Width / 2), [int]($tr.Y + $tr.Height / 2))
+            Start-Sleep -Milliseconds 800
+            $r = $el.Current.BoundingRectangle
+          }
+          break
+        }
+        $anc = $walker.GetParent($anc)
+        $hop++
+      }
+    } catch { }
+  }
   if ($r.IsEmpty) { throw "mouse target has empty rect" }
   $x = [int]($r.X + $r.Width / 2)
   $y = [int]($r.Y + $r.Height / 2)
@@ -1053,7 +1075,8 @@ foreach ($s in $plan.steps) {
         foreach ($attempt in 1..3) {
           try { $ed.SetFocus() } catch { }
           Start-Sleep -Milliseconds 400
-          if (-not (Set-TextValue $ed $want)) { throw "editor set value failed" }
+          # 发现79：Set-TextValue 失败（高负载下 SetFocus/SendKeys 抛异）不再即抛终止，落到回读校验+剪贴板重试尾部，3 次后交给收场裁决
+          if (-not (Set-TextValue $ed $want)) { Log "$id editor-set attempt $attempt Set-TextValue failed, fall into retry" }
           Start-Sleep -Milliseconds 600
           $got = Read-EditorTextSafe $ed $mainRoot
           if ($null -ne $got -and $got.Trim() -eq $want.Trim()) { $done = $true; break }

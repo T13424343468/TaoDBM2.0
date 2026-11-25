@@ -694,7 +694,10 @@ public partial class WorkTab : Grid
         catch (Exception ex)
         {
             if (_mode == WorkMode.TableData) { _offset = prevOffset; UpdateButtons(); }   // 发现51：翻页失败回滚 offset
-            ShowError(HumanError.Say(ex, "执行失败"));
+            // 发现79：连接/登录类异常走 catch 直接 ShowError(HumanError.Say)，横幅成「执行没成功：…」缺「执行失败」前缀，
+            // 与流式路径（RenderResults→「执行失败：没成功：…」）口径不一，S63c/S63d 断言落空——异常路径补齐同前缀
+            var human = HumanError.Say(ex, "执行失败");
+            ShowError(human.StartsWith("执行没成功：", StringComparison.Ordinal) ? "执行失败：" + human["执行".Length..] : human);
             _owner.SetStatus("执行出错");
             AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
         }
@@ -1311,7 +1314,9 @@ public partial class WorkTab : Grid
         }
         catch (Exception ex)
         {
-            ShowError(HumanError.Say(ex, "执行失败"));
+            // 发现79：行编辑执行错误横幅与查询路径同口径补「执行失败」前缀
+            var humanRow = HumanError.Say(ex, "执行失败");
+            ShowError(humanRow.StartsWith("执行没成功：", StringComparison.Ordinal) ? "执行失败：" + humanRow["执行".Length..] : humanRow);
         }
     }
 
