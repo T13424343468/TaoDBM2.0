@@ -1,0 +1,3 @@
+[WALK] console minimized
+[WALK] v7 start exe=
+[WALK] ERROR navicat process never appeared
