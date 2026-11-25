@@ -213,8 +213,14 @@ public class TableDesignerTab : Grid
         HookCheck(w.Pk, w.Null, w.Inc);
         w.Name.TextChanged += (_, _) => RefreshDiff();   // 格5：逐列 diff 随编辑刷新
         // 台账④⑤：类型变化（下拉选中或手输）→ 默认值占位 + 预览 + diff 全刷新
-        w.Type.TextChanged += (_, _) => { UpdateDefPlaceholder(w); RefreshPreview(); RefreshDiff(); };
+        // 云测实锤（run 45649564754 CS1061）：本 WinUI 版本 ComboBox 无 TextChanged 事件，
+        // 手输感知走可编辑模板内的 TextBox（视觉树找 TextEditor），选中感知走 SelectionChanged。
         w.Type.SelectionChanged += (_, _) => { UpdateDefPlaceholder(w); RefreshPreview(); RefreshDiff(); };
+        w.Type.Loaded += (_, _) =>
+        {
+            var editor = FindDescendantTextBox(w.Type);
+            if (editor != null) editor.TextChanged += (_, _) => { UpdateDefPlaceholder(w); RefreshPreview(); RefreshDiff(); };
+        };
         w.Pk.Checked += (_, _) => RefreshDiff();
         w.Pk.Unchecked += (_, _) => RefreshDiff();
         w.Null.Checked += (_, _) => RefreshDiff();
@@ -283,6 +289,20 @@ public class TableDesignerTab : Grid
     private void Hook(params TextBox[] boxes)
     {
         foreach (var b in boxes) b.TextChanged += (_, _) => RefreshPreview();
+    }
+
+    /// <summary>可编辑 ComboBox 模板内的 TextBox（手输感知用；云测 CS1061 教训：ComboBox 本体无 TextChanged）。</summary>
+    private static TextBox? FindDescendantTextBox(DependencyObject root)
+    {
+        int n = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            var c = VisualTreeHelper.GetChild(root, i);
+            if (c is TextBox t) return t;
+            var r = FindDescendantTextBox(c);
+            if (r != null) return r;
+        }
+        return null;
     }
 
     // ---------- 台账⑤：默认值占位按类型区分 ----------
