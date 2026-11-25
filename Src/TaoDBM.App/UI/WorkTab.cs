@@ -996,6 +996,18 @@ public partial class WorkTab : Grid
         {
             bool isNull = nullChecks[i].IsChecked == true;
             bool empty = fields[i].GetText().Length == 0;
+            // 发现65：二进制列——未改动不回写（防 hex 展示值整列覆盖改坏 BLOB）；改动值须为偶数位十六进制
+            bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
+            if (isBin && existing != null && !_cols[i].IsKey && !fields[i].Dirty) continue;
+            if (isBin && !isNull && !empty)
+            {
+                var hex = fields[i].GetText().Trim();
+                if (hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
+                {
+                    _messageBox.Text = $"{_cols[i].Name} 是二进制列：请填偶数位的十六进制（0-9、A-F），或勾选 NULL。";
+                    return;
+                }
+            }
             string val;
             if (isNull)
             {

@@ -16,6 +16,8 @@ public static class RowEditorFactory
         public required FrameworkElement Control { get; init; }
         public required Func<string> GetText { get; init; }
         public required Action<bool> SetEnabled { get; init; }
+        /// <summary>发现65：用户是否实际改过值（TextChanged 置位）——二进制列未改动不回写，防 hex 展示值被整列覆盖。</summary>
+        public bool Dirty { get; set; }
     }
 
     public static Field Create(ColumnSpec col, string? initialText, bool readOnly)
@@ -109,7 +111,16 @@ public static class RowEditorFactory
                 PlaceholderText = "留空＝空字符串；勾选左侧 NULL 存 NULL",
             };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(box, $"EditRow_{col.Name}");
-            box.Text = initialText ?? "";
+            // 发现65：二进制大值不把 hex 塞进输入框（2MB hex 卡 UI）——显示占位说明，改动走「编辑大字段」
+            bool isBinCol = Exporter.IsBinaryColumn(col.DataType);
+            if (isBinCol && (initialText?.Length ?? 0) > 128)
+            {
+                box.PlaceholderText = $"(二进制 {HumanSize.Of(initialText!.Length / 2)}，未修改；要改请点「编辑大字段」)";
+            }
+            else
+            {
+                box.Text = initialText ?? "";
+            }
             if (readOnly) box.IsReadOnly = true;
 
             // 批次二格2：大字段（BLOB/TEXT/IMAGE/bytea 或值超 64 字节）加「编辑大字段」按钮 → BlobEditorDialog
@@ -133,6 +144,7 @@ public static class RowEditorFactory
                     GetText = () => box.Text,
                     SetEnabled = v => { box.IsEnabled = v; blobBtn.IsEnabled = v; },
                 };
+                box.TextChanged += (_, _) => field.Dirty = true;   // 发现65：改动即置脏
                 return field;
             }
             field = new Field
@@ -141,6 +153,7 @@ public static class RowEditorFactory
                 GetText = () => box.Text,
                 SetEnabled = v => box.IsEnabled = v,
             };
+            box.TextChanged += (_, _) => field.Dirty = true;   // 发现65：改动即置脏
         }
         return field;
     }

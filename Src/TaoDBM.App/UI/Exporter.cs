@@ -73,13 +73,34 @@ public static class Exporter
         _ => "'" + v.ToString()?.Replace("'", "''") + "'",
     };
 
-    /// <summary>把界面输入转成 SQL 字面量：空 → NULL，数字列不加引号，其余转义加引号。</summary>
+    /// <summary>把界面输入转成 SQL 字面量：空 → NULL，数字列不加引号，二进制列走 X'hex'，其余转义加引号。</summary>
     public static string Literal(ColumnSpec col, string? input)
     {
         if (string.IsNullOrWhiteSpace(input)) return "NULL";
+        // 发现65（2026-11-25）：二进制列不再当字符串写坏——编辑值须为偶数位十六进制，还原为 X'...' 二进制字面量
+        if (IsBinaryColumn(col.DataType)) return BinaryLiteral(input);
         if (CsvImporter.IsNumeric(col.DataType) && double.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out _))
             return input.Trim();
         return "'" + input.Replace("'", "''") + "'";
+    }
+
+    /// <summary>发现65：按列类型判定二进制列（blob/binary/bytea/image/raw 等）。</summary>
+    public static bool IsBinaryColumn(string? dataType)
+    {
+        if (string.IsNullOrEmpty(dataType)) return false;
+        var dt = dataType.ToLowerInvariant();
+        return dt.Contains("blob") || dt.Contains("binary") || dt.Contains("bytea")
+            || dt.Contains("image") || dt.StartsWith("raw") || dt.Contains("bfile")
+            || dt.Contains("oleobject") || dt.Contains("general");
+    }
+
+    /// <summary>发现65：十六进制串还原为 X'...' 二进制字面量；非法输入（奇数位/非十六进制字符）抛 ArgumentException。</summary>
+    public static string BinaryLiteral(string input)
+    {
+        var hex = input.Trim();
+        if (hex.Length == 0 || hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
+            throw new ArgumentException($"不是有效的十六进制串（长度 {hex.Length}）");
+        return "X'" + hex.ToUpperInvariant() + "'";
     }
 
     /// <summary>
