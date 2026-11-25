@@ -650,6 +650,26 @@ Console.WriteLine("== TableDdl ==");
     Check("默认值文本加引号", TableDdl.FormatDefault("O'Brien") == "'O''Brien'");
     Check("建表语句包装", TableDdl.AsStatements("CREATE TABLE a (id INT);").SequenceEqual(new[] { "CREATE TABLE a (id INT)" }));
 }
+{
+    // 台账④：类型清单按引擎与协议兼容口径
+    Check("类型清单 MySQL 系", TableDdl.TypeChoices(DbEngine.MySQL).Contains("DECIMAL(10,2)")
+        && TableDdl.TypeChoices(DbEngine.OceanBase).SequenceEqual(TableDdl.TypeChoices(DbEngine.MySQL))
+        && TableDdl.TypeChoices(DbEngine.PolarDB).SequenceEqual(TableDdl.TypeChoices(DbEngine.MySQL))
+        && TableDdl.TypeChoices(DbEngine.Tdsql).SequenceEqual(TableDdl.TypeChoices(DbEngine.MySQL)));
+    Check("类型清单 PostgreSQL 系", TableDdl.TypeChoices(DbEngine.PostgreSQL).Contains("JSONB")
+        && TableDdl.TypeChoices(DbEngine.GaussDB).SequenceEqual(TableDdl.TypeChoices(DbEngine.PostgreSQL))
+        && TableDdl.TypeChoices(DbEngine.Kingbase).SequenceEqual(TableDdl.TypeChoices(DbEngine.PostgreSQL)));
+    Check("类型清单 Oracle 系", TableDdl.TypeChoices(DbEngine.Oracle).Contains("VARCHAR2(255)")
+        && TableDdl.TypeChoices(DbEngine.Dameng).SequenceEqual(TableDdl.TypeChoices(DbEngine.Oracle)));
+    Check("类型清单 SQLite / SqlServer", TableDdl.TypeChoices(DbEngine.SQLite).Contains("INTEGER")
+        && TableDdl.TypeChoices(DbEngine.SqlServer).Contains("UNIQUEIDENTIFIER"));
+    // 台账⑤：数值 / 时间类型判定（含括号精度截断）
+    Check("数值类型判定", TableDdl.IsNumericType("INT") && TableDdl.IsNumericType("DECIMAL(10,2)")
+        && TableDdl.IsNumericType("number(18,2)") && TableDdl.IsNumericType("BIGSERIAL")
+        && !TableDdl.IsNumericType("VARCHAR(255)") && !TableDdl.IsNumericType("TEXT"));
+    Check("时间类型判定", TableDdl.IsTemporalType("DATETIME") && TableDdl.IsTemporalType("timestamp(6)")
+        && TableDdl.IsTemporalType("TIMESTAMPTZ") && !TableDdl.IsTemporalType("INT") && !TableDdl.IsTemporalType("VARCHAR(255)"));
+}
 
 Console.WriteLine("== BackupTools ==");
 {

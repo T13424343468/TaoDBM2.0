@@ -22,7 +22,8 @@ public class TableDesignerTab : Grid
     private sealed class ColWidgets
     {
         public TextBox Name = new() { MinWidth = 90, PlaceholderText = "列名" };
-        public TextBox Type = new() { MinWidth = 110, PlaceholderText = "类型" };
+        // 台账④：类型改可编辑下拉（常用类型直选，保底手输兼容 DECIMAL(10,2) 等自定义精度）
+        public ComboBox Type = new() { MinWidth = 110, IsEditable = true, PlaceholderText = "类型" };
         public TextBox Def = new() { MinWidth = 80, PlaceholderText = "默认值" };
         public CheckBox Pk = new() { Content = "主键", MinWidth = 56, VerticalAlignment = VerticalAlignment.Center };
         public CheckBox Null = new() { Content = "可空", MinWidth = 56, IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
@@ -189,6 +190,7 @@ public class TableDesignerTab : Grid
     private void AddColRow(TableColumnDesign? c)
     {
         var w = new ColWidgets();
+        w.Type.ItemsSource = TableDdl.TypeChoices(_prov.Profile.Engine);   // 台账④：按引擎填类型清单
         if (c != null)
         {
             w.Name.Text = c.Name;
@@ -198,6 +200,7 @@ public class TableDesignerTab : Grid
             w.Inc.IsChecked = c.AutoIncrement;
             w.Def.Text = c.DefaultValue;
         }
+        UpdateDefPlaceholder(w);   // 台账⑤：默认值占位随类型
         w.Del.Click += (_, _) =>
         {
             if (_colRows.Count <= 1) return;
@@ -206,10 +209,12 @@ public class TableDesignerTab : Grid
             RefreshPreview();
             RefreshDiff();
         };
-        Hook(w.Name, w.Type, w.Def);
+        Hook(w.Name, w.Def);
         HookCheck(w.Pk, w.Null, w.Inc);
         w.Name.TextChanged += (_, _) => RefreshDiff();   // 格5：逐列 diff 随编辑刷新
-        w.Type.TextChanged += (_, _) => RefreshDiff();
+        // 台账④⑤：类型变化（下拉选中或手输）→ 默认值占位 + 预览 + diff 全刷新
+        w.Type.TextChanged += (_, _) => { UpdateDefPlaceholder(w); RefreshPreview(); RefreshDiff(); };
+        w.Type.SelectionChanged += (_, _) => { UpdateDefPlaceholder(w); RefreshPreview(); RefreshDiff(); };
         w.Pk.Checked += (_, _) => RefreshDiff();
         w.Pk.Unchecked += (_, _) => RefreshDiff();
         w.Null.Checked += (_, _) => RefreshDiff();
@@ -278,6 +283,38 @@ public class TableDesignerTab : Grid
     private void Hook(params TextBox[] boxes)
     {
         foreach (var b in boxes) b.TextChanged += (_, _) => RefreshPreview();
+    }
+
+    // ---------- 台账⑤：默认值占位按类型区分 ----------
+
+    /// <summary>默认值占位随类型：数值类提示填数字，时间类提示表达式，其余提示自动加引号。</summary>
+    private static void UpdateDefPlaceholder(ColWidgets w)
+    {
+        var type = w.Type.Text.Trim();
+        if (type.Length == 0) { w.Def.PlaceholderText = "默认值"; return; }
+        if (TableDdl.IsNumericType(type)) w.Def.PlaceholderText = "数值（如 0）";
+        else if (TableDdl.IsTemporalType(type)) w.Def.PlaceholderText = "如 CURRENT_TIMESTAMP";
+        else w.Def.PlaceholderText = "文本（自动加引号）";
+    }
+
+    /// <summary>台账⑤：执行前校验——类型非空；数值列默认值须为数字或表达式，不再静默生成带引号字符串。</summary>
+    private List<string> ValidateDefaults()
+    {
+        var errs = new List<string>();
+        foreach (var w in _colRows)
+        {
+            var name = w.Name.Text.Trim();
+            if (name.Length == 0) continue;
+            var type = w.Type.Text.Trim();
+            if (type.Length == 0) { errs.Add($"列 {name}：类型不能为空，请从下拉选择或手输。"); continue; }
+            var def = w.Def.Text.Trim();
+            if (def.Length == 0 || !TableDdl.IsNumericType(type)) continue;
+            bool ok = def.Equals("NULL", StringComparison.OrdinalIgnoreCase)
+                || def.Contains('(') || def.Contains("::")
+                || decimal.TryParse(def, System.Globalization.CultureInfo.InvariantCulture, out _);
+            if (!ok) errs.Add($"列 {name}：{type} 为数值类型，默认值须为数字或表达式（如 0、1.5），文本请改列类型。");
+        }
+        return errs;
     }
 
     // ---------- 格5：逐列 diff 着色 ----------
@@ -510,6 +547,10 @@ public class TableDesignerTab : Grid
         var t = Read();
         if (t.TableName.Length == 0 || t.Columns.All(c => c.Name.Length == 0))
             return (new(), new(), "请先填写表名和至少一列。");
+        // 台账④⑤：执行前校验（类型非空 + 数值列默认值口径），错误直接进预览不生成语句
+        var errs = ValidateDefaults();
+        if (errs.Count > 0)
+            return (new(), new(), "校验未通过：\n  " + string.Join("\n  ", errs));
         var engine = _prov.Profile.Engine;
         var stmts = new List<string>();
         var skipped = new List<string>();

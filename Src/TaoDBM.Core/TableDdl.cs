@@ -71,6 +71,46 @@ public static class TableDdl
         _ => "VARCHAR(100)",
     };
 
+    /// <summary>台账④：按引擎给出常用类型清单（设计器类型下拉口径）；国产六家按协议兼容引擎取清单。</summary>
+    public static List<string> TypeChoices(DbEngine e) => e switch
+    {
+        DbEngine.MySQL or DbEngine.OceanBase or DbEngine.PolarDB or DbEngine.Tdsql =>
+            new() { "INT", "BIGINT", "DECIMAL(10,2)", "FLOAT", "DOUBLE", "VARCHAR(255)", "CHAR(36)", "TEXT", "LONGTEXT", "DATE", "DATETIME", "TIMESTAMP", "TIME", "JSON", "BLOB", "BOOLEAN" },
+        DbEngine.PostgreSQL or DbEngine.GaussDB or DbEngine.Kingbase =>
+            new() { "INTEGER", "BIGINT", "NUMERIC(10,2)", "REAL", "DOUBLE PRECISION", "VARCHAR(255)", "TEXT", "BOOLEAN", "DATE", "TIMESTAMP", "TIMESTAMPTZ", "TIME", "UUID", "JSON", "JSONB", "BYTEA", "SERIAL", "BIGSERIAL" },
+        DbEngine.SqlServer =>
+            new() { "INT", "BIGINT", "DECIMAL(10,2)", "FLOAT", "BIT", "NVARCHAR(255)", "NVARCHAR(MAX)", "DATE", "DATETIME2", "DATETIME", "TIME", "UNIQUEIDENTIFIER", "VARBINARY(MAX)" },
+        DbEngine.Oracle or DbEngine.Dameng =>
+            new() { "NUMBER(10)", "NUMBER(18,2)", "NUMBER", "VARCHAR2(255)", "VARCHAR2(4000)", "CLOB", "NCLOB", "DATE", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "BLOB", "RAW(2000)" },
+        DbEngine.SQLite =>
+            new() { "INTEGER", "REAL", "TEXT", "BLOB", "NUMERIC", "BOOLEAN", "DATE", "DATETIME" },
+        _ => new() { "VARCHAR(100)", "INTEGER", "TEXT" },
+    };
+
+    private static readonly System.Collections.Generic.HashSet<string> NumericTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    { "INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "MEDIUMINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL", "NUMBER", "BIT", "SERIAL", "BIGSERIAL" };
+
+    private static readonly System.Collections.Generic.HashSet<string> TemporalTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    { "DATE", "TIME", "DATETIME", "DATETIME2", "SMALLDATETIME", "TIMESTAMP", "TIMESTAMPTZ" };
+
+    /// <summary>台账⑤：类型是否数值类（含括号精度截断后判定，如 DECIMAL(10,2)）。</summary>
+    public static bool IsNumericType(string sqlType)
+    {
+        var t = sqlType.Trim();
+        int i = t.IndexOf('(');
+        if (i > 0) t = t[..i];
+        return NumericTypeNames.Contains(t.Trim());
+    }
+
+    /// <summary>台账⑤：类型是否时间日期类（默认值提示 CURRENT_TIMESTAMP 口径）。</summary>
+    public static bool IsTemporalType(string sqlType)
+    {
+        var t = sqlType.Trim();
+        int i = t.IndexOf('(');
+        if (i > 0) t = t[..i];
+        return TemporalTypeNames.Contains(t.Trim());
+    }
+
     /// <summary>生成 CREATE TABLE 语句；autoIncrement 列按方言落到对应位置，外键以表级子句内联（SQLite 建表也支持）。</summary>
     public static string BuildCreate(TableDesign t, DbEngine engine, Func<string, string> quote)
     {
