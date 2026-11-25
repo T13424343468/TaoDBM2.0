@@ -1,0 +1,1 @@
+NavicatExe=C:\Navicat\navicat.exe
