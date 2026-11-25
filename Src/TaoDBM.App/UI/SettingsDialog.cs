@@ -115,6 +115,8 @@ public static class SettingsDialog
         };
 
         // ㉔ SQL 补全开关（2026-11-25 设计稿冻结）：输入即弹默认开，Ctrl+Space 兜底不受影响
+        // 发现70：Load 走缓存后，设置页打开须强制重读盘，保证外部改文件可见
+        Core.SqlCompletePrefs.Invalidate();
         var chkComplete = new CheckBox
         {
             Content = "SQL 编辑器输入时自动弹出补全（Ctrl+Space 兜底）",

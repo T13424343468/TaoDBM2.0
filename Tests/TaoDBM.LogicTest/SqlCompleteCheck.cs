@@ -122,6 +122,7 @@ public static class SqlCompleteCheck
             check("补全开关-缺失默认开", SqlCompletePrefs.Load(), "");
             SqlCompletePrefs.Save(false);
             check("补全开关-写读往返", SqlCompletePrefs.Load() == false, "");
+            SqlCompletePrefs.Invalidate();   // 发现70：缓存命中也要能被强制重读打破
             File.WriteAllText(prefFile, "{broken");
             check("补全开关-损坏回落默认", SqlCompletePrefs.Load() == true, "");
         }

@@ -28,25 +28,47 @@
 <header><h1>TaoDBM 操作手册</h1><p>程序内随时按 F1 打开 · 本文件与程序内手册同源 · 支持七库：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis</p></header>
 <div class="wrap">
 <nav>
-<a href="#ch0">快速上手</a>
-<a href="#ch1">连接管理</a>
-<a href="#ch2">对象树与数据浏览</a>
-<a href="#ch3">SQL 查询与调试</a>
-<a href="#ch4">表设计与例程</a>
-<a href="#ch5">备份与恢复</a>
-<a href="#ch6">数据传输与同步</a>
-<a href="#ch7">ER 图</a>
-<a href="#ch8">用户与权限</a>
-<a href="#ch9">分库分区分表</a>
-<a href="#ch10">智能工具与诊断</a>
-<a href="#ch11">告警中心与任务中心</a>
-<a href="#ch12">数据安全与留痕</a>
-<a href="#ch13">设置与主题</a>
-<a href="#ch14">七库方言差异速查</a>
-<a href="#ch15">快捷键一览</a>
+<a href="#ch0">安装与卸载</a>
+<a href="#ch1">快速上手</a>
+<a href="#ch2">连接管理</a>
+<a href="#ch3">对象树与数据浏览</a>
+<a href="#ch4">SQL 查询与调试</a>
+<a href="#ch5">表设计与例程</a>
+<a href="#ch6">备份与恢复</a>
+<a href="#ch7">数据传输与同步</a>
+<a href="#ch8">ER 图</a>
+<a href="#ch9">用户与权限</a>
+<a href="#ch10">分库分区分表</a>
+<a href="#ch11">智能工具与诊断</a>
+<a href="#ch12">告警中心与任务中心</a>
+<a href="#ch13">数据安全与留痕</a>
+<a href="#ch14">设置与主题</a>
+<a href="#ch15">七库方言差异速查</a>
+<a href="#ch16">快捷键一览</a>
 </nav>
 <main>
-<section id="ch0"><h2>1. 快速上手</h2>
+<section id="ch0"><h2>1. 安装与卸载</h2>
+<h3>系统要求</h3>
+<p class="bullet">· 操作系统：Windows 10 1809 及以上版本或 Windows 11，64 位（x64）。</p>
+<p class="bullet">· 运行时依赖：安装包不内置 .NET 运行时；若系统缺失，安装器会检测并引导联网安装到统一目录，按提示完成即可。</p>
+<p class="bullet">· 磁盘空间：建议预留 500 MB 以上；连接远程数据库时本机资源占用很小。</p>
+<p class="bullet">· 权限：安装需要管理员权限（MSI 写入 Program Files）；日常使用不需要管理员身份。</p>
+<h3>安装步骤</h3>
+<p>1. 双击安装包（TaoDBM x64 MSI）启动安装向导。</p>
+<p>2. 按向导选择安装目录（默认即可），点「安装」。</p>
+<p>3. 安装完成后从开始菜单或桌面快捷方式启动 TaoDBM。</p>
+<p class="note">！若安装器提示缺少 .NET 运行时，按引导联网安装后再继续，装完无需重启即可使用。</p>
+<h3>升级与覆盖安装</h3>
+<p class="bullet">· 新版本安装包可直接覆盖安装：向导会沿用原安装目录，完成后启动即是新版。</p>
+<p class="bullet">· 覆盖安装不影响已保存的连接配置与界面布局，无需重新配置。</p>
+<p class="bullet">· 大版本升级前如有重要数据操作，建议先照常备份（见「备份与恢复」章）。</p>
+<h3>卸载</h3>
+<p class="bullet">· 方式一：「设置 → 应用 → 已安装的应用」中找到 TaoDBM，点「卸载」。</p>
+<p class="bullet">· 方式二：控制面板 → 程序和功能 → 选中 TaoDBM → 卸载。</p>
+<p class="bullet">· 卸载只移除程序本体；连接配置等个人数据保存在用户目录（%LOCALAPPDATA%\TaoDBM），卸载不会自动删除，重装后仍在。</p>
+<p class="bullet">· 如需彻底清理，可在卸载后手动删除上述用户目录。</p>
+</section>
+<section id="ch1"><h2>2. 快速上手</h2>
 <h3>第一次打开 TaoDBM</h3>
 <p>启动后你会看到一个「开始」标签页，上面写着三步走通：新建连接 → 展开库与表 → 新建查询。</p>
 <p>本手册就是这三步的详细版：顶栏点「手册」或随时按 F1 都能打开。</p>
@@ -68,7 +90,7 @@
 <p class="bullet">· 功能入口找不到时按 F1 回到本手册，按章节找。</p>
 <p class="bullet">· 本手册也随交付包带一份网页版，不装程序双击就能看。</p>
 </section>
-<section id="ch1"><h2>2. 连接管理</h2>
+<section id="ch2"><h2>3. 连接管理</h2>
 <h3>新建连接</h3>
 <p class="bullet">· 入口：右上角「＋ 新建连接」，或左上角菜单「编辑连接」。</p>
 <p class="bullet">· 支持七种数据库：MySQL、PostgreSQL、SQL Server、SQLite、Oracle、MongoDB、Redis。</p>
@@ -85,7 +107,7 @@
 <p class="bullet">· 支持同时开多个实例、多窗口操作不同连接，互不干扰。</p>
 <p class="bullet">· 实例之间通过 .sql 脚本交接工作：一个实例里写好的脚本，拖到另一个实例接着跑。</p>
 </section>
-<section id="ch2"><h2>3. 对象树与数据浏览</h2>
+<section id="ch3"><h2>4. 对象树与数据浏览</h2>
 <h3>连接树</h3>
 <p class="bullet">· 展开连接看到库列表，再展开库看到表、视图等对象。</p>
 <p class="bullet">· 在连接节点上点右键（或用左上角菜单）可刷新、新建查询、查看数据、设计表、备份/还原、传输、ER 图、编辑连接、删除连接。</p>
@@ -102,11 +124,16 @@
 <p class="bullet">· 单元格直接改值、选行删除；所有改动先落草稿，执行前可预览，改过的数据都能在审计里查到。</p>
 <p class="bullet">· 结果随手导出：CSV、INSERT SQL 都支持，字段多的表也不怕。</p>
 </section>
-<section id="ch3"><h2>4. SQL 查询与调试</h2>
+<section id="ch4"><h2>5. SQL 查询与调试</h2>
 <h3>基本操作</h3>
 <p class="bullet">· 新建查询：选中库或表后点「新建查询」，或左上角菜单「新建查询」。</p>
 <p class="bullet">· 执行：F5 或 Ctrl+Enter；保存脚本：Ctrl+S；补全：Ctrl+Space。</p>
+<p class="bullet">· 输入即弹补全（默认开）：输入表名、字段名或「表名.」时自动弹出候选，无需先按 Ctrl+Space；可在「设置」里关掉，关掉后 Ctrl+Space 仍可手动唤出。</p>
 <p class="bullet">· 结果集支持排序、筛选、导出；大结果集分批拉取，不撑爆内存。</p>
+<h3>报表页</h3>
+<p class="bullet">· 在查询结果上右键选「钉到报表页」，把常用查询钉成报表卡片；主菜单「报表页」随时打开。</p>
+<p class="bullet">· 卡片自动按数据选图：分类计数出柱状/直方，带日期出折线；点列名即可切换图表类型。</p>
+<p class="bullet">· 卡片上可刷新、移除；布局自动记住，重开软件还在。设置里可开关报表页入口。</p>
 <h3>断点调试</h3>
 <p class="bullet">· 存储过程支持断点调试：打断点后启动调试，F10 单步、F11 步入、继续执行 F5。</p>
 <p class="bullet">· 断点调试目前仅 MySQL 支持；其他库的例程可查看定义，调试入口会如实标注「暂不支持」。</p>
@@ -122,7 +149,7 @@
 <p class="bullet">· 超大结果走流式导出，边查边写，不整包占内存；中途可取消，取消后可恢复。</p>
 <p class="bullet">· 需要把结果交给别人核对时，可打成带指纹的快照包，对方验包确认内容未被改动。</p>
 </section>
-<section id="ch4"><h2>5. 表设计与例程</h2>
+<section id="ch5"><h2>6. 表设计与例程</h2>
 <h3>设计表</h3>
 <p class="bullet">· 选中表后点「设计表」，可视化编辑列定义（名称、类型、默认值、可空、主键等）。</p>
 <p class="bullet">· 改完先看 DDL 预览，确认无误再执行；执行前同样过危险检查。</p>
@@ -137,7 +164,7 @@
 <p class="bullet">· 大表改结构前，把 DDL 粘进「上线审查」看一眼评分与发现，能提前排掉大部分坑。</p>
 <p class="bullet">· 执行链还有危险拦截兜底：不带 WHERE 的变更、全表清空都会被拦下来二次确认。</p>
 </section>
-<section id="ch5"><h2>6. 备份与恢复</h2>
+<section id="ch6"><h2>7. 备份与恢复</h2>
 <h3>备份 / 恢复向导</h3>
 <p class="bullet">· 入口：选中库或表后，左上角菜单「备份 / 还原」。</p>
 <p class="bullet">· 四步走：① 选库/表 → ② 选备份点 → ③ 选目标 → ④ 执行确认。</p>
@@ -153,7 +180,7 @@
 <p class="bullet">· 备份计划展示未来 7 天备份槽位、下次执行时间与保留清理预览。</p>
 <p class="bullet">· 清理清单只是预览参考，实际执行由任务中心触发，不会偷偷删备份。</p>
 </section>
-<section id="ch6"><h2>7. 数据传输与同步</h2>
+<section id="ch7"><h2>8. 数据传输与同步</h2>
 <h3>传输（跨库迁移）</h3>
 <p class="bullet">· 入口：左上角菜单「传输」。</p>
 <p class="bullet">· 选源连接/库/表 → 目标连接/库，可选「补结构」「传数据」，适合换库、上云、异构迁移。</p>
@@ -173,7 +200,7 @@
 <p class="bullet">· 目前 MySQL 先行；其他引擎不支持的部分会如实报出，不硬翻。</p>
 <p class="bullet">· SSH / 数据库凭据仅在授权会话内使用，不落盘明文。</p>
 </section>
-<section id="ch7"><h2>8. ER 图</h2>
+<section id="ch8"><h2>9. ER 图</h2>
 <h3>生成与编辑</h3>
 <p class="bullet">· 选中库后点「ER 图」，自动加载库内表结构与外键关系成图。</p>
 <p class="bullet">· 节点可拖拽排布，布局可保存 / 打开，下次接着用。</p>
@@ -181,7 +208,7 @@
 <p class="bullet">· 一键导出 PNG，直接贴进文档、评审材料。</p>
 <p class="note">！ER 图是只读视图，改表结构请走「设计表」。</p>
 </section>
-<section id="ch8"><h2>9. 用户与权限</h2>
+<section id="ch9"><h2>10. 用户与权限</h2>
 <h3>权限面板</h3>
 <p class="bullet">· 入口：选中连接后打开「用户与权限」。</p>
 <p class="bullet">· 内容：用户列表 + 风险发现 + 权限矩阵；能发现空密码、过宽授权等风险项。</p>
@@ -189,7 +216,7 @@
 <p class="bullet">· 所有授权 / 回收只生成语句草稿，弹窗预览、逐条勾选确认后才执行，执行写入审计日志。</p>
 <p class="note">！权限差异因库而异（MySQL 库级、PG 对象级、SQL Server 角色级），界面按最大公约数展示，方言差异见「七库方言差异速查」。</p>
 </section>
-<section id="ch9"><h2>10. 分库分区分表</h2>
+<section id="ch10"><h2>11. 分库分区分表</h2>
 <h3>图形化向导</h3>
 <p class="bullet">· 入口：选中表后打开「分库分区分表向导」。</p>
 <p class="bullet">· 四步式：选表 → 选拆分方式 → 选分片键 → 确认方案。</p>
@@ -203,7 +230,7 @@
 <p class="bullet">· 再均衡计划：热点分片超出均值的量与冷清分片缺口贪心配对，生成搬迁清单。</p>
 <p class="bullet">· 读写路由：输入副本延迟与健康度，预演读请求该路由到哪个副本。</p>
 </section>
-<section id="ch10"><h2>11. 智能工具与诊断</h2>
+<section id="ch11"><h2>12. 智能工具与诊断</h2>
 <h3>智能工具</h3>
 <p class="bullet">· 慢查询诊断：静态规则 + 执行计划补充，指出慢在哪。</p>
 <p class="bullet">· 查询重测：同一查询多次计时取中位数，改写前后对比有依据。</p>
@@ -221,7 +248,7 @@
 <p class="bullet">· 暂停/恢复、重建通道、切换主库都只生成语句草稿，预览勾选确认后才执行，不直接动线上。</p>
 <p class="bullet">· 配合告警中心的复制延迟指标，延迟一超阈值就知道。</p>
 </section>
-<section id="ch11"><h2>12. 告警中心与任务中心</h2>
+<section id="ch12"><h2>13. 告警中心与任务中心</h2>
 <h3>告警中心</h3>
 <p class="bullet">· 规则模板化创建：连接数、锁等待、复制延迟等指标选模板填阈值即可。</p>
 <p class="bullet">· 支持立即巡检、触发记录回溯、防轰炸合并（同类告警合并推送，不刷屏）。</p>
@@ -233,7 +260,7 @@
 <p class="bullet">· 长活（查询、导出）提交进统一队列，后台执行。</p>
 <p class="bullet">· 可查看状态、暂停/续跑、取消、重跑、快照导出；对话框关了任务照跑。</p>
 </section>
-<section id="ch12"><h2>13. 数据安全与留痕</h2>
+<section id="ch13"><h2>14. 数据安全与留痕</h2>
 <h3>留痕审计</h3>
 <p class="bullet">· 表格里的行编辑、删除都会留痕，审计列表可查看改动差异。</p>
 <p class="bullet">· 单条可回滚：生成逆 SQL → 预览 → 危险确认后执行。</p>
@@ -256,7 +283,7 @@
 <p class="bullet">· 危险操作一律走草稿确认制：先预览、再勾选、后执行，不图快跳过预览。</p>
 <p class="bullet">· 重要库定期备份 + 定期演练，真出事时有得恢复、恢复得了。</p>
 </section>
-<section id="ch13"><h2>14. 设置与主题</h2>
+<section id="ch14"><h2>15. 设置与主题</h2>
 <h3>设置</h3>
 <p class="bullet">· 关闭主窗口时：每次询问 / 最小化到托盘 / 直接退出，三种行为任选。</p>
 <p class="bullet">· 系统通知：总开关、免打扰时段、同类事件节流、按类型开关。</p>
@@ -270,7 +297,7 @@
 <p class="bullet">· 窗口有最小尺寸保护，缩到多小布局都不乱；中间分栏可拖动调节。</p>
 <p class="bullet">· 工作区多标签页并存，查询、浏览、ER 图各占一页，随手切换。</p>
 </section>
-<section id="ch14"><h2>15. 七库方言差异速查</h2>
+<section id="ch15"><h2>16. 七库方言差异速查</h2>
 <h3>总则</h3>
 <p class="bullet">· 方言差异的处理口径：能翻的翻、翻不了的报——程序不会把不支持的功能装作支持。</p>
 <p class="bullet">· 同一功能在不同库上的行为差异，界面会就地提示；本节是速查版。</p>
@@ -296,7 +323,7 @@
 <p class="bullet">· 键值型：按库（db）浏览键，默认端口 6379。</p>
 <p class="bullet">· 无表结构概念；设计表、ER 图等结构类功能不适用。</p>
 </section>
-<section id="ch15"><h2>16. 快捷键一览</h2>
+<section id="ch16"><h2>17. 快捷键一览</h2>
 <h3>全局与编辑器</h3>
 <p class="bullet">· F1：打开操作手册（任何界面可用）。</p>
 <p class="bullet">· F5：执行当前查询。</p>
