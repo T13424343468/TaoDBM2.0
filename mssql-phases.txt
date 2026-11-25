@@ -1,30 +1,30 @@
-2026-11-25T06:17:15.0210681Z step-start pwsh=7.6.10
-2026-11-25T06:17:16.6712705Z direct-download-ok size=261082544
-2026-11-25T06:17:20.9184770Z unpack-exit=0
-2026-11-25T06:17:20.9292609Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-25T06:17:20.9320100Z setup-start
-2026-11-25T06:19:31.0444324Z setup-exit=0
-2026-11-25T06:19:36.1184569Z service-running
-2026-11-25T06:19:36.1261557Z registry-key=MSSQL15.SQLEXPRESS
-2026-11-25T06:19:36.1300641Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
-2026-11-25T06:19:36.1309137Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
-2026-11-25T06:19:36.1319062Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
-2026-11-25T06:19:36.1327917Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
-2026-11-25T06:19:36.1337076Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
-2026-11-25T06:19:36.1346279Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
-2026-11-25T06:19:36.1354755Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
-2026-11-25T06:19:36.1362496Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
-2026-11-25T06:19:36.1370643Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
-2026-11-25T06:19:36.1379758Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP5
-2026-11-25T06:19:36.1388659Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP6
-2026-11-25T06:19:36.1397932Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
-2026-11-25T06:19:36.1406447Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
-2026-11-25T06:19:36.1436174Z ipall-key-ensured
-2026-11-25T06:19:36.1465114Z port-tcpport-set
-2026-11-25T06:19:36.1474981Z port-dynamic-cleared
-2026-11-25T06:19:36.1483615Z port-enabled-set
-2026-11-25T06:19:36.1490464Z skip-restart: use running instance + dynamic-port fallback
-2026-11-25T06:19:55.3160496Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
-2026-11-25T06:20:05.3429720Z dynamic-port-detected=50580
-2026-11-25T06:20:05.3442945Z connect-poll: attempt=0 port=50580
-2026-11-25T06:20:05.4405202Z tcp-connect-ok port=50580
+2026-11-25T06:32:50.3106287Z step-start pwsh=7.6.10
+2026-11-25T06:32:53.0820294Z direct-download-ok size=261082544
+2026-11-25T06:32:57.3345783Z unpack-exit=0
+2026-11-25T06:32:57.3506682Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-25T06:32:57.3546481Z setup-start
+2026-11-25T06:35:46.0663752Z setup-exit=0
+2026-11-25T06:35:51.1567384Z service-running
+2026-11-25T06:35:51.1671827Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-25T06:35:51.1725865Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
+2026-11-25T06:35:51.1740231Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
+2026-11-25T06:35:51.1755399Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
+2026-11-25T06:35:51.1769445Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
+2026-11-25T06:35:51.1782681Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
+2026-11-25T06:35:51.1797092Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
+2026-11-25T06:35:51.1810182Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
+2026-11-25T06:35:51.1823523Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
+2026-11-25T06:35:51.1837700Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
+2026-11-25T06:35:51.1850488Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP5
+2026-11-25T06:35:51.1864084Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP6
+2026-11-25T06:35:51.1878538Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
+2026-11-25T06:35:51.1891620Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
+2026-11-25T06:35:51.1931719Z ipall-key-ensured
+2026-11-25T06:35:51.1975166Z port-tcpport-set
+2026-11-25T06:35:51.1991939Z port-dynamic-cleared
+2026-11-25T06:35:51.2007157Z port-enabled-set
+2026-11-25T06:35:51.2019896Z skip-restart: use running instance + dynamic-port fallback
+2026-11-25T06:36:09.8199293Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
+2026-11-25T06:36:19.8510393Z dynamic-port-detected=56427
+2026-11-25T06:36:19.8527494Z connect-poll: attempt=0 port=56427
+2026-11-25T06:36:20.0222170Z tcp-connect-ok port=56427
