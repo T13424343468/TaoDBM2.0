@@ -32,7 +32,7 @@ public static class ResultGridMenu
         if (!string.IsNullOrWhiteSpace(sourceSql))
         {
             menu.Items.Add(MenuItem("钉住到看板", () => _ = ShowPinAsync(host, r, colIdx, sourceSql, engine)));
-            menu.Items.Add(MenuItem("钉到报表页", () => PinToReportPage(r, colIdx, sourceSql, engine, info)));   // ㉘：点选出图即钉住
+            menu.Items.Add(MenuItem("钉到报表页", () => PinToReportPage(r, colIdx, sourceSql, engine, info, owner)));   // ㉘：点选出图即钉住
         }
         if (owner is not null && info is not null)
         {
@@ -154,8 +154,9 @@ public static class ResultGridMenu
         return $"pin-{h & 0x7FFFFFFF:X8}";
     }
 
-    /// <summary>㉘ 钉到报表页（2026-11-25 设计稿冻结）：点选列名即出图——RecommendType 自动选型，卡上可手动切换图型与聚合列。</summary>
-    static void PinToReportPage(QueryResult r, int colIdx, string sourceSql, string? engine, NodeInfo? info)
+    /// <summary>㉘ 钉到报表页（2026-11-25 设计稿冻结）：点选列名即出图——RecommendType 自动选型，卡上可手动切换图型与聚合列。
+    /// 发现68：钉住成功状态栏上屏反馈，不再只落日志。</summary>
+    static void PinToReportPage(QueryResult r, int colIdx, string sourceSql, string? engine, NodeInfo? info, MainWindow? owner = null)
     {
         string column = r.Columns[colIdx];
         string type = ChartSpecBuilder.RecommendType(r, column);
@@ -163,6 +164,7 @@ public static class ResultGridMenu
         ReportPageStore.Upsert(new ReportPageStore.Card(
             cardId, $"{column} · {Summarize(sourceSql)}", sourceSql, engine ?? "SQLite", column, type, info?.Db, DateTimeOffset.UtcNow));
         AppLog.Write($"[报表页] 钉住 卡={cardId} 列={column} 型={type}");   // ㉘ 落账锚点
+        owner?.SetStatus($"已钉到报表页：{column}（打开工具 → 报表页查看）");   // 发现68：上屏反馈
     }
 
     static string Summarize(string sql)

@@ -38,9 +38,13 @@
     </Property>
     <Property Id="NETDESKDIR">
       <DirectorySearch Id="NetDesktopDirSrch"
-                       Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App"
-                       Bitness="always64" />
+                       Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" />
     </Property>
+
+    <!-- ㊳ 警示文案属性：双查皆空置文案（AppSearch 后调度，UI 与执行序列都挂） -->
+    <SetProperty Id="SetRuntimeWarnText" After="AppSearch" Sequence="both"
+                 Value="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。"
+                 Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
 
     <UI Id="TaoDBMInstallUI">
       <TextStyle Id="DlgFont" FaceName="微软雅黑" Size="9" />
@@ -93,10 +97,8 @@
         <Control Id="ReadyText" Type="Text" X="20" Y="30" Width="400" Height="24"
                  Text="准备安装 TaoDBM，点击“安装”开始。" />
         <!-- ㊳ 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动）。
-             WiX5 无 Control/Condition 子元素，改 SetProperty＋属性化文本：双查皆空置警示文案，否则属性空即不显示。 -->
-        <SetProperty Id="RuntimeWarnText" After="AppSearch" Sequence="both"
-                     Value="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。"
-                     Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
+             WiX5 中 SetProperty 不能挂 Dialog/Control 下，挂 Package 顶层随序列调度：
+             双查皆空置警示文案，否则属性空即不显示。 -->
         <Control Id="RuntimeWarn" Type="Text" X="20" Y="56" Width="400" Height="14"
                  Text="[RuntimeWarnText]" />
         <Control Id="BackBtn" Type="PushButton" X="270" Y="95" Width="70" Height="22" Text="返回">

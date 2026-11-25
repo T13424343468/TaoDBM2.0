@@ -112,16 +112,17 @@ public static class ReportPageDialog
             Grid.SetColumn(box, col);
             grid.Children.Add(box);
 
-            // 图型/聚合列切换即落盘并重绘（卡上手动切换口径）
+            // 图型/聚合列切换即落盘并重绘（卡上手动切换口径；发现67：程序重填期间 Tag 摘钩，防 SelectionChanged 回环重跑 SQL）
             typeCombo.SelectionChanged += async (_, _) =>
             {
-                if (typeCombo.SelectedIndex < 0) return;
+                if (typeCombo.Tag is true || typeCombo.SelectedIndex < 0) return;
                 var updated = card with { ChartType = TypeNameOf(typeCombo.SelectedIndex) };
                 ReportPageStore.Upsert(updated);
                 await RefreshCardAsync(info, updated, chartHost, colCombo, typeCombo);
             };
             colCombo.SelectionChanged += async (_, _) =>
             {
+                if (colCombo.Tag is true) return;   // 发现67：FillCardAsync 重填聚合列触发的 SelectionChanged 不重跑
                 if (colCombo.SelectedItem is not string c || c.Length == 0) return;
                 var updated = card with { Column = c };
                 ReportPageStore.Upsert(updated);
@@ -181,13 +182,18 @@ public static class ReportPageDialog
             return;
         }
 
-        // 聚合列下拉：结果列全量，当前选择优先（卡上可手动切换聚合列）
+        // 聚合列下拉：结果列全量，当前选择优先（卡上可手动切换聚合列；发现67：重填前 Tag 摘钩，填完恢复）
         string current = colCombo.SelectedItem as string ?? card.Column;
         if (!r.Columns.Contains(current)) current = r.Columns.Contains(card.Column) ? card.Column : r.Columns[0];
         int keep = colCombo.SelectedIndex;
-        colCombo.Items.Clear();
-        foreach (var c in r.Columns) colCombo.Items.Add(c);
-        colCombo.SelectedIndex = Math.Max(keep, r.Columns.IndexOf(current));
+        colCombo.Tag = true;
+        try
+        {
+            colCombo.Items.Clear();
+            foreach (var c in r.Columns) colCombo.Items.Add(c);
+            colCombo.SelectedIndex = Math.Max(keep, r.Columns.IndexOf(current));
+        }
+        finally { colCombo.Tag = null; }   // 发现67：异常也恢复摘钩，不卡死手动切换
 
         string type = typeCombo.SelectedIndex >= 0 ? TypeNameOf(typeCombo.SelectedIndex) : card.NormalizedType;
         var spec = type switch

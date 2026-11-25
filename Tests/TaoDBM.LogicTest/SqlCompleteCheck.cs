@@ -61,6 +61,16 @@ public static class SqlCompleteCheck
         var many = Enumerable.Range(0, 20).Select(i => $"col{i}").ToList();
         check("过滤-上限8条", SqlComplete.Filter(many, "col").Count == SqlComplete.CandidateLimit, "");
         check("过滤-空词根空候选", SqlComplete.Filter(pool, "").Count == 0, "");
+        // 发现66：限定词路径空词根回全量字段（截上限），有词根走过滤
+        var cols = new[] { "id", "city", "amount", "created_at" };
+        var all = SqlComplete.FilterQualified(cols, "");
+        check("限定词-空词根回全量", all.Count == 4 && all.Contains("city") && all.Contains("amount"),
+            string.Join(",", all));
+        check("限定词-空词根截上限", SqlComplete.FilterQualified(many, "").Count == SqlComplete.CandidateLimit, "");
+        check("限定词-空集回空", SqlComplete.FilterQualified(Array.Empty<string>(), "").Count == 0, "");
+        check("限定词-有词根走过滤", SqlComplete.FilterQualified(cols, "ci").SequenceEqual(new[] { "city" }),
+            string.Join(",", SqlComplete.FilterQualified(cols, "ci")));
+        check("限定词-有词根全等排除", !SqlComplete.FilterQualified(cols, "id").Any(k => k.Equals("id", StringComparison.OrdinalIgnoreCase)), "");
     }
 
     static void RunQuote(CheckD check)

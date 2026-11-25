@@ -35,6 +35,7 @@ public partial class WorkTab : Grid
     private readonly Button _runBtn = new() { Content = "▶ 执行", Background = Ant.Primary, Foreground = Ant.OnPrimary, BorderThickness = new Thickness(0), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(14, 5, 14, 5) };
     private readonly Button _stopBtn = new() { Content = "■ 停止", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4), IsEnabled = false };
     private CancellationTokenSource? _runCts;
+    private bool _cancelable;   // 发现69：仅令牌贯穿的流式通道可中止；整包 Execute 与 Browse 翻页点了要给明示
     private readonly Button _csvBtn = new() { Content = "导出 CSV", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
     private readonly Button _insBtn = new() { Content = "导出 INSERT", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
     // 批次四格1/格2（2026-11-23）：导出格式组——Excel（xlsx）/ XML / HTML
@@ -380,7 +381,12 @@ public partial class WorkTab : Grid
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_resultsHost, "work-results");
 
         _runBtn.Click += (_, _) => _ = RunOrRefresh();
-        _stopBtn.Click += (_, _) => _runCts?.Cancel();
+        _stopBtn.Click += (_, _) =>
+        {
+            if (_cancelable) { _runCts?.Cancel(); return; }   // 流式懒加载通道：令牌贯穿，可中止
+            _owner.SetStatus("当前执行不支持中途停止，请等待完成");   // 发现69：整包 Execute/Browse 翻页点了给明示，不再无效果无提示
+            AppLog.Write("[执行账] stop-unsupported=1");
+        };
         // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
         var exportMenu = new MenuFlyout();
         MenuFlyoutItem ExportItem(string text, string id, ExportKind kind)
@@ -608,6 +614,7 @@ public partial class WorkTab : Grid
         int prevOffset = _offset;   // 发现51：浏览翻页失败时回滚 offset，避免页码漂移
         _runBtn.IsEnabled = false;
         _runCts = new CancellationTokenSource();
+        _cancelable = false;   // 发现69：默认不可中止，流式懒加载通道置真
         _stopBtn.IsEnabled = true;
         try
         {
@@ -643,7 +650,10 @@ public partial class WorkTab : Grid
                 // 批次F：关系库走流式底座列懒加载通道（宽表首屏只物化可见列，横向滚动增量拉取）；流式关闭或非关系引擎回旧整包
                 List<QueryResult> list;
                 if (StreamingSwitch.Enabled && _provider is RelationalProvider lazyProv)
+                {
+                    _cancelable = true;   // 发现69：令牌贯穿的流式通道才可中止
                     list = await QueryRouter.ExecuteLazyAsync(lazyProv, _db, sql, 64, _runCts.Token);
+                }
                 else
                     list = await _provider.Execute(_db, sql);
                 QueryHistory.Add(_provider.EngineName, _db, sql);
@@ -1942,7 +1952,7 @@ public partial class WorkTab : Grid
         if (qualTable is not null)
         {
             var cols = CachedColumns(qualTable);
-            return cols is null ? null : SqlComplete.Filter(cols, word);   // null＝装载中，本轮不出候选
+            return cols is null ? null : SqlComplete.FilterQualified(cols, word);   // null＝装载中，本轮不出候选（发现66：空词根回全量字段上限8）
         }
         if (word.Length == 0) return new List<string>();   // 无词根无限定词不弹（避免全量噪音）
         EnsureTables();

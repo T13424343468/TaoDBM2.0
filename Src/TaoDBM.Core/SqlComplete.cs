@@ -55,6 +55,17 @@ public static class SqlComplete
             .ToList();
     }
 
+    /// <summary>限定词路径候选（发现66）：空词根（光标停在「t.」后）回全量字段清单截上限；否则走词根过滤。</summary>
+    public static List<string> FilterQualified(IEnumerable<string> cols, string word, int limit = CandidateLimit)
+    {
+        if (string.IsNullOrEmpty(word))
+            return cols.Where(c => !string.IsNullOrEmpty(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(Math.Max(limit, 1))
+                .ToList();
+        return Filter(cols, word, limit);
+    }
+
     /// <summary>标识符是否需要引用：含字母数字下划线 $ 之外的字符，或以数字开头。</summary>
     public static bool NeedsQuote(string? ident)
     {
