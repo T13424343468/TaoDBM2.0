@@ -260,6 +260,12 @@ public static class RoutinesDialog
         {
             var sel = Sel();
             var kind = sel?.KindEnum ?? RoutineKind.Procedure;
+            // ㉟验证坐实：SQLite 只支持触发器——选过程/函数不再抛未处理异常，提示后回落触发器模板
+            if (info.Profile.Engine == DbEngine.SQLite && kind != RoutineKind.Trigger)
+            {
+                status.Text = "SQLite 只支持触发器，已按触发器模板打开。";
+                kind = RoutineKind.Trigger;
+            }
             // 分级确认（原稿 §20 低风险确认）：新建只打开模板到查询窗口，执行由用户在查询窗口自己按键。
             owner.OpenQueryTab(info, RoutineManager.Template(info.Profile.Engine, kind, "new_routine"));
             status.Text = "已把模板打开到查询窗口，填好后整段执行（过程体内分号不会被误拆）。";

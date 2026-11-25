@@ -752,7 +752,8 @@ public partial class WorkTab : Grid
         }
         ClearError();
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
-        _resultBar.Text = $"{list.Sum(x => x.Rows.Count)} 行 · {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
+        // ㊲验证坐实：结果条计数在流式/分页结果上只报已物化页行数，改用 TotalRows 优先（无则回落物化行数）
+        _resultBar.Text = $"{list.Sum(x => x.TotalRows ?? x.Rows.Count):N0} 行 · {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
     }
 
     /// <summary>整改三批三-10：结果网格右键设计助手入口的连接上下文（与 _assistBtn 同构）。</summary>
@@ -771,7 +772,7 @@ public partial class WorkTab : Grid
             : (onRowTap is not null
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
                 : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 单击行编辑 / 删除" : ""));
-        _resultBar.Text = $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
+        _resultBar.Text = $"{(r.TotalRows ?? r.Rows.Count):N0} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条（㊲：总行数优先）
     }
 
     /// <summary>Redis 键列表：单击某键 → 打开该键详情页。</summary>
