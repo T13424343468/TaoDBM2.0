@@ -29,7 +29,7 @@ function Focus-DBeaver {
   return $p
 }
 
-Write-Host "[WALK] v4 start exe=$ExePath"
+Write-Host "[WALK] v5 start exe=$ExePath"
 Start-Sleep -Seconds 5
 
 # 1) 启动（闪屏＋首启向导全程入镜）
@@ -38,16 +38,16 @@ Start-Sleep -Seconds 50
 
 # 2) 首启向导：逐页点 Next（坐标按上轮录屏实拍 1024x768，Next=(645,504)）
 Focus-DBeaver | Out-Null
-[MouseNative4]::Click(645, 504)
+[MouseNative4]::Click(645, 476)
 Start-Sleep -Seconds 3
-[MouseNative4]::Click(645, 504)
+[MouseNative4]::Click(645, 476)
 Start-Sleep -Seconds 3
-[MouseNative4]::Click(645, 504)
+[MouseNative4]::Click(645, 476)
 Start-Sleep -Seconds 3
 
 # 3) 末页点 Apply（737,504），等 10 秒进主界面
 Focus-DBeaver | Out-Null
-[MouseNative4]::Click(737, 504)
+[MouseNative4]::Click(737, 476)
 Start-Sleep -Seconds 10
 
 # 4) 主界面停留 10 秒（入镜）
@@ -62,6 +62,6 @@ Start-Sleep -Seconds 12
 [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
 Start-Sleep -Seconds 4
 
-Write-Host "[WALK] v4 done"
+Write-Host "[WALK] v5 done"
 Get-Process -Name "dbeaver" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
