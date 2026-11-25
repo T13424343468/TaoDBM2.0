@@ -1,5 +1,6 @@
-# NavicatWalk.yml — 竞品对照线 v2（2026-11-25 老板令：不要截屏，用录屏）
-# 云真机真下载真静默安装真启动 Navicat Premium Lite 简体中文版，ffmpeg 桌面全程录屏回传
+﻿# NavicatWalk.yml — 竞品对照线 v3（2026-11-25 老板令：Premium 正牌有免费体验期不需要注册，Lite 换 Premium）
+# 云真机真下载真静默安装真启动 Navicat Premium 简体中文版（试用版），ffmpeg 桌面全程录屏回传
+# 第一轮被动录屏：启动等 60s 看弹什么，不点击；确认试用期弹窗再决定点哪
 # 视频回传分支：navicat-shots-latest（与取证同款通道）
 name: navicat-walk
 
@@ -19,10 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Navicat Premium Lite (CN, x64)
+      - name: Download Navicat Premium (CN, x64, trial)
         shell: pwsh
         run: |
-          $url = "https://download.navicat.com/download/navicat18_premium_lite_cs_x64.exe"
+          $url = "https://download.navicat.com/download/navicat18_premium_cs_x64.exe"
           $out = "$PWD\navicat-setup.exe"
           Write-Host "[DL] $url"
           Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
