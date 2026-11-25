@@ -360,7 +360,7 @@ public partial class WorkTab : Grid
                 e.Handled = true;
             }
         };
-        var ctrlF = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Microsoft.UI.Xaml.Input.VirtualModifiers.Control, Key = Windows.System.VirtualKey.F };
+        var ctrlF = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Modifiers = Windows.System.VirtualKeyModifiers.Control, Key = Windows.System.VirtualKey.F };
         KeyboardAccelerators.Add(ctrlF);
         ctrlF.Invoked += (_, args) =>
         {
