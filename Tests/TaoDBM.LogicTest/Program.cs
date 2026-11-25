@@ -99,6 +99,23 @@ Console.WriteLine("== Exporter ==");
     Check("CSV BOM", csv.StartsWith('\uFEFF'));
 }
 {
+    // ㊻ CSV 公式注入防护：=+-@ 开头单元格加前缀 ' 转义；纯数值（含负数）保持原值
+    var r = new QueryResult { Columns = { "k", "v" } };
+    r.Rows.Add(new object?[] { 1, "=cmd|' /C calc'!A0" });
+    r.Rows.Add(new object?[] { 2, "+SUM(A1:A2)" });
+    r.Rows.Add(new object?[] { 3, "@risk" });
+    r.Rows.Add(new object?[] { 4, "-5" });
+    r.Rows.Add(new object?[] { 5, "+42.5" });
+    r.Rows.Add(new object?[] { 6, "普通文本" });
+    var csv = Exporter.Csv(r);
+    Check("CSV 公式注入=转义", csv.Contains("'=cmd"), csv);
+    Check("CSV 公式注入+转义", csv.Contains("'+SUM"), csv);
+    Check("CSV 公式注入@转义", csv.Contains("'@risk"), csv);
+    Check("CSV 负数不转义", csv.Contains("\n4,-5") && !csv.Contains("'-5"), csv);
+    Check("CSV 正数不转义", csv.Contains("\n5,+42.5"), csv);
+    Check("CSV 普通文本原样", csv.Contains(",普通文本"), csv);
+}
+{
     var r = new QueryResult { Columns = { "id", "name" } };
     r.Rows.Add(new object?[] { 1, "O'Brien" });
     r.Rows.Add(new object?[] { 2, DBNull.Value });
@@ -107,6 +124,21 @@ Console.WriteLine("== Exporter ==");
     Check("INSERT 引号转义", sql.Contains("'O''Brien'"), sql);
     Check("INSERT NULL", sql.Contains("NULL"), sql);
     Check("INSERT 十六进制", sql.Contains("X'DEAD'"), sql);
+}
+{
+    // ㊽ 导出脱敏接线：整包 Masked 按列名规则打码；无敏感列原样返回同一引用
+    var r = new QueryResult { Columns = { "id", "phone", "password" } };
+    r.Rows.Add(new object?[] { 1, "13812345678", "p@ssw0rd" });
+    r.Rows.Add(new object?[] { 2, "13987654321", "abc123" });
+    var masked = Exporter.Masked(r);
+    Check("导出脱敏-手机号打码", masked.Rows[0][1]!.ToString() == "138****5678", masked.Rows[0][1]?.ToString() ?? "");
+    Check("导出脱敏-密码整值打码", masked.Rows[0][2]!.ToString() == "********", masked.Rows[0][2]?.ToString() ?? "");
+    Check("导出脱敏-非敏感列原值", masked.Rows[0][0]!.ToString() == "1");
+    Check("导出脱敏-行数不变", masked.Rows.Count == 2);
+    Check("导出脱敏-原结果不被修改", r.Rows[0][1]!.ToString() == "13812345678");
+    var plain = new QueryResult { Columns = { "id", "amount" } };
+    plain.Rows.Add(new object?[] { 1, 99 });
+    Check("导出脱敏-无敏感列原样返回", ReferenceEquals(Exporter.Masked(plain), plain));
 }
 {
     // A1 流式导出：逐页写 TextWriter，不整包攒串；行为必须与整包版严格同形
@@ -4804,7 +4836,7 @@ Console.WriteLine("\n== 操作手册（2026-11-20 老板令）==");
 Layer("单元");
 {
     var ch = ManualContent.Chapters;
-    Check("MAN-章节数量", ch.Length == 16, ch.Length.ToString());
+    Check("MAN-章节数量", ch.Length == 17, ch.Length.ToString());   // ㊷ 手册补「安装与卸载」章，16→17
     Check("MAN-章节标题唯一", ch.Select(c => c.Title).Distinct().Count() == ch.Length);
     Check("MAN-每章有小节", ch.All(c => c.Sections.Length > 0));
     Check("MAN-每节有标题与正文", ch.All(c => c.Sections.All(s => !string.IsNullOrWhiteSpace(s.Heading) && !string.IsNullOrWhiteSpace(s.Body))));

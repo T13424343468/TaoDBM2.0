@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint); }'
+$src = 'using System; using System.Runtime.InteropServices; public class WinNative { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder buf, int max); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string title); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SetWindowTextW(IntPtr hWnd, string text); [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr hWnd, int id); [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd); [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId); [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint); [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach); [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags); [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo); [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId(); }'
 Add-Type -TypeDefinition $src
 # ---------- 3b. 真鼠标点击（恢复自 b7fefa823，合并解决方向误删） ----------
 # Tapped/DoubleTapped/ContextFlyout 只认真鼠标事件，UIA Invoke 打不进（双击表/排序/右键菜单均此路）
@@ -56,6 +56,33 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
   $y = [int]($r.Y + $r.Height / 2)
   [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
 }
+function Click-TreeItemText([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
+  # 子级树节点右键定谳（2026-11-24 二轮）：UIA TreeItem BoundingRectangle 是整行宽度，行中心点落在文本右侧空白＝点在树背景上，菜单不开；
+  # 连接节点文本长、行中心恰在文本上才侥幸成功。改为优先点节点内 Text 子元素中心，兜底点左缘+60px；先 ScrollIntoView 防虚拟化偏移。
+  try {
+    ($el.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)).ScrollIntoView()
+    Start-Sleep -Milliseconds 400
+  } catch { }
+  $r = $el.Current.BoundingRectangle
+  if ($r.IsEmpty) { throw "mouse target has empty rect" }
+  $tx = $null
+  try {
+    $texts = $el.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)))
+    foreach ($t in $texts) {
+      $tr = $t.Current.BoundingRectangle
+      if (-not $tr.IsEmpty -and $tr.Width -gt 1) { $tx = $tr; break }
+    }
+  } catch { }
+  if ($null -ne $tx) {
+    $x = [int]($tx.X + $tx.Width / 2)
+    $y = [int]($tx.Y + $tx.Height / 2)
+  } else {
+    $x = [int]($r.X + [Math]::Min($r.Width / 2, 60))
+    $y = [int]($r.Y + $r.Height / 2)
+  }
+  [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
+}
+
 function Get-AppLogTail([int]$n) {
   foreach ($lg in @('D:\TaoDBMData\TaoDBM\logs\taodbm.log', (Join-Path $env:LOCALAPPDATA 'TaoDBM\logs\taodbm.log'))) {
     if (Test-Path $lg) { return (Get-Content $lg -Tail $n) }
@@ -69,6 +96,36 @@ $walkLog = New-Object System.Collections.Generic.List[string]
 $funcCov = New-Object System.Collections.Generic.List[string]
 $hardFail = $false
 function Log([string]$m) { $walkLog.Add($m); Write-Host "[WALK] $m"; try { $walkLog | Set-Content ui-walk-log.txt -Encoding utf8 } catch { } }
+
+function Force-AppForeground([string]$why) {
+  # #322 定谳：裸 SetForegroundWindow 被前台锁静默拒绝（截图实锤宿主终端整窗盖住应用，键鼠全落终端）——AttachThreadInput 强制夺回并复核
+  for ($att = 1; $att -le 2; $att++) {
+    try {
+      $fgHwnd = [WinNative]::GetForegroundWindow()
+      if ($fgHwnd -eq $handle) { return $true }
+      $fgProcId = [uint32]0
+      $tidFg = [WinNative]::GetWindowThreadProcessId($fgHwnd, [ref]$fgProcId)
+      $tidCur = [WinNative]::GetCurrentThreadId()
+      $attached = $false
+      if ($fgHwnd -ne [IntPtr]::Zero -and $tidFg -ne $tidCur) { $attached = [WinNative]::AttachThreadInput($tidCur, $tidFg, $true) }
+      try {
+        [WinNative]::ShowWindow($handle, 9) | Out-Null
+        [WinNative]::SetWindowPos($handle, [IntPtr]::Zero, 0, 0, 0, 0, 0x0043) | Out-Null
+        [WinNative]::SetForegroundWindow($handle) | Out-Null
+      } finally {
+        if ($attached) { [WinNative]::AttachThreadInput($tidCur, $tidFg, $false) | Out-Null }
+      }
+      Start-Sleep -Milliseconds 250
+      if ([WinNative]::GetForegroundWindow() -eq $handle) { return $true }
+    } catch { }
+    # 第二发前敲一下 ALT（模拟用户输入解除前台锁限制）
+    try { [WinNative]::keybd_event(0x12, 0, 0, [IntPtr]::Zero); [WinNative]::keybd_event(0x12, 0, 2, [IntPtr]::Zero) } catch { }
+    Start-Sleep -Milliseconds 150
+  }
+  Log "foreground force failed ($why)"
+  Push-Evidence "fg-force-failed $why"
+  return $false
+}
 
 function Save-Shot([string]$name) {
   try {
@@ -98,7 +155,7 @@ if ($handle -eq [IntPtr]::Zero) {
   exit 1
 }
 [WinNative]::ShowWindow($handle, 3) | Out-Null
-[WinNative]::SetForegroundWindow($handle) | Out-Null
+Force-AppForeground 'startup' | Out-Null
 Start-Sleep -Seconds 8
 $proc.Refresh()
 if ($proc.HasExited) { Write-Host "::error::app exited before walk code=$($proc.ExitCode)"; exit 1 }
@@ -189,6 +246,38 @@ function Get-ScopeText([System.Windows.Automation.AutomationElement]$scope) {
     }
   } catch { }
   return $sb.ToString()
+}
+
+function Open-TreeContextFlyout([System.Windows.Automation.AutomationElement]$treeItem, [string]$needle, [string]$label) {
+  # 右键弹层三段式（2026-11-24 二轮定谳）：直接右键 → 左键选中再右键 → Shift+F10；每段失败记录屏上窗口名，弹层开没开当场留证
+  for ($attempt = 1; $attempt -le 3; $attempt++) {
+    if ($attempt -eq 1) {
+      Click-TreeItemText $treeItem 'right'
+    } elseif ($attempt -eq 2) {
+      Log "ctx retry $label : select-then-rightclick"
+      try { Invoke-El $treeItem | Out-Null } catch { }
+      Start-Sleep -Milliseconds 600
+      Click-TreeItemText $treeItem 'right'
+    } else {
+      Log "ctx retry $label : shift-f10"
+      try { Invoke-El $treeItem | Out-Null } catch { }
+      Start-Sleep -Milliseconds 600
+      [System.Windows.Forms.SendKeys]::SendWait("+{F10}")
+    }
+    Start-Sleep -Seconds 1
+    $mi = Find-ElWait @{ name = $needle } 4 $mainRoot
+    if ($null -eq $mi) { $mi = Find-ElWait @{ name = $needle } 3 $null }
+    if ($null -ne $mi) { return $mi }
+    try {
+      $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))
+      $names = @(); foreach ($w in $wins) { $names += ("[{0}]" -f $w.Current.Name) }
+      Log ("ctx miss $label attempt $attempt windows-on-screen: " + ($names -join ' '))
+      Push-Evidence ("ctx-miss $label attempt $attempt windows: " + ($names -join ' '))
+    } catch { }
+    try { [System.Windows.Forms.SendKeys]::SendWait("{ESC}") } catch { }
+    Start-Sleep -Milliseconds 500
+  }
+  return $null
 }
 function Invoke-El([System.Windows.Automation.AutomationElement]$el) {
   try { ($el.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke(); return $true } catch { }
@@ -477,6 +566,7 @@ foreach ($s in $plan.steps) {
   # 注解上限约 10 条/步，恰好覆盖 S01-S10 关键窗（存盘 S05/树 S06 均在内），机器死前也能对出走到哪步；
   # 同时带应用内存读数并断言存活，把 S08 一带的静默死亡变成可读账
   Assert-AppAlive "step $id"
+  Force-AppForeground $id | Out-Null
   $appMem = 0
   try { $script:proc.Refresh(); $appMem = [int]($script:proc.WorkingSet64 / 1MB) } catch { }
   Write-Host ("::notice::WALK step {0} start ({1}; app={2}MB)" -f $id, $feature, $appMem)
@@ -669,7 +759,7 @@ foreach ($s in $plan.steps) {
           if (-not $arrived) {
             Log "$id menu arrival missing, retry once with foreground"
             Push-Evidence "$id menu-arrival-retry"
-            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Force-AppForeground $id | Out-Null
             Start-Sleep -Milliseconds 400
             Invoke-El $btn
             Start-Sleep -Milliseconds 600
@@ -872,7 +962,7 @@ foreach ($s in $plan.steps) {
               # 键盘导航兜底（原路保留）：前置窗口后路径键入；仍失败则落 allowMiss
               try {
                 Push-Evidence "S17d kbd-nav-attempt"
-                [WinNative]::SetForegroundWindow($h) | Out-Null
+                Force-AppForeground 'S17d' | Out-Null
                 Start-Sleep -Milliseconds 400
                 [System.Windows.Forms.SendKeys]::SendWait("^a")
                 Push-Evidence "S17d ctrl-a-sent"
@@ -978,7 +1068,7 @@ foreach ($s in $plan.steps) {
           if ($null -ne $fresh) { $el = $fresh } else { throw "work-editor not found and fresh tab failed" }
         }
         # #320 定谳加固：长走查中云机前台漂移，SendKeys 落空（红步屏面正常而 applog 零打点）——发键前强制回前台
-        try { [WinNative]::SetForegroundWindow($handle) | Out-Null; Start-Sleep -Milliseconds 250 } catch { }
+        Force-AppForeground $id | Out-Null; Start-Sleep -Milliseconds 250
         try { $el.SetFocus() } catch { }
         Start-Sleep -Milliseconds 300
         $focusedOk = $false
@@ -1009,7 +1099,7 @@ foreach ($s in $plan.steps) {
           if (-not $arrived) {
             Log "$id keys arrival missing, retry once with foreground+focus"
             Push-Evidence "$id keys-arrival-retry"
-            try { [WinNative]::SetForegroundWindow($handle) | Out-Null } catch { }
+            Force-AppForeground $id | Out-Null
             Start-Sleep -Milliseconds 300
             try { $el.SetFocus() } catch { }
             Start-Sleep -Milliseconds 300
@@ -1092,15 +1182,73 @@ foreach ($s in $plan.steps) {
         if ($null -eq $item) { throw "menu item not found: $($s.itemName)" }
         Invoke-El $item
         Start-Sleep -Seconds 2
+        if ($s.shot) { Save-Shot (Tpl $s.shot) }   # ㉗ 菜单项点击留证（与 click 动作同口径）
+      }
+      'context-tour' {
+        # 全页面逐页留证（2026-11-24 老板令）：右键树节点 → 展开二级分组 → 逐项打开弹窗截图 → ESC/关闭按钮收场。
+        # 单项失败只记账不中断（红绿全留痕），每项独立 try/catch；截图名 tour-{tourPrefix}-{序号}.png
+        $treeItem = $null
+        $needleItem = Tpl ([string]$s.prefix)
+        $allTree = $mainRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+        foreach ($e in $allTree) {
+          try { if ($e.Current.ControlType -eq [System.Windows.Automation.ControlType]::TreeItem -and $e.Current.Name -like "*$needleItem*") { $treeItem = $e; break } } catch { }
+        }
+        if ($null -eq $treeItem) { throw "tour tree item not found: $needleItem" }
+        $group = [string]$s.group
+        $idx = 0
+        $results = @()
+        foreach ($name in @($s.items | ForEach-Object { Tpl ([string]$_) })) {
+          $idx++
+          $shotName = "{0}-{1:d2}.png" -f $s.tourPrefix, $idx
+          try {
+            $sub = Open-TreeContextFlyout $treeItem $group "$($s.tourPrefix)-$idx"
+            if ($null -ne $sub) {
+              $expanded = $false
+              try {
+                $ec = $sub.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+                $ec.Expand(); $expanded = $true
+              } catch { }
+              if (-not $expanded) { Invoke-El $sub | Out-Null }
+              Start-Sleep -Milliseconds 900
+            }
+            # 分组缺失兜底：菜单项可能平铺在一级（无「库工具」分组），直接找项
+            $mi = Find-ElWait @{ name = $name } 6 $mainRoot
+            if ($null -eq $mi) { $mi = Find-ElWait @{ name = $name } 4 $null }
+            if ($null -eq $mi) { throw "tour item not found: $name (group=$group opened=$($null -ne $sub))" }
+            Invoke-El $mi
+            Start-Sleep -Seconds 3
+            Save-Shot $shotName
+            [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+            Start-Sleep -Milliseconds 700
+            # ESC 不达兜底：点常见关闭/取消按钮（45 个弹窗无键盘收场口径的现场对策）
+            $closeBtn = Find-ElWait @{ controlType = 'Button'; name = '关闭' } 2 $mainRoot
+            if ($null -eq $closeBtn) { $closeBtn = Find-ElWait @{ controlType = 'Button'; name = '取消' } 2 $mainRoot }
+            if ($null -ne $closeBtn) { try { Invoke-El $closeBtn } catch { } }
+            Start-Sleep -Milliseconds 500
+            Close-ExtraWindows $handle
+            Assert-AppAlive "tour $name"
+            $results += "OK $name"
+            Push-Evidence "tour-ok $name $shotName"
+          } catch {
+            try { Save-Shot ("{0}-{1:d2}-fail.png" -f $s.tourPrefix, $idx) } catch { }
+            try { [System.Windows.Forms.SendKeys]::SendWait("{ESC}") } catch { }
+            Start-Sleep -Milliseconds 500
+            Close-ExtraWindows $handle
+            $results += "RED $name : $($_.Exception.Message)"
+            Push-Evidence "tour-red $name $($_.Exception.Message)"
+          }
+        }
+        Log ("tour done: " + ($results -join ' ;; '))
+        Push-Evidence ("tour-summary " + ($results -join ' ;; '))
       }
       'tree-context' {
         # 树节点右键 → 弹出菜单点项（连接右键菜单：任务中心/智能工具/看板管理/部署向导…）
+        # 2026-11-24 二轮定谳：首轮 35 个 tree-context 全 miss——二级子菜单项未展开不在 UIA 树；
+        # 且 U078 一级项也 miss＝右键弹层本身可能没开。本版补：弹层探测＋选中后重试＋Shift+F10 兜底＋现场窗口取证。
         $item = Find-ElWait @{ controlType = 'TreeItem'; name = (Tpl $s.prefix) } 10 $mainRoot
         if ($null -eq $item) { throw "tree item not found: $(Tpl $s.prefix)" }
-        Click-ElMouse $item 'right'
-        Start-Sleep -Seconds 1
-        $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 6 $mainRoot
-        if ($null -eq $mi) { $mi = Find-ElWait @{ name = (Tpl $s.itemName) } 4 $null }
+        $needle = Tpl ([string]$s.itemName)
+        $mi = Open-TreeContextFlyout $item $needle $s.prefix
         if ($null -eq $mi) { throw "context item not found: $($s.itemName)" }
         Invoke-El $mi
         Start-Sleep -Seconds 3
