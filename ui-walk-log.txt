@@ -1,189 +1,189 @@
 probe quiet-watch start (10s, no UIA)
 probe quiet-watch done
-shot shot-01-start.png 41745 bytes
+shot shot-01-start.png 41692 bytes
 coverage: 17 named elements in main window
-shot sweep-U000.png 41745 bytes
+shot sweep-U000.png 41715 bytes
 coverage-func U000 巡检-主窗口初始态（欢迎页） => pass
-shot sweep-U001.png 42114 bytes
+shot sweep-U001.png 53827 bytes
 coverage-func U001 巡检-新建连接对话框 => pass
-shot sweep-U002.png 53863 bytes
+shot sweep-U002.png 53827 bytes
 coverage-func U002 巡检-连接对话框引擎切换MySQL => pass
-shot sweep-U003.png 53964 bytes
+shot sweep-U003.png 53927 bytes
 coverage-func U003 巡检-连接对话框引擎切换PostgreSQL => pass
-shot sweep-U004.png 53875 bytes
+shot sweep-U004.png 53840 bytes
 coverage-func U004 巡检-连接对话框引擎切换SQLServer => pass
-shot sweep-U005.png 54502 bytes
+shot sweep-U005.png 54470 bytes
 coverage-func U005 巡检-连接对话框引擎切换MongoDB => pass
-shot sweep-U006.png 53756 bytes
+shot sweep-U006.png 53713 bytes
 coverage-func U006 巡检-连接对话框引擎切换Redis => pass
-shot sweep-U007.png 42083 bytes
+shot sweep-U007.png 42069 bytes
 coverage-func U007 巡检-连接对话框收场 => pass
-shot sweep-U007a.png 53830 bytes
+shot sweep-U007a.png 53821 bytes
 coverage-func U007a 巡检-新建连接对话框（建连） => pass
-shot sweep-U007b.png 63268 bytes
+shot sweep-U007b.png 63263 bytes
 coverage-func U007b 巡检-连接选择SQLite引擎 => pass
-shot sweep-U007c.png 62905 bytes
+shot sweep-U007c.png 62896 bytes
 coverage-func U007c 巡检-连接填写名称 => pass
-shot sweep-U007d.png 64845 bytes
+shot sweep-U007d.png 64840 bytes
 coverage-func U007d 巡检-连接填写数据库文件 => pass
-shot sweep-U007e.png 44125 bytes
+shot sweep-U007e.png 44130 bytes
 coverage-func U007e 巡检-连接保存 => pass
-shot sweep-U010.png 43692 bytes
+shot sweep-U010.png 43696 bytes
 coverage-func U010 巡检-展开连接 => pass
-shot sweep-U011.png 46943 bytes
+shot sweep-U011.png 46933 bytes
 coverage-func U011 巡检-展开数据库 => pass
-shot sweep-U012.png 46958 bytes
+shot sweep-U012.png 46961 bytes
 coverage-func U012 巡检-选中表节点 => pass
-shot sweep-U013.png 58399 bytes
+shot sweep-U013.png 58451 bytes
 coverage-func U013 巡检-查看数据页签 => pass
-shot sweep-U014.png 58399 bytes
+shot sweep-U014.png 58451 bytes
 coverage-func U014 巡检-表数据页签工具栏 => pass
-shot sweep-U015.png 48177 bytes
+shot sweep-U015.png 48194 bytes
 coverage-func U015 巡检-表结构按钮 => pass
-shot sweep-U016.png 48963 bytes
+shot sweep-U016.png 48979 bytes
 coverage-func U016 巡检-表结构收场 => pass
-shot sweep-U017a.png 53590 bytes
+shot sweep-U017a.png 53609 bytes
 coverage-func U017a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U017.png 48745 bytes
+shot sweep-U017.png 48760 bytes
 coverage-func U017 巡检-表单视图按钮 => pass
-shot sweep-U018.png 49433 bytes
+shot sweep-U018.png 49478 bytes
 coverage-func U018 巡检-表单视图收场 => pass
 step U019 巡检-拟真数据按钮 => miss : target not found
 coverage-func U019 巡检-拟真数据按钮 => miss
-shot sweep-U020.png 49433 bytes
+shot sweep-U020.png 49478 bytes
 coverage-func U020 巡检-拟真数据收场 => pass
-shot sweep-U021a.png 54194 bytes
+shot sweep-U021a.png 54228 bytes
 coverage-func U021a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U021.png 48732 bytes
+shot sweep-U021.png 48773 bytes
 coverage-func U021 巡检-粘贴数据按钮 => pass
-shot sweep-U022.png 49449 bytes
+shot sweep-U022.png 49461 bytes
 coverage-func U022 巡检-粘贴数据收场 => pass
-shot sweep-U023.png 64744 bytes
+shot sweep-U023.png 64725 bytes
 coverage-func U023 巡检-表设计器（列） => pass
-shot sweep-U024.png 64744 bytes
+shot sweep-U024.png 64725 bytes
 coverage-func U024 巡检-表设计器收场 => pass
-shot sweep-U030.png 42546 bytes
+shot sweep-U030.png 42512 bytes
 coverage-func U030 巡检-新建查询页签 => pass
-shot sweep-U031.png 42546 bytes
+shot sweep-U031.png 42512 bytes
 coverage-func U031 巡检-查询页工具栏全貌 => pass
-shot sweep-U032open.png 47036 bytes
+shot sweep-U032open.png 47010 bytes
 coverage-func U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
-shot sweep-U032.png 43340 bytes
+shot sweep-U032.png 42508 bytes
 coverage-func U032 巡检-导出CSV按钮 => pass
-shot sweep-U033.png 43340 bytes
+shot sweep-U033.png 43332 bytes
 coverage-func U033 巡检-导出CSV收场 => pass
-shot sweep-U034a.png 42543 bytes
+shot sweep-U034a.png 48675 bytes
 coverage-func U034a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U034open.png 47845 bytes
+shot sweep-U034open.png 47827 bytes
 coverage-func U034open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
-shot sweep-U034.png 42557 bytes
+shot sweep-U034.png 42538 bytes
 coverage-func U034 巡检-导出INSERT按钮 => pass
-shot sweep-U035.png 43359 bytes
+shot sweep-U035.png 43332 bytes
 coverage-func U035 巡检-导出INSERT收场 => pass
-shot sweep-U036.png 47845 bytes
+shot sweep-U036.png 47827 bytes
 coverage-func U036 巡检-导出更多菜单 => pass
-shot sweep-U037.png 43359 bytes
+shot sweep-U037.png 43332 bytes
 coverage-func U037 巡检-导出更多收场 => pass
-shot sweep-U038a.png 48692 bytes
+shot sweep-U038a.png 48675 bytes
 coverage-func U038a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U038.png 42596 bytes
+shot sweep-U038.png 54836 bytes
 coverage-func U038 巡检-查询收藏 => pass
-shot sweep-U039.png 43375 bytes
+shot sweep-U039.png 43370 bytes
 coverage-func U039 巡检-收藏收场 => pass
-shot sweep-U040a.png 48680 bytes
+shot sweep-U040a.png 48675 bytes
 coverage-func U040a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U040.png 48667 bytes
+shot sweep-U040.png 54015 bytes
 coverage-func U040 巡检-查询历史 => pass
-shot sweep-U041.png 43375 bytes
+shot sweep-U041.png 43360 bytes
 coverage-func U041 巡检-历史收场 => pass
-shot sweep-U042a.png 48680 bytes
+shot sweep-U042a.png 48666 bytes
 coverage-func U042a 巡检-更多菜单展开（B⑥ 低频收组） => pass
-shot sweep-U042.png 43521 bytes
+shot sweep-U042.png 43498 bytes
 coverage-func U042 巡检-报表 => pass
-shot sweep-U043.png 44279 bytes
+shot sweep-U043.png 44250 bytes
 coverage-func U043 巡检-报表收场 => pass
 step U044 巡检-设计辅助 => miss : target not found
 coverage-func U044 巡检-设计辅助 => miss
-shot sweep-U045.png 44279 bytes
+shot sweep-U045.png 44250 bytes
 coverage-func U045 巡检-设计辅助收场 => pass
-shot sweep-U046a.png 54447 bytes
+shot sweep-U046a.png 54424 bytes
 coverage-func U046a 巡检-编辑器右键打开菜单 => pass
-shot sweep-U046.png 43746 bytes
+shot sweep-U046.png 43722 bytes
 coverage-func U046 巡检-编辑器右键菜单 => pass
-shot sweep-U047.png 43756 bytes
+shot sweep-U047.png 43693 bytes
 coverage-func U047 巡检-右键菜单收场 => pass
-shot tour-conn-01.png 55359 bytes
-shot tour-conn-02.png 53996 bytes
-shot tour-conn-03.png 57862 bytes
-shot tour-conn-04.png 53190 bytes
-shot tour-conn-05.png 66016 bytes
-shot tour-conn-06.png 61473 bytes
-shot tour-conn-07.png 59796 bytes
-shot tour-conn-08.png 63813 bytes
-shot tour-conn-09.png 69229 bytes
-shot tour-conn-10.png 68116 bytes
-shot tour-conn-11.png 59806 bytes
-shot tour-conn-12.png 59830 bytes
-shot tour-conn-13.png 68553 bytes
-shot tour-conn-14.png 62791 bytes
-shot tour-conn-15.png 58312 bytes
-shot tour-conn-16.png 60336 bytes
-shot tour-conn-17.png 66105 bytes
-shot tour-conn-18.png 56624 bytes
-shot tour-conn-19.png 55965 bytes
-shot tour-conn-20.png 60525 bytes
-shot tour-conn-21.png 52315 bytes
+shot tour-conn-01.png 55303 bytes
+shot tour-conn-02.png 53944 bytes
+shot tour-conn-03.png 57802 bytes
+shot tour-conn-04.png 53158 bytes
+shot tour-conn-05.png 65978 bytes
+shot tour-conn-06.png 61407 bytes
+shot tour-conn-07.png 59748 bytes
+shot tour-conn-08.png 63776 bytes
+shot tour-conn-09.png 69255 bytes
+shot tour-conn-10.png 68143 bytes
+shot tour-conn-11.png 59802 bytes
+shot tour-conn-12.png 59825 bytes
+shot tour-conn-13.png 68527 bytes
+shot tour-conn-14.png 62763 bytes
+shot tour-conn-15.png 58285 bytes
+shot tour-conn-16.png 60320 bytes
+shot tour-conn-17.png 66123 bytes
+shot tour-conn-18.png 56641 bytes
+shot tour-conn-19.png 55997 bytes
+shot tour-conn-20.png 60548 bytes
+shot tour-conn-21.png 52344 bytes
 tour done: OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 分片向导 ;; OK 一键诊断 ;; OK 高危 SQL 拦截 ;; OK 上线审查 ;; OK 任务中心 ;; OK 流式开关 ;; OK 读路由预演 ;; OK 热点检测 ;; OK 再均衡规划 ;; OK 分片键评估 ;; OK 迁移续传 ;; OK 团队合并 ;; OK 共享包 ;; OK 智能工具 ;; OK 看板管理 ;; OK 服务器监控 ;; OK 命令监控 ;; OK 仪表板
-shot sweep-U050.png 43080 bytes
+shot sweep-U050.png 43093 bytes
 coverage-func U050 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
-shot sweep-U058.png 57237 bytes
+shot sweep-U058.png 57241 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
-shot sweep-U059.png 43533 bytes
+shot sweep-U059.png 43543 bytes
 coverage-func U059 巡检-数据同步收场 => pass
-shot sweep-U064.png 47702 bytes
+shot sweep-U064.png 47695 bytes
 coverage-func U064 巡检-ER图 => pass
-shot sweep-U065.png 43548 bytes
+shot sweep-U065.png 43551 bytes
 coverage-func U065 巡检-ER图收场 => pass
-shot sweep-U066.png 63353 bytes
+shot sweep-U066.png 63354 bytes
 coverage-func U066 巡检-备份恢复向导 => pass
-shot sweep-U067.png 43534 bytes
+shot sweep-U067.png 43551 bytes
 coverage-func U067 巡检-备份收场 => pass
-shot sweep-U078.png 57435 bytes
+shot sweep-U078.png 57449 bytes
 coverage-func U078 巡检-在库中搜索 => pass
-shot sweep-U079.png 43027 bytes
+shot sweep-U079.png 43045 bytes
 coverage-func U079 巡检-库搜索收场 => pass
-shot tour-db-01.png 58146 bytes
-shot tour-db-02.png 51039 bytes
-shot tour-db-03.png 60257 bytes
-shot tour-db-04.png 60898 bytes
-shot tour-db-05.png 61103 bytes
-shot tour-db-06.png 63823 bytes
-shot tour-db-07.png 62895 bytes
-shot tour-db-08.png 67194 bytes
-shot tour-db-09.png 68790 bytes
-shot tour-db-10.png 78311 bytes
-shot tour-db-11.png 60354 bytes
-shot tour-db-12.png 71421 bytes
-shot tour-db-13.png 67824 bytes
-shot tour-db-14.png 49429 bytes
+shot tour-db-01.png 58158 bytes
+shot tour-db-02.png 51027 bytes
+shot tour-db-03.png 60216 bytes
+shot tour-db-04.png 60858 bytes
+shot tour-db-05.png 61063 bytes
+shot tour-db-06.png 63779 bytes
+shot tour-db-07.png 62880 bytes
+shot tour-db-08.png 67216 bytes
+shot tour-db-09.png 68817 bytes
+shot tour-db-10.png 78335 bytes
+shot tour-db-11.png 60410 bytes
+shot tour-db-12.png 71487 bytes
+shot tour-db-13.png 67877 bytes
+shot tour-db-14.png 49447 bytes
 tour done: OK 备份计划 ;; OK 备份演练 ;; OK 数据脱敏 ;; OK 数据对账 ;; OK 误删恢复 ;; OK 留痕审计 ;; OK 问库 ;; OK 快照包 ;; OK 批量清理 ;; OK 设计辅助 ;; OK 例程管理 ;; OK 一键诊断 ;; OK 告警中心 ;; OK 三层模型
-shot sweep-U088.png 51229 bytes
+shot sweep-U088.png 51220 bytes
 coverage-func U088 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
-shot sweep-U104.png 54975 bytes
+shot sweep-U104.png 54969 bytes
 coverage-func U104 巡检-设置入口真拍 => pass
-shot sweep-U104a.png 68519 bytes
+shot sweep-U104a.png 68507 bytes
 coverage-func U104a 巡检-设置菜单项点击 => pass
-shot sweep-U104b.png 51605 bytes
+shot sweep-U104b.png 51596 bytes
 coverage-func U104b 巡检-设置收场 => pass
-shot sweep-U105.png 61268 bytes
+shot sweep-U105.png 61259 bytes
 coverage-func U105 巡检-手册 => pass
-shot sweep-U106.png 51496 bytes
+shot sweep-U106.png 51494 bytes
 coverage-func U106 巡检-手册收场 => pass
-shot ux-u107-about.png 66209 bytes
-shot sweep-U107.png 51494 bytes
+shot ux-u107-about.png 66205 bytes
+shot sweep-U107.png 51493 bytes
 coverage-func U107 巡检-关于 => pass
-shot ux-u108-theme.png 51494 bytes
-shot sweep-U108.png 51494 bytes
+shot ux-u108-theme.png 51493 bytes
+shot sweep-U108.png 51493 bytes
 coverage-func U108 巡检-主题入口 => pass
-shot sweep-U109.png 51494 bytes
+shot sweep-U109.png 51511 bytes
 coverage-func U109 巡检-收尾主窗口 => pass
