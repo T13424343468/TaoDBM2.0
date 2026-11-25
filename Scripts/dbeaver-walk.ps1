@@ -1,4 +1,4 @@
-﻿# dbeaver-walk.ps1 v4 — 竞品对照走查（DBeaver CE）：录屏＋真鼠标点击走完首启向导
+﻿# dbeaver-walk.ps1 v6 — 竞品对照走查（DBeaver CE）：录屏＋鼠标/回车双保险走完首启向导
 param(
   [Parameter(Mandatory = $true)][string]$ExePath
 )
@@ -9,7 +9,7 @@ Add-Type -AssemblyName System.Windows.Forms
 $mouseSrc = @'
 using System;
 using System.Runtime.InteropServices;
-public class MouseNative4 {
+public class MouseNative6 {
   [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, IntPtr dwExtraInfo);
   const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004;
@@ -22,33 +22,35 @@ function Focus-DBeaver {
   $p = Get-Process -Name "dbeaver" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   if ($p) {
     $sig = '[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);'
-    $t = Add-Type -MemberDefinition $sig -Name FG4 -Namespace W4 -PassThru
+    $t = Add-Type -MemberDefinition $sig -Name FG6 -Namespace W6 -PassThru
     $t::SetForegroundWindow($p.MainWindowHandle) | Out-Null
     Start-Sleep -Milliseconds 800
   }
   return $p
 }
 
-Write-Host "[WALK] v5 start exe=$ExePath"
+Write-Host "[WALK] v6 start exe=$ExePath"
 Start-Sleep -Seconds 5
 
 # 1) 启动（闪屏＋首启向导全程入镜）
 Start-Process -FilePath $ExePath
-Start-Sleep -Seconds 50
+Start-Sleep -Seconds 55
 
-# 2) 首启向导：逐页点 Next（坐标按上轮录屏实拍 1024x768，Next=(645,504)）
-Focus-DBeaver | Out-Null
-[MouseNative4]::Click(645, 476)
-Start-Sleep -Seconds 3
-[MouseNative4]::Click(645, 476)
-Start-Sleep -Seconds 3
-[MouseNative4]::Click(645, 476)
-Start-Sleep -Seconds 3
+# 2) 首启向导：每页「点 Next＋回车」双保险，共 5 轮推进（Next 中心 645,476）
+for ($i = 1; $i -le 5; $i++) {
+  Focus-DBeaver | Out-Null
+  [MouseNative6]::Click(645, 476)
+  Start-Sleep -Seconds 1
+  [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+  Start-Sleep -Seconds 4
+}
 
-# 3) 末页点 Apply（737,504），等 10 秒进主界面
+# 3) 末页点 Apply（737,476）＋回车兜底，等 12 秒进主界面
 Focus-DBeaver | Out-Null
-[MouseNative4]::Click(737, 476)
-Start-Sleep -Seconds 10
+[MouseNative6]::Click(737, 476)
+Start-Sleep -Seconds 1
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+Start-Sleep -Seconds 12
 
 # 4) 主界面停留 10 秒（入镜）
 Start-Sleep -Seconds 10
@@ -62,6 +64,6 @@ Start-Sleep -Seconds 12
 [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
 Start-Sleep -Seconds 4
 
-Write-Host "[WALK] v5 done"
+Write-Host "[WALK] v6 done"
 Get-Process -Name "dbeaver" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
