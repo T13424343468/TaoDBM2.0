@@ -76,6 +76,8 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          # v10：v9 推送步骤失败（录屏成功但视频只在产物里）；EAP 放开避免 stderr 触发 stop，推送输出落日志，失败重试一次，超 95MB 先重编码
+          $ErrorActionPreference = 'Continue'
           git config --global user.email "ci@taodbm.local"
           git config --global user.name "TaoDBM CI"
           New-Item -ItemType Directory -Force nav-repo | Out-Null
@@ -84,10 +86,25 @@ jobs:
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch --depth 1 origin navicat-shots-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B navicat-shots-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan navicat-shots-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          if (Test-Path ..\nav-walk.mp4) { Copy-Item ..\nav-walk.mp4 -Force; git add nav-walk.mp4 }
+          if (Test-Path ..\nav-walk.mp4) {
+            Copy-Item ..\nav-walk.mp4 -Force
+            $sz = (Get-Item nav-walk.mp4).Length
+            "video-size=$sz" | Out-File ..\walk-log.txt -Append -Encoding utf8
+            if ($sz -gt 95MB) {
+              & ..\ffmpeg.exe -y -i nav-walk.mp4 -c:v libx264 -preset veryfast -crf 34 -pix_fmt yuv420p -g 20 -movflags +frag_keyframe+empty_moov nav-walk-small.mp4
+              if ((Test-Path nav-walk-small.mp4) -and ((Get-Item nav-walk-small.mp4).Length -lt $sz)) { Move-Item nav-walk-small.mp4 nav-walk.mp4 -Force; "video-reencoded=yes" | Out-File ..\walk-log.txt -Append -Encoding utf8 }
+            }
+            git add nav-walk.mp4
+          }
           if (Test-Path ..\walk-log.txt) { Copy-Item ..\walk-log.txt -Force; git add walk-log.txt }
           git commit --allow-empty -m "navicat walk video run ${{ github.run_id }}" | Out-Null
-          git push origin navicat-shots-latest --force 2>&1 | Out-Host
+          $pushOut = git push origin navicat-shots-latest --force 2>&1 | Out-String
+          Write-Host "[PUSH-1] exit=$LASTEXITCODE $pushOut"
+          if ($LASTEXITCODE -ne 0) {
+            Start-Sleep -Seconds 10
+            $pushOut = git push origin navicat-shots-latest --force 2>&1 | Out-String
+            Write-Host "[PUSH-2] exit=$LASTEXITCODE $pushOut"
+          }
           Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/navicat-shots-latest/nav-walk.mp4"
 
       - name: Upload video (always)
