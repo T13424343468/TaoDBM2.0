@@ -21,7 +21,7 @@ jobs:
       - name: Download DBeaver CE installer
         shell: pwsh
         run: |
-          $url = "https://download.dbeaver.com/community/dbeaver-ce-latest-x86_64-setup.exe"
+          $url = "https://github.com/dbeaver/dbeaver/releases/latest/download/dbeaver-ce-26.2.5.2-windows-x86_64.exe"
           $out = "$PWD\dbeaver-setup.exe"
           Write-Host "[DL] $url"
           Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
