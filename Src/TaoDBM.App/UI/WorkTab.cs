@@ -786,13 +786,21 @@ public partial class WorkTab : Grid
         _lastFull = _last;   // B⑦：全量留存供查找过滤
         FrameworkElement el;
         if (onRowTap is not null) el = GridBuilder.Build(r, onRowTap, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
-        else if (editable && _isRelational) el = GridBuilder.Build(r, idx => _ = EditRow(idx), EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
+        else if (editable && _isRelational)
+        {
+            // P0 网格就地编辑（2026-11-25 老板令「用产品思维优化」）：双击单元格原地改、回车落库，不弹窗（竞品全如此）；
+            // 单击不再弹编辑窗，弹窗全口径（含二进制列回退）收进右键菜单。
+            el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo(),
+                onCellEdit: (ri, ci, cell) => _ = InPlaceEdit(ri, ci, cell),
+                onEditRow: ri => _ = EditRow(ri),
+                onDeleteRow: ri => _ = DeleteRow(ri));
+        }
         else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
         _resultsHost.Content = el;
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
-                : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 单击行编辑 / 删除" : ""));
+                : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 双击单元格就地编辑 · 右键编辑/删除该行" : ""));
         _resultBar.Text = $"{(r.TotalRows ?? r.Rows.Count):N0} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条（㊲：总行数优先）
     }
 
@@ -1146,6 +1154,94 @@ public partial class WorkTab : Grid
     public Task EditRowAt(int rowIndex) => EditRow(rowIndex);
     /// <summary>刷新浏览数据（粘贴数据落库后回显）。</summary>
     public Task RefreshAsync() { _offset = 0; return RunOrRefresh(); }
+
+    // ---------- P0 网格就地编辑（2026-11-25 老板令「用产品思维优化」） ----------
+
+    /// <summary>双击单元格原地改、回车落库，不弹窗（竞品全如此）。
+    /// 守卫与 EditRow 同口径：无主键拒编（防误改整表）、主键列只读、二进制列回退弹窗（hex 校验口径在弹窗内）；
+    /// Esc/失焦还原不落库；UPDATE 单列生成复用 Exporter.Literal 与 NULL 语义（留空＝数字列 NULL、文本列 ''）。</summary>
+    private async Task InPlaceEdit(int rowIndex, int colIdx, Border cell)
+    {
+        if (!_isRelational) { _messageBox.Text = "该引擎不支持行内编辑。"; return; }
+        if (_cols.Count == 0) { _messageBox.Text = "请先点“结构”或刷新数据读取列信息。"; return; }
+        if (_browseResult == null || rowIndex >= _browseResult.Rows.Count || colIdx >= _cols.Count) return;
+        if (KeyCol is null) { _messageBox.Text = "该表没有主键列，无法安全编辑（避免误改整表）。"; return; }
+        var col = _cols[colIdx];
+        if (col.IsKey) { _messageBox.Text = "主键列不可就地修改。"; return; }
+        if (Exporter.IsBinaryColumn(col.DataType)) { await EditRow(rowIndex); return; }   // 二进制列回退弹窗
+
+        var original = _browseResult.Rows[rowIndex][colIdx];
+        bool origNull = original == null || original is DBNull;
+        string origText = origNull ? "" : Exporter.Format(original);
+        if (cell.Child is TextBox) return;   // 已在编辑态，防重复进入
+
+        var tb = new TextBox { Text = origText, Margin = new Thickness(6, 2, 6, 2), VerticalAlignment = VerticalAlignment.Center, MinWidth = 60 };
+        bool done = false;
+        void Restore()
+        {
+            cell.Child = new TextBlock
+            {
+                Text = Exporter.DisplayFormat(original),
+                Margin = new Thickness(10, 6, 10, 6),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = Ant.Text,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+        async Task CommitAsync()
+        {
+            if (done) return;
+            done = true;
+            string text = tb.Text;
+            Restore();
+            if (text == origText) return;   // 未改动不落库
+            string val = text.Length == 0
+                ? (CsvImporter.IsNumeric(col.DataType) ? "NULL" : "''")
+                : Exporter.Literal(col, text);
+            int keyIdx = _cols.IndexOf(KeyCol);
+            if (keyIdx < 0 || keyIdx >= _browseResult.Rows[rowIndex].Length) return;
+            var keyVal = _browseResult.Rows[rowIndex][keyIdx];
+            var sql = $"UPDATE {_provider.Quote(_child)} SET {_provider.Quote(col.Name)} = {val} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, Exporter.Format(keyVal))}";
+            await ExecWrite(sql, "已保存修改");
+        }
+        tb.KeyDown += (_, e) =>
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter) { e.Handled = true; _ = CommitAsync(); }
+            else if (e.Key == Windows.System.VirtualKey.Escape) { e.Handled = true; done = true; Restore(); }
+        };
+        tb.LostFocus += (_, _) => { if (!done) { done = true; Restore(); } };   // 失焦还原：不落库，防误写
+        cell.Child = tb;
+        tb.Focus(FocusState.Pointer);
+        tb.SelectAll();
+    }
+
+    /// <summary>P0 配套：右键「删除该行」——单击行不再弹编辑窗后，删除入口收进右键菜单（确认弹层与 EditRow 同口径）。</summary>
+    private async Task DeleteRow(int rowIndex)
+    {
+        if (!_isRelational) return;
+        if (KeyCol is null) { _messageBox.Text = "该表没有主键列，无法安全删除（避免误删整表）。"; return; }
+        if (_browseResult == null || rowIndex >= _browseResult.Rows.Count) return;
+        int keyIdx = _cols.IndexOf(KeyCol);
+        if (keyIdx < 0 || keyIdx >= _browseResult.Rows[rowIndex].Length) return;
+        var keyVal = _browseResult.Rows[rowIndex][keyIdx];
+        var confirm = new ContentDialog
+        {
+            Title = "确认删除这一行",
+            Content = new TextBlock
+            {
+                Text = $"将删除 {_child} 中 {KeyCol!.Name} = {Exporter.Format(keyVal)} 的这一行，删除后需自行恢复数据，请确认。",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Ant.Error,
+            },
+            PrimaryButtonText = "删除",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = _owner.Content.XamlRoot,
+        };
+        if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+        var del = $"DELETE FROM {_provider.Quote(_child)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, Exporter.Format(keyVal))}";
+        await ExecWrite(del, "已删除 1 行");
+    }
 
     private async Task EditRow(int? rowIndex)
     {

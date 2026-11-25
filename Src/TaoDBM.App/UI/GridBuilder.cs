@@ -9,10 +9,14 @@ namespace TaoDBM.UI;
 /// <summary>把 QueryResult 渲染成表格（纯代码构建，Ant 风格表头）。</summary>
 public static class GridBuilder
 {
+    /// <summary>P0 网格就地编辑（2026-11-25 老板令「用产品思维优化」）：onCellEdit(rowIdx, colIdx, cell) 供双击单元格原地改；
+    /// onEditRow/onDeleteRow 供右键菜单弹窗编辑/删除（单击不再弹窗后，弹窗全口径从右键进）。</summary>
     public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
-        Dictionary<string, double>? colWidths = null, string? widthKey = null, MainWindow? owner = null, NodeInfo? info = null)
+        Dictionary<string, double>? colWidths = null, string? widthKey = null, MainWindow? owner = null, NodeInfo? info = null,
+        Action<int, int, Border>? onCellEdit = null, Action<int>? onEditRow = null, Action<int>? onDeleteRow = null)
     {
         // 批次F：宽表懒加载结果（列数超虚拟阈值）走等宽占位网格，横向滚动增量拉列
+        // P0 就地编辑未接：懒加载宽表列未物化，保持只读（后续批次再接）
         if (r is LazyQueryResult lz && lz.Store.TotalColumns > 64)
             return LazyWideGrid.Build(lz, onRowTap, sourceSql, engine);
 
@@ -34,7 +38,7 @@ public static class GridBuilder
         if (r.Rows.Count > VirtualThreshold)
         {
             // 虚拟滚动（2026-11-20 夜批②）：大数据量窗口化渲染，万行级不卡；列宽规则与普通渲染一致
-            return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine, owner, info);
+            return VirtualizedResultGrid.Build(r, onRowTap, sourceSql, engine, owner, info, onCellEdit, onEditRow, onDeleteRow);
         }
 
         // 整改二批 #03（2026-11-23）：表头点击循环排序（内存序，不回库）＋表头冻结（滚动时钉在视口顶部）
@@ -112,7 +116,8 @@ public static class GridBuilder
             rowsHost.Children.Clear();
             int shown = Math.Min(r.Rows.Count, 1000);
             for (int d = 0; d < shown; d++)
-                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine, widths: widths, owner: owner, info: info));
+                rowsHost.Children.Add(BuildRow(r, order[d], nCols, onRowTap, sourceSql: sourceSql, engine: engine, widths: widths, owner: owner, info: info,
+                    onCellEdit: onCellEdit, onEditRow: onEditRow, onDeleteRow: onDeleteRow));
         }
         PopulateRows();
 
@@ -167,9 +172,11 @@ public static class GridBuilder
     /// <summary>单行物化（普通渲染与虚拟渲染共用）：nCols 列单元格 + 隔行底色 + 可选行点选。
     /// fixedHeight 供虚拟渲染锁行高（位移映射需要统一行高）；null 保持原自适应高度。
     /// sourceSql/engine 非空时给单元格挂右键分析/钉住（批次E）；null 保持原状（浏览详情等只读场景）。
-    /// 整改二批 #03：单元格一律挂右键菜单（复制该行/单元格/全部＋分析）；displayIdx 提供时按显示位次取隔行底色（排序后斑马纹不乱）。</summary>
+    /// 整改二批 #03：单元格一律挂右键菜单（复制该行/单元格/全部＋分析）；displayIdx 提供时按显示位次取隔行底色（排序后斑马纹不乱）。
+    /// P0 就地编辑：onCellEdit 挂单元格双击；onEditRow/onDeleteRow 进右键菜单。</summary>
     public static Grid BuildRow(QueryResult r, int rowIdx, int nCols, Action<int>? onRowTap, double? fixedHeight = null,
-        string? sourceSql = null, string? engine = null, int? displayIdx = null, double[]? widths = null, MainWindow? owner = null, NodeInfo? info = null)
+        string? sourceSql = null, string? engine = null, int? displayIdx = null, double[]? widths = null, MainWindow? owner = null, NodeInfo? info = null,
+        Action<int, int, Border>? onCellEdit = null, Action<int>? onEditRow = null, Action<int>? onDeleteRow = null)
     {
         var row = r.Rows[rowIdx];
         var rowGrid = new Grid { Background = (displayIdx ?? rowIdx) % 2 == 1 ? Ant.AltRow : null };
@@ -188,7 +195,12 @@ public static class GridBuilder
                 VerticalAlignment = VerticalAlignment.Center,
             };
             var cell = new Border { Child = tb, BorderBrush = Ant.Border, BorderThickness = new Thickness(0, 0, 1, 1) };
-            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, rowIdx, owner, info);   // #03：复制该行/单元格/全部 ＋ 分析/钉住；三-10 设计助手入口
+            if (onCellEdit != null)
+            {
+                int ri = rowIdx, ci = i;
+                cell.DoubleTapped += (_, e) => { e.Handled = true; onCellEdit(ri, ci, cell); };   // P0：双击原地改
+            }
+            ResultGridMenu.Attach(cell, r, i, sourceSql, engine, rowIdx, owner, info, onEditRow, onDeleteRow);   // #03：复制该行/单元格/全部 ＋ 分析/钉住；三-10 设计助手入口；P0 编辑/删除该行
             Grid.SetColumn(cell, i);
             rowGrid.Children.Add(cell);
         }

@@ -12,7 +12,8 @@ namespace TaoDBM.UI;
 public static class VirtualizedResultGrid
 {
     public static FrameworkElement Build(QueryResult r, Action<int>? onRowTap = null, string? sourceSql = null, string? engine = null,
-        MainWindow? owner = null, NodeInfo? info = null)
+        MainWindow? owner = null, NodeInfo? info = null,
+        Action<int, int, Microsoft.UI.Xaml.Controls.Border>? onCellEdit = null, Action<int>? onEditRow = null, Action<int>? onDeleteRow = null)
     {
         int nCols = Math.Min(r.Columns.Count, 64);
         int total = r.Rows.Count;
@@ -90,7 +91,8 @@ public static class VirtualizedResultGrid
             rowsHost.Children.Clear();
             for (int rowIdx = first; rowIdx <= last; rowIdx++)
             {
-                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx, owner: owner, info: info);
+                var el = GridBuilder.BuildRow(r, order[rowIdx], nCols, onRowTap, rowH, sourceSql, engine, rowIdx, owner: owner, info: info,
+                    onCellEdit: onCellEdit, onEditRow: onEditRow, onDeleteRow: onDeleteRow);
                 el.VerticalAlignment = VerticalAlignment.Top;
                 el.Margin = new Thickness(0, rowIdx * rowH, 0, 0);
                 rowsHost.Children.Add(el);

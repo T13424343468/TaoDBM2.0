@@ -15,9 +15,11 @@ public static class ResultGridMenu
     /// <summary>给表头或行单元格挂右键菜单；host 须已入可视树（XamlRoot 就绪）。
     /// rowIdx 非空＝数据单元格（追加复制项）；空＝表头（只分析/钉住）。
     /// 整改三批三-10（2026-11-24 老板令「抓紧时间」）：owner/info 齐备时追加设计助手两入口——
-    /// 图表规范（本结果快照预填）与表单构建（当前连接上下文），免开对话框再找入口。</summary>
+    /// 图表规范（本结果快照预填）与表单构建（当前连接上下文），免开对话框再找入口。
+    /// P0 就地编辑（2026-11-25）：onEditRow/onDeleteRow 提供时追加「编辑该行（弹窗）/删除该行」——
+    /// 单击行不再弹编辑窗后，弹窗全口径从右键进。</summary>
     public static void Attach(FrameworkElement host, QueryResult r, int colIdx, string? sourceSql, string? engine, int? rowIdx = null,
-        MainWindow? owner = null, NodeInfo? info = null)
+        MainWindow? owner = null, NodeInfo? info = null, Action<int>? onEditRow = null, Action<int>? onDeleteRow = null)
     {
         if (colIdx < 0 || colIdx >= r.Columns.Count) return;
         var menu = new MenuFlyout();
@@ -27,6 +29,12 @@ public static class ResultGridMenu
             menu.Items.Add(MenuItem("复制该单元格", () => CopyCell(r, ri, colIdx)));
             menu.Items.Add(MenuItem($"复制全部（前 {ResultGridOps.CopyRowLimit:N0} 行）", () => CopyRows(r, Enumerable.Range(0, r.Rows.Count))));
             menu.Items.Add(MenuItem("复制为 INSERT（跨库粘贴用）", () => CopyAsInsert(r, Enumerable.Range(0, r.Rows.Count))));   // 批次二格4
+            if (onEditRow != null || onDeleteRow != null)
+            {
+                menu.Items.Add(new MenuFlyoutSeparator());
+                if (onEditRow != null) menu.Items.Add(MenuItem("编辑该行（弹窗）", () => onEditRow(ri)));
+                if (onDeleteRow != null) menu.Items.Add(MenuItem("删除该行", () => onDeleteRow(ri)));
+            }
         }
         menu.Items.Add(MenuItem("分析本列", () => _ = ShowAnalysisAsync(host, r, colIdx)));
         if (!string.IsNullOrWhiteSpace(sourceSql))
