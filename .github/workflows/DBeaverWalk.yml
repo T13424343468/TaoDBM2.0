@@ -1,0 +1,88 @@
+# DBeaverWalk.yml — 竞品对照线（DBeaver CE 免登录，2026-11-25）
+# Navicat 免费版强制登录 Navicat ID 无法跳过（录屏实拍），换免登录竞品继续逐页面对照
+name: dbeaver-walk
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/DBeaverWalk.yml'
+      - 'Scripts/dbeaver-walk.ps1'
+
+jobs:
+  dbeaver:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download DBeaver CE installer
+        shell: pwsh
+        run: |
+          $url = "https://download.dbeaver.com/community/dbeaver-ce-latest-x86_64-setup.exe"
+          $out = "$PWD\dbeaver-setup.exe"
+          Write-Host "[DL] $url"
+          Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+          $len = (Get-Item $out).Length
+          Write-Host "[DL] size=$len"
+          if ($len -lt 50MB) { Write-Host "::error::installer too small"; exit 1 }
+
+      - name: Download ffmpeg (static build)
+        shell: pwsh
+        run: |
+          $zip = "$PWD\ffmpeg.zip"
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath "$PWD\ff" -Force
+          $ff = Get-ChildItem "$PWD\ff" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          Copy-Item $ff.FullName "$PWD\ffmpeg.exe"
+          Write-Host "[FFMPEG] $((Get-Item "$PWD\ffmpeg.exe").Length) bytes"
+
+      - name: Silent install (NSIS)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "$PWD\dbeaver-setup.exe" -ArgumentList '/S' -Wait -PassThru
+          Write-Host "[INSTALL] exit=$($p.ExitCode)"
+          $exe = Get-ChildItem "C:\Program Files\DBeaver","C:\Program Files\dbeaver" -Recurse -Filter "dbeaver.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) { Write-Host "::error::dbeaver.exe not found"; Get-ChildItem "C:\Program Files" -Directory -ErrorAction SilentlyContinue | Out-Host; exit 1 }
+          Write-Host "[FOUND] $($exe.FullName)"
+          "DBeaverExe=$($exe.FullName)" | Out-File -FilePath dbeaver-env.txt -Encoding utf8
+
+      - name: Record screen while launching and walking
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $exe = ((Get-Content dbeaver-env.txt | Select-Object -First 1)) -replace '^DBeaverExe=',''
+          $ff = Start-Process -FilePath "$PWD\ffmpeg.exe" -ArgumentList '-y','-f','gdigrab','-framerate','10','-i','desktop','-c:v','libx264','-preset','veryfast','-crf','28','-pix_fmt','yuv420p','-g','20','-movflags','+frag_keyframe+empty_moov','-t','540','dbeaver-walk.mp4' -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 3
+          pwsh -NoProfile -File Scripts/dbeaver-walk.ps1 -ExePath $exe
+          Start-Sleep -Seconds 5
+          Stop-Process -Id $ff.Id -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 3
+          if (Test-Path dbeaver-walk.mp4) { Write-Host "[VIDEO] $((Get-Item dbeaver-walk.mp4).Length) bytes" } else { Write-Host "::error::video missing"; exit 1 }
+          exit 0
+
+      - name: Push video to public branch
+        if: always()
+        shell: pwsh
+        run: |
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force db-repo | Out-Null
+          Set-Location db-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch --depth 1 origin dbeaver-video-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B dbeaver-video-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan dbeaver-video-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          if (Test-Path ..\dbeaver-walk.mp4) { Copy-Item ..\dbeaver-walk.mp4 -Force; git add dbeaver-walk.mp4 }
+          git commit --allow-empty -m "dbeaver walk video run ${{ github.run_id }}" | Out-Null
+          git push origin dbeaver-video-latest --force 2>&1 | Out-Host
+          Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/dbeaver-video-latest/dbeaver-walk.mp4"
+
+      - name: Upload video (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbeaver-video
+          path: dbeaver-walk.mp4
