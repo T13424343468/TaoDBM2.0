@@ -1,5 +1,5 @@
 {
-  "version": "v3.18-clipstack-copy-sametab-banner",
+  "version": "v3.19-unsaved-close-target",
   "steps": [
     {
       "id": "S01",
@@ -352,8 +352,20 @@
       "action": "press-esc",
       "critical": true
     },
-    {"id": "S60e", "feature": "批次一-全选编辑器", "action": "press-keys", "keys": "^a", "critical": true},
-    {"id": "S60f", "feature": "批次一-复制入堆栈", "action": "press-keys", "keys": "^c", "critical": true},
+    {
+      "id": "S60e",
+      "feature": "批次一-全选编辑器",
+      "action": "press-keys",
+      "keys": "^a",
+      "critical": true
+    },
+    {
+      "id": "S60f",
+      "feature": "批次一-复制入堆栈",
+      "action": "press-keys",
+      "keys": "^c",
+      "critical": true
+    },
     {
       "id": "S61",
       "feature": "批次一-右键剪贴板堆栈",
@@ -506,7 +518,8 @@
       "feature": "P1-02 脏标记-编辑置脏",
       "action": "editor-set",
       "sql": "SELECT 'p1-dirty-walk';",
-      "critical": true
+      "critical": true,
+      "sameTab": true
     },
     {
       "id": "S65b",
@@ -542,10 +555,7 @@
       "action": "mouse-click",
       "find": {
         "controlType": "Button",
-        "nameAny": [
-          "关闭",
-          "Close"
-        ]
+        "name": "Close Tab"
       },
       "critical": true
     },
@@ -580,10 +590,7 @@
       "action": "mouse-click",
       "find": {
         "controlType": "Button",
-        "nameAny": [
-          "关闭",
-          "Close"
-        ]
+        "name": "Close Tab"
       },
       "critical": true
     },

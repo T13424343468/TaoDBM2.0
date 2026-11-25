@@ -76,6 +76,18 @@ public class BackupDrillTab : Grid
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         }));
+        // 发现77：SQL Server 的 .bak 按数据库服务器端路径读取，与 mysqldump 本机路径语义不同，明示防混淆
+        if (engine == DbEngine.SqlServer)
+        {
+            _fileBox.PlaceholderText = "备份文件路径（.bak，须是数据库服务器上的本机路径）";
+            Children.Add(BuildRow(new TextBlock
+            {
+                Text = "注意：SQL Server 的 RESTORE 按数据库服务器端路径读取 .bak 文件，请填服务器本机磁盘上的绝对路径（如 D:\\backup\\db.bak），不是你正在操作的这台电脑的路径。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.Warn,
+                TextWrapping = TextWrapping.Wrap,
+            }));
+        }
         Children.Add(BuildRow(_fileBox));
         Children.Add(BuildRow(_countsBox));
         Children.Add(BuildRow(genRow));
@@ -241,7 +253,7 @@ public class BackupDrillTab : Grid
                 try
                 {
                     var qr = await prov.ExecuteSingle(tempDb, BackupDrill.CountSql(engine, table));
-                    if (qr.Message.StartsWith("错误", StringComparison.Ordinal) || qr.Message.Contains("没成功："))
+                    if (qr.IsError)   // 发现76：结构化错误标记，不再靠文案子串匹配
                         throw new InvalidOperationException(qr.Message);
                     actual[table] = qr.Rows.Count > 0 ? Convert.ToInt64(qr.Rows[0][0]) : -1;
                 }

@@ -140,8 +140,9 @@ public class TableDesignerTab : Grid
         SetRow(pivot, 1);
 
         if (existing is { Count: > 0 })
+            // 发现74/75：旧列的自增 / 默认值 / 注释原样回填，改表 MODIFY 带回不再静默丢
             foreach (var c in existing)
-                AddColRow(new TableColumnDesign { Name = c.Name, SqlType = c.DataType, Nullable = c.Nullable, IsPrimaryKey = c.IsKey });
+                AddColRow(new TableColumnDesign { Name = c.Name, SqlType = c.DataType, Nullable = c.Nullable, IsPrimaryKey = c.IsKey, AutoIncrement = c.IsAutoIncrement, DefaultValue = c.DefaultValue, Comment = c.Comment });
         else AddColRow(null);
         if (table != null)
         {
@@ -296,7 +297,9 @@ public class TableDesignerTab : Grid
                 w.RowHost.Background = Ant.SuccessBg; // 新增列
             else if (!old.DataType.Trim().Equals(w.Type.Text.Trim(), StringComparison.OrdinalIgnoreCase)
                 || old.Nullable != (w.Null.IsChecked != false)
-                || old.IsKey != (w.Pk.IsChecked == true))
+                || old.IsKey != (w.Pk.IsChecked == true)
+                || old.IsAutoIncrement != (w.Inc.IsChecked == true)
+                || old.DefaultValue.Trim() != w.Def.Text.Trim())
                 w.RowHost.Background = Ant.WarnBg;    // 修改列
             else
                 w.RowHost.Background = null;          // 未变
@@ -587,7 +590,7 @@ public class TableDesignerTab : Grid
                 try
                 {
                     var list = await _prov.Execute(_db, stmts[i] + ";");
-                    var errs = list.Where(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："))).ToList();
+                    var errs = list.Where(r => r.IsError).ToList();   // 发现76：结构化错误标记，不再靠文案子串
                     if (errs.Count > 0)
                     {
                         okAll = false;

@@ -613,6 +613,38 @@ Console.WriteLine("== TableDdl ==");
         && pgStmts.Any(s => s == "ALTER TABLE t ALTER COLUMN old1 DROP NOT NULL"), string.Join(" | ", pgStmts));
 }
 {
+    // 发现74/75：改表带回自增 / 默认值 / 注释，不再静默丢
+    var my = (Func<string, string>)(s => "`" + s + "`");
+    var t = new TableDesign
+    {
+        TableName = "t",
+        Columns =
+        {
+            new TableColumnDesign { Name = "id", SqlType = "BIGINT", IsPrimaryKey = true, AutoIncrement = true, Nullable = false },
+            new TableColumnDesign { Name = "memo", SqlType = "VARCHAR(50)", DefaultValue = "abc", Comment = "备注" },
+            new TableColumnDesign { Name = "seq", SqlType = "INT", DefaultValue = "nextval('t_seq'::regclass)" },
+        },
+    };
+    var (stmts, skipped) = TableDdl.BuildAlter(t, new[] { "id", "memo", "seq" }, DbEngine.MySQL, my);
+    Check("发现74 MySQL MODIFY 带回自增", stmts.Any(s => s == "ALTER TABLE `t` MODIFY COLUMN `id` BIGINT AUTO_INCREMENT"), string.Join(" | ", stmts));
+    Check("发现74 MODIFY 不重复声明主键", stmts.All(s => !s.Contains("MODIFY") || !s.Contains("PRIMARY KEY")), string.Join(" | ", stmts));
+    Check("发现75 MySQL MODIFY 带回默认值", stmts.Any(s => s.Contains("MODIFY COLUMN `memo`") && s.Contains("DEFAULT 'abc'")), string.Join(" | ", stmts));
+    Check("发现75 MySQL MODIFY 带回注释", stmts.Any(s => s.Contains("MODIFY COLUMN `memo`") && s.Contains("COMMENT '备注'")), string.Join(" | ", stmts));
+    Check("发现75 表达式默认值原样带回", stmts.Any(s => s.Contains("MODIFY COLUMN `seq`") && s.Contains("DEFAULT nextval('t_seq'::regclass)")), string.Join(" | ", stmts));
+
+    var (pgStmts, _) = TableDdl.BuildAlter(t, new[] { "id", "memo", "seq" }, DbEngine.PostgreSQL, s => s);
+    Check("发现75 PG 改列带回默认值", pgStmts.Any(s => s == "ALTER TABLE t ALTER COLUMN memo SET DEFAULT 'abc'"), string.Join(" | ", pgStmts));
+    Check("发现75 PG 序列默认值原样", pgStmts.Any(s => s == "ALTER TABLE t ALTER COLUMN seq SET DEFAULT nextval('t_seq'::regclass)"), string.Join(" | ", pgStmts));
+
+    var (ssStmts, ssSkip) = TableDdl.BuildAlter(t, new[] { "id", "memo", "seq" }, DbEngine.SqlServer, s => s);
+    Check("发现74 SqlServer 自增列明示跳过", ssSkip.Any(s => s.Contains("id") && s.Contains("IDENTITY")), string.Join("|", ssSkip));
+    Check("发现74 SqlServer 不改自增列", ssStmts.All(s => !s.Contains("ALTER COLUMN id")), string.Join(" | ", ssStmts));
+    Check("发现75 SqlServer 单独 ADD DEFAULT", ssStmts.Any(s => s == "ALTER TABLE t ADD DEFAULT 'abc' FOR memo"), string.Join(" | ", ssStmts));
+
+    var (oraStmts, _) = TableDdl.BuildAlter(t, new[] { "memo" }, DbEngine.Oracle, s => s);
+    Check("发现75 Oracle MODIFY 带回默认值", oraStmts.Any(s => s == "ALTER TABLE t MODIFY (memo VARCHAR(50) DEFAULT 'abc')"), string.Join(" | ", oraStmts));
+}
+{
     Check("默认值 NULL 原样", TableDdl.FormatDefault("null") == "NULL");
     Check("默认值数字原样", TableDdl.FormatDefault("42") == "42" && TableDdl.FormatDefault("1.5") == "1.5");
     Check("默认值文本加引号", TableDdl.FormatDefault("O'Brien") == "'O''Brien'");

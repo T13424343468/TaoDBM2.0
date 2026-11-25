@@ -39,8 +39,11 @@ public class MySqlProvider : RelationalProvider
 
     protected override string ListChildrenSql(string db) => "SHOW TABLES";
 
+    // 发现74/75：第 5 列自增标记、第 6 列默认值原样、第 7 列注释（改表带回，不再静默丢）
     protected override string ListColumnsSql(string db, string table) =>
-        "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS" +
+        "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY," +
+        " CASE WHEN EXTRA LIKE '%auto_increment%' THEN '1' ELSE '0' END, COLUMN_DEFAULT, COLUMN_COMMENT" +
+        " FROM information_schema.COLUMNS" +
         $" WHERE TABLE_SCHEMA = {Lit(db)} AND TABLE_NAME = {Lit(table)} ORDER BY ORDINAL_POSITION";
 
     protected override string PagingClause(int offset, int limit) => $"LIMIT {limit} OFFSET {offset}";
@@ -92,7 +95,9 @@ public class PostgreSqlProvider : RelationalProvider
         var dot = table.IndexOf('.');
         string schema = dot > 0 ? table[..dot] : "public";
         string name = dot > 0 ? table[(dot + 1)..] : table;
-        return "SELECT c.column_name, c.data_type, c.is_nullable, CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN 'PRI' ELSE '' END" +
+        // 发现74/75：第 5 列自增标记（serial 序列默认 nextval 即视为自增）、第 6 列默认值原样带回
+        return "SELECT c.column_name, c.data_type, c.is_nullable, CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN 'PRI' ELSE '' END," +
+            " CASE WHEN c.column_default LIKE 'nextval(%' THEN '1' ELSE '0' END, c.column_default" +
             " FROM information_schema.columns c" +
             " LEFT JOIN information_schema.key_column_usage k ON k.table_schema = c.table_schema AND k.table_name = c.table_name AND k.column_name = c.column_name" +
             " LEFT JOIN information_schema.table_constraints tc ON tc.constraint_name = k.constraint_name AND tc.constraint_type = 'PRIMARY KEY'" +
@@ -147,12 +152,15 @@ public class SqlServerProvider : RelationalProvider
     protected override string ListChildrenSql(string db) =>
         "SELECT s.name + '.' + t.name FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id ORDER BY 1";
 
+    // 发现74/75：第 5 列自增标记（is_identity）、第 6 列默认值定义（default_constraints.definition，形如 ((0))）
     protected override string ListColumnsSql(string db, string table) =>
         "SELECT c.name, t.name + CASE WHEN t.name IN ('nvarchar','varchar','nchar','char') THEN '(' + CAST(c.max_length AS varchar) + ')' ELSE '' END," +
-        " c.is_nullable, CASE WHEN ic.column_id IS NOT NULL THEN 'PRI' ELSE '' END" +
+        " c.is_nullable, CASE WHEN ic.column_id IS NOT NULL THEN 'PRI' ELSE '' END," +
+        " CASE WHEN c.is_identity = 1 THEN '1' ELSE '0' END, dc.definition" +
         " FROM sys.columns c JOIN sys.types t ON t.user_type_id = c.user_type_id" +
         " LEFT JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id" +
         " LEFT JOIN sys.indexes ix ON ix.object_id = ic.object_id AND ix.index_id = ic.index_id AND ix.is_primary_key = 1" +
+        " LEFT JOIN sys.default_constraints dc ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id" +
         $" WHERE c.object_id = OBJECT_ID(N'{table.Replace("'", "''")}') ORDER BY c.column_id";
 
     protected override string PagingClause(int offset, int limit) =>
@@ -195,12 +203,16 @@ public class SqliteProvider : RelationalProvider
         await c.OpenAsync();
         foreach (var r in await ReadAsync(c, ListColumnsSql(null!, table)))
         {
+            // PRAGMA table_info：cid/name/type/notnull/dflt_value/pk；发现74：INTEGER 主键即 rowid 别名按自增口径回填
+            var type = (Convert.ToString(r.GetValue(2)) ?? "").Trim().ToUpperInvariant();
             list.Add(new ColumnSpec
             {
                 Name = Convert.ToString(r.GetValue(1)) ?? "",
                 DataType = Convert.ToString(r.GetValue(2)) ?? "",
                 Nullable = Convert.ToInt64(r.GetValue(3)) == 0,
                 IsKey = Convert.ToInt64(r.GetValue(5)) > 0,
+                IsAutoIncrement = Convert.ToInt64(r.GetValue(5)) > 0 && type == "INTEGER",
+                DefaultValue = Convert.ToString(r.GetValue(4)) ?? "",
             });
         }
         return list;
@@ -249,9 +261,10 @@ public class OracleProvider : RelationalProvider
     protected override string ListChildrenSql(string db) =>
         "SELECT table_name FROM user_tables ORDER BY table_name";
 
+    // 发现74/75：第 5 列自增标记（identity_column 仅 12c+，11g 兼容口径恒 '0'）、第 6 列默认值原样（DATA_DEFAULT，LONG 读回为字符串）
     protected override string ListColumnsSql(string db, string table) =>
         "SELECT column_name, data_type || CASE WHEN data_type IN ('VARCHAR2','NVARCHAR2','CHAR') THEN '(' || data_length || ')' ELSE '' END," +
-        " CASE WHEN nullable = 'Y' THEN 'YES' ELSE 'NO' END, ''" +
+        " CASE WHEN nullable = 'Y' THEN 'YES' ELSE 'NO' END, '', '0', DATA_DEFAULT" +
         " FROM user_tab_columns WHERE table_name = UPPER('" + table.Replace("'", "''") + "') ORDER BY column_id";
 
     protected override string PagingClause(int offset, int limit) =>

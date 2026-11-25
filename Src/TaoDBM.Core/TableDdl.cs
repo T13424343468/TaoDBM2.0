@@ -165,7 +165,7 @@ public static class TableDdl
                 : $"ALTER TABLE {table} ADD {def}");
         }
 
-        // 修改已有列（自增属性一律不可改，跳过）
+        // 修改已有列（发现74：自增属性按读回原样带回，不再静默丢；发现75：默认值/注释带回）
         if (modifyExisting)
         foreach (var c in t.Columns.Where(c => c.Name.Length > 0 && existing.Contains(c.Name)))
         {
@@ -174,14 +174,22 @@ public static class TableDdl
                 skipped.Add("SQLite: 不支持修改列类型/属性，仅支持加列（SQLite 官方限制）。");
                 continue;
             }
+            // 发现74：SQL Server 不支持 ALTER COLUMN 修改 IDENTITY 列，明示跳过防静默失败
+            if (engine == DbEngine.SqlServer && c.AutoIncrement)
+            {
+                skipped.Add($"SQL Server: 自增列（IDENTITY）不支持修改（{c.Name}），已跳过。");
+                continue;
+            }
             string type = TypeOr(c, engine);
             string nullable = !c.Nullable ? " NOT NULL" : "";
             stmts.Add(engine switch
             {
-                DbEngine.MySQL => $"ALTER TABLE {table} MODIFY COLUMN {ColumnDef(c, engine, quote, tableLevelPk: false, withIdentity: false)}",
+                // 发现74：withIdentity 带回自增；withPk=false 不重复声明主键（MODIFY 再声明 PRIMARY KEY 报 1068）；rawDefault 库内表达式原样带回
+                DbEngine.MySQL => $"ALTER TABLE {table} MODIFY COLUMN {ColumnDef(c, engine, quote, tableLevelPk: false, withIdentity: true, withPk: false, rawDefault: true)}",
                 DbEngine.SqlServer => $"ALTER TABLE {table} ALTER COLUMN {quote(c.Name)} {type}{nullable}",
-                DbEngine.Oracle => $"ALTER TABLE {table} MODIFY ({quote(c.Name)} {type}{nullable})",
-                _ => "", // PostgreSQL 在下方单独拼（可能拆两条）
+                // 发现75：Oracle MODIFY 子句内联带回默认值（库内读回的原样表达式直接用）
+                DbEngine.Oracle => $"ALTER TABLE {table} MODIFY ({quote(c.Name)} {type}{nullable}{DefaultTail(c.DefaultValue)})",
+                _ => "", // PostgreSQL 在下方单独拼（可能拆多条）
             });
             if (engine == DbEngine.PostgreSQL)
             {
@@ -189,7 +197,13 @@ public static class TableDdl
                 stmts.Add(c.Nullable
                     ? $"ALTER TABLE {table} ALTER COLUMN {quote(c.Name)} DROP NOT NULL"
                     : $"ALTER TABLE {table} ALTER COLUMN {quote(c.Name)} SET NOT NULL");
+                // 发现75：PG 改列不落 DEFAULT 子句会静默丢默认值（含 serial 的 nextval 序列），原样带回
+                if (c.DefaultValue.Trim().Length > 0)
+                    stmts.Add($"ALTER TABLE {table} ALTER COLUMN {quote(c.Name)} SET DEFAULT {DefaultForModify(c.DefaultValue)}");
             }
+            // 发现75：SQL Server ALTER COLUMN 不支持 DEFAULT，需单独 ADD DEFAULT（列已有默认时新约束后建先生效，值一致无副作用）
+            if (engine == DbEngine.SqlServer && c.DefaultValue.Trim().Length > 0)
+                stmts.Add($"ALTER TABLE {table} ADD DEFAULT {DefaultForModify(c.DefaultValue)} FOR {quote(c.Name)}");
         }
 
         // 删除列
@@ -230,8 +244,9 @@ public static class TableDdl
     private static string TypeOr(TableColumnDesign c, DbEngine e) =>
         string.IsNullOrWhiteSpace(c.SqlType) ? DefaultType(e) : c.SqlType.Trim();
 
-    /// <summary>单列定义片段。withIdentity=false 时忽略自增（改表场景）。</summary>
-    private static string ColumnDef(TableColumnDesign c, DbEngine e, Func<string, string> quote, bool tableLevelPk, bool withIdentity = true)
+    /// <summary>单列定义片段。withIdentity=false 时忽略自增（改表场景）；withPk=false 不内联 PRIMARY KEY（MODIFY 再声明主键会报错）；
+    /// rawDefault=true 时默认值按改表口径原样带回（发现75）。</summary>
+    private static string ColumnDef(TableColumnDesign c, DbEngine e, Func<string, string> quote, bool tableLevelPk, bool withIdentity = true, bool withPk = true, bool rawDefault = false)
     {
         string name = quote(c.Name);
         string type = TypeOr(c, e);
@@ -255,18 +270,32 @@ public static class TableDdl
                 case DbEngine.Oracle: parts.Add("GENERATED ALWAYS AS IDENTITY"); break;
             }
             // 自增列隐式非空；单列主键仍需内联 PRIMARY KEY
-            if (c.IsPrimaryKey && !tableLevelPk) parts.Add("PRIMARY KEY");
+            if (c.IsPrimaryKey && !tableLevelPk && withPk) parts.Add("PRIMARY KEY");
         }
         else
         {
-            if (c.IsPrimaryKey && !tableLevelPk) parts.Add("PRIMARY KEY");
+            if (c.IsPrimaryKey && !tableLevelPk && withPk) parts.Add("PRIMARY KEY");
             else if (!c.Nullable) parts.Add("NOT NULL");
         }
-        if (c.DefaultValue.Trim().Length > 0) parts.Add("DEFAULT " + FormatDefault(c.DefaultValue.Trim()));
+        if (c.DefaultValue.Trim().Length > 0) parts.Add("DEFAULT " + (rawDefault ? DefaultForModify(c.DefaultValue) : FormatDefault(c.DefaultValue.Trim())));
         // 列注释内联（仅 MySQL）：MODIFY COLUMN 显式带回原注释，改表不丢属性
         if (e == DbEngine.MySQL && c.Comment.Trim().Length > 0) parts.Add($"COMMENT '{Esc(c.Comment.Trim())}'");
         return string.Join(" ", parts);
     }
+
+    /// <summary>改表场景默认值片段（发现75）：库内读回的原样表达式（带引号/括号/类型转换）直接带回，
+    /// 用户手填的裸值沿用 FormatDefault 口径加引号。</summary>
+    private static string DefaultForModify(string v)
+    {
+        var t = v.Trim();
+        if (t.StartsWith("'") && t.EndsWith("'") && t.Length >= 2) return t;
+        if (t.Contains('(') || t.Contains("::")) return t;
+        return FormatDefault(t);
+    }
+
+    /// <summary>Oracle MODIFY 子句内的默认值尾段（发现75）：空返回空串，否则 " DEFAULT 表达式"。</summary>
+    private static string DefaultTail(string v) =>
+        v.Trim().Length == 0 ? "" : " DEFAULT " + DefaultForModify(v);
 
     /// <summary>建表语句包装为语句列表（统一执行入口用）。</summary>
     public static List<string> AsStatements(string sql) => new() { sql.TrimEnd(';') };

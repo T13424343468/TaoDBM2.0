@@ -223,6 +223,22 @@ function Find-El([System.Windows.Automation.AutomationElement]$scope, $find) {
       }
     } catch { }
   }
+  # 发现78：nameAny 此前未实现，find 静默退化成「任意第一个 Button」（S66a 点到无关按钮，未保存确认框永不出现）——多候选名依次精确→包含
+  if ($find.nameAny) {
+    foreach ($n in $find.nameAny) {
+      $c = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, [string]$n)
+      $el = $scope.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $c)
+      if ($null -ne $el) { return $el }
+    }
+    try {
+      $allEls = $scope.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+      foreach ($n in $find.nameAny) {
+        foreach ($e in $allEls) {
+          if ($e.Current.Name -like ("*" + $n + "*")) { return $e }
+        }
+      }
+    } catch { }
+  }
   return $null
 }
 function Find-ElWait($find, [int]$seconds, $scope) {
