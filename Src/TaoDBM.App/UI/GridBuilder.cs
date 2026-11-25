@@ -215,19 +215,17 @@ public static class GridBuilder
         bool dragging = false;
         double startX = 0, startW = 0, moved = 0;
 
-        // C② affordance：悬停高亮＋加宽＋↔光标（ProtectedCursor），与主分栏条同一套规范
+        // C② affordance：悬停高亮＋加宽（WinUI 3 Border 为 sealed 且无公开光标 API，↔光标撤除，与主分栏条同一套规范）
         splitter.PointerEntered += (_, _) =>
         {
             splitter.Width = 8;
             splitter.Background = Ant.Primary;
-            splitter.ProtectedCursor = Microsoft.UI.Input.InputCursor.Create(Windows.UI.Core.CoreCursorType.SizeWestEast);
         };
         splitter.PointerExited += (_, _) =>
         {
             if (dragging) return;
             splitter.Width = 6;
             splitter.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-            splitter.ProtectedCursor = null;
         };
 
         void ApplyWidth(double w)
@@ -265,7 +263,6 @@ public static class GridBuilder
             splitter.ReleasePointerCapture(e.Pointer);
             splitter.Width = 6;
             splitter.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
-            splitter.ProtectedCursor = null;
             if (moved >= 4)
             {
                 if (colWidths != null) colWidths[wkey(i)] = widths[i];

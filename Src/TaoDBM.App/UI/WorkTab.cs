@@ -253,11 +253,11 @@ public partial class WorkTab : Grid
         if (mode == WorkMode.Query)
         {
             Children.Add(_editor); SetRow(_editor, 1); _editor.Height = 170;
-            // B⑤：编辑器与结果区之间可拖分栏——悬停高亮＋↕光标，拖完即用（会话随页签）
+            // B⑤：编辑器与结果区之间可拖分栏——悬停高亮（↕光标因 WinUI 3 无公开光标 API 撤除，同 GridBuilder 口径），拖完即用（会话随页签）
             var vsplit = new Border
             {
                 Height = 6,
-                Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
             };
@@ -266,9 +266,8 @@ public partial class WorkTab : Grid
             vsplit.PointerEntered += (_, _) =>
             {
                 vsplit.Background = Ant.Primary;
-                vsplit.ProtectedCursor = Microsoft.UI.Input.InputCursor.Create(Windows.UI.Core.CoreCursorType.SizeNorthSouth);
             };
-            vsplit.PointerExited += (_, _) => { if (!vDrag) vsplit.Background = new SolidColorBrush(Windows.UI.Colors.Transparent); };
+            vsplit.PointerExited += (_, _) => { if (!vDrag) vsplit.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); };
             vsplit.PointerPressed += (_, e) => { vDrag = true; vStartY = e.GetCurrentPoint(vsplit).Position.Y; vStartH = _editor.Height; vsplit.CapturePointer(e.Pointer); e.Handled = true; };
             vsplit.PointerMoved += (_, e) =>
             {
@@ -282,8 +281,7 @@ public partial class WorkTab : Grid
                 if (!vDrag) return;
                 vDrag = false;
                 vsplit.ReleasePointerCapture(e.Pointer);
-                vsplit.Background = new SolidColorBrush(Windows.UI.Colors.Transparent);
-                vsplit.ProtectedCursor = null;
+                vsplit.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 e.Handled = true;
             };
             Children.Add(vsplit);
