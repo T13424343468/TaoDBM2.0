@@ -1018,7 +1018,16 @@ foreach ($s in $plan.steps) {
         if ($null -eq $ed) { throw "work-editor not found" }
         # #313：脏编辑器上 SetValue 稳定产生回读不一致（#312 定谳的 SetValue 竞态在非空内容下复现，a/b 段跨库同型）——置文前有内容先开新查询页签（#245/query 同口径）
         $cur = Read-EditorTextSafe $ed $mainRoot
-        if ($null -ne $cur -and $cur.Trim().Length -gt 0) {
+        if ($s.sameTab) {
+          # 发现72：sameTab 步（S63e 横幅收起链路）必须留在原页签——横幅在原页签上，新开页签成功执行后「[错误横幅] 收起」永不落账；清空后同空编辑器口径 SetValue（S63a 已验证可靠）
+          Push-Evidence "$id same-tab clear"
+          try { $ed.SetFocus() } catch { }
+          Start-Sleep -Milliseconds 300
+          [System.Windows.Forms.SendKeys]::SendWait("^a")
+          Start-Sleep -Milliseconds 150
+          [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+          Start-Sleep -Milliseconds 300
+        } elseif ($null -ne $cur -and $cur.Trim().Length -gt 0) {
           Push-Evidence "$id editor-dirty, fresh tab"
           $fresh = Open-FreshQueryTab $mainRoot
           if ($null -ne $fresh) { $ed = $fresh }
@@ -1033,8 +1042,9 @@ foreach ($s in $plan.steps) {
           $got = Read-EditorTextSafe $ed $mainRoot
           if ($null -ne $got -and $got.Trim() -eq $want.Trim()) { $done = $true; break }
           Log "$id editor-set retry $attempt (readback mismatch got=$got)"
-          # 读不回＝脚本不可验证，交账本裁决；读到错＝编辑器脏，开新页签剪贴板整段粘贴再试（query 同口径）
-          $fresh = Open-FreshQueryTab $mainRoot
+          # 读不回＝脚本不可验证，交账本裁决；读到错＝编辑器脏，开新页签剪贴板整段粘贴再试（query 同口径）；sameTab 步不开新页签，原位重试
+          $fresh = $null
+          if (-not $s.sameTab) { $fresh = Open-FreshQueryTab $mainRoot }
           if ($null -ne $fresh) { $ed = $fresh }
           try {
             Set-Clipboard -Value $want

@@ -1,5 +1,5 @@
 {
-  "version": "v3.17-tree-glyph-anchor",
+  "version": "v3.18-clipstack-copy-sametab-banner",
   "steps": [
     {
       "id": "S00A",
@@ -653,6 +653,8 @@
       "action": "press-esc",
       "critical": true
     },
+    {"id": "S60e", "feature": "批次一-全选编辑器", "action": "press-keys", "keys": "^a", "critical": true},
+    {"id": "S60f", "feature": "批次一-复制入堆栈", "action": "press-keys", "keys": "^c", "critical": true},
     {
       "id": "S61",
       "feature": "批次一-右键剪贴板堆栈",
@@ -741,6 +743,7 @@
       "id": "S63e",
       "feature": "P1-01 错误横幅-改成功语句",
       "action": "editor-set",
+      "sameTab": true,
       "sql": "SELECT 1 AS p1ok;",
       "critical": true
     },

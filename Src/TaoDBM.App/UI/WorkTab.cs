@@ -377,6 +377,9 @@ public partial class WorkTab : Grid
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_stopBtn, "work-stop");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_csvBtn, "work-csv");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_messageBox, "work-message");
+        // 发现72：TextBox 的 UIA Name 默认只暴露 PlaceholderText（「消息」），消息正文读屏与走查断言都拿不到——文本变化同步到 Name
+        _messageBox.TextChanged += (_, _) => Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            _messageBox, _messageBox.Text.Length > 0 ? _messageBox.Text : "消息");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_pageInfo, "work-pageinfo");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_resultsHost, "work-results");
 
@@ -756,7 +759,13 @@ public partial class WorkTab : Grid
         _resultsHost.Content = panel;
         if (errResult is not null)
         {
-            ShowError("执行失败：" + errResult.Message["错误：".Length..]);
+            // 发现73：㊴统一文案层消息是「执行没成功：…」整句，旧码按「错误：」前缀硬剥 3 字符把「执行没」剥掉，横幅成了「执行失败：成功：…」；两种前缀都识别、只剥不改字
+            var detail = errResult.Message.StartsWith("错误：", StringComparison.Ordinal)
+                ? errResult.Message["错误：".Length..]
+                : errResult.Message.StartsWith("执行没成功：", StringComparison.Ordinal)
+                    ? errResult.Message["执行".Length..]
+                    : errResult.Message;
+            ShowError("执行失败：" + detail);
             return;
         }
         ClearError();
