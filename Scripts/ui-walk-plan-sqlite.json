@@ -789,6 +789,14 @@
       "critical": true
     },
     {
+      "id": "S63z",
+      "feature": "P1-01 引导降模态-选中连接节点",
+      "action": "select",
+      "prefix": "__CONN_NAME__",
+      "critical": true,
+      "note": "云345 簇B：树上残留 Database 选中态时「查看数据」走 OpenQueryTab 而非引导提示——先显式选中连接节点，保证 S64a 走 InfoAsync"
+    },
+    {
       "id": "S64a",
       "feature": "P1-01 引导降模态-触发引导",
       "action": "menu",

@@ -52,6 +52,7 @@ Add-Type -TypeDefinition $mouseSrc
 
 function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string]$mode) {
   $r = $el.Current.BoundingRectangle
+  $tabRect = $null
   if ($r.IsEmpty) {
     # 发现79：TabView 关闭钮仅悬停页签时渲染，UIA 树里有节点但 BoundingRectangle 为空（云343 S66a/S66e 十段同因定谇）——先悬停页签祖先中心让关闭钮现形，再重读矩形
     try {
@@ -62,6 +63,7 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
         if ($anc.Current.ControlType.ProgrammaticName -eq 'ControlType.TabItem') {
           $tr = $anc.Current.BoundingRectangle
           if (-not $tr.IsEmpty) {
+            $tabRect = $tr
             [MouseNative]::Move([int]($tr.X + $tr.Width / 2), [int]($tr.Y + $tr.Height / 2))
             Start-Sleep -Milliseconds 800
             $r = $el.Current.BoundingRectangle
@@ -73,7 +75,16 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
       }
     } catch { }
   }
-  if ($r.IsEmpty) { throw "mouse target has empty rect" }
+  if ($r.IsEmpty) {
+    # 云345 追修：悬停后 UIA 仍回读空矩形（截图实锤关闭钮可见而 UIA 不刷新）——按页签矩形右缘几何点击兜底（TabView 关闭钮贴页签右缘，中心约在右缘内 14px）
+    if ($null -ne $tabRect -and -not $tabRect.IsEmpty) {
+      $x = [int]($tabRect.Right - 14)
+      $y = [int]($tabRect.Y + $tabRect.Height / 2)
+      [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
+      return
+    }
+    throw "mouse target has empty rect"
+  }
   $x = [int]($r.X + $r.Width / 2)
   $y = [int]($r.Y + $r.Height / 2)
   [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
@@ -622,17 +633,80 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Start-Sleep -Seconds 2; Save-Shot (Tpl $s.shot) }
       }
       'setcombo' {
+        # 云345 追修（mssql c2b 实锤：setcombo 显示 pass 而引擎仍 MySQL）——选择后回读选中项校验，不一致重试，3 次仍不一致才红
         $sc = New-DlgScope
         $el = Find-ElWait $s.find 8 $sc
         if ($null -eq $el) { throw "combo not found" }
-        if (-not (Select-ComboItem $el (Tpl $s.value))) { throw "combo item select failed" }
-        Start-Sleep -Milliseconds 1500
+        $want = (Tpl $s.value)
+        $ok = $false
+        $everRead = $false
+        foreach ($attempt in 1..3) {
+          if (-not (Select-ComboItem $el $want)) { Log "$id setcombo attempt $attempt select failed"; Start-Sleep -Milliseconds 800; continue }
+          Start-Sleep -Milliseconds 1200
+          $got = $null
+          try { $sel = ($el.GetCurrentPattern([System.Windows.Automation.SelectionPattern]::Pattern)).Current.GetSelection(); if ($sel.Length -gt 0) { $got = $sel[0].Current.Name } } catch { }
+          if ($null -eq $got) { try { $got = ($el.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { } }
+          if ($null -eq $got) { continue }
+          $everRead = $true
+          if ($got -eq $want) { $ok = $true; break }
+          Log "$id setcombo retry $attempt (readback got=$got want=$want)"
+        }
+        # 读得回但不一致＝真红；全程读不回＝脚本不可校验，留账接受不硬红
+        if (-not $ok -and $everRead) { throw "combo set verify failed after retries (want=$want)" }
+        if (-not $everRead) { Log "$id setcombo unreadable, accepted without verify" }
+        Start-Sleep -Milliseconds 800
       }
       'setvalue' {
+        # 云345 追修（mysql c2b 实锤：SetValue 竞态静默丢值，连接落库成空用户）——置文后回读校验，不一致换剪贴板粘贴法重试；读不回（密码框类）双法各置一次留账不硬红
         $sc = New-DlgScope
         $el = Find-ElWait $s.find 8 $sc
         if ($null -eq $el) { throw "field not found" }
-        if (-not (Set-TextValue $el (Tpl $s.value))) { throw "set value failed" }
+        $want = (Tpl $s.value)
+        $readable = $true
+        foreach ($attempt in 1..3) {
+          if (-not (Set-TextValue $el $want)) { Log "$id setvalue attempt $attempt Set-TextValue failed" }
+          Start-Sleep -Milliseconds 600
+          $got = $null
+          try { $got = ($el.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
+          if ($null -eq $got) {
+            # 首轮读不回＝字段不可回读（密码框类）：换剪贴板法再置一次，留账后接受（无法校验≠置失败）
+            if ($readable) {
+              $readable = $false
+              Log "$id setvalue field unreadable, clipboard-paste fallback once"
+              try {
+                Set-Clipboard -Value $want
+                $el.SetFocus()
+                Start-Sleep -Milliseconds 300
+                [System.Windows.Forms.SendKeys]::SendWait("^a")
+                Start-Sleep -Milliseconds 150
+                [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+                Start-Sleep -Milliseconds 150
+                [System.Windows.Forms.SendKeys]::SendWait("^v")
+                Start-Sleep -Milliseconds 600
+              } catch { }
+            }
+            break
+          }
+          if ($got -eq $want) { break }
+          Log "$id setvalue retry $attempt (readback got=$got want=$want)"
+          try {
+            Set-Clipboard -Value $want
+            $el.SetFocus()
+            Start-Sleep -Milliseconds 300
+            [System.Windows.Forms.SendKeys]::SendWait("^a")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+            Start-Sleep -Milliseconds 150
+            [System.Windows.Forms.SendKeys]::SendWait("^v")
+            Start-Sleep -Milliseconds 600
+          } catch { }
+        }
+        # 可回读字段终审：3 轮后仍不一致＝真红；读不回（密码框类）不硬红
+        if ($readable) {
+          $fin = $null
+          try { $fin = ($el.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).Current.Value } catch { }
+          if ($null -ne $fin -and $fin -ne $want) { throw "set value verify failed (got=$fin want=$want)" }
+        }
       }
       'tree-contains' {
         # 保存→RebuildRoots 异步重建，单次读树会竞速（#76 S06 误报嫌疑）：轮询 10 秒等节点出现
@@ -1085,14 +1159,24 @@ foreach ($s in $plan.steps) {
           $fresh = $null
           if (-not $s.sameTab) { $fresh = Open-FreshQueryTab $mainRoot }
           if ($null -ne $fresh) { $ed = $fresh }
+          # 云345 追修（mssql c2b 实锤：重试尾 ^a 未选中时 DEL 逐轮吃掉首字符，叠成 ELECT...）——先 ValuePattern 清空并回读确空，再整段粘贴
+          try { ($ed.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)).SetValue('') } catch { }
+          Start-Sleep -Milliseconds 400
+          $curClr = Read-EditorTextSafe $ed $mainRoot
+          if ($null -ne $curClr -and $curClr.Trim().Length -gt 0) {
+            try {
+              $ed.SetFocus()
+              Start-Sleep -Milliseconds 300
+              [System.Windows.Forms.SendKeys]::SendWait("^a")
+              Start-Sleep -Milliseconds 150
+              [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
+              Start-Sleep -Milliseconds 300
+            } catch { }
+          }
           try {
             Set-Clipboard -Value $want
             $ed.SetFocus()
             Start-Sleep -Milliseconds 300
-            [System.Windows.Forms.SendKeys]::SendWait("^a")
-            Start-Sleep -Milliseconds 150
-            [System.Windows.Forms.SendKeys]::SendWait("{DEL}")
-            Start-Sleep -Milliseconds 150
             [System.Windows.Forms.SendKeys]::SendWait("^v")
           } catch { }
           Start-Sleep -Milliseconds 600
@@ -1307,6 +1391,30 @@ foreach ($s in $plan.steps) {
         [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
         Start-Sleep -Seconds 1
         Close-ExtraWindows $handle
+        # 云345 追修（mysql c2b 实锤：另存 SQL 文件对话框 Esc 后仍开着，模态挡住后续确认框）——
+        # 扫应用进程的 Win32 对话框窗（#32770），仍在则直发 WM_CLOSE 再扫，3 轮后仍开才红
+        $appPid = $script:proc.Id
+        foreach ($round in 1..3) {
+          $dlgHwnd = [IntPtr]::Zero
+          try {
+            $hScan = [IntPtr]::Zero
+            do {
+              $hScan = [WinNative]::FindWindowExW([IntPtr]::Zero, $hScan, $null, $null)
+              if ($hScan -ne [IntPtr]::Zero -and [WinNative]::IsWindowVisible($hScan)) {
+                $cls2 = New-Object System.Text.StringBuilder 256
+                [void][WinNative]::GetClassNameW($hScan, $cls2, 256)
+                $wpid2 = [uint32]0
+                [void][WinNative]::GetWindowThreadProcessId($hScan, [ref]$wpid2)
+                if ($cls2.ToString() -eq '#32770' -and $wpid2 -eq $appPid) { $dlgHwnd = $hScan; break }
+              }
+            } while ($hScan -ne [IntPtr]::Zero)
+          } catch { }
+          if ($dlgHwnd -eq [IntPtr]::Zero) { break }
+          Log "$id press-esc: app dialog still open (round $round), send WM_CLOSE"
+          Push-Evidence "$id esc-dialog-still-open"
+          try { $res2 = [IntPtr]::Zero; [void][WinNative]::SendMessageTimeoutW($dlgHwnd, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero, 0x0002, 1000, [ref]$res2) } catch { }
+          Start-Sleep -Milliseconds 900
+        }
       }
       default { throw "unknown action: $action" }
     }
