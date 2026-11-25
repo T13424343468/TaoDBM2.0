@@ -67,4 +67,11 @@ public partial class MainWindow
     {
         if (Core.FocusModeState.Load()) ApplyFocus(true);
     }
+
+    /// <summary>发现59：页签标题统一出口——专注态只更新暂存标题不上屏，避免与脏标记互相覆盖。</summary>
+    internal void SetTabHeader(TabViewItem tab, string header)
+    {
+        if (_focusOn) _focusSavedHeaders[tab] = header;
+        else tab.Header = header;
+    }
 }

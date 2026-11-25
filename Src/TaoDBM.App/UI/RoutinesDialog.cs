@@ -330,7 +330,7 @@ public static class RoutinesDialog
                     sel.KindEnum == RoutineKind.Trigger && info.Profile.Engine == DbEngine.MySQL ? db : null,
                     sel.KindEnum == RoutineKind.Trigger ? sel.Table : null);
                 var qr = await prov.ExecuteSingle(db, sql);
-                status.Text = q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："))
+                status.Text = qr.Message.StartsWith("错误", StringComparison.Ordinal) || qr.Message.Contains("没成功：")
                     ? "删除失败：" + qr.Message
                     : $"已删除 {sel.Name}。";
                 await ReloadAsync();

@@ -136,44 +136,65 @@ public static class Exporter
         return "X'" + hex.ToUpperInvariant() + "'";
     }
 
+    // 发现50：流式导出重入保护——页序列可能共享连接/游标状态，同一时刻只允许一个流式导出
+    private static int _streamBusy;
+
+    private static void EnterStream()
+    {
+        if (System.Threading.Interlocked.CompareExchange(ref _streamBusy, 1, 0) != 0)
+            throw new InvalidOperationException("已有导出在进行中，请等它完成后再开始新的导出。");
+    }
+
+    private static void ExitStream() => System.Threading.Interlocked.Exchange(ref _streamBusy, 0);
+
     /// <summary>
     /// A1 流式导出（CSV）：逐页写 TextWriter，不整包攒串，大结果集内存恒定。
     /// 页序列来自 StreamingQuery / QueryRouter 的分页枚举；返回写出行数。
     /// </summary>
     public static long CsvStream(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, TextWriter w, CancellationToken ct = default)
     {
-        w.Write('\uFEFF'); // UTF-8 BOM，Excel 直接打开不乱码（与整包版一致）
-        w.WriteLine(string.Join(",", columns.Select(EscapeCsv)));
-        long written = 0;
-        foreach (var page in pages)
+        EnterStream();
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            foreach (var row in page.Rows)
+            w.Write('\uFEFF'); // UTF-8 BOM，Excel 直接打开不乱码（与整包版一致）
+            w.WriteLine(string.Join(",", columns.Select(EscapeCsv)));
+            long written = 0;
+            foreach (var page in pages)
             {
-                var cells = new string[row.Length];
-                for (int i = 0; i < row.Length; i++) cells[i] = EscapeCsv(Format(row[i]));
-                w.WriteLine(string.Join(",", cells));
-                written++;
+                ct.ThrowIfCancellationRequested();
+                foreach (var row in page.Rows)
+                {
+                    var cells = new string[row.Length];
+                    for (int i = 0; i < row.Length; i++) cells[i] = EscapeCsv(Format(row[i]));
+                    w.WriteLine(string.Join(",", cells));
+                    written++;
+                }
             }
+            return written;
         }
-        return written;
+        finally { ExitStream(); }
     }
 
     /// <summary>A1 流式导出（INSERT）：逐页写 TextWriter，不整包攒串；返回写出行数。</summary>
     public static long InsertSqlStream(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, string table, TextWriter w, CancellationToken ct = default)
     {
-        long written = 0;
-        foreach (var page in pages)
+        EnterStream();
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            foreach (var row in page.Rows)
+            long written = 0;
+            foreach (var page in pages)
             {
-                var vals = new string[row.Length];
-                for (int i = 0; i < row.Length; i++) vals[i] = SqlValue(row[i]);
-                w.WriteLine($"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", vals)});");
-                written++;
+                ct.ThrowIfCancellationRequested();
+                foreach (var row in page.Rows)
+                {
+                    var vals = new string[row.Length];
+                    for (int i = 0; i < row.Length; i++) vals[i] = SqlValue(row[i]);
+                    w.WriteLine($"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", vals)});");
+                    written++;
+                }
             }
+            return written;
         }
-        return written;
+        finally { ExitStream(); }
     }
 }

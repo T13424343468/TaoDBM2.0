@@ -581,8 +581,11 @@ public partial class WorkTab : Grid
     private void ShowBrowsePage(QueryResult r, Action<int>? onRowTap = null, bool editable = false, string unit = "行", string suffix = "", int? hits = null)
     {
         ShowResult(r, editable: editable, onRowTap: onRowTap);
+        // 发现52：零行不再显示「第 1-0 行」倒挂
         _pageInfo.Text = r.TotalRows is long t
-            ? $"共 {t:N0} {unit} · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} {unit}{suffix}"
+            ? (r.Rows.Count == 0
+                ? $"共 {t:N0} {unit}{suffix}"
+                : $"共 {t:N0} {unit} · 第 {_offset + 1}-{Math.Min(_offset + r.Rows.Count, int.MaxValue)} {unit}{suffix}")
             : $"{r.Rows.Count} {unit}";
         if (hits is int h && h > r.Rows.Count) _pageInfo.Text += $" · 筛选命中 {h:N0}";
         _prevBtn.IsEnabled = _offset > 0;
@@ -603,6 +606,7 @@ public partial class WorkTab : Grid
     {
         if (_busy) return;
         _busy = true;
+        long prevOffset = _offset;   // 发现51：浏览翻页失败时回滚 offset，避免页码漂移
         _runBtn.IsEnabled = false;
         _runCts = new CancellationTokenSource();
         _stopBtn.IsEnabled = true;
@@ -670,12 +674,14 @@ public partial class WorkTab : Grid
         }
         catch (OperationCanceledException)
         {
+            if (_mode == WorkMode.TableData) { _offset = prevOffset; UpdateButtons(); }   // 发现51：翻页被停止也回滚
             _messageBox.Text = "已取消：执行被手动停止。";
             _owner.SetStatus("执行已停止");
             AppLog.Write("[执行账] cancelled=1");
         }
         catch (Exception ex)
         {
+            if (_mode == WorkMode.TableData) { _offset = prevOffset; UpdateButtons(); }   // 发现51：翻页失败回滚 offset
             ShowError(HumanError.Say(ex, "执行失败"));
             _owner.SetStatus("执行出错");
             AppLog.Write("[执行账] error=" + ex.Message.Replace('\r', ' ').Replace('\n', ' '));
@@ -1272,6 +1278,7 @@ public partial class WorkTab : Grid
         try
         {
             var list = await _provider.Execute(_db, sql);
+            QueryHistory.Add(_provider.EngineName, _db, sql);   // 发现63：行编辑写盘也入查询历史，与手敲执行同口径
             var qr = list.LastOrDefault();
             _messageBox.Text = qr is { Message.Length: > 0 } ? qr.Message : okMsg;
             _owner.SetStatus(okMsg);
@@ -1291,6 +1298,12 @@ public partial class WorkTab : Grid
 
     // ---------- CSV / JSON 导入 ----------
 
+    /// <summary>发现61：错误行中止专用异常——与用户手动取消区分，收尾时报「已导入 N 行后中止」而非「已取消」。</summary>
+    private sealed class ImportAbortException : Exception
+    {
+        public ImportAbortException(string message) : base(message) { }
+    }
+
     private async Task ImportCsv()
     {
         if (!_isRelational) { _messageBox.Text = "该引擎不支持数据导入。"; return; }
@@ -1306,10 +1319,13 @@ public partial class WorkTab : Grid
             var path = dlg.FileName;
             var file = new System.IO.FileInfo(path);
 
-            var text = await System.IO.File.ReadAllTextAsync(path);
+            // 发现54/55：CSV/TXT 不再整文件读入内存——按探测编码（BOM/UTF-8/GBK 自适应）开流式读取器；全文进内存仅 JSON 解析需要
             bool isJson = file.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+            string? text = isJson ? await System.IO.File.ReadAllTextAsync(path) : null;
             // 批次四格1（2026-11-23）：xlsx 导入分流——ExcelReader 读首表（首行表头 + 公式读缓存值），复用 CSV 映射与执行链
             bool isXlsx = file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase);
+            // 发现54：编码探测——BOM→UTF-8(BOM)；首段 GBK 严格试解含非 ASCII→GBK；否则 UTF-8（每次调用开新读取器）
+            System.IO.TextReader OpenText() => new System.IO.StreamReader(path, Core.SqlFileIo.DetectEncoding(path));
             List<string> headers = new();
             List<string?[]> rows = new();
             ImportPreviewDialog.ImportPlan? plan = null;
@@ -1322,7 +1338,7 @@ public partial class WorkTab : Grid
             }
             else if (isJson)
             {
-                (headers, rows) = JsonImporter.Parse(text);
+                (headers, rows) = JsonImporter.Parse(text ?? "");
                 if (headers.Count == 0 || rows.Count == 0) { _messageBox.Text = "JSON 内容为空，或不是「对象数组 / 每行一个对象」的格式，未能读出数据。"; return; }
             }
             if (_cols.Count == 0) _cols = await _provider.GetColumns(_db, _child);
@@ -1336,21 +1352,16 @@ public partial class WorkTab : Grid
             else if (!isJson)
             {
                 // 格3：先出预览与映射（前 50 行），确认后才执行导入
-                List<string> previewHeaders;
+                List<string> previewHeaders = new();
                 List<string?[]> previewRows = new();
-                var first = ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 50 }).FirstOrDefault();
-                previewHeaders = first?.Headers?.ToList() ?? new List<string>();
-                if (first is not null)
+                // 发现55：预览也走流式——单次枚举取前 50 行，不整文件进内存
+                using (var previewReader = OpenText())
                 {
-                    previewRows.AddRange(first.Rows);
-                    // 预览不足 50 行时再取一批补齐展示
-                    if (previewRows.Count < 50)
+                    foreach (var b in ImportStreaming.CsvBatches(previewReader, new ImportOptions { BatchSize = 50 }))
                     {
-                        foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 50 }))
-                        {
-                            previewRows.AddRange(b.Rows);
-                            if (previewRows.Count >= 50) break;
-                        }
+                        if (previewHeaders.Count == 0 && b.Headers is { Count: > 0 }) previewHeaders.AddRange(b.Headers);
+                        previewRows.AddRange(b.Rows);
+                        if (previewRows.Count >= 50) break;
                     }
                 }
                 if (previewHeaders.Count == 0 || previewRows.Count == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
@@ -1385,6 +1396,13 @@ public partial class WorkTab : Grid
 
             int total = 0, ok = 0; bool truncated = false;
             var errs = new System.Text.StringBuilder();
+            int errCount = 0;
+            // 发现62：错误明细封顶 20 条，超出只报条数，不再无限拼进消息
+            void AddErr(string msg)
+            {
+                errCount++;
+                if (errCount <= 20) errs.AppendLine(msg);
+            }
             try
             {
                 if (isJson || isXlsx)
@@ -1405,10 +1423,10 @@ public partial class WorkTab : Grid
                         var list = await _provider.Execute(_db, s);
                         foreach (var qr in list)
                         {
-                            if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
+                            if (qr.Message.StartsWith("错误", StringComparison.Ordinal) || qr.Message.Contains("没成功："))
                             {
-                                errs.AppendLine(qr.Message);
-                                if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
+                                AddErr(qr.Message);
+                                if (plan is not null && !plan.SkipErrors) throw new ImportAbortException("错误行中止");
                             }
                             else ok++;
                         }
@@ -1418,7 +1436,9 @@ public partial class WorkTab : Grid
                 else
                 {
                     // CSV 走流式批次：逐批生成并执行 INSERT，内存中仅保留单批；列映射按预览计划重排
-                    foreach (var b in ImportStreaming.CsvBatches(new StringReader(text), new ImportOptions { BatchSize = 100 }))
+                    // 发现55：执行段同样流式——按探测编码开读取器，不再依赖整文件文本
+                    using var execReader = OpenText();
+                    foreach (var b in ImportStreaming.CsvBatches(execReader, new ImportOptions { BatchSize = 100 }))
                     {
                         ct.ThrowIfCancellationRequested();
                         if (b.Headers == null || b.Rows.Count == 0) continue;
@@ -1442,10 +1462,10 @@ public partial class WorkTab : Grid
                             var list = await _provider.Execute(_db, s);
                             foreach (var qr in list)
                             {
-                                if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
+                                if (qr.Message.StartsWith("错误", StringComparison.Ordinal) || qr.Message.Contains("没成功："))
                                 {
-                                    errs.AppendLine(qr.Message);
-                                    if (plan is not null && !plan.SkipErrors) throw new OperationCanceledException("错误行中止");
+                                    AddErr(qr.Message);
+                                    if (plan is not null && !plan.SkipErrors) throw new ImportAbortException("错误行中止");
                                 }
                                 else ok++;
                             }
@@ -1457,16 +1477,23 @@ public partial class WorkTab : Grid
                     if (total == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
                 }
                 QueryHistory.Add(_provider.EngineName, _db, $"-- {(isXlsx ? "xlsx" : isJson ? "JSON" : "CSV")} 导入 {file.Name}（{total} 行）");
-                _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errs.Length > 0 ? "\n" + errs : "")}";
+                _messageBox.Text = $"导入完成：共 {total} 行，成功 {ok} 行{(truncated ? "（已达行数上限，超出部分被截断）" : "")}{(errCount > 0 ? $"\n错误 {errCount} 条{(errCount > 20 ? "（仅显示前 20 条）" : "")}：\n" + errs : "")}";
                 _owner.SetStatus($"{(isXlsx ? "xlsx" : isJson ? "JSON" : "CSV")} 导入 {file.Name}：{ok}/{total} 行");
                 AppLog.Write($"[导入] 完成 file={file.Name} total={total} ok={ok}");
                 _offset = 0;
                 await RunOrRefresh();
             }
+            catch (ImportAbortException)
+            {
+                // 发现61：错误行中止不再报成「已取消」
+                ShowError($"导入中止：出错行未导入，中止前已成功导入 {ok} 行。{(errCount > 0 ? "\n" + errs : "")}");
+                AppLog.Write($"[导入] 错误行中止 ok={ok}");
+            }
             catch (OperationCanceledException)
             {
-                ShowError("已取消");
-                AppLog.Write("[导入] 取消");
+                // 发现60：手动取消也报已导入行数
+                ShowError($"已取消：取消前已成功导入 {ok} 行。");
+                AppLog.Write($"[导入] 取消 ok={ok}");
             }
             finally
             {

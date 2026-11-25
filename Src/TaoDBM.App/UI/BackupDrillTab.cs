@@ -241,7 +241,7 @@ public class BackupDrillTab : Grid
                 try
                 {
                     var qr = await prov.ExecuteSingle(tempDb, BackupDrill.CountSql(engine, table));
-                    if (q(r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")))
+                    if (qr.Message.StartsWith("错误", StringComparison.Ordinal) || qr.Message.Contains("没成功："))
                         throw new InvalidOperationException(qr.Message);
                     actual[table] = qr.Rows.Count > 0 ? Convert.ToInt64(qr.Rows[0][0]) : -1;
                 }

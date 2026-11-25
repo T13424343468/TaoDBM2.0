@@ -62,9 +62,15 @@ public partial class MainWindow
             {
                 if (!e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
                 var items = await e.DataView.GetStorageItemsAsync();
+                bool loaded = false;
                 foreach (var it in items.OfType<Windows.Storage.IStorageFile>())
                     if (Path.GetExtension(it.Path).Equals(".sql", StringComparison.OrdinalIgnoreCase))
+                    {
                         await LoadSqlFileAsync(it.Path);
+                        loaded = true;
+                    }
+                // 发现58：非 .sql 拖入不再静默忽略，状态栏给出明确提示
+                if (!loaded) SetStatus("已忽略：只装载 .sql 文件（其他文件不会被执行）。");
             }
             catch (Exception ex) { Core.AppLog.Write($".sql 拖放: {ex.Message}"); }
         };

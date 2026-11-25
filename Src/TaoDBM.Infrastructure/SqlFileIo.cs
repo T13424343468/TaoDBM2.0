@@ -36,14 +36,18 @@ public static class SqlFileIo
         using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 3))
             n = fs.Read(head, 0, 3);
         if (n >= 3 && head[0] == 0xEF && head[1] == 0xBB && head[2] == 0xBF) return new UTF8Encoding(true);
-        // GBK 严格试解：首段能被 GBK 完整解出且含非 ASCII → 按 GBK；否则 UTF-8（含纯 ASCII）
+        // GBK 严格试解：首段（64KB）能被 GBK 完整解出且含非 ASCII → 按 GBK；否则 UTF-8（含纯 ASCII）。
+        // 发现57（2026-11-25）：不再 ReadAllBytes 全文件进内存，大文件只试解首段。
         try
         {
-            var bytes = File.ReadAllBytes(path);
-            if (bytes.Length == 0) return new UTF8Encoding(false);
+            var buf = new byte[1 << 16];
+            int read;
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16))
+                read = fs.Read(buf, 0, buf.Length);
+            if (read == 0) return new UTF8Encoding(false);
             var gbk = Encoding.GetEncoding("GBK", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-            gbk.GetString(bytes);
-            return bytes.Any(b => b > 0x7F) ? gbk : new UTF8Encoding(false);
+            gbk.GetString(buf, 0, read);
+            return buf.Take(read).Any(b => b > 0x7F) ? gbk : new UTF8Encoding(false);
         }
         catch { return new UTF8Encoding(false); }
     }

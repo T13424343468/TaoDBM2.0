@@ -1192,6 +1192,18 @@ public partial class MainWindow : Window
             return;
         }
         var prov = info.Provider!;
+        // 发现53：同表重复开页签改为复用已有页签（同连接＋同库＋同表＋浏览态），不再各开一份
+        foreach (var kv in _workTabs)
+        {
+            if (kv.Value.SessionMode == nameof(UI.WorkMode.TableData)
+                && kv.Value.SessionConnectionId == prov.Profile.Id
+                && kv.Value.SessionDb == info.Db
+                && kv.Value.SessionChild == info.Name)
+            {
+                WorkTabs.SelectedItem = kv.Key;
+                return;
+            }
+        }
         var tab = new TabViewItem
         {
             Header = $"{(prov.IsNoSql ? prov.BrowseLabel : "表")} · {info.Name}",
@@ -1292,7 +1304,8 @@ public partial class MainWindow : Window
                         header = $"查询 · {first}";
                     }
                 }
-                tab.Header = (wt.IsDirty ? "● " : "") + header;
+                // 发现59：标题统一走 SetTabHeader（专注态只更新暂存不上屏）
+                SetTabHeader(tab, (wt.IsDirty ? "● " : "") + header);
             }
             catch { /* 标题更新失败不影响业务 */ }
         }

@@ -95,7 +95,7 @@ public partial class WorkTab
     {
         var text = EditorText;
         if (string.IsNullOrWhiteSpace(text)) { _messageBox.Text = "没有可美化的 SQL。"; return; }
-        EditorText = SqlBeautifier.Beautify(text);
+        ReplaceMinimal(text, SqlBeautifier.Beautify(text));   // 发现56：定点编辑保撤销历史
         _messageBox.Text = "SQL 已美化：子句分行、括号缩进。";
         AppLog.Write("[编辑器] beautify");
     }
@@ -103,8 +103,9 @@ public partial class WorkTab
     private void ToggleComment()
     {
         var (start, len) = EditorSelection;
-        var (newText, selStart, selLength) = SqlCommentToggler.Toggle(EditorText, start, start + len);
-        EditorText = newText;
+        var before = EditorText;
+        var (newText, selStart, selLength) = SqlCommentToggler.Toggle(before, start, start + len);
+        ReplaceMinimal(before, newText);   // 发现56：定点编辑保撤销历史
         SelectRange(selStart, selLength);
         AppLog.Write("[编辑器] comment-toggle");
     }
@@ -238,7 +239,7 @@ public partial class WorkTab
         var before = EditorText;
         var (newText, selStart, selLength) = _folder.Fold(before, start, start + len);
         if (newText == before) { _messageBox.Text = "请选中至少两行再折叠。"; return; }
-        EditorText = newText;
+        ReplaceMinimal(before, newText);   // 发现56：定点编辑保撤销历史
         SelectRange(selStart, selLength);
         AppLog.Write("[编辑器] fold pending=" + _folder.PendingCount);
     }
@@ -248,8 +249,22 @@ public partial class WorkTab
         var before = EditorText;
         var (newText, selStart, selLength) = _folder.Unfold(before, EditorCaret);
         if (newText == before) { _messageBox.Text = "光标不在折叠标记上。"; return; }
-        EditorText = newText;
+        ReplaceMinimal(before, newText);   // 发现56：定点编辑保撤销历史
         SelectRange(selStart, Math.Min(selLength, 0));
         AppLog.Write("[编辑器] unfold pending=" + _folder.PendingCount);
+    }
+
+    /// <summary>发现56：最小差异定点替换——新旧文本仅一段连续区间不同时走 GetRange 定点编辑（保留撤销历史）；
+    /// 差异散布全篇（如美化重排）时退化为单段大范围替换，仍避免 SetText 整文清栈。</summary>
+    private void ReplaceMinimal(string before, string after)
+    {
+        if (before == after) return;
+        int maxP = Math.Min(before.Length, after.Length);
+        int p = 0;
+        while (p < maxP && before[p] == after[p]) p++;
+        int s = 0;
+        while (s < before.Length - p && s < after.Length - p
+               && before[before.Length - 1 - s] == after[after.Length - 1 - s]) s++;
+        ReplaceRange(p, before.Length - p - s, after.Substring(p, after.Length - p - s));
     }
 }
