@@ -21,13 +21,13 @@ jobs:
       - name: Download DBeaver CE installer
         shell: pwsh
         run: |
-          $url = "https://github.com/dbeaver/dbeaver/releases/latest/download/dbeaver-ce-26.2.5.2-windows-x86_64.exe"
-          $out = "$PWD\dbeaver-setup.exe"
+          $url = "https://github.com/dbeaver/dbeaver/releases/latest/download/dbeaver-ce-26.2.5.2-windows-x86_64.zip"
+          $out = "$PWD\dbeaver.zip"
           Write-Host "[DL] $url"
           Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
           $len = (Get-Item $out).Length
           Write-Host "[DL] size=$len"
-          if ($len -lt 50MB) { Write-Host "::error::installer too small"; exit 1 }
+          if ($len -lt 50MB) { Write-Host "::error::archive too small"; exit 1 }
 
       - name: Download ffmpeg (static build)
         shell: pwsh
@@ -39,13 +39,12 @@ jobs:
           Copy-Item $ff.FullName "$PWD\ffmpeg.exe"
           Write-Host "[FFMPEG] $((Get-Item "$PWD\ffmpeg.exe").Length) bytes"
 
-      - name: Silent install (NSIS)
+      - name: Extract portable build
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "$PWD\dbeaver-setup.exe" -ArgumentList '/S' -Wait -PassThru
-          Write-Host "[INSTALL] exit=$($p.ExitCode)"
-          $exe = Get-ChildItem "C:\Program Files\DBeaver","C:\Program Files\dbeaver" -Recurse -Filter "dbeaver.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $exe) { Write-Host "::error::dbeaver.exe not found"; Get-ChildItem "C:\Program Files" -Directory -ErrorAction SilentlyContinue | Out-Host; exit 1 }
+          Expand-Archive -Path "$PWD\dbeaver.zip" -DestinationPath "C:\DBeaver" -Force
+          $exe = Get-ChildItem "C:\DBeaver" -Recurse -Filter "dbeaver.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) { Write-Host "::error::dbeaver.exe not found"; Get-ChildItem "C:\DBeaver" -ErrorAction SilentlyContinue | Select-Object -First 30 | Out-Host; exit 1 }
           Write-Host "[FOUND] $($exe.FullName)"
           "DBeaverExe=$($exe.FullName)" | Out-File -FilePath dbeaver-env.txt -Encoding utf8
 
