@@ -79,6 +79,7 @@ jobs:
           git fetch --depth 1 origin navicat-shots-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B navicat-shots-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan navicat-shots-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
           if (Test-Path ..\nav-walk.mp4) { Copy-Item ..\nav-walk.mp4 -Force; git add nav-walk.mp4 }
+          if (Test-Path ..\walk-log.txt) { Copy-Item ..\walk-log.txt -Force; git add walk-log.txt }
           git commit --allow-empty -m "navicat walk video run ${{ github.run_id }}" | Out-Null
           git push origin navicat-shots-latest --force 2>&1 | Out-Host
           Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/navicat-shots-latest/nav-walk.mp4"
