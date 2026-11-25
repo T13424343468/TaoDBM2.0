@@ -1,0 +1,77 @@
+# NavicatWalk.yml — 竞品对照线（2026-11-25 老板令：真装竞品逐功能逐页面对照）
+# 云真机（windows runner）真下载真静默安装真启动 Navicat Premium Lite 简体中文版，逐页截图回传
+# 截图回传分支：navicat-shots-latest（与 ui-smoke 取证同款通道）
+name: navicat-walk
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/NavicatWalk.yml'
+      - 'Scripts/navicat-walk.ps1'
+
+jobs:
+  navicat:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Navicat Premium Lite (CN, x64)
+        shell: pwsh
+        run: |
+          $url = "https://download.navicat.com/download/navicat18_premium_lite_cs_x64.exe"
+          $out = "$PWD\navicat-setup.exe"
+          Write-Host "[DL] $url"
+          Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+          $len = (Get-Item $out).Length
+          Write-Host "[DL] size=$len"
+          if ($len -lt 100MB) { Write-Host "::error::installer too small"; exit 1 }
+
+      - name: Silent install (Inno Setup)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "$PWD\navicat-setup.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/DIR="C:\Navicat"' -Wait -PassThru
+          Write-Host "[INSTALL] exit=$($p.ExitCode)"
+          $exe = Get-ChildItem "C:\Navicat","C:\Program Files\PremiumSoft" -Recurse -Filter "navicat.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) { Write-Host "::error::navicat.exe not found after install"; Get-ChildItem "C:\Navicat","C:\Program Files\PremiumSoft" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 40 | Out-Host; exit 1 }
+          Write-Host "[FOUND] $($exe.FullName)"
+          "NavicatExe=$($exe.FullName)" | Out-File -FilePath navicat-env.txt -Encoding utf8
+
+      - name: Launch and walk (screenshots)
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $exe = ((Get-Content navicat-env.txt | Select-Object -First 1)) -replace '^NavicatExe=',''
+          pwsh -NoProfile -File Scripts/navicat-walk.ps1 -ExePath $exe
+          exit 0
+
+      - name: Push screenshots to public branch
+        if: always()
+        shell: pwsh
+        run: |
+          git config --global user.email "ci@taodbm.local"
+          git config --global user.name "TaoDBM CI"
+          New-Item -ItemType Directory -Force nav-repo | Out-Null
+          Set-Location nav-repo
+          git init | Out-Null
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch --depth 1 origin navicat-shots-latest 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B navicat-shots-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan navicat-shots-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
+          Copy-Item ..\nav-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\navicat-env.txt -Force -ErrorAction SilentlyContinue
+          git add -A 2>$null
+          git commit --allow-empty -m "navicat walk shots run ${{ github.run_id }}" | Out-Null
+          git push origin navicat-shots-latest --force 2>&1 | Out-Host
+          Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/navicat-shots-latest/"
+
+      - name: Upload screenshots (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navicat-shots
+          path: |
+            nav-*.png
+            navicat-env.txt
