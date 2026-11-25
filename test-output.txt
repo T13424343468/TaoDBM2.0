@@ -1,4 +1,3 @@
-MSBuild server unavailable: could not connect to the server within the timeout window; the server may have failed to start. Falling back to an in-process build.
 
 ========== 单元层 ==========
 == SqlSplitter ==
@@ -1464,7 +1463,7 @@ MSBuild server unavailable: could not connect to the server within the timeout w
 
 ========== 万链层 ==========
   ✓ 万链归账：10000 链 × 30 步零违规
-  （万链归账：10000 链 / 300000 步 / 断言 1212241 条 / 违规 0 / 耗时 1.3s）
+  （万链归账：10000 链 / 300000 步 / 断言 1212241 条 / 违规 0 / 耗时 1.7s）
 == AtomicWrite 原子落盘（三.6 断电模拟）==
   ✓ 原子写：目标完整且无残留tmp
   ✓ 原子覆盖：新版完整替换
