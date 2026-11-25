@@ -1,7 +1,7 @@
 # TaoDBM MSI latest
 
-run 370
-file: TaoDBM-2.0.0-x64-370.msi
-sha256: F8AE485A2565A0D0A4DE5F776A7AA07893D5FE01675C7AF3E7A8190CE6C30ABF
-release: https://github.com/T13424343468/TaoDBM2.0/releases/download/msi-run-370/TaoDBM-2.0.0-x64-370.msi
+run 371
+file: TaoDBM-2.0.0-x64-371.msi
+sha256: 5D151CBA3E757AA9D00924E4C69A87465379C4A7C6026C0447E626CB8CF5943E
+release: https://github.com/T13424343468/TaoDBM2.0/releases/download/msi-run-371/TaoDBM-2.0.0-x64-371.msi
 
