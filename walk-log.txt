@@ -1,3 +1,6 @@
+env-exists=True
+NavicatExe=C:\Navicat\navicat.exe
+exe=[C:\Navicat\navicat.exe]
 [WALK] console minimized
 [WALK] v7 start exe=
 [WALK] ERROR navicat process never appeared
