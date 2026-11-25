@@ -25,7 +25,7 @@
     <Property Id="STARTMENU_SHORTCUT" Value="1" />
     <Property Id="ADD_TO_PATH" Value="1" />
 
-    <!-- ㊳ .NET 运行时前置检测（2026-11-25 安装器新标准）：MSI 不内置运行时，安装序列前置双查——
+    <!-- 发现38 .NET 运行时前置检测（2026-11-25 安装器新标准）：MSI 不内置运行时，安装序列前置双查——
          ① 注册表查 .NET 主机安装记录（dotnet Setup sharedhost Version，64 位视图）；
          ② 捆绑/落盘查桌面运行时共享目录（ProgramFiles\dotnet\shared\Microsoft.WindowsDesktop.App）。
          两查皆空才判缺失（任一命中即视为已装，避免误拦 zip 解压等安装方式）。
@@ -41,9 +41,9 @@
                        Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" />
     </Property>
 
-    <!-- ㊳ 警示文案属性：双查皆空置文案（AppSearch 后调度，UI 与执行序列都挂） -->
+    <!-- 发现38 警示文案属性：双查皆空置文案（AppSearch 后调度，UI 与执行序列都挂）；文案仅用 CP936 码页内字符（WIX0311） -->
     <SetProperty Id="SetRuntimeWarnText" After="AppSearch" Sequence="both"
-                 Value="⚠ 未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。"
+                 Value="注意：未检测到 .NET 桌面运行时 10.0，请先按提示安装，否则装完无法启动。"
                  Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
 
     <UI Id="TaoDBMInstallUI">
@@ -96,7 +96,7 @@
       <Dialog Id="VerifyReadyDlg" Width="440" Height="130" Title="[ProductName] 安装程序">
         <Control Id="ReadyText" Type="Text" X="20" Y="30" Width="400" Height="24"
                  Text="准备安装 TaoDBM，点击“安装”开始。" />
-        <!-- ㊳ 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动）。
+        <!-- 发现38 运行时缺失警示行：双查皆空时显示（VerifyReadyDlg 非 MainDlg，允许改动）。
              WiX5 中 SetProperty 不能挂 Dialog/Control 下，挂 Package 顶层随序列调度：
              双查皆空置警示文案，否则属性空即不显示。 -->
         <Control Id="RuntimeWarn" Type="Text" X="20" Y="56" Width="400" Height="14"
@@ -106,7 +106,7 @@
         </Control>
         <Control Id="InstallBtn" Type="PushButton" X="350" Y="95" Width="70" Height="22"
                  Default="yes" Text="安装">
-          <!-- ㊳ 双查皆空先弹运行时提示，不进入执行序列；装好运行时重检后条件通过即放行（装完可继续） -->
+          <!-- 发现38 双查皆空先弹运行时提示，不进入执行序列；装好运行时重检后条件通过即放行（装完可继续） -->
           <Publish Event="SpawnDialog" Value="RuntimeCheckDlg" Order="1"
                    Condition="NOT NETDESKREG AND NOT NETDESKDIR" />
           <Publish Event="EndDialog" Value="Return" Order="2"
@@ -114,7 +114,7 @@
         </Control>
       </Dialog>
 
-      <!-- ㊳ 运行时缺失提示：明确说「需要安装 .NET 运行时」并引导联网装统一目录，含断网文案；重新检测重跑 AppSearch 后可继续 -->
+      <!-- 发现38 运行时缺失提示：明确说「需要安装 .NET 运行时」并引导联网装统一目录，含断网文案；重新检测重跑 AppSearch 后可继续 -->
       <Dialog Id="RuntimeCheckDlg" Width="440" Height="170" Title="[ProductName] 安装程序">
         <Control Id="RtTitle" Type="Text" X="20" Y="14" Width="400" Height="18"
                  Text="{\TitleFont}需要安装 .NET 运行时" />
