@@ -1,87 +1,96 @@
-﻿# dbeaver-walk.ps1 v8 — 竞品对照走查（DBeaver CE）：录屏＋键盘/鼠标双路选中单选项走完首启向导
+﻿# dbeaver-walk.ps1 v9 — 竞品对照走查（DBeaver CE）：录屏＋UI Automation 按控件名驱动首启向导
 param(
   [Parameter(Mandatory = $true)][string]$ExePath
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms
-
-$mouseSrc = @'
-using System;
-using System.Runtime.InteropServices;
-public class MouseNative8 {
-  [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
-  [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, IntPtr dwExtraInfo);
-  const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004;
-  public static void Click(int x, int y) { SetCursorPos(x, y); System.Threading.Thread.Sleep(150); mouse_event(LEFTDOWN, 0, 0, 0, IntPtr.Zero); mouse_event(LEFTUP, 0, 0, 0, IntPtr.Zero); }
-}
-'@
-Add-Type -TypeDefinition $mouseSrc
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
 
 function Focus-DBeaver {
   $p = Get-Process -Name "dbeaver" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   if ($p) {
     $sig = '[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);'
-    $t = Add-Type -MemberDefinition $sig -Name FG8 -Namespace W8 -PassThru
+    $t = Add-Type -MemberDefinition $sig -Name FG9 -Namespace W9 -PassThru
     $t::SetForegroundWindow($p.MainWindowHandle) | Out-Null
     Start-Sleep -Milliseconds 800
   }
   return $p
 }
 
-Write-Host "[WALK] v8 start exe=$ExePath"
+function Find-Wizard {
+  $root = [System.Windows.Automation.AutomationElement]::RootElement
+  $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Product Configuration")
+  return $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+}
+
+function Invoke-ButtonByName([string]$NamePattern) {
+  $w = Find-Wizard
+  if (-not $w) { Write-Host "[UIA] wizard not found"; return $false }
+  $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
+  $btns = $w.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+  foreach ($b in $btns) {
+    Write-Host "[UIA] button: $($b.Current.Name) enabled=$($b.Current.IsEnabled)"
+    if ($b.Current.Name -like $NamePattern -and $b.Current.IsEnabled) {
+      try { ($b.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke(); Write-Host "[UIA] invoked: $($b.Current.Name)"; return $true } catch { Write-Host "[UIA] invoke failed: $_" }
+    }
+  }
+  return $false
+}
+
+function Select-RadioByName([string]$NamePattern) {
+  $w = Find-Wizard
+  if (-not $w) { Write-Host "[UIA] wizard not found"; return $false }
+  $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::RadioButton)
+  $rads = $w.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+  foreach ($r in $rads) {
+    Write-Host "[UIA] radio: $($r.Current.Name) enabled=$($r.Current.IsEnabled)"
+    if ($r.Current.Name -like $NamePattern) {
+      try { ($r.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)).Select(); Write-Host "[UIA] selected: $($r.Current.Name)"; return $true } catch { Write-Host "[UIA] select failed: $_" }
+    }
+  }
+  return $false
+}
+
+Write-Host "[WALK] v9 start exe=$ExePath"
 Start-Sleep -Seconds 5
 
 # 1) 启动（闪屏＋首启向导全程入镜）
 Start-Process -FilePath $ExePath
 Start-Sleep -Seconds 55
 
-# 2) 第 1 页点 Next（645,476）进第 2 页
-Focus-DBeaver | Out-Null
-[MouseNative8]::Click(645, 476)
+# 2) 第 1 页：UIA 点 Next
+[void](Invoke-ButtonByName "Next*")
 Start-Sleep -Seconds 5
 
-# 3) 第 2 页 Data collection：键盘路——Tab 聚焦单选组，DOWN 选中「Do not share」
-Focus-DBeaver | Out-Null
-[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
-Start-Sleep -Seconds 1
-[System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
-Start-Sleep -Seconds 1
-
-# 4) 鼠标路兜底：点单选圆点（243,201）再点标签文字（370,201）
-[MouseNative8]::Click(243, 201)
-Start-Sleep -Seconds 1
-[MouseNative8]::Click(370, 201)
+# 3) 第 2 页 Data collection：UIA 选中「Do not share」单选项
+[void](Select-RadioByName "*Do not share*")
 Start-Sleep -Seconds 2
 
-# 5) 逐页点 Next＋回车兜底，共 4 轮（覆盖后续可能的多页）
+# 4) 逐页 UIA 点 Next，共 4 轮（覆盖后续可能的多页）
 for ($i = 1; $i -le 4; $i++) {
-  Focus-DBeaver | Out-Null
-  [MouseNative8]::Click(645, 476)
-  Start-Sleep -Seconds 1
-  [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+  if (-not (Invoke-ButtonByName "Next*")) { Write-Host "[UIA] Next round $i not invoked" }
   Start-Sleep -Seconds 4
 }
 
-# 6) 末页点 Apply（737,476）＋回车兜底，等 12 秒进主界面
-Focus-DBeaver | Out-Null
-[MouseNative8]::Click(737, 476)
-Start-Sleep -Seconds 1
-[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+# 5) 末页 UIA 点 Apply，等 12 秒进主界面
+[void](Invoke-ButtonByName "Apply")
 Start-Sleep -Seconds 12
 
-# 7) 主界面停留 10 秒（入镜）
+# 6) 主界面停留 10 秒（入镜）
 Start-Sleep -Seconds 10
 
-# 8) 新建连接向导 Ctrl+Shift+N，停 12 秒展示连接表单
+# 7) 新建连接向导 Ctrl+Shift+N，停 12 秒展示连接表单
+Focus-DBeaver | Out-Null
 Focus-DBeaver | Out-Null
 [System.Windows.Forms.SendKeys]::SendWait("^+n")
 Start-Sleep -Seconds 12
 
-# 9) 收场
+# 8) 收场
 [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
 Start-Sleep -Seconds 4
 
-Write-Host "[WALK] v8 done"
+Write-Host "[WALK] v9 done"
 Get-Process -Name "dbeaver" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
