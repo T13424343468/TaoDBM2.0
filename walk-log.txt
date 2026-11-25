@@ -2,5 +2,24 @@ env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
 [WALK] console minimized
-[WALK] v7 start exe=
-[WALK] ERROR navicat process never appeared
+[WALK] v9 start exe=C:\Navicat\navicat.exe
+[WALK] t+5s proc count=1 titles='navicat'
+[WALK] t+10s proc count=1 titles='navicat'
+[WALK] t+15s proc count=1 titles='navicat'
+[WALK] t+20s proc count=1 titles='navicat'
+[WALK] t+25s proc count=1 titles='navicat'
+[WALK] t+30s proc count=1 titles='navicat'
+[WALK] t+35s proc count=1 titles='navicat'
+[WALK] t+40s proc count=1 titles='navicat'
+[WALK] t+45s proc count=1 titles='navicat'
+[WALK] t+50s proc count=1 titles='navicat'
+[WALK] t+55s proc count=1 titles='navicat'
+[WALK] t+60s proc count=1 titles='navicat'
+[WALK] after trial click window='Navicat Premium'
+[WALK] wizard click 1 window='Navicat Premium'
+[WALK] wizard click 2 window='Navicat Premium'
+[WALK] wizard click 3 window='Navicat Premium'
+[WALK] wizard click 4 window='Navicat Premium'
+[WALK] after ctrl+n window='Navicat Premium'
+[WALK] v9 done
+video-size=5242916
