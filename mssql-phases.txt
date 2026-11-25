@@ -1,7 +1,7 @@
-2026-11-25T07:16:30.3575484Z phase=step-start pwsh=7.6.10
-2026-11-25T07:16:36.9686658Z phase=direct-download-ok size=261082544
-2026-11-25T07:16:39.0947246Z phase=unpack-started args=/q /x=C:\SQLMedia
-2026-11-25T07:16:39.1006754Z phase=unpack-exit=0
-2026-11-25T07:16:39.1097018Z phase=setup-found C:\SQLMedia\SETUP.EXE
-2026-11-25T07:19:05.5089020Z phase=setup-exit=0
-2026-11-25T07:19:24.7115244Z dynamic-port-detected=50151
+2026-11-25T07:16:34.6655579Z phase=step-start pwsh=7.6.10
+2026-11-25T07:16:37.9168921Z phase=direct-download-ok size=261082544
+2026-11-25T07:16:40.4506854Z phase=unpack-started args=/q /x=C:\SQLMedia
+2026-11-25T07:16:40.4558321Z phase=unpack-exit=0
+2026-11-25T07:16:40.4665749Z phase=setup-found C:\SQLMedia\SETUP.EXE
+2026-11-25T07:19:25.8426264Z phase=setup-exit=0
+2026-11-25T07:19:44.6898084Z dynamic-port-detected=65509
