@@ -606,7 +606,7 @@ public partial class WorkTab : Grid
     {
         if (_busy) return;
         _busy = true;
-        long prevOffset = _offset;   // 发现51：浏览翻页失败时回滚 offset，避免页码漂移
+        int prevOffset = _offset;   // 发现51：浏览翻页失败时回滚 offset，避免页码漂移
         _runBtn.IsEnabled = false;
         _runCts = new CancellationTokenSource();
         _stopBtn.IsEnabled = true;
