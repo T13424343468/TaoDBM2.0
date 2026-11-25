@@ -1,6 +1,6 @@
-# NavicatWalk.yml — 竞品对照线（2026-11-25 老板令：真装竞品逐功能逐页面对照）
-# 云真机（windows runner）真下载真静默安装真启动 Navicat Premium Lite 简体中文版，逐页截图回传
-# 截图回传分支：navicat-shots-latest（与 ui-smoke 取证同款通道）
+# NavicatWalk.yml — 竞品对照线 v2（2026-11-25 老板令：不要截屏，用录屏）
+# 云真机真下载真静默安装真启动 Navicat Premium Lite 简体中文版，ffmpeg 桌面全程录屏回传
+# 视频回传分支：navicat-shots-latest（与取证同款通道）
 name: navicat-walk
 
 on:
@@ -30,6 +30,16 @@ jobs:
           Write-Host "[DL] size=$len"
           if ($len -lt 100MB) { Write-Host "::error::installer too small"; exit 1 }
 
+      - name: Download ffmpeg (static build)
+        shell: pwsh
+        run: |
+          $zip = "$PWD\ffmpeg.zip"
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath "$PWD\ff" -Force
+          $ff = Get-ChildItem "$PWD\ff" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          Copy-Item $ff.FullName "$PWD\ffmpeg.exe"
+          Write-Host "[FFMPEG] $((Get-Item "$PWD\ffmpeg.exe").Length) bytes"
+
       - name: Silent install (Inno Setup)
         shell: pwsh
         run: |
@@ -40,15 +50,22 @@ jobs:
           Write-Host "[FOUND] $($exe.FullName)"
           "NavicatExe=$($exe.FullName)" | Out-File -FilePath navicat-env.txt -Encoding utf8
 
-      - name: Launch and walk (screenshots)
+      - name: Record screen while launching and walking
         shell: pwsh
         run: |
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $exe = ((Get-Content navicat-env.txt | Select-Object -First 1)) -replace '^NavicatExe=',''
+          # 录屏：整桌面 10fps，最长 9 分钟保险
+          $ff = Start-Process -FilePath "$PWD\ffmpeg.exe" -ArgumentList '-y','-f','gdigrab','-framerate','10','-i','desktop','-c:v','libx264','-preset','veryfast','-crf','28','-pix_fmt','yuv420p','-t','540','nav-walk.mp4' -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 3
           pwsh -NoProfile -File Scripts/navicat-walk.ps1 -ExePath $exe
+          Start-Sleep -Seconds 5
+          Stop-Process -Id $ff.Id -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 3
+          if (Test-Path nav-walk.mp4) { Write-Host "[VIDEO] $((Get-Item nav-walk.mp4).Length) bytes" } else { Write-Host "::error::video missing"; exit 1 }
           exit 0
 
-      - name: Push screenshots to public branch
+      - name: Push video to public branch
         if: always()
         shell: pwsh
         run: |
@@ -60,18 +77,14 @@ jobs:
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch --depth 1 origin navicat-shots-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B navicat-shots-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan navicat-shots-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
-          Copy-Item ..\nav-*.png -Force -ErrorAction SilentlyContinue
-          Copy-Item ..\navicat-env.txt -Force -ErrorAction SilentlyContinue
-          git add -A 2>$null
-          git commit --allow-empty -m "navicat walk shots run ${{ github.run_id }}" | Out-Null
+          if (Test-Path ..\nav-walk.mp4) { Copy-Item ..\nav-walk.mp4 -Force; git add nav-walk.mp4 }
+          git commit --allow-empty -m "navicat walk video run ${{ github.run_id }}" | Out-Null
           git push origin navicat-shots-latest --force 2>&1 | Out-Host
-          Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/navicat-shots-latest/"
+          Write-Host "[PUSHED] raw: https://raw.githubusercontent.com/${{ github.repository }}/navicat-shots-latest/nav-walk.mp4"
 
-      - name: Upload screenshots (always)
+      - name: Upload video (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: navicat-shots
-          path: |
-            nav-*.png
-            navicat-env.txt
+          name: navicat-video
+          path: nav-walk.mp4

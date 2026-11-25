@@ -1,76 +1,47 @@
-﻿﻿# navicat-walk.ps1 — 竞品对照走查：云真机真装真开真截图（Navicat Premium Lite 简体中文版）
-# 口径：不猜界面，每步截图留证；首跑以「装上、开起、主界面、新建连接」为硬目标，逐轮迭代加深
+﻿# navicat-walk.ps1 — 竞品对照走查 v2：录屏模式（2026-11-25 老板令：不要截屏，用录屏）
+# 口径：全程动作在 ffmpeg 桌面录屏下进行，视频即证据；动作间留停顿保证可看
 param(
   [Parameter(Mandatory = $true)][string]$ExePath
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-
-$mouseSrc = @'
-using System;
-using System.Runtime.InteropServices;
-public class MouseNative {
-  [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
-  [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, IntPtr dwExtraInfo);
-  const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010;
-  public static void Click(int x, int y) { SetCursorPos(x, y); System.Threading.Thread.Sleep(120); mouse_event(LEFTDOWN, 0, 0, 0, IntPtr.Zero); mouse_event(LEFTUP, 0, 0, 0, IntPtr.Zero); }
-  public static void DblClick(int x, int y) { Click(x, y); System.Threading.Thread.Sleep(80); mouse_event(LEFTDOWN, 0, 0, 0, IntPtr.Zero); mouse_event(LEFTUP, 0, 0, 0, IntPtr.Zero); }
-  public static void RightClick(int x, int y) { SetCursorPos(x, y); System.Threading.Thread.Sleep(120); mouse_event(RIGHTDOWN, 0, 0, 0, IntPtr.Zero); mouse_event(RIGHTUP, 0, 0, 0, IntPtr.Zero); }
-}
-'@
-Add-Type -TypeDefinition $mouseSrc
-
-function Save-Shot([string]$name) {
-  try {
-    $b = New-Object System.Drawing.Bitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)
-    $g = [System.Drawing.Graphics]::FromImage($b)
-    $g.CopyFromScreen(0, 0, 0, 0, $b.Size)
-    $b.Save("$name.png", [System.Drawing.Imaging.ImageFormat]::Png)
-    $g.Dispose(); $b.Dispose()
-    Write-Host "[SHOT] $name"
-  } catch { Write-Host "[SHOT-FAIL] $name : $_" }
-}
+Add-Type -AssemblyName System.Windows.Forms
 
 function Focus-Navicat {
   $p = Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   if ($p) {
     $sig = '[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);'
-    $t = Add-Type -MemberDefinition $sig -Name FG -Namespace W -PassThru
+    $t = Add-Type -MemberDefinition $sig -Name FG2 -Namespace W2 -PassThru
     $t::SetForegroundWindow($p.MainWindowHandle) | Out-Null
-    Start-Sleep -Milliseconds 600
+    Start-Sleep -Milliseconds 800
   }
   return $p
 }
 
-Write-Host "[WALK] start exe=$ExePath"
-# n00: 启动
+Write-Host "[WALK] video mode start exe=$ExePath"
+Start-Sleep -Seconds 5
+
+# 1) 启动 Navicat（首启全程入镜）
 Start-Process -FilePath $ExePath
-Start-Sleep -Seconds 40
-Save-Shot "nav-00-firstrun"
-# 首启弹窗兜底：回车（默认按钮多为同意/确定）再截
+Start-Sleep -Seconds 45
+
+# 2) 首启弹窗兜底：回车（默认按钮多为同意/确定），留 8 秒看清弹了什么
 Focus-Navicat | Out-Null
 [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
-Start-Sleep -Seconds 6
-Save-Shot "nav-01-after-enter"
-[System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-Start-Sleep -Seconds 3
-Save-Shot "nav-02-main"
+Start-Sleep -Seconds 8
 
-# n03: 新建连接（Ctrl+N）
+# 3) 关掉残余弹窗，亮出主界面
+[System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+Start-Sleep -Seconds 5
+
+# 4) 新建连接（Ctrl+N），停 12 秒展示整个连接表单
 Focus-Navicat | Out-Null
 [System.Windows.Forms.SendKeys]::SendWait("^n")
-Start-Sleep -Seconds 6
-Save-Shot "nav-03-newconn"
-[System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 12
 
-# n04: 主菜单兜底（Alt 键拉出菜单栏）
-Focus-Navicat | Out-Null
-[System.Windows.Forms.SendKeys]::SendWait("%")
-Start-Sleep -Seconds 2
-Save-Shot "nav-04-altmenu"
+# 5) 收场
 [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+Start-Sleep -Seconds 4
 
 Write-Host "[WALK] done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
