@@ -93,6 +93,13 @@ function Click-ElMouse([System.Windows.Automation.AutomationElement]$el, [string
       [MouseNative]::Click($x, $y, ($mode -eq 'right'), ($mode -eq 'double'))
       return
     }
+    # 云401 取证（mysql 三作业 S66a 关闭钮与页签矩形全空）：枚举全部页签名与矩形入账，定谝溢出未渲染 vs 页签不在树
+    try {
+      $tabsAll = $mainRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::TabItem)))
+      $tinfo = @()
+      foreach ($t in $tabsAll) { try { $tr2 = $t.Current.BoundingRectangle; $tinfo += ("{0}[{1}x{2}@{3},{4}]" -f $t.Current.Name, [int]$tr2.Width, [int]$tr2.Height, [int]$tr2.X, [int]$tr2.Y) } catch { } }
+      Push-Evidence ("empty-rect-tabs " + ($tinfo -join ' | '))
+    } catch { }
     throw "mouse target has empty rect"
   }
   $x = [int]($r.X + $r.Width / 2)
@@ -638,7 +645,22 @@ foreach ($s in $plan.steps) {
       'click' {
         $sc = New-DlgScope
         $el = Find-ElWait $s.find 8 $sc
-        if ($null -eq $el) { throw "target not found" }
+        if ($null -eq $el) {
+          # 云401 取证（mssql 四作业 S05 保存钮 8 秒不现）：枚举主窗全部按钮名入账，定谝「对话框没开 vs 按钮不在树 vs 名字变了」
+          try {
+            $btns = $mainRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)))
+            $bnames = @()
+            foreach ($b in $btns) { try { $bn = $b.Current.Name; if (-not [string]::IsNullOrWhiteSpace($bn)) { $bnames += $bn } } catch { } }
+            Push-Evidence ("click-fail-buttons " + (($bnames | Select-Object -First 40) -join ' | '))
+          } catch { }
+          try {
+            $wins = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+            $wnames = @()
+            foreach ($w in $wins) { try { $wnames += $w.Current.Name } catch { } }
+            Push-Evidence ("click-fail-windows " + (($wnames | Select-Object -First 10) -join ' | '))
+          } catch { }
+          throw "target not found"
+        }
         if (-not (Invoke-El $el)) { throw "invoke failed" }
         if ($s.shot) { Start-Sleep -Seconds 2; Save-Shot (Tpl $s.shot) }
       }
