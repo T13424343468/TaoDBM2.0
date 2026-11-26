@@ -25,21 +25,31 @@ public static class ExportProfiles
     {
         var list = LoadAll();
         list.RemoveAll(p => p.Name.Equals(profile.Name, StringComparison.OrdinalIgnoreCase));
-        list.Add(profile);
-        // 默认格式唯一：新配置设默认时取消其他默认
+        // 默认格式唯一：新配置设默认时取消其他默认（受影响的配置逐个重写落盘，一文件一配置不串写）
+        var changed = new List<ExportProfile> { profile };
         if (profile.IsDefault)
             for (int i = 0; i < list.Count; i++)
                 if (list[i].IsDefault && !list[i].Name.Equals(profile.Name, StringComparison.OrdinalIgnoreCase))
-                    list[i] = list[i] with { IsDefault = false };
-        var dto = list.Select(p => new
+                {
+                    var updated = list[i] with { IsDefault = false };
+                    list[i] = updated;
+                    changed.Add(updated);
+                }
+        foreach (var p in changed) WriteOne(p);
+        AppLog.Write($"[导出配置] 已保存 {profile.Name}（{profile.Format}{(profile.IsDefault ? "，设为默认" : "")}）");
+    }
+
+    /// <summary>发现151：单配置落盘（一文件一配置，避免整表串写导致跨文件重复）。</summary>
+    private static void WriteOne(ExportProfile p)
+    {
+        var dto = new[] { new
         {
             p.Name, p.Format, p.LastDir, p.BrowseScopeDefault, p.IsDefault,
             SavedAt = DateTimeOffset.Now,
-        });
-        System.IO.File.WriteAllText(PathOf(profile.Name),
+        } };
+        System.IO.File.WriteAllText(PathOf(p.Name),
             JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }),
             new System.Text.UTF8Encoding(false));
-        AppLog.Write($"[导出配置] 已保存 {profile.Name}（{profile.Format}{(profile.IsDefault ? "，设为默认" : "")}）");
     }
 
     public static List<ExportProfile> LoadAll()
@@ -48,7 +58,8 @@ public static class ExportProfiles
         {
             var dir = System.IO.Path.Combine(TaoPaths.Root, DirName);
             if (!System.IO.Directory.Exists(dir)) return new List<ExportProfile>();
-            var result = new List<ExportProfile>();
+            // 同名去重：按文件内 SavedAt 取最新（兼容旧版整表串写文件遗留的重复条目）
+            var byName = new Dictionary<string, (ExportProfile P, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
             foreach (var f in System.IO.Directory.GetFiles(dir, "*.json"))
             {
                 try
@@ -56,17 +67,23 @@ public static class ExportProfiles
                     var root = JsonDocument.Parse(System.IO.File.ReadAllText(f)).RootElement;
                     foreach (var p in root.EnumerateArray())
                     {
-                        result.Add(new ExportProfile(
+                        var profile = new ExportProfile(
                             p.GetProperty("Name").GetString() ?? "",
                             p.GetProperty("Format").GetString() ?? "csv",
                             p.TryGetProperty("LastDir", out var d) ? d.GetString() ?? "" : "",
                             p.TryGetProperty("BrowseScopeDefault", out var b) ? b.GetString() ?? "" : "",
-                            p.TryGetProperty("IsDefault", out var i) && i.GetBoolean()));
+                            p.TryGetProperty("IsDefault", out var i) && i.GetBoolean());
+                        if (profile.Name.Length == 0) continue;
+                        var at = p.TryGetProperty("SavedAt", out var s) && s.ValueKind == JsonValueKind.String
+                            && DateTimeOffset.TryParse(s.GetString(), out var t) ? t : DateTimeOffset.MinValue;
+                        if (!byName.TryGetValue(profile.Name, out var old) || at >= old.At)
+                            byName[profile.Name] = (profile, at);
                     }
                 }
                 catch { /* 单个坏文件跳过不拖垮整表 */ }
             }
-            return result.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            return byName.Values.Select(v => v.P)
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
         }
         catch { return new List<ExportProfile>(); }
     }
