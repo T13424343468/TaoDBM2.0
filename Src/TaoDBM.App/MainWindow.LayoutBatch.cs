@@ -30,7 +30,7 @@ public partial class MainWindow
                 Height = 3,
                 Width = 28,
                 CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
-                Background = Brushes.Transparent,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
             var label = new TextBlock
@@ -42,7 +42,7 @@ public partial class MainWindow
             };
             var btn = new Button
             {
-                Background = Brushes.Transparent,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(8, 4, 8, 0),
                 Content = new StackPanel { Children = { label, bar } },
@@ -98,7 +98,7 @@ public partial class MainWindow
     {
         var active = DomainNav.ActiveKey(_navLastMode, _navBackupOpen, _navTaskOpen, _navErdOpen);
         foreach (var (key, bar) in _navBars)
-            bar.Background = key == active ? Ant.OnPrimary : Brushes.Transparent;
+            bar.Background = key == active ? Ant.OnPrimary : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
     }
 
     // ---------- 发现133：对象联动操作栏 ----------
@@ -282,8 +282,8 @@ public partial class MainWindow
             FontSize = AntTokens.FontMinor,
             Foreground = ok ? Ant.Text : Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
-            Grid.Column = 1,
         };
+        v.SetValue(Grid.ColumnProperty, 1);   // WinUI 附加属性不能用对象初始化器语法
         g.Children.Add(v);
         return g;
     }
@@ -415,7 +415,7 @@ public partial class MainWindow
     /// <summary>收藏点击：在对象树里选中对应连接根节点（找不到则提示先刷新）。</summary>
     private void SelectConnectionInTree(string profileId)
     {
-        foreach (var root in ConnTree.Roots)
+        foreach (var root in ConnTree.RootNodes)
         {
             if (_nodeMap.TryGetValue(root, out var i) && i.Profile.Id == profileId)
             {

@@ -398,16 +398,6 @@ public partial class WorkTab : Grid
         };
         // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
         var exportMenu = new MenuFlyout();
-        // 发现151：格式名映射（配置键口径）——默认格式标注与目录记忆共用
-        static string FmtOf(ExportKind k) => k switch
-        {
-            ExportKind.Csv => "csv",
-            ExportKind.InsertSql => "insert",
-            ExportKind.Excel => "excel",
-            ExportKind.Xml => "xml",
-            ExportKind.Html => "html",
-            _ => "json",
-        };
         var defFmt = ExportProfiles.DefaultFormat();
         MenuFlyoutItem ExportItem(string text, string id, ExportKind kind)
         {
@@ -1068,7 +1058,7 @@ public partial class WorkTab : Grid
         var first = await _provider.Browse(_db, _child, 0, 1000);
         var rows = new List<object?[]>(first.Rows);
         long total = first.TotalRows ?? rows.Count;
-        long offset = first.Rows.Count;
+        int offset = first.Rows.Count;
         while (rows.Count < total)
         {
             var page = await _provider.Browse(_db, _child, offset, 1000);
@@ -1085,6 +1075,17 @@ public partial class WorkTab : Grid
             TotalRows = total,
         };
     }
+
+    /// <summary>发现151：格式名映射（配置键口径）——默认格式标注与目录记忆共用；提为类级方法供导出/流式两链路调用。</summary>
+    private static string FmtOf(ExportKind k) => k switch
+    {
+        ExportKind.Csv => "csv",
+        ExportKind.InsertSql => "insert",
+        ExportKind.Excel => "excel",
+        ExportKind.Xml => "xml",
+        ExportKind.Html => "html",
+        _ => "json",
+    };
 
     private async Task ExportOneAsync(ExportKind kind, QueryResult src0, string savePath)
     {

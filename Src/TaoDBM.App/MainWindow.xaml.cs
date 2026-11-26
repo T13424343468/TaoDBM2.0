@@ -752,7 +752,7 @@ public partial class MainWindow : Window
                 bool exists = System.IO.File.Exists(entry.File);
                 if (exists) Item("还原", async (_, _) => await RestoreBackupEntry(info, entry));
                 Item("打开所在文件夹", (_, _) => RevealInExplorer(entry.File), danger: false);
-                Item(exists ? "删除" : "删除记录", async (_, _) => await DeleteBackupEntry(node, info, entry, keepFile: false), danger: true);
+                Item(exists ? "删除" : "删除记录", async (_, _) => await DeleteBackupEntry(node, info, entry), danger: true);
                 break;
             }
         }
