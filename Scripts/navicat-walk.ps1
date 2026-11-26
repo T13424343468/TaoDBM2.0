@@ -118,8 +118,24 @@ for ($i = 0; $i -lt 45; $i++) {
 }
 if (-not $trialReady) { Log "WARN trial dialog not detected by pixel; click anyway" }
 Shot "shot-n01-trial.png"
-[MouseNative12]::Click(717, 515)
-Start-Sleep -Seconds 20
+# 点击-验证-重试闭环：点试用→8s 后验金边（512,120）是否消失→未消失再试，最多 5 轮，末轮回车兜底
+function Test-TrialGone {
+  try {
+    $c = Get-Pixel 512 120
+    return (-not ($c.R -gt 180 -and $c.G -gt 120 -and $c.B -lt 90))
+  } catch { return $false }
+}
+$dismissed = $false
+for ($try = 1; $try -le 5; $try++) {
+  Focus-Navicat | Out-Null
+  [MouseNative12]::Click(717, 515)
+  Log "trial click attempt $try"
+  Start-Sleep -Seconds 8
+  if (Test-TrialGone) { $dismissed = $true; Log "trial dismissed on attempt $try"; break }
+  if ($try -eq 4) { [System.Windows.Forms.SendKeys]::SendWait("{ENTER}"); Log "ENTER fallback sent" }
+}
+if (-not $dismissed) { Log "WARN trial dialog possibly still up; continue" }
+Start-Sleep -Seconds 12
 
 # 2) 向导 4 连击 + 关新功能弹窗（v10 定谳坐标）
 for ($i = 1; $i -le 4; $i++) { [MouseNative12]::Click(869, 669); Start-Sleep -Seconds 6 }
