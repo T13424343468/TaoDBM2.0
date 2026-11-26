@@ -1,5 +1,5 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v15：真库对照·类名状态机（v14 实锤：试用弹窗已被关掉——关断后枚举只见 TWhatsNew+TNavicatMainForm；
-# 窗口类名全部到手：TRegistrationSubForm=试用弹窗、TWhatsNew=改善向导、TNavicatMainForm=主窗体、TSplashForm=启动屏）
+﻿# navicat-walk.ps1 — 竞品对照走查 v16：真库对照·类名状态机完版（v15 实锤双通配 bug：传参带*函数再拼*致永远不匹配，关断循环被跳过；
+# v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
 #    等 TWhatsNew→不共享(746,667)→共享(887,667)→ESC 逐招关断；③ 关新功能弹窗(696,187)；
@@ -87,6 +87,7 @@ function Get-NavWindows {
 
 function Test-WindowClass {
   param([string]$ClassPattern)
+  $ClassPattern = $ClassPattern.TrimEnd('*')
   $wins = Get-NavWindows -ProcId $script:navPid
   foreach ($w in $wins) { if ($w -like "class='$ClassPattern'*") { return $true } }
   return $false
@@ -94,6 +95,7 @@ function Test-WindowClass {
 
 function Wait-WindowClass {
   param([string]$ClassPattern, [int]$TimeoutSec = 60)
+  $ClassPattern = $ClassPattern.TrimEnd('*')
   $deadline = (Get-Date).AddSeconds($TimeoutSec)
   while ((Get-Date) -lt $deadline) {
     $wins = Get-NavWindows -ProcId $script:navPid
@@ -105,6 +107,7 @@ function Wait-WindowClass {
 
 function Focus-WindowClass {
   param([string]$ClassPattern)
+  $ClassPattern = $ClassPattern.TrimEnd('*')
   $wins = Get-NavWindows -ProcId $script:navPid
   foreach ($w in $wins) {
     if ($w -like "class='$ClassPattern'*" -and $w -match 'hwnd=(-?\d+)') {
@@ -176,25 +179,33 @@ for ($m = 0; $m -lt 4 -and -not $trialGone; $m++) {
 if (-not $trialGone) { Log "WARN trial dialog still up after 4 methods" }
 Start-Sleep -Seconds 8
 
-# 3) 关改善向导（TWhatsNew）：不共享(746,667)→共享(887,667)→ESC，每招后类名验证
+# 3) 走完改善向导（TWhatsNew）：4×下一步(869,669)推进到末页→不共享(746,667)→共享(887,667)→ESC，每招后类名验证
 $wizSeen = Wait-WindowClass -ClassPattern 'TWhatsNew*' -TimeoutSec 30
 if ($wizSeen) {
   Log "wizard window: $wizSeen"
-  $wizGone = $false
+  for ($i = 1; $i -le 4; $i++) {
+    if (-not (Test-WindowClass -ClassPattern 'TWhatsNew*')) { break }
+    Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
+    [MouseNative15]::Click(869, 669)
+    Log "wizard next click $i"
+    Start-Sleep -Seconds 4
+  }
+  Shot "shot-n13-wizard-final.png"
+  $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
   $wNames = @('no-share', 'share', 'esc')
   for ($m = 0; $m -lt 3 -and -not $wizGone; $m++) {
     Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
     switch ($m) {
-      0 { [MouseNative15]::Click(746, 667); Log "wizard method $($m+1) no-share(746,667)" }
-      1 { [MouseNative15]::Click(887, 667); Log "wizard method $($m+1) share(887,667)" }
-      2 { [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Log "wizard method $($m+1) ESC" }
+      0 { [MouseNative15]::Click(746, 667); Log "wizard finish method $($m+1) no-share(746,667)" }
+      1 { [MouseNative15]::Click(887, 667); Log "wizard finish method $($m+1) share(887,667)" }
+      2 { [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Log "wizard finish method $($m+1) ESC" }
     }
     Start-Sleep -Seconds 6
     $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
-    Shot ("shot-n13-wizard-" + $wNames[$m] + ".png")
+    Shot ("shot-n14-wizard-" + $wNames[$m] + ".png")
     Log ("wizard dismissed=" + $wizGone + " by " + $wNames[$m])
   }
-  if (-not $wizGone) { Log "WARN wizard still up after 3 methods" }
+  if (-not $wizGone) { Log "WARN wizard still up after finish methods" }
 } else { Log "no wizard window; continue" }
 Start-Sleep -Seconds 5
 
