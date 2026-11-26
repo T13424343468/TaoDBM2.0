@@ -112,5 +112,9 @@ public static class ConnectionStore
         Port = p.Port, User = p.User, Password = p.Password, Database = p.Database,
         Parameters = p.Parameters, SavePassword = p.SavePassword, ColorTag = p.ColorTag,
         SshHost = p.SshHost, SshPort = p.SshPort, SshUser = p.SshUser, SshPassword = p.SshPassword,
+        // 发现131：白名单漏 8 字段——每次存盘经 Clone 静默清空（隧道/认证/哨兵/分组/标记）
+        TunnelUrl = p.TunnelUrl, AuthMode = p.AuthMode,
+        RedisMode = p.RedisMode, SentinelMaster = p.SentinelMaster, SentinelNodes = p.SentinelNodes,
+        Group = p.Group, Starred = p.Starred, Hidden = p.Hidden,
     };
 }

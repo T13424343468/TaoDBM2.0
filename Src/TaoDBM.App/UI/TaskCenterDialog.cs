@@ -208,7 +208,7 @@ public static class TaskCenterDialog
                     // 批次三格1：按 Kind 分派——query 走 Execute；backup/sync/dictionary 等引擎函数类任务
                     // 以任务 SQL 为参数说明落账（引擎函数执行器随批接入，先保证旧 query 条目口径不变）
                     var rs = await prov.Execute(e.Db.Length > 0 ? e.Db : db, e.Sql);
-                    bool bad = rs.Any(r => (r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功：")));
+                    bool bad = rs.Any(r => r.IsError || r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："));   // 发现113：接结构化 IsError，不再只靠文案子串
                     SqlScheduler.RecordResult(e.Id, bad ? "failed" : "done");
                     if (!bad) ok++;
                 }

@@ -71,6 +71,7 @@ public static class TeamShareMergeDialog
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
                 await System.IO.File.WriteAllTextAsync(path, TeamShareMerge.ToJson(_result.Merged));
                 status.Text = $"已保存：{path}";
+                AppLog.Write($"[团队合并] 合并结果落盘: 新增{_result.Added} 更新{_result.Updated} 墓碑{_result.Tombstones} -> {path}");   // 发现145：关键操作补落账
             }
             catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;

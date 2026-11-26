@@ -33,8 +33,8 @@ public static class AlertCenterDialog
             {
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
                 var toggle = new CheckBox { IsChecked = r.Enabled, MinWidth = 0 };
-                toggle.Checked += (_, _) => { r.Enabled = true; AlertEngine.SaveRules(RulesFile, rules); };
-                toggle.Unchecked += (_, _) => { r.Enabled = false; AlertEngine.SaveRules(RulesFile, rules); };
+                toggle.Checked += (_, _) => { r.Enabled = true; AlertEngine.SaveRules(RulesFile, rules); AppLog.Write($"[告警规则] 启用: {r.Name}"); };   // 发现145：规则变更补落账
+                toggle.Unchecked += (_, _) => { r.Enabled = false; AlertEngine.SaveRules(RulesFile, rules); AppLog.Write($"[告警规则] 停用: {r.Name}"); };
                 row.Children.Add(toggle);
                 row.Children.Add(new TextBlock
                 {
@@ -43,7 +43,7 @@ public static class AlertCenterDialog
                     FontSize = AntTokens.FontMinor,
                 });
                 var delBtn = new Button { Content = "删除", FontSize = AntTokens.FontCaption, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
-                delBtn.Click += (_, _) => { rules.Remove(r); AlertEngine.SaveRules(RulesFile, rules); RefreshRules(); };
+                delBtn.Click += (_, _) => { rules.Remove(r); AlertEngine.SaveRules(RulesFile, rules); AppLog.Write($"[告警规则] 删除: {r.Name}"); RefreshRules(); };   // 发现145
                 row.Children.Add(delBtn);
                 rulesPanel.Children.Add(row);
             }
@@ -77,6 +77,7 @@ public static class AlertCenterDialog
             if (t.Name is null) return;
             rules.Add(AlertEngine.FromTemplate(t));
             AlertEngine.SaveRules(RulesFile, rules);
+            AppLog.Write($"[告警规则] 新建: {t.Name}");   // 发现145：规则变更补落账
             templateBox.SelectedIndex = -1;
             RefreshRules();
             status.Text = $"已从模板新建规则「{t.Name}」。";

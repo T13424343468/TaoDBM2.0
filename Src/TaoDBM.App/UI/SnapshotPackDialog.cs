@@ -67,6 +67,7 @@ public static class SnapshotPackDialog
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
                 await System.IO.File.WriteAllTextAsync(path, json);
                 status.Text = $"已保存：{path}";
+                AppLog.Write($"[快照包] 打包落盘: {path}");   // 发现145：关键操作补落账
             }
             catch (Exception ex) { status.Text = HumanError.Say(ex, "保存失败"); }
             await Task.CompletedTask;

@@ -553,6 +553,7 @@ public partial class MainWindow : Window
         // 树先随内存重建再弹错：模态报错框会挂起其后代码（#78 定谳）
         RebuildRoots();
         SetStatus($"已删除连接 {info.Profile.DisplayName}");
+        AppLog.Write($"[删除连接] 成功: {info.Profile.DisplayName}");   // 发现130：成功路径补落账
         if (saveErr != null) await InfoAsync($"连接存盘失败：{saveErr}");
         // P4：危险操作执行完成 → 通知调度（规则判定不够格就静默）
         ToastCenter.Publish(new NotifyEvent(NotifyKind.RiskySqlDone, info.Profile.DisplayName,
@@ -797,6 +798,7 @@ public partial class MainWindow : Window
         node.Children.Add(new TreeViewNode { Content = "…" });
         node.IsExpanded = false;
         SetStatus($"已关闭连接 {info.Profile.DisplayName}（配置保留，展开即重新连接）");
+        AppLog.Write($"[关闭连接] 成功: {info.Profile.DisplayName}");   // 发现130：断开成功路径补落账
     }
 
     /// <summary>树右键打开拟真数据（多表模式）。</summary>

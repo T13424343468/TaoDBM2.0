@@ -48,8 +48,8 @@ public static class HumanError
         // 连接
         if (m.Contains("connect", StringComparison.OrdinalIgnoreCase) || m.Contains("host", StringComparison.OrdinalIgnoreCase) || m.Contains("网络") || m.Contains("Connection", StringComparison.OrdinalIgnoreCase))
             return ("连不上数据库（地址不通或服务没起）", "建议确认地址、端口与服务状态，再点「测试连接」");
-        // 语法
-        if (m.Contains("syntax", StringComparison.OrdinalIgnoreCase) || m.Contains("语法") || m.Contains("SQL"))
+        // 语法（发现129：删「SQL」关键词——SQLSTATE 断连错误含 SQL 字样被误报语法错，syntax/语法已覆盖）
+        if (m.Contains("syntax", StringComparison.OrdinalIgnoreCase) || m.Contains("语法"))
             return ("SQL 语法没通过", "建议检查语句拼写；可单独执行定位出错位置");
         // 磁盘/IO
         if (m.Contains("disk", StringComparison.OrdinalIgnoreCase) || m.Contains("磁盘") || m.Contains("space", StringComparison.OrdinalIgnoreCase) || m.Contains("IO", StringComparison.Ordinal) && m.Contains("file", StringComparison.OrdinalIgnoreCase))
