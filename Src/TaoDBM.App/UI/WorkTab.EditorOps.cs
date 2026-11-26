@@ -49,6 +49,7 @@ public partial class WorkTab
         AddMenuItem(menu, "执行计划", "editor-menu-explain", () => _ = ExplainCurrent());
         AddMenuItem(menu, "代码段…", "editor-menu-snippets", ShowSnippets);
         AddMenuItem(menu, "粘贴自剪贴板堆栈…", "editor-menu-clipstack", ShowClipboardStack);
+        AddMenuItem(menu, "含引号复制", "editor-menu-copyquoted", CopyQuoted);
         menu.Items.Add(new MenuFlyoutSeparator());
         AddMenuItem(menu, "折叠选中行", "editor-menu-fold", FoldSelection);
         AddMenuItem(menu, "展开光标处折叠", "editor-menu-unfold", UnfoldAtCaret);
@@ -142,6 +143,22 @@ public partial class WorkTab
         if (len == 0) return "";
         var text = EditorText;
         return start + len <= text.Length ? text.Substring(start, len) : "";
+    }
+
+    /// <summary>发现140：含引号复制——选区按 SQL 字符串字面量转义（' 翻倍）后写入剪贴板，直接可粘贴进 VALUES。</summary>
+    private void CopyQuoted()
+    {
+        var s = SelectedText();
+        if (s.Length == 0) { _messageBox.Text = "没有选区：先选中要复制的文本再点「含引号复制」。"; return; }
+        try
+        {
+            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dp.SetText("'" + s.Replace("'", "''") + "'");
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+            _messageBox.Text = "已按 SQL 字符串字面量复制（单引号已转义）。";
+            AppLog.Write("[编辑器] copy-quoted");
+        }
+        catch { _messageBox.Text = "复制失败：剪贴板不可用。"; }
     }
 
     /// <summary>执行计划入口：对当前语句包一层 EXPLAIN（估算计划，不执行本体）。</summary>

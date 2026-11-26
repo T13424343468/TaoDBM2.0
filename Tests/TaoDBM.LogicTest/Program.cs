@@ -116,6 +116,26 @@ Console.WriteLine("== Exporter ==");
     Check("CSV 普通文本原样", csv.Contains(",普通文本"), csv);
 }
 {
+    // 发现150：JSON 导出——对象数组形、类型分型、引号/控制字符转义、流式与整包同形
+    var r = new QueryResult { Columns = { "id", "name", "score", "ok", "note" } };
+    r.Rows.Add(new object?[] { 1, "张\"三", 98.5, true, null });
+    r.Rows.Add(new object?[] { 2, DBNull.Value, -3, false, "换\n行\t制表" });
+    var json = Exporter.Json(r);
+    Check("JSON 表头", json.Contains("\"id\":") && json.Contains("\"name\":") && json.Contains("\"score\":"), json);
+    Check("JSON 整数原样", json.Contains("\"id\":1"), json);
+    Check("JSON 浮点不变区域", json.Contains("\"score\":98.5"), json);
+    Check("JSON 负数原样", json.Contains("\"score\":-3"), json);
+    Check("JSON 布尔小写", json.Contains("\"ok\":true") && json.Contains("\"ok\":false"), json);
+    Check("JSON null 落 null", json.Contains("\"note\":null"), json);
+    Check("JSON 引号转义", json.Contains("\"张\\\"三\""), json);
+    Check("JSON 控制字符转义", json.Contains("换\\n行\\t制表"), json);
+    Check("JSON DBNull 落 null", json.Contains("\"name\":null"), json);
+    var pages = new[] { new TaoDBM.Core.Streaming.QueryPage { Rows = r.Rows.Select(x => (object[])x).ToArray(), HasMore = false } };
+    var sw = new StringWriter();
+    long n = Exporter.JsonStream(pages, r.Columns, sw);
+    Check("JSON 流式与整包同形", n == 2 && sw.ToString() == json, $"n={n}");
+}
+{
     // ㊴ 统一错误文案层：人话模板映射＋原始异常不上屏（只进 AppLog）
     var deadlock = HumanError.Say(new Exception("MySqlException: Deadlock found when trying to get lock; try restarting transaction"), "回滚失败");
     Check("人话-死锁映射", deadlock.Contains("抢锁") && deadlock.StartsWith("回滚没成功："), deadlock);

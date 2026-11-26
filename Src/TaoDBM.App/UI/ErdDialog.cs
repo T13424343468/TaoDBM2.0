@@ -100,6 +100,7 @@ public static class ErdDialog
         fileMenu.Items.Add(SubItem("保存布局", "ErdFile_Save", async () => await SaveLayout(owner)));
         fileMenu.Items.Add(SubItem("打开布局", "ErdFile_Open", async () => await OpenLayout(owner)));
         fileMenu.Items.Add(SubItem("导出 PNG", "ErdFile_Png", async () => await ExportPng(owner)));
+        fileMenu.Items.Add(SubItem("导出 SVG", "ErdFile_Svg", async () => await ExportSvg(owner)));
         var canvasMenu = new MenuFlyoutSubItem { Text = "画布" };
         canvasMenu.Items.Add(SubItem("生成 ER 图", "ErdCanvas_Gen", async () =>
         {
@@ -581,6 +582,73 @@ public static class ErdDialog
         }
         catch (Exception ex) { _hint.Text = HumanError.Say(ex, "导出失败"); }
     }
+
+    /// <summary>发现146：导出 SVG 矢量图——表框矩形＋列文本＋关系虚线，缩放打印不失真（与 PNG 同一套模型与布局坐标）。</summary>
+    private static async Task ExportSvg(MainWindow owner)
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "先生成 ER 图再导出。"; return; }
+        try
+        {
+            var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.PicturesLibrary };
+            picker.FileTypeChoices.Add("SVG 矢量图", new List<string> { ".svg" });
+            picker.SuggestedFileName = $"TaoDBM-ER-{DateTime.Now:yyyyMMdd-HHmm}";
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(owner));
+            var f = await picker.PickSaveFileAsync();
+            if (f is null) return;
+            await Windows.Storage.FileIO.WriteTextAsync(f, BuildSvg());
+            _hint.Text = $"已导出 SVG：{f.Path}";
+            AppLog.Write("[ER图] svg-export tables=" + _model.Tables.Count);
+        }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "导出失败"); }
+    }
+
+    /// <summary>发现146：把模型序列化成 SVG（表框 200 宽、列行 16 高，连线端点与 DrawEdges 同口径取框顶中点；颜色取 Ant 令牌不写死）。</summary>
+    private static string BuildSvg()
+    {
+        string primary = SvgColor(Ant.Primary), card = SvgColor(Ant.Card), textSub = SvgColor(Ant.TextSub);
+        double maxW = 0, maxH = 0;
+        foreach (var t in _model.Tables)
+        {
+            maxW = Math.Max(maxW, t.X + 200);
+            maxH = Math.Max(maxH, t.Y + BoxHeight(t));
+        }
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{maxW + 40:0}\" height=\"{maxH + 40:0}\" viewBox=\"0 0 {maxW + 40:0} {maxH + 40:0}\">");
+        foreach (var e in _model.Edges)
+        {
+            if (!_boxes.TryGetValue(e.FromTable, out var from) || !_boxes.TryGetValue(e.ToTable, out var to)) continue;
+            double ax = Canvas.GetLeft(from) + 90, ay = Canvas.GetTop(from) + 20;
+            double bx = Canvas.GetLeft(to) + 90, by = Canvas.GetTop(to) + 20;
+            sb.Append($"<line x1=\"{ax:0.##}\" y1=\"{ay:0.##}\" x2=\"{bx:0.##}\" y2=\"{by:0.##}\" stroke=\"{primary}\" stroke-width=\"1.5\" stroke-dasharray=\"4 2\"/>");
+        }
+        foreach (var t in _model.Tables)
+        {
+            double x = t.X, y = t.Y, h = BoxHeight(t);
+            sb.Append($"<rect x=\"{x:0.##}\" y=\"{y:0.##}\" width=\"200\" height=\"{h:0.##}\" rx=\"8\" fill=\"{card}\" stroke=\"{primary}\" stroke-width=\"1.5\"/>");
+            sb.Append($"<text x=\"{x + 10:0.##}\" y=\"{y + 20:0.##}\" font-size=\"13\" font-weight=\"bold\" fill=\"{primary}\" font-family=\"sans-serif\">{SvgEsc(t.Name)}</text>");
+            int shown = 0;
+            foreach (var c in t.Columns.Take(12))
+            {
+                shown++;
+                sb.Append($"<text x=\"{x + 10:0.##}\" y=\"{y + 20 + shown * 16:0.##}\" font-size=\"12\" fill=\"{textSub}\" font-family=\"sans-serif\">{SvgEsc((c.IsKey ? "🔑 " : "    ") + c.Name + "  " + c.Type)}</text>");
+            }
+            if (t.Columns.Count > 12)
+                sb.Append($"<text x=\"{x + 10:0.##}\" y=\"{y + 20 + 13 * 16:0.##}\" font-size=\"12\" fill=\"{textSub}\" font-family=\"sans-serif\">  …</text>");
+        }
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+
+    /// <summary>发现146：SolidColorBrush 转 #RRGGBB（SVG 不认 alpha 前缀，丢弃 A 通道）。</summary>
+    private static string SvgColor(Microsoft.UI.Xaml.Media.Brush b)
+    {
+        var c = b is Microsoft.UI.Xaml.Media.SolidColorBrush sc ? sc.Color : Microsoft.UI.Colors.Gray;
+        return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+    }
+
+    private static double BoxHeight(ErdTable t) => 30 + Math.Min(t.Columns.Count, 12) * 16 + 12 + (t.Columns.Count > 12 ? 16 : 0);
+
+    private static string SvgEsc(string s) => s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 
     private static async Task SaveLayout(MainWindow owner)
     {

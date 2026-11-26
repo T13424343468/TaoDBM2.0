@@ -197,4 +197,88 @@ public static class Exporter
         }
         finally { ExitStream(); }
     }
+
+    /// <summary>发现150：JSON 导出（整包）——对象数组形，字符串/数值/布尔/null 分型，控制字符转义。</summary>
+    public static string Json(QueryResult r)
+    {
+        var sb = new StringBuilder();
+        JsonStream(new[] { new Core.Streaming.QueryPage { Rows = r.Rows.Select(x => (object[])x).ToArray(), HasMore = false } }, r.Columns, new StringWriter(sb));
+        return sb.ToString();
+    }
+
+    /// <summary>发现150：JSON 流式导出——逐页写 TextWriter 不整包攒串；返回写出行数。</summary>
+    public static long JsonStream(IEnumerable<Core.Streaming.QueryPage> pages, IReadOnlyList<string> columns, TextWriter w, CancellationToken ct = default)
+    {
+        w.Write('[');
+        long written = 0;
+        bool firstRow = true;
+        foreach (var page in pages)
+        {
+            ct.ThrowIfCancellationRequested();
+            foreach (var row in page.Rows)
+            {
+                if (!firstRow) w.Write(',');
+                w.Write("\n{");
+                for (int i = 0; i < columns.Count && i < row.Length; i++)
+                {
+                    if (i > 0) w.Write(',');
+                    w.Write(JsonString(columns[i]));
+                    w.Write(':');
+                    w.Write(JsonValue(row[i]));
+                }
+                w.Write('}');
+                written++;
+                firstRow = false;
+            }
+        }
+        w.WriteLine("\n]");
+        return written;
+    }
+
+    /// <summary>发现150：JSON 值分型——整数原样，浮点/小数走不变区域性，布尔小写，null/DBNull 落 null，其余按字符串转义。</summary>
+    private static string JsonValue(object? v) => v switch
+    {
+        null or DBNull => "null",
+        bool b => b ? "true" : "false",
+        byte or sbyte or short or ushort or int or uint or long or ulong => v.ToString() ?? "null",
+        float or double or decimal => IsFiniteNumber(v) ? Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? "null" : JsonString(Format(v)),
+        _ => JsonString(Format(v)),
+    };
+
+    private static bool IsFiniteNumber(object v)
+    {
+        try
+        {
+            var d = Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture);
+            return !double.IsNaN(d) && !double.IsInfinity(d);
+        }
+        catch { return false; }
+    }
+
+    /// <summary>发现150：JSON 字符串转义——引号/反斜杠/控制字符按 RFC 8259（控制字符落 \u00XX）。</summary>
+    private static string JsonString(string? s)
+    {
+        s ??= "";
+        var sb = new StringBuilder(s.Length + 2);
+        sb.Append('"');
+        foreach (var ch in s)
+        {
+            switch (ch)
+            {
+                case '"': sb.Append("\\\""); break;
+                case '\\': sb.Append("\\\\"); break;
+                case '\b': sb.Append("\\b"); break;
+                case '\f': sb.Append("\\f"); break;
+                case '\n': sb.Append("\\n"); break;
+                case '\r': sb.Append("\\r"); break;
+                case '\t': sb.Append("\\t"); break;
+                default:
+                    if (ch < ' ') sb.Append("\\u").Append(((int)ch).ToString("x4"));
+                    else sb.Append(ch);
+                    break;
+            }
+        }
+        sb.Append('"');
+        return sb.ToString();
+    }
 }
