@@ -1,24 +1,20 @@
 env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
-[WALK] v11 start exe=C:\Navicat\navicat.exe
+[WALK] v12 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
+[WALK] trial dialog detected at t=25s pixel=255,255,255
+[WALK] shot shot-n01-trial.png
 [WALK] after wizard window='navicat'
-[WALK] shot shot-n01-main.png
-[WALK] shot shot-n02-menu.png
-[WALK] uia[menu] count=0 names=
-[WALK] WARN SQLite menu item not found by UIA; fallback keyboard
-[WALK] shot shot-n03-conn-dialog.png
-[WALK] uia[conn-dialog] count=0 names=
-[WALK] WARN conn-name element not found
-[WALK] WARN browse button not found
-[WALK] shot shot-n04-filled.png
-[WALK] WARN ok button not found; fallback Ctrl+S
-[WALK] shot shot-n05-saved.png
-[WALK] WARN connection node not found in tree
-[WALK] shot shot-n06-tree.png
-[WALK] WARN users node not found
-[WALK] shot shot-n07-data.png
-[WALK] shot shot-n08-data2.png
-[WALK] v11 done
-video-size=7077924
+[WALK] shot shot-n02-main.png
+[WALK] shot shot-n03-menu.png
+[WALK] menu rows detected: 
+[WALK] WARN no menu rows detected; fallback click y=249
+[WALK] shot shot-n04-conn-dialog.png
+[WALK] shot shot-n05-filled.png
+[WALK] shot shot-n06-saved.png
+[WALK] shot shot-n07-tree.png
+[WALK] shot shot-n08-db.png
+[WALK] shot shot-n09-data.png
+[WALK] v12 done
+video-size=5505060
