@@ -4,25 +4,25 @@ exe=[C:\Navicat\navicat.exe]
 [WALK] v15 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
 [WALK] WARN trial window not seen; dump windows
-[WALK] win: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] win: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] no wizard window; continue
 [WALK] shot shot-n02-main.png
-[WALK] win-main: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win-main: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win-main: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] win-main: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win-main: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win-main: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] shot shot-n03-menu.png
 [WALK] menu rows detected: 
 [WALK] WARN no menu rows detected; fallback click y=270
 [WALK] shot shot-n04-conn-dialog.png
-[WALK] win-conn: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win-conn: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win-conn: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] win-conn: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win-conn: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win-conn: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] shot shot-n05-filled.png
 [WALK] shot shot-n06-saved.png
 [WALK] shot shot-n07-tree.png
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
 [WALK] v15 done
-video-size=11010084
+video-size=9699364
