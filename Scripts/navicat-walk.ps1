@@ -1,4 +1,4 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v16：真库对照·类名状态机完版（v15 实锤双通配 bug：传参带*函数再拼*致永远不匹配，关断循环被跳过；
+﻿# navicat-walk.ps1 — 竞品对照走查 v17：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
 # v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
@@ -89,7 +89,7 @@ function Test-WindowClass {
   param([string]$ClassPattern)
   $ClassPattern = $ClassPattern.TrimEnd('*')
   $wins = Get-NavWindows -ProcId $script:navPid
-  foreach ($w in $wins) { if ($w -like "class='$ClassPattern'*") { return $true } }
+  foreach ($w in $wins) { if ($w -like "*class='$ClassPattern'*") { return $true } }
   return $false
 }
 
@@ -99,7 +99,7 @@ function Wait-WindowClass {
   $deadline = (Get-Date).AddSeconds($TimeoutSec)
   while ((Get-Date) -lt $deadline) {
     $wins = Get-NavWindows -ProcId $script:navPid
-    foreach ($w in $wins) { if ($w -like "class='$ClassPattern'*") { return $w } }
+    foreach ($w in $wins) { if ($w -like "*class='$ClassPattern'*") { return $w } }
     Start-Sleep -Seconds 2
   }
   return $null
@@ -110,7 +110,7 @@ function Focus-WindowClass {
   $ClassPattern = $ClassPattern.TrimEnd('*')
   $wins = Get-NavWindows -ProcId $script:navPid
   foreach ($w in $wins) {
-    if ($w -like "class='$ClassPattern'*" -and $w -match 'hwnd=(-?\d+)') {
+    if ($w -like "*class='$ClassPattern'*" -and $w -match 'hwnd=(-?\d+)') {
       $h = [IntPtr][int64]$Matches[1]
       try { [Win15]::SetForegroundWindow($h) | Out-Null } catch {}
       Start-Sleep -Milliseconds 600
@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v16 start exe=$ExePath"
+Log "v17 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -282,6 +282,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v16 done"
+Log "v17 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
