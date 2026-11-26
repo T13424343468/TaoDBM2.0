@@ -33,6 +33,8 @@ public class ConnectionProfile
     public string Group { get; set; } = "";
     public bool Starred { get; set; }
     public bool Hidden { get; set; }
+    // 发现143：连接备注（连接对话框「备注」页签；缺省兼容旧 JSON）
+    public string Remark { get; set; } = "";
 }
 
 public static class ProfileCrypto
@@ -116,5 +118,6 @@ public static class ConnectionStore
         TunnelUrl = p.TunnelUrl, AuthMode = p.AuthMode,
         RedisMode = p.RedisMode, SentinelMaster = p.SentinelMaster, SentinelNodes = p.SentinelNodes,
         Group = p.Group, Starred = p.Starred, Hidden = p.Hidden,
+        Remark = p.Remark,   // 发现143：备注入白名单，存盘不被 Clone 清空
     };
 }

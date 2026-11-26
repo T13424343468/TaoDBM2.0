@@ -58,23 +58,52 @@ public static class DiagnosticsDialog
         var procPanel = new StackPanel { Spacing = 6 };
         var varPanel = new StackPanel { Spacing = 6 };
         var statPanel = new StackPanel { Spacing = 6 };
+        Func<Task> loadProc = () => LoadProcessesAsync(owner, prov, profile.Engine, ResolveDbAsync(prov, info), procPanel, status);
         var loaders = new Dictionary<StackPanel, Func<Task>>
         {
-            [procPanel] = () => LoadProcessesAsync(owner, prov, profile.Engine, ResolveDbAsync(prov, info), procPanel, status),
+            [procPanel] = loadProc,
             [varPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), varPanel, status, "变量"),
             [statPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), statPanel, status, "状态"),
         };
         var loaded = new HashSet<StackPanel>();
         var tabs = new TabView { IsAddButtonVisible = false, MinWidth = 660 };
+        // 发现149：进程页自动刷新开关（默认关，开启后 10 秒一轮，对话框关闭即停）
+        var autoRefresh = new CheckBox { Content = $"自动刷新（每 {UiBatchB.AutoRefreshSeconds} 秒）" };
+        var procTabContent = new StackPanel { Spacing = 6 };
+        procTabContent.Children.Add(autoRefresh);
+        procTabContent.Children.Add(new ScrollViewer { Content = procPanel, MaxHeight = 440, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        var procTab = new TabViewItem { Header = "进程", IsClosable = false, Content = procTabContent };
         tabs.TabItems.Add(new TabViewItem { Header = "体检", IsClosable = false, Content = panel });
-        tabs.TabItems.Add(new TabViewItem { Header = "进程", IsClosable = false, Content = new ScrollViewer { Content = procPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        tabs.TabItems.Add(procTab);
         tabs.TabItems.Add(new TabViewItem { Header = "变量", IsClosable = false, Content = new ScrollViewer { Content = varPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
         tabs.TabItems.Add(new TabViewItem { Header = "状态", IsClosable = false, Content = new ScrollViewer { Content = statPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
         tabs.SelectionChanged += async (_, _) =>
         {
             if (tabs.SelectedItem is not TabViewItem item) return;
-            if (item.Content is not ScrollViewer sv || sv.Content is not StackPanel sp) return;
+            // 进程页签内容外层是开关行＋滚动区，滚动区里才是加载面板；其余页签滚动区直挂面板
+            StackPanel? sp = item.Content switch
+            {
+                ScrollViewer sv => sv.Content as StackPanel,
+                StackPanel root => root.Children.OfType<ScrollViewer>().FirstOrDefault()?.Content as StackPanel,
+                _ => null,
+            };
+            if (sp is null) return;
             if (loaders.TryGetValue(sp, out var load) && loaded.Add(sp)) await load();
+        };
+
+        // 发现149：自动刷新定时器——只在进程页签可见时刷新，对话框关闭即停（无泄漏）
+        var refreshTimer = owner.DispatcherQueue.CreateTimer();
+        refreshTimer.Interval = TimeSpan.FromSeconds(UiBatchB.AutoRefreshSeconds);
+        refreshTimer.Tick += async (_, _) =>
+        {
+            if (tabs.SelectedItem != procTab) return;   // 不在进程页不空跑查询
+            await loadProc();
+        };
+        autoRefresh.Click += (_, _) =>
+        {
+            bool on = autoRefresh.IsChecked == true;
+            if (on) refreshTimer.Start(); else refreshTimer.Stop();
+            AppLog.Write($"[诊断] 进程页自动刷新 {(on ? "开" : "关")}");
         };
 
         var dlgPanel = new StackPanel { Spacing = 10, MinWidth = 660 };
@@ -87,6 +116,7 @@ public static class DiagnosticsDialog
             CloseButtonText = "关闭",
             XamlRoot = owner.Content.XamlRoot,
         };
+        dlg.Closed += (_, _) => refreshTimer.Stop();   // 发现149：对话框关闭即停自动刷新，无泄漏
         _ = dlg.ShowThemedAsync();
         _ = RunDiagAsync(owner, info, prov, report, status);
     }
@@ -181,7 +211,9 @@ public static class DiagnosticsDialog
         };
         if (sql is null)
         {
-            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无{kind}口径，此页签不适用。");
+            // 发现149：不支持的引擎给人话（SQLite / MongoDB / Redis 各有口径），不报错不空白
+            string say = UiBatchB.KeyValueUnsupported(engine);
+            AddLine(panel, say.Length > 0 ? say : $"{EngineInfo.Name(engine)} 暂无{kind}口径，此页签不适用。");
             status.Text = "";
             return;
         }

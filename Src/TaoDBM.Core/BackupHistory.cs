@@ -32,6 +32,16 @@ public static class BackupHistory
 
     public static void Clear() { lock (Gate) { SaveAll(new List<Entry>()); } }
 
+    /// <summary>按文件路径移除账本记录（备份树内删除条目用；文件本身由调用方处置）。</summary>
+    public static void RemoveFile(string file)
+    {
+        lock (Gate)
+        {
+            var all = LoadAll();
+            if (all.RemoveAll(e => e.File == file) > 0) SaveAll(all);
+        }
+    }
+
     private static List<Entry> LoadAll()
     {
         try

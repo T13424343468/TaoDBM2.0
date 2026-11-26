@@ -169,6 +169,18 @@ public partial class MainWindow
             case "newconn":
                 OnNewConn(this, new RoutedEventArgs());
                 break;
+            case "ai":   // 发现138：AI 建表入口提级——占位改真实入口，未并入时人话引导，不报错不空白
+                if (ObjectActionBarModel.AiTableAvailable)
+                {
+                    AppLog.Write("[AI建表] 入口点击：模型已并入，AI 建表流程随 AI 版批开放");
+                    await InfoAsync("AI 建表已就绪：模型已并入，建表流程入口随 AI 版批开放。");
+                }
+                else
+                {
+                    AppLog.Write("[AI建表] 入口点击：模型未并入，人话引导");
+                    await InfoAsync(ObjectActionBarModel.AiTableGuide);
+                }
+                break;
             case "delete" when info.Kind == NodeKind.Connection:
                 OnDelConn(this, new RoutedEventArgs());
                 break;

@@ -42,6 +42,10 @@ public class ConnectionDialog
     private readonly ComboBox _redisMode = new() { Header = "连接模式", HorizontalAlignment = HorizontalAlignment.Stretch, ItemsSource = new List<string> { "直连", "哨兵（主从自动切换）" }, Visibility = Visibility.Collapsed };
     private readonly TextBox _sentinelMaster = new() { Header = "Master 名称", PlaceholderText = "如 mymaster", Visibility = Visibility.Collapsed };
     private readonly TextBox _sentinelNodes = new() { Header = "哨兵节点列表（每行一个 host:port）", AcceptsReturn = true, Height = 84, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+    // 发现143：连接备注（「备注」页签，多行，只存本机配置）
+    private readonly TextBox _remark = new() { Header = "备注", AcceptsReturn = true, Height = 120, TextWrapping = TextWrapping.Wrap, PlaceholderText = "连接用途、环境说明等，只保存在本机配置里" };
+    /// <summary>发现143：选项卡容器（保存校验失败时切到对应页签）。</summary>
+    private Pivot? _pivot;
 
     public ConnectionDialog(ConnectionProfile profile)
     {
@@ -93,6 +97,8 @@ public class ConnectionDialog
         _redisMode.SelectedIndex = profile.RedisMode == "sentinel" ? 1 : 0;
         _sentinelMaster.Text = profile.SentinelMaster;
         _sentinelNodes.Text = profile.SentinelNodes.Replace(";", "\r\n");
+        _remark.Text = profile.Remark;   // 发现143：备注回填
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_remark, "conn-remark");
         _redisMode.SelectionChanged += (_, _) => OnEngineChanged();   // 模式切换复用引擎可见性联动
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_redisMode, "conn-redis-mode");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_sentinelMaster, "conn-sentinel-master");
@@ -116,10 +122,10 @@ public class ConnectionDialog
         OnEngineChanged();
     }
 
+    /// <summary>发现143：SSH 开关关闭时页签内字段置灰（IsEnabled 而非 Visibility，页签结构不塌）；HTTP 隧道端点独立于 SSH 开关，不随开关置灰。</summary>
     private void OnSshChanged(bool on)
     {
-        var vis = on ? Visibility.Visible : Visibility.Collapsed;
-        _sshHost.Visibility = _sshPort.Visibility = _sshUser.Visibility = _sshPass.Visibility = vis;
+        _sshHost.IsEnabled = _sshPort.IsEnabled = _sshUser.IsEnabled = _sshPass.IsEnabled = on;
     }
 
     /// <summary>批次三格5：选 Windows 集成认证时隐藏账号密码框（免密语义）。</summary>
@@ -220,38 +226,57 @@ public class ConnectionDialog
     /// <summary>挂到窗口显示；用户点保存返回 true。</summary>
     public async Task<bool> ShowAsync(Window owner, bool isNew)
     {
-        // 右侧留出滚动条带：浮层滚动条不再压在输入框右缘上（2026-11-03 真机截图反馈）
-        // 批次六格2：窄窗断点——弹层 MinWidth 改 MaxWidth 约束，窄窗不横向溢出
-        var panel = new StackPanel { Spacing = 10, MaxWidth = 520, Margin = new Thickness(0, 0, 12, 0) };
-        panel.Children.Add(_engine);
-        panel.Children.Add(_name);
-        panel.Children.Add(_host);
-        panel.Children.Add(_port);
-        panel.Children.Add(_user);
-        panel.Children.Add(_pass);
-        panel.Children.Add(_database);
-        panel.Children.Add(_dsnList);   // 批次四格3：ODBC DSN 下拉
-        panel.Children.Add(_file);
-        panel.Children.Add(_params);
-        panel.Children.Add(_redisMode);   // E①：Redis 连接模式（直连/哨兵）
-        panel.Children.Add(_sentinelMaster);   // E①：哨兵 Master 名称
-        panel.Children.Add(_sentinelNodes);   // E①：哨兵节点列表
-        panel.Children.Add(_tnsBtn);
-        panel.Children.Add(_tnsList);
-        panel.Children.Add(_auth);   // 批次三格5：认证方式
-        _tnsBtn.Click += (_, _) => _ = PickTns(owner);
-        panel.Children.Add(_savePwd);
-        panel.Children.Add(_hint);
+        // 发现143：23 字段单屏平铺改四页签分组——常规 / SSH 隧道 / 高级 / 备注，首屏只露六项核心字段
+        var generalPanel = new StackPanel { Spacing = 10 };
+        generalPanel.Children.Add(_engine);
+        generalPanel.Children.Add(_name);
+        generalPanel.Children.Add(_host);
+        generalPanel.Children.Add(_port);
+        generalPanel.Children.Add(_user);
+        generalPanel.Children.Add(_pass);
+        generalPanel.Children.Add(_database);
+        generalPanel.Children.Add(_dsnList);   // 批次四格3：ODBC DSN 下拉
+        generalPanel.Children.Add(_file);
+        generalPanel.Children.Add(_auth);   // 批次三格5：认证方式
+        generalPanel.Children.Add(_savePwd);
 
         var sshPanel = new StackPanel { Spacing = 8 };
-        sshPanel.Children.Add(new TextBlock { Text = "SSH 隧道（可选，经跳板机连接内网数据库）", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 0) });
+        sshPanel.Children.Add(new TextBlock { Text = "SSH 隧道（可选，经跳板机连接内网数据库）", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap });
         sshPanel.Children.Add(_ssh);
         sshPanel.Children.Add(_sshHost);
         sshPanel.Children.Add(_sshPort);
         sshPanel.Children.Add(_sshUser);
         sshPanel.Children.Add(_sshPass);
-        sshPanel.Children.Add(_tunnelUrl);   // 批次三格4：HTTP 隧道端点
-        panel.Children.Add(sshPanel);
+        sshPanel.Children.Add(_tunnelUrl);   // 批次三格4：HTTP 隧道端点（独立于 SSH 开关）
+
+        var advPanel = new StackPanel { Spacing = 10 };
+        advPanel.Children.Add(_params);
+        advPanel.Children.Add(_redisMode);   // E①：Redis 连接模式（直连/哨兵）
+        advPanel.Children.Add(_sentinelMaster);   // E①：哨兵 Master 名称
+        advPanel.Children.Add(_sentinelNodes);   // E①：哨兵节点列表
+        advPanel.Children.Add(_tnsBtn);
+        advPanel.Children.Add(_tnsList);
+        _tnsBtn.Click += (_, _) => _ = PickTns(owner);
+
+        var remarkPanel = new StackPanel { Spacing = 10 };
+        remarkPanel.Children.Add(_remark);
+
+        _pivot = new Pivot
+        {
+            Items =
+            {
+                new PivotItem { Header = "常规", Content = generalPanel },
+                new PivotItem { Header = "SSH 隧道", Content = sshPanel },
+                new PivotItem { Header = "高级", Content = advPanel },
+                new PivotItem { Header = "备注", Content = remarkPanel },
+            },
+        };
+
+        // 右侧留出滚动条带：浮层滚动条不再压在输入框右缘上（2026-11-03 真机截图反馈）
+        // 批次六格2：窄窗断点——弹层 MinWidth 改 MaxWidth 约束，窄窗不横向溢出
+        var panel = new StackPanel { Spacing = 10, MaxWidth = 520, Margin = new Thickness(0, 0, 12, 0) };
+        panel.Children.Add(_pivot);
+        panel.Children.Add(_hint);   // 页签下方共享提示条，校验失败切页签后提示仍可见
 
         var scroll = new ScrollViewer { Content = panel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
@@ -290,11 +315,13 @@ public class ConnectionDialog
                 // 发现64：保存前必填校验——非文件引擎主机不能为空（哨兵模式改查 Master 名称），留对话框提示
                 if (!EngineInfo.IsFileBased(Profile.Engine) && Profile.RedisMode != "sentinel" && Profile.Host.Length == 0)
                 {
+                    SelectTab(0);   // 发现143：主机在「常规」页签，校验失败切过去再提示
                     _hint.Text = "主机还没填：填服务器地址（如 127.0.0.1）再保存。";
                     continue;
                 }
                 if (Profile.RedisMode == "sentinel" && Profile.SentinelMaster.Length == 0)
                 {
+                    SelectTab(2);   // 发现143：哨兵配置在「高级」页签
                     _hint.Text = "Master 名称还没填：填哨兵的 master 名称再保存。";
                     continue;
                 }
@@ -302,6 +329,7 @@ public class ConnectionDialog
                 if (!EngineInfo.IsFileBased(Profile.Engine) && Profile.RedisMode != "sentinel"
                     && int.TryParse(_port.Text?.Trim(), out var port) && port is < 1 or > 65535)
                 {
+                    SelectTab(0);   // 发现143：端口在「常规」页签
                     _hint.Text = $"端口 {port} 不在有效范围（1-65535），请核对后再保存。";
                     continue;
                 }
@@ -309,12 +337,19 @@ public class ConnectionDialog
                 if (_ssh.IsChecked == true
                     && int.TryParse(_sshPort.Text?.Trim(), out var sport) && sport is < 1 or > 65535)
                 {
+                    SelectTab(1);   // 发现143：SSH 端口在「SSH 隧道」页签
                     _hint.Text = $"SSH 端口 {sport} 不在有效范围（1-65535），请核对后再保存。";
                     continue;
                 }
             }
             return result == ContentDialogResult.Secondary;
         }
+    }
+
+    /// <summary>发现143：保存校验失败时切到对应页签（0=常规 1=SSH 隧道 2=高级 3=备注），不跨页签静默丢错。</summary>
+    private void SelectTab(int index)
+    {
+        if (_pivot != null && index >= 0 && index < _pivot.Items.Count) _pivot.SelectedIndex = index;
     }
 
     /// <summary>选 tnsnames.ora 文件并解析；条目填进下拉，选中即回填主机/端口/服务名（避免嵌套对话框）。</summary>
@@ -371,6 +406,7 @@ public class ConnectionDialog
         Profile.RedisMode = Profile.Engine == DbEngine.Redis && _redisMode.SelectedIndex == 1 ? "sentinel" : "direct";
         Profile.SentinelMaster = _sentinelMaster.Text.Trim();
         Profile.SentinelNodes = _sentinelNodes.Text.Trim().Replace("\r\n", ";").Replace('\n', ';');
+        Profile.Remark = _remark.Text.Trim();   // 发现143：备注落盘
     }
 
     private async Task<bool> TestConn()

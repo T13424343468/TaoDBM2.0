@@ -10,7 +10,7 @@ using TaoDBM.UI;
 
 namespace TaoDBM;
 
-public enum NodeKind { Connection, Database, Table, Column, Key, Category, ObjectDef }
+public enum NodeKind { Connection, Database, Table, Column, Key, Category, ObjectDef, BackupHistory, BackupEntry }
 
 /// <summary>树节点附加信息。</summary>
 public class NodeInfo
@@ -24,6 +24,7 @@ public class NodeInfo
     public string Category = "";  // B2 对象树：views/indexes/fks/routines/triggers
     public string RowText = "";   // B2 对象树：目录行原文（索引/外键无 DDL，直接展示）
     public string ConnState = ""; // 格18：连接运行态 ""=未知 / "Connected"=绿点 / "Failed"=红点（随 RebuildRoots 按 Profile.Id 保留）
+    public BackupHistory.Entry? BackupEntry;   // 发现144：备份树条目原文（还原 / 删除要用）
 }
 
 public partial class MainWindow : Window
@@ -377,6 +378,7 @@ public partial class MainWindow : Window
         ["conn"] = "\uE717",    // World——连接
         ["group"] = "\uE8B7",   // Folder——分组/库
         ["table"] = "\uE8A5",   // Document——表/集合
+        ["backup"] = "\uE8E5",  // 发现144：备份（SaveLocal 储存字形）
     };
 
     private static readonly FontFamily IconFont = new("Segoe MDL2 Assets");
@@ -740,6 +742,19 @@ public partial class MainWindow : Window
                             await OpenRoutineDebug(info);
                         });
                 break;
+            case NodeKind.BackupHistory:   // 发现144：备份节点——刷新重读账本
+                Item("刷新", (_, _) => RefreshNode(node));
+                break;
+            case NodeKind.BackupEntry:   // 发现144：备份条目——还原 / 打开所在文件夹 / 删除记录
+            {
+                var entry = info.BackupEntry;
+                if (entry is null) break;
+                bool exists = System.IO.File.Exists(entry.File);
+                if (exists) Item("还原", async (_, _) => await RestoreBackupEntry(info, entry));
+                Item("打开所在文件夹", (_, _) => RevealInExplorer(entry.File), danger: false);
+                Item(exists ? "删除" : "删除记录", async (_, _) => await DeleteBackupEntry(node, info, entry, keepFile: false), danger: true);
+                break;
+            }
         }
         fly.ShowAt(e.OriginalSource as FrameworkElement ?? ConnTree);
     }
@@ -808,6 +823,66 @@ public partial class MainWindow : Window
     /// <summary>树右键打开拟真数据（多表模式）。</summary>
     private void OpenFaker(NodeInfo info) => _ = UI.FakerDialog.Show(this, info.Provider!, info.Db, info.Name);
 
+    /// <summary>发现144：备份条目还原——二次确认后走与向导同源的还原链路，成功失败都落账。</summary>
+    private async Task RestoreBackupEntry(NodeInfo info, BackupHistory.Entry entry)
+    {
+        bool ok = await ConfirmAsync($"将用该备份覆盖当前库 {entry.Db}，确认？");
+        if (!ok) return;
+        try
+        {
+            info.Provider ??= ProviderFactory.Create(info.Profile);
+            string result = await BackupPlanRunner.RestoreAsync(info.Profile, info.Provider, entry.Db, entry.File);
+            SetStatus(result);
+            AppLog.Write($"[备份树] 还原 db={entry.Db} file={entry.File} ok=true");
+            ToastCenter.Publish(new NotifyEvent(NotifyKind.Restore, info.Profile.DisplayName, "还原完成", result, DateTime.Now));
+        }
+        catch (Exception ex)
+        {
+            string msg = HumanError.Say(ex, "还原失败");
+            SetStatus(msg);
+            AppLog.Write($"[备份树] 还原 db={entry.Db} file={entry.File} ok=false {msg}");
+            await InfoAsync(msg);
+            ToastCenter.Publish(new NotifyEvent(NotifyKind.Restore, info.Profile.DisplayName, "还原失败", msg, DateTime.Now));
+        }
+    }
+
+    /// <summary>发现144：删除——文件在盘上只删文件（账本条目保留，条目置灰标注）；文件已不在盘上删账本记录。</summary>
+    private async Task DeleteBackupEntry(TreeViewNode node, NodeInfo info, BackupHistory.Entry entry)
+    {
+        bool ok = await ConfirmAsync(System.IO.File.Exists(entry.File)
+            ? $"确定删除备份文件 {entry.File} 吗？账本记录保留（条目会置灰标注）。"
+            : "确定删除该备份记录吗？");
+        if (!ok) return;
+        try
+        {
+            if (System.IO.File.Exists(entry.File))
+            {
+                System.IO.File.Delete(entry.File);
+                AppLog.Write($"[备份树] 删除文件 file={entry.File}（账本条目保留）");
+                SetStatus("已删除备份文件；账本条目保留并置灰标注。");
+            }
+            else
+            {
+                BackupHistory.RemoveFile(entry.File);
+                AppLog.Write($"[备份树] 删除记录 file={entry.File}");
+                SetStatus("已删除备份记录。");
+            }
+            RefreshNode(node);
+        }
+        catch (Exception ex) { await InfoAsync(HumanError.Say(ex, "删除失败")); }
+    }
+
+    /// <summary>发现144：资源管理器定位备份文件。</summary>
+    private static void RevealInExplorer(string file)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{file}\"") { UseShellExecute = true });
+            AppLog.Write($"[备份树] 打开所在文件夹 file={file}");
+        }
+        catch (Exception ex) { AppLog.Write($"[备份树] 打开文件夹失败: {ex.Message}"); }
+    }
+
     private async void OnNodeExpanding(TreeView sender, TreeViewExpandingEventArgs args)
     {
         var node = args.Node;
@@ -845,6 +920,18 @@ public partial class MainWindow : Window
                         node.Children.Add(childNode);
                     }
                     if (dbs.Count == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
+                    // 发现144：备份产物树内管理——备过份的连接挂「备份」子节点（无记录不显示，避免噪音）
+                    string engineName = EngineInfo.Name(info.Profile.Engine);
+                    bool hasBackups = BackupHistory.All().Any(h => h.Engine == engineName);
+                    if (hasBackups)
+                    {
+                        var bInfo = new NodeInfo { Kind = NodeKind.BackupHistory, Profile = info.Profile, Provider = info.Provider, Name = "备份" };
+                        var bNode = new TreeViewNode { Content = NodeIconText("backup", "备份") };
+                        bNode.Children.Add(new TreeViewNode { Content = "…" });
+                        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(bNode, $"ConnBackup_{info.Profile.Id}");
+                        _nodeMap[bNode] = bInfo;
+                        node.Children.Add(bNode);
+                    }
                     SetStatus($"{info.Profile.DisplayName}：{dbs.Count} 个库");
                     break;
 
@@ -913,6 +1000,34 @@ public partial class MainWindow : Window
                         }
                     if (objCount == 0) node.Children.Add(new TreeViewNode { Content = "（空）" });
                     SetStatus($"{info.Db} · {info.Name}：{objCount} 项");
+                    break;
+
+                case NodeKind.BackupHistory:
+                    // 发现144：备份条目按时间倒序列出（账本本身最新在前）；文件已不在磁盘的置灰标注
+                    {
+                        string engineName = EngineInfo.Name(info.Profile.Engine);
+                        var entries = BackupHistory.All().Where(h => h.Engine == engineName).ToList();
+                        int n = 0;
+                        foreach (var e in entries)
+                        {
+                            bool exists = System.IO.File.Exists(e.File);
+                            string label = $"{e.Db} · {UiBatchB.BackupEntryLabel(e, exists)}";
+                            var eInfo = new NodeInfo { Kind = NodeKind.BackupEntry, Profile = info.Profile, Provider = info.Provider, Name = e.File, Db = e.Db, BackupEntry = e };
+                            var eNode = new TreeViewNode { Content = NodeIconText("table", label) };
+                            if (!exists)
+                            {
+                                var host = eNode.Content as StackPanel;
+                                if (host is not null)
+                                    foreach (var child in host.Children.OfType<TextBlock>())
+                                        child.Foreground = Ant.TextSub;   // 置灰（颜色走令牌）
+                            }
+                            _nodeMap[eNode] = eInfo;
+                            node.Children.Add(eNode);
+                            n++;
+                        }
+                        if (n == 0) node.Children.Add(new TreeViewNode { Content = UiBatchB.BackupTreeEmptyText });
+                        SetStatus($"备份记录：{n} 条");
+                    }
                     break;
 
                 case NodeKind.Table when info.Provider is { IsNoSql: false }:

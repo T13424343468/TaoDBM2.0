@@ -385,57 +385,122 @@ public static class ErdDialog
             return;
         }
 
-        var sb = new System.Text.StringBuilder();
-        foreach (var d in actionable)
-            sb.AppendLine($"【{d.Table}】{d.Detail}");
-        sb.AppendLine();
-        foreach (var s in stmts) sb.AppendLine(s + ";");
-        if (skipped.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("提示：");
-            foreach (var s in skipped) sb.AppendLine("  " + s);
-        }
-        sb.AppendLine();
-        sb.AppendLine($"共 {stmts.Count} 条语句。执行后新增表 / 补列 / 改列类型会落到库内，不删除库中已有对象。");
-
-        var box = new TextBox
-        {
-            AcceptsReturn = true,
-            IsReadOnly = true,
-            Text = sb.ToString(),
-            FontFamily = new FontFamily("Consolas"),
-            MinWidth = 620,
-            MinHeight = 320,
-            MaxHeight = 420,
-            TextWrapping = TextWrapping.Wrap,
-        };
-        var dlg = new ContentDialog
-        {
-            Title = "同步到库 · 差异脚本预览",
-            Content = box,
-            PrimaryButtonText = $"执行同步（{stmts.Count} 条）",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) { _hint.Text = "已取消，库未改动。"; return; }
-
-        int ok = 0;
-        var fails = new List<string>();
+        // 发现147：差异脚本逐条勾选——每条语句一行 CheckBox（默认全勾）＋类型徽标＋表名＋摘要，全文可展开
+        var checkList = new StackPanel { Spacing = 4 };
+        var checks = new List<(CheckBox Box, string Stmt, TextBlock Result)>();
         foreach (var s in stmts)
         {
+            var box = new CheckBox { Content = UiBatchB.SyncItemLabel(s), IsChecked = true, HorizontalContentAlignment = HorizontalAlignment.Left };
+            var full = new TextBlock
+            {
+                Text = s,
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(28, 0, 0, 4),
+                Visibility = Visibility.Collapsed,
+            };
+            var toggle = new HyperlinkButton { Content = "展开全文", Margin = new Thickness(28, -4, 0, 0), Padding = new Thickness(0) };
+            toggle.Click += (_, _) =>
+            {
+                bool show = full.Visibility == Visibility.Collapsed;
+                full.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+                toggle.Content = show ? "收起全文" : "展开全文";
+            };
+            var result = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(28, 0, 0, 6) };
+            box.Click += (_, _) => UpdateExecBtn();
+            checkList.Children.Add(box);
+            checkList.Children.Add(full);
+            checkList.Children.Add(toggle);
+            checkList.Children.Add(result);
+            checks.Add((box, s, result));
+        }
+
+        if (skipped.Count > 0)
+        {
+            var skipNote = new TextBlock
+            {
+                Text = "提示（不执行）：\n  " + string.Join("\n  ", skipped),
+                Foreground = Ant.TextSub,
+                FontSize = AntTokens.FontMinor,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0),
+            };
+            checkList.Children.Add(skipNote);
+        }
+
+        var execBtn = new Button
+        {
+            Content = $"执行所选（{checks.Count}/{checks.Count} 条）",
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+        };
+        void UpdateExecBtn()
+        {
+            int n = checks.Count(c => c.Box.IsChecked == true);
+            execBtn.Content = $"执行所选（{n}/{checks.Count} 条）";
+            execBtn.IsEnabled = n > 0;   // 全不勾时禁用
+        }
+
+        var scroll = new ScrollViewer
+        {
+            Content = checkList,
+            MaxHeight = 380,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+        var panel = new StackPanel { Spacing = 8, MinWidth = 620 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"共 {stmts.Count} 条语句。逐条勾选要执行的语句；执行后新增表 / 补列 / 改列类型会落到库内，不删除库中已有对象。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            FontSize = AntTokens.FontMinor,
+        });
+        panel.Children.Add(scroll);
+        panel.Children.Add(execBtn);
+
+        var dlg = new ContentDialog
+        {
+            Title = "同步到库 · 差异脚本逐条确认",
+            Content = panel,
+            CloseButtonText = "取消",
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        var showResult = new TaskCompletionSource<bool>();
+        dlg.Closed += (_, _) => showResult.TrySetResult(false);
+        _ = dlg.ShowThemedAsync();
+        execBtn.Click += (_, _) => showResult.TrySetResult(true);
+        bool confirmed = await showResult.Task;
+        if (!confirmed) { _hint.Text = "已取消，库未改动。"; return; }
+
+        int selected = checks.Count(c => c.Box.IsChecked == true);
+        int ok = 0;
+        var fails = new List<string>();
+        foreach (var (box, s, result) in checks)
+        {
+            if (box.IsChecked != true) continue;   // 未勾选的语句不执行
             try
             {
                 var rs = await prov.Execute(db, s + ";");
-                if (rs.Any(r => r.IsError)) fails.Add(s);
-                else ok++;
+                var errRow = rs.FirstOrDefault(r => r.IsError);
+                if (errRow is not null)
+                {
+                    fails.Add(s);
+                    result.Text = "✗ " + (errRow.Message.Length > 0 ? errRow.Message : "执行没成功");
+                    result.Foreground = Ant.Error;
+                }
+                else { ok++; result.Text = "✓ 执行成功"; result.Foreground = Ant.Success; }
             }
-            catch { fails.Add(s); }
+            catch (Exception ex)
+            {
+                fails.Add(s);
+                result.Text = "✗ " + HumanError.Say(ex, "执行失败");
+                result.Foreground = Ant.Error;
+            }
         }
-        AppLog.Write($"[ER图] 同步到库 db={db} stmts={stmts.Count} ok={ok} fail={fails.Count}");
+        AppLog.Write($"[ER图] 同步到库 db={db} stmts={stmts.Count} selected={selected} ok={ok} fail={fails.Count}");   // 发现147：落账带勾选数
         _hint.Text = fails.Count == 0
-            ? $"同步到库完成：{ok}/{stmts.Count} 条语句全部成功。请在左侧树点「刷新」查看结果。"
+            ? $"同步到库完成：所选 {selected} 条语句全部成功。请在左侧树点「刷新」查看结果。"
             : $"同步到库部分完成：成功 {ok} 条、失败 {fails.Count} 条。首条失败语句：{fails[0]}";
     }
 

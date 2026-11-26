@@ -151,16 +151,94 @@ public static class SettingsDialog
         var scroll = new ScrollViewer
         {
             Content = panel,
-            MaxHeight = 520,
+            MaxHeight = 480,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Padding = new Thickness(0, 0, 4, 0),
         };
 
+        // ---------- 发现152：外观页签——编辑器 / 网格字体字号（uifonts.json，损坏回默认） ----------
+        var fontPrefs = Core.UiFontPrefs.Load();
+        string[] fontChoices = { "Consolas", "Cascadia Code", "微软雅黑", "宋体", "Arial" };
+        var editorFontBox = new ComboBox { Header = "编辑器字体", MinWidth = 200, ItemsSource = fontChoices, SelectedItem = fontPrefs.EditorFontFamily };
+        var editorSizeBox = new TextBox { Header = $"编辑器字号（{Core.UiFontPrefs.MinFontSize}-{Core.UiFontPrefs.MaxFontSize}）", Text = fontPrefs.EditorFontSize.ToString(), MinWidth = 120 };
+        var gridFontBox = new ComboBox { Header = "网格字体", MinWidth = 200, ItemsSource = fontChoices, SelectedItem = fontPrefs.GridFontFamily };
+        var gridSizeBox = new TextBox { Header = $"网格字号（{Core.UiFontPrefs.MinFontSize}-{Core.UiFontPrefs.MaxFontSize}）", Text = fontPrefs.GridFontSize.ToString(), MinWidth = 120 };
+        var fontPreview = new TextBlock
+        {
+            Text = "SELECT id, name FROM orders WHERE amount > 100;  -- 字体预览",
+            FontFamily = new FontFamily(fontPrefs.EditorFontFamily),
+            FontSize = fontPrefs.EditorFontSize,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 8, 0, 0),
+        };
+        editorFontBox.SelectionChanged += (_, _) => fontPreview.FontFamily = new FontFamily(editorFontBox.SelectedItem?.ToString() ?? "Consolas");   // 预览即时生效
+        editorSizeBox.TextChanged += (_, _) =>
+        {
+            if (int.TryParse(editorSizeBox.Text?.Trim(), out var sz))
+                fontPreview.FontSize = Core.UiFontPrefs.ClampFontSize(sz);
+        };
+        var themeHint = new TextBlock { Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+        var themeLink = new HyperlinkButton { Content = "打开主题选择", Margin = new Thickness(0, 0, 0, 0), Padding = new Thickness(0) };
+        themeLink.Click += (_, _) => themeHint.Text = "主题切换在主窗口顶部「主题」按钮：水墨 / 天青 / 墨夜，三主题即时生效。";
+
+        var lookPanel = new StackPanel { Spacing = 8, MinWidth = 400 };
+        lookPanel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { editorFontBox, editorSizeBox } });
+        lookPanel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { gridFontBox, gridSizeBox } });
+        lookPanel.Children.Add(new TextBlock { Text = "改完保存后，新开的查询页签与数据网格按新字体显示。", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
+        lookPanel.Children.Add(fontPreview);
+        lookPanel.Children.Add(themeLink);
+        lookPanel.Children.Add(themeHint);
+        var lookScroll = new ScrollViewer
+        {
+            Content = lookPanel,
+            MaxHeight = 480,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 4, 0),
+        };
+
+        // ---------- 发现152：快捷键页签——只读清单＋改绑（冲突当场人话提示不落盘） ----------
+        var shortcutList = new StackPanel { Spacing = 4, MinWidth = 400 };
+        var shortcutStatus = new TextBlock { Foreground = Ant.Error, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
+        void RefreshShortcuts()
+        {
+            shortcutList.Children.Clear();
+            foreach (var def in Core.ShortcutPrefs.Actions)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+                row.Children.Add(new TextBlock { Text = def.Label, VerticalAlignment = VerticalAlignment.Center, MinWidth = 190 });
+                row.Children.Add(new TextBlock { Text = Core.ShortcutPrefs.Effective(def.Key), VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.Primary, MinWidth = 110 });
+                var rebindBtn = new Button { Content = "改绑", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 2, 10, 2), FontSize = AntTokens.FontMinor };
+                var actionKey = def.Key;
+                rebindBtn.Click += async (_, _) => await RebindShortcutAsync(owner, actionKey, shortcutStatus, RefreshShortcuts);
+                row.Children.Add(rebindBtn);
+                shortcutList.Children.Add(row);
+            }
+            shortcutList.Children.Add(new TextBlock
+            {
+                Text = "改绑即生效；改回出厂绑定即清除覆盖。编辑器内置四键（执行 / 补全 / 保存）随编辑器同口径生效。",
+                Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 8, 0, 0),
+            });
+        }
+        RefreshShortcuts();
+        var shortcutScroll = new ScrollViewer
+        {
+            Content = shortcutList,
+            MaxHeight = 480,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 4, 0),
+        };
+
+        var pivot = new Pivot { MinWidth = 460 };
+        pivot.Items.Add(new PivotItem { Header = "通用", Content = scroll });
+        pivot.Items.Add(new PivotItem { Header = "外观", Content = lookScroll });
+        pivot.Items.Add(new PivotItem { Header = "快捷键", Content = shortcutScroll });
+
         var dlg = new ContentDialog
         {
             Title = "设置",
-            Content = scroll,
+            Content = pivot,
             PrimaryButtonText = "保存",
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
@@ -185,7 +263,100 @@ public static class SettingsDialog
             SaveNotify();
             Core.SqlOpenPrefs.Save(chkSqlLatest.IsChecked == true);
             Core.SqlCompletePrefs.Save(chkComplete.IsChecked == true);   // ㉔：补全开关保存即生效
+            // 发现152：外观偏好保存（字号越界在 Save 内钳制；新开页签按新字体显示）
+            fontPrefs.EditorFontFamily = editorFontBox.SelectedItem?.ToString() ?? "Consolas";
+            fontPrefs.GridFontFamily = gridFontBox.SelectedItem?.ToString() ?? "Consolas";
+            if (int.TryParse(editorSizeBox.Text?.Trim(), out var esz)) fontPrefs.EditorFontSize = esz;
+            if (int.TryParse(gridSizeBox.Text?.Trim(), out var gsz)) fontPrefs.GridFontSize = gsz;
+            fontPrefs.Save();
+            Core.AppLog.Write($"[设置] 外观保存 editor={fontPrefs.EditorFontFamily}/{fontPrefs.EditorFontSize} grid={fontPrefs.GridFontFamily}/{fontPrefs.GridFontSize}");
         }
+    }
+
+    /// <summary>发现152：改绑对话框——按下新键组合（修饰键＋主键），冲突当场人话提示不落盘；Esc 取消。</summary>
+    private static async Task RebindShortcutAsync(Window owner, string actionKey, TextBlock status, Action refresh)
+    {
+        var capture = new TextBox
+        {
+            IsReadOnly = true,
+            PlaceholderText = "点这里后按下新组合，如 Ctrl+Alt+Q（Esc 取消）",
+            MinWidth = 380,
+        };
+        var err = new TextBlock { Foreground = Ant.Error, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
+        var panel = new StackPanel { Spacing = 8, MinWidth = 400 };
+        var def = Core.ShortcutPrefs.Def(actionKey);
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"为「{def?.Label}」按下新的键组合。当前：{Core.ShortcutPrefs.Effective(actionKey)}",
+            TextWrapping = TextWrapping.Wrap,
+        });
+        panel.Children.Add(capture);
+        panel.Children.Add(err);
+
+        var dlg = new ContentDialog
+        {
+            Title = "改绑快捷键",
+            Content = panel,
+            CloseButtonText = "取消",
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        var done = new TaskCompletionSource<bool>();
+        dlg.Closed += (_, _) => done.TrySetResult(false);
+
+        capture.KeyDown += (s, e) =>
+        {
+            e.Handled = true;
+            if (e.Key == Windows.System.VirtualKey.Escape) { done.TrySetResult(false); return; }
+            string key = VirtualKeyName(e.Key);
+            if (key.Length == 0) return;   // 只按修饰键不算完整组合
+            var mods = new List<string>();
+            void Add(Windows.System.VirtualKey vk, string name)
+            {
+                if (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentRoot(vk)
+                    .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down)) mods.Add(name);
+            }
+            Add(Windows.System.VirtualKey.Control, "Ctrl");
+            Add(Windows.System.VirtualKey.Shift, "Shift");
+            Add(Windows.System.VirtualKey.Menu, "Alt");
+            Add(Windows.System.VirtualKey.LeftWindows, "Win");
+            Add(Windows.System.VirtualKey.RightWindows, "Win");
+            string combo = string.Join("+", mods.Concat(new[] { key }).Distinct());
+            string conflict = Core.ShortcutPrefs.Rebind(actionKey, combo);
+            if (conflict.Length > 0) { err.Text = conflict; return; }   // 冲突当场人话提示，继续捕获
+            done.TrySetResult(true);
+        };
+
+        _ = dlg.ShowThemedAsync();
+        bool saved = await done.Task;
+        if (saved) { status.Text = ""; refresh(); }
+        else if (err.Text.Length > 0) status.Text = err.Text;
+    }
+
+    /// <summary>发现152：VirtualKey → 绑定串主键名；只按修饰键返回空串。</summary>
+    private static string VirtualKeyName(Windows.System.VirtualKey k)
+    {
+        int v = (int)k;
+        if (v >= (int)Windows.System.VirtualKey.A && v <= (int)Windows.System.VirtualKey.Z)
+            return ((char)('A' + v - (int)Windows.System.VirtualKey.A)).ToString();
+        if (v >= (int)Windows.System.VirtualKey.Number0 && v <= (int)Windows.System.VirtualKey.Number9)
+            return ((char)('0' + v - (int)Windows.System.VirtualKey.Number0)).ToString();
+        if (v >= (int)Windows.System.VirtualKey.F1 && v <= (int)Windows.System.VirtualKey.F12)
+            return $"F{v - (int)Windows.System.VirtualKey.F1 + 1}";
+        return k switch
+        {
+            Windows.System.VirtualKey.Enter => "Enter",
+            Windows.System.VirtualKey.Space => "Space",
+            Windows.System.VirtualKey.Tab => "Tab",
+            Windows.System.VirtualKey.Home => "Home",
+            Windows.System.VirtualKey.End => "End",
+            Windows.System.VirtualKey.PageUp => "PageUp",
+            Windows.System.VirtualKey.PageDown => "PageDown",
+            Windows.System.VirtualKey.Up => "Up",
+            Windows.System.VirtualKey.Down => "Down",
+            Windows.System.VirtualKey.Left => "Left",
+            Windows.System.VirtualKey.Right => "Right",
+            _ => "",
+        };
     }
 
     /// <summary>单类事件的中文名（设置界面用）。</summary>
