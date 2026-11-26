@@ -1,38 +1,32 @@
-main-window named-interactive-elements: 18 (visible-list capped 200)
+main-window named-interactive-elements: 30 (visible-list capped 200)
 ControlType.Pane | False | Non Client Input Sink Window
 ControlType.Pane | False | AppWindow Custom Title Bar
 ControlType.Button | False | Minimize
 ControlType.Button | False | Restore
 ControlType.Button | False | Close
+ControlType.Text | False | 表
+ControlType.Text | False | 查询
+ControlType.Text | False | 备份
+ControlType.Text | False | 任务中心
+ControlType.Text | False | ER 图
 ControlType.Button | False | ＋ 新建连接
 ControlType.Button | False | 主题
 ControlType.Button | False | 刷新
 ControlType.Button | False | 手册
 ControlType.Button | False | 关于
+ControlType.Text | False | 还没有连接：点「新建连接」开始。
 ControlType.Edit | False | 筛选连接（名称 / 主机）
-ControlType.TabItem | False | 欢迎使用 TaoDBM。
-
-1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
-2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
-3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
-
-支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
+ControlType.TabItem | False | 开始
 ControlType.Text | False | 开始
 ControlType.Button | False | Add New Tab
-ControlType.Pane | False | 欢迎使用 TaoDBM。
-
-1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
-2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
-3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
-
-支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
-ControlType.Text | False | 欢迎使用 TaoDBM。
-
-1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。
-2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。
-3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。
-
-支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
+ControlType.Text | False | 欢迎使用 TaoDBM
+ControlType.Text | False | 新手引导：右上角「＋ 新建连接」建好连接后，左侧树展开库与表，双击表即可浏览数据；选中后点「新建查询」，写 SQL 按 F5 执行。
+ControlType.Button | False | 知道了
+ControlType.Text | False | 收藏连接
+ControlType.Text | False | 暂无收藏：在连接右键菜单里「星标」即可收藏到这里。
+ControlType.Text | False | 最近打开
+ControlType.Text | False | 暂无最近打开的页签。
+ControlType.Text | False | 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
 ControlType.Text | False | 共 0 个连接 · 0 个分组
 ControlType.Text | False | 0 连接 · 0 已连接
 feature-level coverage account:
