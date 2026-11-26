@@ -1,4 +1,4 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v19：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
+﻿# navicat-walk.ps1 — 竞品对照走查 v20：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
 # v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v19 start exe=$ExePath"
+Log "v20 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -208,91 +208,63 @@ if ($wizSeen) {
 } else { Log "no wizard window; continue" }
 Start-Sleep -Seconds 5
 
-# 4) 关新功能弹窗（v10 定谳坐标 696,187）+ 主界面截图
-Focus-WindowClass -ClassPattern 'TNavicatMainForm*' | Out-Null
-[MouseNative15]::Click(696, 187)
-Start-Sleep -Seconds 3
+# 4) 关功能导览（TFeatureTour，v19 新现）键盘 ESC + 主界面截图
+$tourGone = -not (Test-WindowClass -ClassPattern 'TFeatureTour*')
+for ($i = 1; $i -le 3 -and -not $tourGone; $i++) {
+  Focus-WindowClass -ClassPattern 'TFeatureTour*' | Out-Null
+  [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+  Log "tour esc $i"
+  Start-Sleep -Seconds 2
+  $tourGone = -not (Test-WindowClass -ClassPattern 'TFeatureTour*')
+  Log ("tour dismissed=" + $tourGone + " by esc" + $i)
+}
 Shot "shot-n02-main.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-main: $w" }
 
-# 5) 连接下拉 → 扫描菜单行 → 点第 7 行（SQLite 猜测位）
-[MouseNative15]::Click(48, 75)
-Start-Sleep -Seconds 1
-$cp = [System.Windows.Forms.Cursor]::Position
-Log ("cursor after click: " + $cp.X + "," + $cp.Y)
+# 5) 键盘建连接（v19 定谳：鼠标注入全程落空、光标钉死屏幕中心；键盘全通）：
+#    Alt+F 打开文件菜单 → DOWN 到第 2 项「新建连接...」→ ENTER
+Focus-WindowClass -ClassPattern 'TNavicatMainForm*' | Out-Null
+[System.Windows.Forms.SendKeys]::SendWait("%f")
 Start-Sleep -Seconds 2
-Shot "shot-n03-menu.png"
-$rows = @()
-$bmp = New-Object System.Drawing.Bitmap(1024, 768)
-$g = [System.Drawing.Graphics]::FromImage($bmp)
-$g.CopyFromScreen(0, 0, 0, 0, $bmp.Size)
-$g.Dispose()
-$inBand = $false; $bandStart = 0
-for ($y = 90; $y -lt 520; $y++) {
-  $dark = 0
-  for ($x = 25; $x -lt 220; $x += 2) {
-    $c = $bmp.GetPixel($x, $y)
-    if ($c.R -lt 120 -and $c.G -lt 120 -and $c.B -lt 120) { $dark++ }
-  }
-  if ($dark -ge 3 -and -not $inBand) { $inBand = $true; $bandStart = $y }
-  elseif ($dark -lt 3 -and $inBand) { $inBand = $false; if ($y - $bandStart -ge 8) { $rows += [int](($bandStart + $y) / 2) } }
-}
-$bmp.Dispose()
-Log "menu rows detected: $($rows -join ',')"
-if ($rows.Count -ge 7) {
-  [MouseNative15]::Click(100, $rows[6])
-  Log "clicked menu row 7 at y=$($rows[6])"
-} elseif ($rows.Count -gt 0) {
-  [MouseNative15]::Click(100, $rows[$rows.Count - 1])
-  Log "clicked last menu row at y=$($rows[$rows.Count - 1])"
-} else {
-  Log "WARN no menu rows detected; fallback click y=270"
-  [MouseNative15]::Click(100, 270)
-}
-Start-Sleep -Seconds 5
+Shot "shot-n03-filemenu.png"
+[System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+Start-Sleep -Milliseconds 500
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+Start-Sleep -Seconds 3
 Shot "shot-n04-conn-dialog.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-conn: $w" }
-$dlgSeen = Get-NavWindows -ProcId $script:navPid | Where-Object { $_ -like "*class='TConnection*'" -or $_ -like "*class='TForm*'" }
-if (-not $dlgSeen) {
-  Log "no conn dialog; keyboard Alt+F menu probe"
-  Focus-WindowClass -ClassPattern 'TNavicatMainForm*' | Out-Null
-  [System.Windows.Forms.SendKeys]::SendWait("%f")
-  Start-Sleep -Seconds 2
-  Shot "shot-n15-altf-menu.png"
-  $bmp2 = New-Object System.Drawing.Bitmap(1024, 768)
-  $g2 = [System.Drawing.Graphics]::FromImage($bmp2)
-  $g2.CopyFromScreen(0, 0, 0, 0, $bmp2.Size)
-  $g2.Dispose()
-  $mrows = @()
-  $inB = $false; $bS = 0
-  for ($y = 40; $y -lt 520; $y++) {
-    $dark = 0
-    for ($x = 5; $x -lt 300; $x += 2) {
-      $c = $bmp2.GetPixel($x, $y)
-      if ($c.R -lt 120 -and $c.G -lt 120 -and $c.B -lt 120) { $dark++ }
-    }
-    if ($dark -ge 3 -and -not $inB) { $inB = $true; $bS = $y }
-    elseif ($dark -lt 3 -and $inB) { $inB = $false; if ($y - $bS -ge 8) { $mrows += [int](($bS + $y) / 2) } }
-  }
-  $bmp2.Dispose()
-  Log "altf menu rows: $($mrows -join ',')"
-  [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
-  Start-Sleep -Seconds 1
-}
 
-# 6) SQLite 连接表单：连接名 → 数据库文件路径 → 保存
-[MouseNative15]::Click(450, 180)
-Start-Sleep -Seconds 1
+# 5.5) 类型选择：方向键 6 下到 SQLite（猜测位）→ ENTER；每步截图留证
+for ($i = 1; $i -le 6; $i++) {
+  [System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+  Start-Sleep -Milliseconds 300
+}
+Shot "shot-n05-picker.png"
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+Start-Sleep -Seconds 3
+Shot "shot-n06-connform.png"
+foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-form: $w" }
+
+# 6) SQLite 连接表单（键盘）：连接名 → TAB×3 → 数据库文件路径 → ENTER 保存
 [System.Windows.Forms.SendKeys]::SendWait("sample-sqlite")
-Start-Sleep -Seconds 1
-[MouseNative15]::Click(450, 265)
-Start-Sleep -Seconds 1
+Start-Sleep -Milliseconds 500
+Shot "shot-n06a-name.png"
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
+Start-Sleep -Milliseconds 300
+Shot "shot-n06b-tab1.png"
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
+Start-Sleep -Milliseconds 300
+Shot "shot-n06c-tab2.png"
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
+Start-Sleep -Milliseconds 300
+Shot "shot-n06d-tab3.png"
 [System.Windows.Forms.SendKeys]::SendWait("C:\taodb-sample\sample.db")
-Start-Sleep -Seconds 1
-Shot "shot-n05-filled.png"
-[MouseNative15]::Click(640, 660)
+Start-Sleep -Milliseconds 500
+Shot "shot-n06e-filled.png"
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
 Start-Sleep -Seconds 5
-Shot "shot-n06-saved.png"
+Shot "shot-n06f-saved.png"
+foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-saved: $w" }
 
 # 7) 树：双击连接节点 → main → users
 [MouseNative15]::DblClick(100, 140)
@@ -311,6 +283,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v19 done"
+Log "v20 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
