@@ -279,6 +279,139 @@ public static class DataSyncDialog
             }
         };
 
+        // 发现148：同步配置——整套源/目标/表/选项存取，可挂任务中心到点自动跑
+        var cfgNameBox = new TextBox { PlaceholderText = "配置名（另存/挂任务用）", MinWidth = 170 };
+        var cfgBox = new ComboBox { MinWidth = 180, PlaceholderText = "选择已存配置" };
+        foreach (var n in SyncProfiles.List()) cfgBox.Items.Add(n);
+        var cfgLoadBtn = new Button { Content = "加载", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var cfgSaveBtn = new Button { Content = "另存", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var cfgManageBtn = new Button { Content = "管理", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var hookIvBox = new TextBox { PlaceholderText = "间隔(分)", Text = "60", MinWidth = 70 };
+        var hookBtn = new Button { Content = "挂到任务中心", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+
+        SyncProfiles.SyncProfile? BuildProfileFromUi(string name)
+        {
+            var src = srcBox.SelectedItem as ConnectionProfile;
+            var dst = dstBox.SelectedItem as ConnectionProfile;
+            var sdb = srcDbBox.SelectedItem as string ?? "";
+            var ddb = dstDbBox.SelectedItem as string ?? "";
+            var tables = tableList.Items.OfType<CheckBox>().Where(c => c.IsChecked == true)
+                .Select(c => (string)c.Content).ToList();
+            if (src is null || dst is null || sdb.Length == 0 || ddb.Length == 0 || tables.Count == 0) return null;
+            return new SyncProfiles.SyncProfile(name, src.DisplayName, sdb, dst.DisplayName, ddb, tables,
+                syncStruct.IsChecked == true, alignTypes.IsChecked == true, sendData.IsChecked == true, modeTruncate.IsChecked == true);
+        }
+
+        cfgLoadBtn.Click += async (_, _) =>
+        {
+            var name = cfgBox.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(name)) { output.Text = "先在下拉里选一个配置再加载。"; return; }
+            var p = SyncProfiles.Load(name);
+            if (p is null) { output.Text = $"配置「{name}」读不出来（可能已损坏），请删掉重建。"; return; }
+            var srcItem = srcBox.Items.OfType<ConnectionProfile>().FirstOrDefault(x => x.DisplayName.Equals(p.SourceConnection, StringComparison.OrdinalIgnoreCase));
+            var dstItem = dstBox.Items.OfType<ConnectionProfile>().FirstOrDefault(x => x.DisplayName.Equals(p.TargetConnection, StringComparison.OrdinalIgnoreCase));
+            if (srcItem is null || dstItem is null)
+            {
+                output.Text = $"配置里的连接「{(srcItem is null ? p.SourceConnection : p.TargetConnection)}」当前不存在，请先在左侧建好同名连接再加载。";
+                return;
+            }
+            srcBox.SelectedItem = srcItem;
+            dstBox.SelectedItem = dstItem;
+            await LoadDbs(srcBox, srcDbBox, output);
+            await LoadDbs(dstBox, dstDbBox, output);
+            if (srcDbBox.Items.Contains(p.SourceDb)) srcDbBox.SelectedItem = p.SourceDb;
+            if (dstDbBox.Items.Contains(p.TargetDb)) dstDbBox.SelectedItem = p.TargetDb;
+            tableList.Items.Clear();
+            foreach (var t in p.Tables) tableList.Items.Add(new CheckBox { Content = t, IsChecked = true });
+            syncStruct.IsChecked = p.SyncStruct;
+            alignTypes.IsChecked = p.AlignTypes;
+            sendData.IsChecked = p.SendData;
+            if (p.TruncateMode) modeTruncate.IsChecked = true; else modeAppend.IsChecked = true;
+            cfgNameBox.Text = p.Name;
+            output.Text = $"已套用配置「{p.Name}」：{p.SourceConnection}/{p.SourceDb} → {p.TargetConnection}/{p.TargetDb}，{p.Tables.Count} 表。";
+        };
+        cfgSaveBtn.Click += (_, _) =>
+        {
+            var name = (cfgNameBox.Text ?? "").Trim();
+            if (name.Length == 0) { output.Text = "先填配置名再另存。"; return; }
+            var p = BuildProfileFromUi(name);
+            if (p is null) { output.Text = "请把源 / 目标连接、库和要传的表都选好再另存。"; return; }
+            var verr = SyncProfiles.Validate(p);
+            if (verr.Length > 0) { output.Text = verr; return; }
+            try
+            {
+                SyncProfiles.Save(p);
+                if (!cfgBox.Items.Contains(name)) cfgBox.Items.Add(name);
+                cfgBox.SelectedItem = name;
+                output.Text = $"已保存配置「{name}」，下次打开可直接加载或挂到任务中心。";
+            }
+            catch (Exception ex) { output.Text = HumanError.Say(ex, "保存配置失败"); }
+        };
+        cfgManageBtn.Click += async (_, _) =>
+        {
+            var panel = new StackPanel { Spacing = 8, MinWidth = 380 };
+            var names = SyncProfiles.List();
+            if (names.Count == 0) panel.Children.Add(new TextBlock { Text = "还没有保存过同步配置。", TextWrapping = TextWrapping.Wrap });
+            foreach (var n in names)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                row.Children.Add(new TextBlock { Text = n, VerticalAlignment = VerticalAlignment.Center });
+                var delBtn = new Button { Content = "删除", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge) };
+                delBtn.Click += (_, _) =>
+                {
+                    SyncProfiles.Delete(n);
+                    panel.Children.Remove(row);
+                    if (cfgBox.Items.Contains(n)) cfgBox.Items.Remove(n);
+                };
+                row.Children.Add(delBtn);
+                panel.Children.Add(row);
+            }
+            var mg = new ContentDialog
+            {
+                Title = "管理同步配置",
+                Content = new ScrollViewer { Content = panel, MaxHeight = 300, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
+                CloseButtonText = "关闭",
+                XamlRoot = owner.Content.XamlRoot,
+            };
+            await mg.ShowThemedAsync();
+        };
+        hookBtn.Click += async (_, _) =>
+        {
+            var name = (cfgNameBox.Text ?? "").Trim();
+            if (name.Length == 0) { output.Text = "先填配置名，再挂到任务中心。"; return; }
+            var p = BuildProfileFromUi(name);
+            if (p is null) { output.Text = "请把源 / 目标连接、库和要传的表都选好再挂任务。"; return; }
+            var verr = SyncProfiles.Validate(p);
+            if (verr.Length > 0) { output.Text = verr; return; }
+            if (!int.TryParse(hookIvBox.Text?.Trim(), out int iv)) { output.Text = "间隔请填数字（分钟）。"; return; }
+            if (p.TruncateMode)
+            {
+                // 清空重灌到点会先 TRUNCATE：危险操作先确认，不静默挂账
+                var confirm = new ContentDialog
+                {
+                    Title = "确认挂任务",
+                    Content = new TextBlock
+                    {
+                        Text = $"配置「{name}」是清空重灌模式：到点会先 TRUNCATE 目标表再全量写入，不可回退。\n确认挂到任务中心（每 {iv} 分钟执行一次）？",
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    PrimaryButtonText = "确认挂任务",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = owner.Content.XamlRoot,
+                };
+                if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+            }
+            try
+            {
+                SyncProfiles.Save(p);
+                var e = SqlScheduler.Add(p.Name, p.TargetDb, "--tao-sync:" + p.Name, iv, "sync");
+                output.Text = $"已挂到任务中心：{e.Name}（{e.Id}），每 {iv} 分钟执行一次，下次 {e.NextRunAt:MM-dd HH:mm}。到点自动按配置执行，可在任务中心→定时 SQL 管理里启停。";
+                AppLog.Write($"[同步配置] 已挂任务 {p.Name}（{e.Id}）每 {iv} 分");
+            }
+            catch (Exception ex) { output.Text = HumanError.Say(ex, "挂任务失败"); }
+        };
+
         var content = new StackPanel { Spacing = 10, MinWidth = 620, Margin = new Thickness(0, 0, 12, 0) };
         content.Children.Add(new TextBlock
         {
@@ -292,6 +425,19 @@ public static class DataSyncDialog
         rowA.Children.Add(srcBox);
         rowA.Children.Add(srcDbBox);
         content.Children.Add(rowA);
+        // 发现148：同步配置行——另存/加载/管理整套配置，可挂任务中心到点自动执行
+        var rowCfg = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        rowCfg.Children.Add(cfgNameBox);
+        rowCfg.Children.Add(cfgBox);
+        rowCfg.Children.Add(cfgLoadBtn);
+        rowCfg.Children.Add(cfgSaveBtn);
+        rowCfg.Children.Add(cfgManageBtn);
+        content.Children.Add(rowCfg);
+        var rowHook = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        rowHook.Children.Add(new TextBlock { Text = "到点自动执行：", VerticalAlignment = VerticalAlignment.Center, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
+        rowHook.Children.Add(hookIvBox);
+        rowHook.Children.Add(hookBtn);
+        content.Children.Add(rowHook);
         var rowB = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         rowB.Children.Add(new TextBlock { Text = "目标", VerticalAlignment = VerticalAlignment.Center });
         rowB.Children.Add(dstBox);
@@ -321,6 +467,71 @@ public static class DataSyncDialog
             XamlRoot = owner.Content.XamlRoot,
         };
         _ = dlg.ShowThemedAsync();
+    }
+
+    /// <summary>发现148：按配置执行一次同步（任务中心 sync 条目与挂账任务共用）——
+    /// 按连接显示名解析两连接，结构同步＋数据传输；返回错误消息（空串=成功）。</summary>
+    public static async Task<string> ExecuteProfileAsync(SyncProfiles.SyncProfile profile)
+    {
+        var all = ConnectionStore.Load();
+        var srcProfile = all.FirstOrDefault(p => p.DisplayName.Equals(profile.SourceConnection, StringComparison.OrdinalIgnoreCase));
+        var dstProfile = all.FirstOrDefault(p => p.DisplayName.Equals(profile.TargetConnection, StringComparison.OrdinalIgnoreCase));
+        if (srcProfile is null) return $"源连接「{profile.SourceConnection}」不存在，请先建好同名连接。";
+        if (dstProfile is null) return $"目标连接「{profile.TargetConnection}」不存在，请先建好同名连接。";
+        try
+        {
+            using var src = ProviderFactory.Create(srcProfile);
+            using var dst = ProviderFactory.Create(dstProfile);
+            foreach (var t in profile.Tables)
+            {
+                // 1) 结构同步
+                if (profile.SyncStruct)
+                {
+                    List<ColumnSpec> srcCols;
+                    try { srcCols = await src.GetColumns(profile.SourceDb, t); }
+                    catch { srcCols = new(); }
+                    if (srcCols.Count > 0)
+                    {
+                        List<string> dstNames = new();
+                        bool targetExists = true;
+                        try { dstNames = (await dst.GetColumns(profile.TargetDb, t)).Select(c => c.Name).ToList(); }
+                        catch { targetExists = false; }
+                        if (!targetExists)
+                        {
+                            var create = DataSync.CreateForTarget(t, srcCols, dst.Profile.Engine, dst.Quote);
+                            await dst.Execute(profile.TargetDb, create);
+                        }
+                        else
+                        {
+                            var (stmts, _) = DataSync.SyncColumns(t, srcCols, dstNames, dst.Profile.Engine, dst.Quote, profile.AlignTypes);
+                            foreach (var s in stmts) await dst.Execute(profile.TargetDb, s);
+                        }
+                    }
+                }
+                // 2) 数据传输
+                if (profile.SendData)
+                {
+                    if (profile.TruncateMode)
+                    {
+                        var clearSql = dst.Profile.Engine == DbEngine.SQLite
+                            ? $"DELETE FROM {dst.Quote(t)}"
+                            : $"TRUNCATE TABLE {dst.Quote(t)}";
+                        await dst.Execute(profile.TargetDb, clearSql);
+                    }
+                    var qr = (await src.Execute(profile.SourceDb, $"SELECT * FROM {src.Quote(t)}")).FirstOrDefault();
+                    if (qr is not null && qr.Rows.Count > 0)
+                        foreach (var b in DataSync.InsertBatches(qr, dst.Quote(t), dst.Quote))
+                            await dst.Execute(profile.TargetDb, b);
+                }
+            }
+            AppLog.Write($"[同步配置] 已执行 {profile.Name}（{profile.Tables.Count} 表）");
+            return "";
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write($"[同步配置] 执行失败 {profile.Name}: {ex.Message}");
+            return HumanError.Say(ex, "同步配置执行");
+        }
     }
 
     /// <summary>格11：目标表是否已有数据（重复同名表提示用；读不到按无数据处理）。</summary>

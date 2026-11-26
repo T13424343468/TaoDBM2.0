@@ -30,6 +30,7 @@ public static class BatchCheckSweep
         RunOdbcEscape(d);          // 发现101
         RunManualContent(d);       // 发现89/92/98/99/128
         RunFallbackNotice(d);      // 发现114
+        UiBatchBCheck.RunAll(check);   // 界面批 B：138/144/147/149/152/153（独立文件，ComboMatrix 家法）
     }
 
     // 发现81：SQL Server 改默认值——带约束名映射时先 DROP 旧约束再 ADD DEFAULT；无映射保持原口径不 DROP
@@ -259,7 +260,9 @@ public static class BatchCheckSweep
         private bool _throw;
         private ConnectionState _state = ConnectionState.Closed;
         public FakeConn(bool throwOnFirstOpen) => _throw = throwOnFirstOpen;
-        public override string ConnectionString { get; set; } = "";
+        private string _cs = "";
+        [System.Diagnostics.CodeAnalysis.AllowNull]   // A路代修：Release 口径 CS8765，基类参数可空注解（OdbcCore 同款）
+        public override string ConnectionString { get => _cs; set => _cs = value ?? ""; }
         public override string Database => "db";
         public override string DataSource => "src";
         public override string ServerVersion => "1.0";

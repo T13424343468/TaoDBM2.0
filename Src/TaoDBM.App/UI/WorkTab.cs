@@ -178,6 +178,12 @@ public partial class WorkTab : Grid
         _mode = mode;
         SourceFile = sourceFile ?? "";
 
+        // 发现152：外观偏好生效——结果网格字体字号随设置（挂在结果宿主上沿视觉树继承，
+        // 单元格未显式设 FontFamily 即生效；字号被单元格令牌显式接管的部分归云测首验）
+        var fontPrefs = UiFontPrefs.Load();
+        _resultsHost.FontFamily = new FontFamily(fontPrefs.GridFontFamily);
+        _resultsHost.FontSize = fontPrefs.GridFontSize;
+
         _hlTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
         _hlTimer.Interval = TimeSpan.FromMilliseconds(250);
         _hlTimer.Tick += (_, _) => { _hlTimer.Stop(); ApplyHighlight(); };
@@ -392,9 +398,22 @@ public partial class WorkTab : Grid
         };
         // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
         var exportMenu = new MenuFlyout();
+        // 发现151：格式名映射（配置键口径）——默认格式标注与目录记忆共用
+        static string FmtOf(ExportKind k) => k switch
+        {
+            ExportKind.Csv => "csv",
+            ExportKind.InsertSql => "insert",
+            ExportKind.Excel => "excel",
+            ExportKind.Xml => "xml",
+            ExportKind.Html => "html",
+            _ => "json",
+        };
+        var defFmt = ExportProfiles.DefaultFormat();
         MenuFlyoutItem ExportItem(string text, string id, ExportKind kind)
         {
-            var it = new MenuFlyoutItem { Text = text };
+            // 发现151：配置里设了默认格式，菜单项文本加「（默认）」标注
+            var label = defFmt.Equals(FmtOf(kind), StringComparison.OrdinalIgnoreCase) ? text + "（默认）" : text;
+            var it = new MenuFlyoutItem { Text = label };
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(it, id);
             it.Click += (_, _) => _ = ExportAsync(kind);
             exportMenu.Items.Add(it);
@@ -406,6 +425,12 @@ public partial class WorkTab : Grid
         ExportItem("导出 XML", "ExportXml", ExportKind.Xml);
         ExportItem("导出 HTML", "ExportHtml", ExportKind.Html);
         ExportItem("导出 JSON（.json）", "ExportJson", ExportKind.Json);   // 发现154：接线补齐，菜单可达
+        // 发现151：导出配置管理入口——增删配置/设默认格式/自动记忆开关
+        var exportCfgItem = new MenuFlyoutItem { Text = "导出配置…" };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(exportCfgItem, "ExportProfiles");
+        exportCfgItem.Click += (_, _) => _ = ShowExportProfilesDialogAsync();
+        exportMenu.Items.Add(new MenuFlyoutSeparator());
+        exportMenu.Items.Add(exportCfgItem);
         _exportMoreBtn.Flyout = exportMenu;
         _structBtn.Click += (_, _) => _ = ShowStructure();
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
@@ -864,11 +889,14 @@ public partial class WorkTab : Grid
             // #216: WinUI FileSavePicker natively crashes on Windows Server sessions (walk 4/4 app-death);
             // use WinForms save dialog (classic #32770, same on Server/client), failures go to managed catch
             var d = DialogOf(kind);
+            // 发现151：文件对话框先落到该格式最近导出过的目录（目录已消失则回落系统默认）
+            var lastDir = ExportProfiles.LastDirOf(FmtOf(kind));
             using var dlg = new System.Windows.Forms.SaveFileDialog
             {
                 Title = d.Title,
                 Filter = d.Filter,
                 FileName = d.FileName,
+                InitialDirectory = lastDir.Length > 0 ? lastDir : "",
             };
             if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             var savePath = dlg.FileName;
@@ -896,11 +924,84 @@ public partial class WorkTab : Grid
                 }
                 await ExportOneAsync(kind, sources[idx], path);
             }
+            // 发现151：自动记忆开——导出成功后按格式记住目录（开关在「导出配置…」里）
+            if (UiPrefs.Get("export-automemory") != "off")
+                ExportProfiles.RememberLastDir(FmtOf(kind), savePath);
         }
         catch (Exception ex)
         {
             ShowError(HumanError.Say(ex, "导出失败"));
         }
+    }
+
+    /// <summary>发现151：导出配置管理——增删配置/设默认格式/自动记忆开关，内联小对话框。</summary>
+    private async Task ShowExportProfilesDialogAsync()
+    {
+        var panel = new StackPanel { Spacing = 10, MinWidth = 480 };
+        // 新增行：配置名 + 格式 + 范围默认值
+        var nameBox = new TextBox { PlaceholderText = "配置名", MinWidth = 110 };
+        var fmtBox = new ComboBox { MinWidth = 100, ItemsSource = new List<string> { "csv", "insert", "excel", "xml", "html", "json" }, SelectedIndex = 0 };
+        var scopeBox = new ComboBox { MinWidth = 170, ItemsSource = new List<string> { "范围默认：不指定", "范围默认：当前页", "范围默认：筛选结果", "范围默认：全表" }, SelectedIndex = 0 };
+        var addBtn = new Button { Content = "新增配置", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        var addRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        addRow.Children.Add(nameBox); addRow.Children.Add(fmtBox); addRow.Children.Add(scopeBox); addRow.Children.Add(addBtn);
+        panel.Children.Add(addRow);
+        var listPanel = new StackPanel { Spacing = 6 };
+        panel.Children.Add(listPanel);
+        // 自动记忆开关（UiPrefs 键 export-automemory，on/off）
+        var autoMem = new CheckBox { Content = "导出成功后自动记住该格式的目录", IsChecked = UiPrefs.Get("export-automemory") != "off" };
+        autoMem.Checked += (_, _) => UiPrefs.Set("export-automemory", "on");
+        autoMem.Unchecked += (_, _) => UiPrefs.Set("export-automemory", "off");
+        panel.Children.Add(autoMem);
+
+        void Reload()
+        {
+            listPanel.Children.Clear();
+            var all = ExportProfiles.LoadAll();
+            if (all.Count == 0)
+            {
+                listPanel.Children.Add(new TextBlock { Text = "还没有导出配置。", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor });
+                return;
+            }
+            foreach (var p in all)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+                row.Children.Add(new TextBlock
+                {
+                    Text = $"{p.Name}（{p.Format}{(p.IsDefault ? "，默认" : "")}{(p.BrowseScopeDefault.Length > 0 ? $"，{p.BrowseScopeDefault}" : "")}）",
+                    VerticalAlignment = VerticalAlignment.Center, FontSize = AntTokens.FontMinor,
+                });
+                if (!p.IsDefault)
+                {
+                    var defBtn = new Button { Content = "设默认", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge) };
+                    defBtn.Click += (_, _) => { ExportProfiles.Save(p with { IsDefault = true }); Reload(); };
+                    row.Children.Add(defBtn);
+                }
+                var delBtn = new Button { Content = "删除", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge) };
+                delBtn.Click += (_, _) => { ExportProfiles.Delete(p.Name); Reload(); };
+                row.Children.Add(delBtn);
+                listPanel.Children.Add(row);
+            }
+        }
+        Reload();
+        addBtn.Click += (_, _) =>
+        {
+            var name = (nameBox.Text ?? "").Trim();
+            if (name.Length == 0) { AppLog.Write("[导出配置] 新增被拒：配置名为空"); return; }
+            var fmt = fmtBox.SelectedItem?.ToString() ?? "csv";
+            var scope = scopeBox.SelectedIndex switch { 1 => "page", 2 => "filtered", 3 => "all", _ => "" };
+            ExportProfiles.Save(new ExportProfiles.ExportProfile(name, fmt, "", scope, false));
+            nameBox.Text = "";
+            Reload();
+        };
+        var dlg = new ContentDialog
+        {
+            Title = "导出配置",
+            Content = new ScrollViewer { Content = panel, MaxHeight = 360, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
+            CloseButtonText = "关闭",
+            XamlRoot = _owner.Content.XamlRoot,
+        };
+        await dlg.ShowThemedAsync();
     }
 
     /// <summary>格6：多结果集导出选择器（结果集 1..n ＋ 全部）。</summary>
@@ -943,7 +1044,13 @@ public partial class WorkTab : Grid
         combo.Items.Add(cur.TotalRows is long t
             ? $"全表（共 {t:N0} 行，逐页取数后导出，大表较慢）"
             : "全表（逐页取数后导出，大表较慢）");
-        combo.SelectedIndex = 0;
+        // 发现151：范围默认值——导出配置里设了默认范围就按它选（filtered 仅在筛选生效时可选）
+        combo.SelectedIndex = ExportProfiles.BrowseScopeDefault() switch
+        {
+            "filtered" when filterDiffers => 1,
+            "all" => combo.Items.Count - 1,
+            _ => 0,
+        };
         var dlg = new ContentDialog
         {
             Title = "导出范围",
@@ -2022,9 +2129,10 @@ public partial class WorkTab : Grid
     {
         try
         {
+            var prefs = UiFontPrefs.Load();   // 发现152：编辑器字体字号随外观偏好（损坏/缺失回落默认）
             var fmt = _editor.Document.GetDefaultCharacterFormat();
-            fmt.Name = "Consolas";
-            fmt.Size = 13;
+            fmt.Name = prefs.EditorFontFamily;
+            fmt.Size = prefs.EditorFontSize;
             _editor.Document.SetDefaultCharacterFormat(fmt);
             ApplyHighlight();
         }

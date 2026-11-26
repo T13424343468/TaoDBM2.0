@@ -44,6 +44,12 @@ public partial class App : Application
                 return;
             }
 
+            // 发现142：命令行 -run-task <定时任务Id>（可多个）——交给任务中心排队，
+            // 任务中心打开时排水执行；格式问题只进日志不拖垮启动。
+            var (runTaskIds, runTaskWarns) = Core.TaskCombos.ParseRunTaskArgs(Environment.GetCommandLineArgs().Skip(1));
+            foreach (var w in runTaskWarns) AppLog.Write("[启动] " + w);
+            if (runTaskIds.Count > 0) UI.TaskCenterDialog.QueueScheduledRun(runTaskIds);
+
             // Tao 系列存储默认 D 盘：首次运行把旧 C 盘数据迁过去（已有同名文件不覆盖）
             Core.TaoPaths.MigrateLegacyFiles();
             // P4：系统通知注册（官方流程：先挂 NotificationInvoked 再 Register）。注册失败只进日志，不拖垮启动。
