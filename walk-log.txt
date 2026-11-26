@@ -5,6 +5,13 @@ exe=[C:\Navicat\navicat.exe]
 [WALK] db gen exit=0 size=36864
 [WALK] trial dialog detected at t=25s pixel=255,255,255
 [WALK] shot shot-n01-trial.png
+[WALK] trial click attempt 1
+[WALK] trial click attempt 2
+[WALK] trial click attempt 3
+[WALK] trial click attempt 4
+[WALK] ENTER fallback sent
+[WALK] trial click attempt 5
+[WALK] WARN trial dialog possibly still up; continue
 [WALK] after wizard window='navicat'
 [WALK] shot shot-n02-main.png
 [WALK] shot shot-n03-menu.png
@@ -17,4 +24,4 @@ exe=[C:\Navicat\navicat.exe]
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
 [WALK] v12 done
-video-size=5505060
+video-size=6553636
