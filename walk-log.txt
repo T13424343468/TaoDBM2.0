@@ -3,14 +3,14 @@ NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
 [WALK] v21 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
-[WALK] trial window: hwnd=197148 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=197148 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=131598 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win: hwnd=655378 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] trial window: hwnd=197220 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=197220 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=1179692 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win: hwnd=131652 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] trial method 1 ESC
 [WALK] shot shot-n12-trial-esc.png
 [WALK] trial dismissed=True by esc
-[WALK] wizard window: hwnd=131834 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
+[WALK] wizard window: hwnd=131920 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
 [WALK] wizard tab-enter 1
 [WALK] shot shot-n13-wizard-te1.png
 [WALK] wizard tab-enter 2
@@ -43,25 +43,26 @@ exe=[C:\Navicat\navicat.exe]
 [WALK] tour esc 1
 [WALK] tour dismissed=True by esc1
 [WALK] shot shot-n02-main.png
-[WALK] win-main: hwnd=328220 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-main: hwnd=262688 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
 [WALK] shot shot-n03-filemenu.png
 [WALK] shot shot-n04-conn-dialog.png
-[WALK] win-conn: hwnd=262918 class='TConnectionDialogForm' title='新建连接' rect=(54,40)-(970,680)
-[WALK] win-conn: hwnd=328220 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-conn: hwnd=263004 class='TConnectionDialogForm' title='新建连接' rect=(54,40)-(970,680)
+[WALK] win-conn: hwnd=262688 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
 [WALK] shot shot-n05-picker.png
 [WALK] shot shot-n06-connform.png
-[WALK] win-form: hwnd=262918 class='TConnectionDialogForm' title='新建连接 (SQLite)' rect=(54,40)-(970,680)
-[WALK] win-form: hwnd=328220 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-form: hwnd=263004 class='TConnectionDialogForm' title='新建连接 (SQLite)' rect=(54,40)-(970,680)
+[WALK] win-form: hwnd=262688 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
 [WALK] shot shot-n06a-name.png
 [WALK] shot shot-n06b-tab1.png
+[WALK] shot shot-n06c-tab2.png
 [WALK] shot shot-n06e-filled.png
 [WALK] shot shot-n06f-saved.png
-[WALK] win-saved: hwnd=262908 class='TFeatureTour' title='' rect=(312,171)-(712,572)
-[WALK] win-saved: hwnd=328220 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-saved: hwnd=262994 class='TFeatureTour' title='' rect=(312,171)-(712,572)
+[WALK] win-saved: hwnd=262688 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
 [WALK] tour2 esc 1
 [WALK] tour2 dismissed=True by esc1
 [WALK] shot shot-n07-tree.png
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
 [WALK] v21 done
-video-size=3932196
+video-size=3670052
