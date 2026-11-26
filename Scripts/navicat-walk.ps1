@@ -1,4 +1,4 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v17：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
+﻿# navicat-walk.ps1 — 竞品对照走查 v18：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
 # v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
@@ -55,10 +55,10 @@ using System;
 using System.Runtime.InteropServices;
 public class MouseNative15 {
   [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
-  [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dwData, IntPtr dwExtraInfo);
+  [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
   const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004;
-  public static void Click(int x, int y) { SetCursorPos(x, y); System.Threading.Thread.Sleep(150); mouse_event(LEFTDOWN, 0, 0, 0, IntPtr.Zero); System.Threading.Thread.Sleep(60); mouse_event(LEFTUP, 0, 0, 0, IntPtr.Zero); }
-  public static void DblClick(int x, int y) { Click(x, y); System.Threading.Thread.Sleep(80); mouse_event(LEFTDOWN, 0, 0, 0, IntPtr.Zero); System.Threading.Thread.Sleep(60); mouse_event(LEFTUP, 0, 0, 0, IntPtr.Zero); }
+  public static void Click(int x, int y) { SetCursorPos(x, y); System.Threading.Thread.Sleep(150); mouse_event(LEFTDOWN, 0, 0, 0, 0, UIntPtr.Zero); System.Threading.Thread.Sleep(60); mouse_event(LEFTUP, 0, 0, 0, 0, UIntPtr.Zero); }
+  public static void DblClick(int x, int y) { Click(x, y); System.Threading.Thread.Sleep(80); mouse_event(LEFTDOWN, 0, 0, 0, 0, UIntPtr.Zero); System.Threading.Thread.Sleep(60); mouse_event(LEFTUP, 0, 0, 0, 0, UIntPtr.Zero); }
 }
 '@
 Add-Type -TypeDefinition $mouseSrc
@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v17 start exe=$ExePath"
+Log "v18 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -183,29 +183,25 @@ Start-Sleep -Seconds 8
 $wizSeen = Wait-WindowClass -ClassPattern 'TWhatsNew*' -TimeoutSec 30
 if ($wizSeen) {
   Log "wizard window: $wizSeen"
-  for ($i = 1; $i -le 4; $i++) {
+  for ($i = 1; $i -le 8; $i++) {
     if (-not (Test-WindowClass -ClassPattern 'TWhatsNew*')) { break }
     Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
-    [MouseNative15]::Click(869, 669)
-    Log "wizard next click $i"
-    Start-Sleep -Seconds 4
+    [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    Log "wizard enter $i"
+    Start-Sleep -Seconds 3
+    Shot ("shot-n13-wizard-enter" + $i + ".png")
   }
-  Shot "shot-n13-wizard-final.png"
   $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
-  $wNames = @('no-share', 'share', 'esc')
-  for ($m = 0; $m -lt 3 -and -not $wizGone; $m++) {
+  Log ("wizard dismissed=" + $wizGone + " by enter-loop")
+  if (-not $wizGone) {
     Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
-    switch ($m) {
-      0 { [MouseNative15]::Click(746, 667); Log "wizard finish method $($m+1) no-share(746,667)" }
-      1 { [MouseNative15]::Click(887, 667); Log "wizard finish method $($m+1) share(887,667)" }
-      2 { [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Log "wizard finish method $($m+1) ESC" }
-    }
-    Start-Sleep -Seconds 6
+    [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    Start-Sleep -Seconds 3
     $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
-    Shot ("shot-n14-wizard-" + $wNames[$m] + ".png")
-    Log ("wizard dismissed=" + $wizGone + " by " + $wNames[$m])
+    Shot "shot-n14-wizard-esc.png"
+    Log ("wizard dismissed=" + $wizGone + " by esc")
   }
-  if (-not $wizGone) { Log "WARN wizard still up after finish methods" }
+  if (-not $wizGone) { Log "WARN wizard still up after keyboard methods" }
 } else { Log "no wizard window; continue" }
 Start-Sleep -Seconds 5
 
@@ -282,6 +278,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v17 done"
+Log "v18 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
