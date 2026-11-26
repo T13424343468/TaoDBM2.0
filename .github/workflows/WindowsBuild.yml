@@ -1570,6 +1570,7 @@ jobs:
           git fetch --depth 1 origin ux-sweep-latest 2>$null
           if ($LASTEXITCODE -eq 0) { git checkout -B ux-sweep-latest FETCH_HEAD 2>$null | Out-Null } else { git checkout --orphan ux-sweep-latest 2>$null | Out-Null; git rm -rf . 2>$null | Out-Null }
           Copy-Item ..\sweep-*.png -Force -ErrorAction SilentlyContinue
+          Copy-Item ..\ux-u*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\tour-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ev-shot-*.png -Force -ErrorAction SilentlyContinue
           Copy-Item ..\ui-coverage.txt -Force -ErrorAction SilentlyContinue

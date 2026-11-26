@@ -69,40 +69,47 @@ public class BackupDrillTab : Grid
             _status.Text = BackupTools.UnsupportedReason(engine);
         }
 
-        Children.Add(BuildRow(new TextBlock
+        // 发现129：Grid 未建 RowDefinitions，全部子元素叠在 row 0（提示文案与输入框占位文字重叠、两按钮重叠）。
+        // 改为逐行登记＋自动建行定义＋设 Grid.Row，保证纵向依次排列。
+        AddRow(new TextBlock
         {
             Text = $"备份可用性演练 — {_db}@{engine}：恢复到临时库并逐表对账，验证备份真的可用；过程不触碰原库。",
             FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
-        }));
+        });
         // 发现77：SQL Server 的 .bak 按数据库服务器端路径读取，与 mysqldump 本机路径语义不同，明示防混淆
         if (engine == DbEngine.SqlServer)
         {
             _fileBox.PlaceholderText = "备份文件路径（.bak，须是数据库服务器上的本机路径）";
-            Children.Add(BuildRow(new TextBlock
+            AddRow(new TextBlock
             {
                 Text = "注意：SQL Server 的 RESTORE 按数据库服务器端路径读取 .bak 文件，请填服务器本机磁盘上的绝对路径（如 D:\\backup\\db.bak），不是你正在操作的这台电脑的路径。",
                 FontSize = AntTokens.FontMinor,
                 Foreground = Ant.Warn,
                 TextWrapping = TextWrapping.Wrap,
-            }));
+            });
         }
-        Children.Add(BuildRow(_fileBox));
-        Children.Add(BuildRow(_countsBox));
-        Children.Add(BuildRow(genRow));
-        Children.Add(BuildRow(runRow));
-        Children.Add(BuildRow(_output));
-        Children.Add(BuildRow(_status));
+        AddRow(_fileBox);
+        AddRow(_countsBox);
+        AddRow(genRow);
+        AddRow(runRow);
+        AddRow(_output);
+        AddRow(_status);
         _output.Text = supported
             ? "填备份文件路径与对账清单后点「开始演练」。演练只在临时副本/临时库上操作。"
             : "当前引擎不支持备份演练。";
     }
 
-    private static FrameworkElement BuildRow(FrameworkElement child)
+    private readonly List<FrameworkElement> _rows = new();
+
+    private void AddRow(FrameworkElement child)
     {
         child.HorizontalAlignment = HorizontalAlignment.Stretch;
-        return child;
+        RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+        Grid.SetRow(child, _rows.Count);
+        _rows.Add(child);
+        Children.Add(child);
     }
 
     private async Task RunAsync()

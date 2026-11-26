@@ -211,12 +211,18 @@ public static class TableDdl
         }
 
         // 修改已有列（发现74：自增属性按读回原样带回，不再静默丢；发现75：默认值/注释带回）
+        // 发现130：SQLite 限制提示逐列重复堆叠，同一提示只记一条
+        var sqliteSkipNoted = false;
         if (modifyExisting)
         foreach (var c in t.Columns.Where(c => c.Name.Length > 0 && existing.Contains(c.Name)))
         {
             if (engine == DbEngine.SQLite)
             {
-                skipped.Add("SQLite: 不支持修改列类型/属性，仅支持加列（SQLite 官方限制）。");
+                if (!sqliteSkipNoted)
+                {
+                    skipped.Add("SQLite: 不支持修改列类型/属性，仅支持加列（SQLite 官方限制）。");
+                    sqliteSkipNoted = true;
+                }
                 continue;
             }
             // 发现74：SQL Server 不支持 ALTER COLUMN 修改 IDENTITY 列，明示跳过防静默失败

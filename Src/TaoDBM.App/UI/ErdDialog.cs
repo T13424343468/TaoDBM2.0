@@ -60,7 +60,7 @@ public static class ErdDialog
             Text = "选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。",
         };
 
-        var connBox = new ComboBox { MinWidth = 200, PlaceholderText = "连接" };
+        var connBox = new ComboBox { MinWidth = 200, PlaceholderText = "连接", DisplayMemberPath = nameof(ConnectionProfile.DisplayName) };
         foreach (var p in relational) connBox.Items.Add(p);
         if (preselect is not null && relational.Contains(preselect)) connBox.SelectedItem = preselect;
         var dbBox = new ComboBox { MinWidth = 160, PlaceholderText = "库" };
