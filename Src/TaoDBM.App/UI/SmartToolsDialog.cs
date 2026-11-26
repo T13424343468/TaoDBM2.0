@@ -199,6 +199,14 @@ public static class SmartToolsDialog
             return;
         }
 
+        // 发现125：重测通道硬守门——非 SELECT（含多语句、注释夹带写语句）一律拒绝执行，与界面承诺对齐。
+        if (!QueryRetest.IsSelectOnly(beforeSql) || (!string.IsNullOrWhiteSpace(afterSql) && !QueryRetest.IsSelectOnly(afterSql)))
+        {
+            AppLog.Write("[智能工具] retest-guard rejected non-select");   // 发现125 守门留痕
+            status.Text = "重测只执行 SELECT：粘贴的内容包含非查询语句或多条语句，已拒绝执行。";
+            return;
+        }
+
         status.Text = "重测对比中…（默认 5 轮取中位数）";
         try
         {

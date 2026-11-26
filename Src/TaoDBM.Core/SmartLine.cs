@@ -137,6 +137,47 @@ public static class QueryRetest
         return times[times.Count / 2];
     }
 
+    /// <summary>
+    /// 重测守门（发现125）：剥掉注释与字符串字面量后，仅允许首词为 SELECT 或 WITH 的单条语句；
+    /// 分号后还有内容的（多语句）、空语句、首词非查询的一律拒绝。UI 承诺「重测只执行 SELECT」，此闸是硬保证。
+    /// </summary>
+    public static bool IsSelectOnly(string? sql)
+    {
+        if (string.IsNullOrWhiteSpace(sql)) return false;
+        var stripped = StripCommentsAndLiterals(sql).Trim();
+        if (stripped.Length == 0) return false;
+        // 多语句拒绝：分号后除空白外还有内容即拒
+        var semi = stripped.IndexOf(';');
+        if (semi >= 0 && stripped[(semi + 1)..].Trim().Length > 0) return false;
+        var first = System.Text.RegularExpressions.Regex.Match(stripped, @"^[A-Za-z_]+").Value;
+        return first.Equals("SELECT", StringComparison.OrdinalIgnoreCase)
+            || first.Equals("WITH", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>剥注释（-- 与 /* */）和单引号字符串（'' 转义），供守门判断首词与多语句。</summary>
+    private static string StripCommentsAndLiterals(string sql)
+    {
+        var sb = new System.Text.StringBuilder(sql.Length);
+        for (int i = 0; i < sql.Length; i++)
+        {
+            if (i + 1 < sql.Length && sql[i] == '-' && sql[i + 1] == '-') { while (i < sql.Length && sql[i] != '\n') i++; if (i < sql.Length) sb.Append('\n'); continue; }
+            if (i + 1 < sql.Length && sql[i] == '/' && sql[i + 1] == '*') { i += 2; while (i + 1 < sql.Length && !(sql[i] == '*' && sql[i + 1] == '/')) i++; i++; continue; }
+            if (sql[i] == '\'')
+            {
+                i++;
+                while (i < sql.Length)
+                {
+                    if (sql[i] == '\'' && i + 1 < sql.Length && sql[i + 1] == '\'') { i += 2; continue; }
+                    if (sql[i] == '\'') break;
+                    i++;
+                }
+                sb.Append('\''); continue;
+            }
+            sb.Append(sql[i]);
+        }
+        return sb.ToString();
+    }
+
     /// <summary>改造前后对比：Speedup = Before/After，&gt;1 表示改造后更快。</summary>
     public static async Task<RetestReport> CompareAsync(Func<string, CancellationToken, Task> run, string beforeSql, string afterSql, int iterations = 5, CancellationToken ct = default)
     {
@@ -341,15 +382,44 @@ public static class QueryReproPack
         catch (ArgumentNullException) { return null; }
     }
 
-    /// <summary>入包前净化：键名命中凭据黑名单的参数整键剔除并留痕；SetupSql/Sql 不动（由审查者人工过目）。</summary>
+    /// <summary>
+    /// 入包前净化（发现126）：①键名命中凭据黑名单的参数整键剔除并留痕；②Sql 与 SetupSql 逐条扫描
+    /// 凭据式赋值（password=…、pwd:… 等），命中值打码为 *** 并留痕——不再依赖「人工过目」。
+    /// </summary>
     public static ReproPack Sanitize(ReproPack pack)
     {
-        if (pack.Params.Count == 0) return pack;
         var dropped = pack.Params.Keys.Where(ForbiddenKeys.Contains).ToList();
-        if (dropped.Count == 0) return pack;
         var clean = pack.Params.Where(kv => !ForbiddenKeys.Contains(kv.Key))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        var sqlHits = 0;
+        var sql = RedactInline(pack.Sql, ref sqlHits);
+        var setup = new List<string>(pack.SetupSql.Count);
+        foreach (var s in pack.SetupSql)
+        {
+            var hits = 0;
+            setup.Add(RedactInline(s, ref hits));
+            sqlHits += hits;
+        }
+
+        if (dropped.Count == 0 && sqlHits == 0) return pack with { Params = clean, Sql = sql, SetupSql = setup };
         var note = string.IsNullOrWhiteSpace(pack.Notes) ? "" : pack.Notes + "；";
-        return pack with { Params = clean, Notes = $"{note}已剔除凭据类参数：{string.Join(",", dropped)}" };
+        var parts = new List<string>();
+        if (dropped.Count > 0) parts.Add($"已剔除凭据类参数：{string.Join(",", dropped)}");
+        if (sqlHits > 0) parts.Add($"SQL 原文中 {sqlHits} 处凭据式赋值已打码");
+        return pack with { Params = clean, Sql = sql, SetupSql = setup, Notes = note + string.Join("；", parts) };
+    }
+
+    /// <summary>凭据式赋值打码：password/pwd/secret/token/api_key 等键的赋值整体替换为 ***（键名保留）。</summary>
+    private static readonly System.Text.RegularExpressions.Regex InlineCredential =
+        new(@"\b(password|passwd|pwd|secret|token|api[_\-]?key|access[_\-]?key)\s*[=:]\s*('[^']*'|""[^""]*""|[^\s;,\)\]]+)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static string RedactInline(string text, ref int hits)
+    {
+        var count = 0;
+        var result = InlineCredential.Replace(text, m => { count++; return m.Groups[1].Value + " = ***"; });
+        hits += count;
+        return result;
     }
 }

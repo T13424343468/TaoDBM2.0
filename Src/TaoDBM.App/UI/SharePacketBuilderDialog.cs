@@ -45,10 +45,23 @@ public static class SharePacketBuilderDialog
             if (items is null) { status.Text = "共享条目 JSON 无法解析（应为 ShareItem 数组）。"; return; }
             try
             {
-                var packet = SharePacketBuilder.Build(items, sender, DateTimeOffset.Now);
+                // 发现107：封包前逐条净化——不再只依赖「团队合并」阶段，粘贴路径同样过黑名单兜底。
+                var droppedAll = new List<string>();
+                var cleanItems = new List<ShareItem>(items.Count);
+                foreach (var it in items)
+                {
+                    var (clean, dropped) = TeamShareMerge.Sanitize(it);
+                    cleanItems.Add(clean);
+                    droppedAll.AddRange(dropped);
+                }
+                if (droppedAll.Count > 0)
+                    AppLog.Write($"[共享包] build sanitize dropped={string.Join(",", droppedAll.Distinct())}");   // 发现107 留痕
+                var packet = SharePacketBuilder.Build(cleanItems, sender, DateTimeOffset.Now);
                 _pending = packet;
                 saveBtn.IsEnabled = true;
                 ShowHeader(report, packet);
+                if (droppedAll.Count > 0)
+                    AddLine(report, $"⚠ 载荷命中凭据黑名单并已剔除：{string.Join(", ", droppedAll.Distinct())}", Ant.Warn, 1);
                 if (int.TryParse((chunkBox.Text ?? "").Trim(), out var cc) && cc > 0)
                     AddLine(report, $"分块预演：{SharePacketBuilder.Chunk(packet, cc).Count} 块（每块 {cc} 字符，按序重装后整体验签）", null, 1);
                 status.Text = "封包完成：指纹头已生成，可另存包文件交同事搬运，或留作验包对照。";
@@ -103,7 +116,7 @@ public static class SharePacketBuilderDialog
         var panel = new StackPanel { Spacing = 12, MinWidth = 680 };
         panel.Children.Add(new TextBlock
         {
-            Text = $"局域网搬运（{sender}）：封包生成 SHA256 指纹头，接收方重算指纹防篡改防截断；大包可分块过线。凭据已在「团队合并」净化阶段剔除。载荷只读展示。",
+            Text = $"局域网搬运（{sender}）：封包生成 SHA256 指纹头，接收方重算指纹防篡改防截断；大包可分块过线。封包前逐条过凭据黑名单，命中即剔除并留痕。载荷只读展示。",
             TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor,
         });
         panel.Children.Add(itemsBox);

@@ -2049,6 +2049,27 @@ Layer("集成");
     var back = QueryReproPack.FromJson(packJson);
     Check("智能线-复现包往返", back != null && back.Sql == clean.Sql && back.Params["r"] == "华东", "");
     Check("智能线-坏包不炸", QueryReproPack.FromJson("{坏") == null, "");
+
+    // 发现125：重测守门——只放行单条 SELECT/WITH，注释与字符串字面量剥净后判定
+    Check("重测守门-纯SELECT", QueryRetest.IsSelectOnly("SELECT COUNT(*) FROM t"), "");
+    Check("重测守门-CTE放行", QueryRetest.IsSelectOnly("WITH c AS (SELECT 1) SELECT * FROM c"), "");
+    Check("重测守门-多语句拒绝", !QueryRetest.IsSelectOnly("SELECT 1; DROP TABLE t"), "");
+    Check("重测守门-UPDATE拒绝", !QueryRetest.IsSelectOnly("UPDATE t SET a = 'x'"), "");
+    Check("重测守门-DELETE拒绝", !QueryRetest.IsSelectOnly("DELETE FROM t WHERE id = 1"), "");
+    Check("重测守门-字符串内分号放行", QueryRetest.IsSelectOnly("SELECT 'a;b' FROM t"), "");
+    Check("重测守门-注释剥净后放行", QueryRetest.IsSelectOnly("SELECT 1 /* ; DROP TABLE t */"), "");
+    Check("重测守门-纯注释拒绝", !QueryRetest.IsSelectOnly("-- just a comment"), "");
+    Check("重测守门-空拒绝", !QueryRetest.IsSelectOnly("   "), "");
+
+    // 发现126：复现包 SQL 原文凭据打码——不再依赖人工过目
+    var packCred = new QueryReproPack.ReproPack("1.0", "带凭据复现", "MySQL",
+        "SELECT * FROM t WHERE pwd = 'hunter2' AND id = 1",
+        new Dictionary<string, string>(), new List<string> { "SET @pwd = password123;" }, null, DateTimeOffset.UtcNow);
+    var cleanCred = QueryReproPack.Sanitize(packCred);
+    Check("复现包-SQL凭据打码", !cleanCred.Sql.Contains("hunter2") && cleanCred.Sql.Contains("***"), cleanCred.Sql);
+    Check("复现包-SetupSql打码", !cleanCred.SetupSql[0].Contains("password123") && cleanCred.SetupSql[0].Contains("***"), cleanCred.SetupSql[0]);
+    Check("复现包-打码留痕", (cleanCred.Notes ?? "").Contains("打码"), cleanCred.Notes ?? "");
+    Check("复现包-无凭据原文不动", QueryReproPack.Sanitize(pack).Sql == pack.Sql, "");
     var db2 = Path.Combine(Path.GetTempPath(), "taodbm-repro-" + Guid.NewGuid().ToString("N") + ".db");
     await using (var conn2 = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={db2}"))
     {
