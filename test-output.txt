@@ -1,3 +1,8 @@
-D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\BatchCheckSweep.cs(33,9): error CS0103: The name 'UiBatchBCheck' does not exist in the current context [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(210,47): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableGuide' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(210,101): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableGuide' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(211,43): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableAvailable' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(214,34): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableAvailable' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(215,63): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableAvailable' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
+D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\UiBatchBCheck.cs(217,40): error CS0117: 'ObjectActionBarModel' does not contain a definition for 'AiTableAvailable' [D:\a\TaoDBM2.0\TaoDBM2.0\Tests\TaoDBM.LogicTest\TaoDBM.LogicTest.csproj]
 
 The build failed. Fix the build errors and run again.
