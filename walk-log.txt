@@ -1,62 +1,28 @@
 env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
-[WALK] v14 start exe=C:\Navicat\navicat.exe
+[WALK] v15 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
-[WALK] win: hwnd=197138 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=197126 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win: hwnd=327844 class='TApplication' title='navicat' rect=(512,384)-(512,384)
-[WALK] dialog hwnd=0 mainHwnd=327844
-[WALK] shot shot-n10-x-close-before.png
-[WALK] method 1 X(776,175)
-[WALK] responding=True
-[WALK] shot shot-n11-x-close-after.png
-[WALK] shot shot-n10-trial-click-before.png
-[WALK] method 2 trial(717,515) with dialog focused
-[WALK] responding=True
-[WALK] shot shot-n11-trial-click-after.png
-[WALK] shot shot-n10-postmsg-before.png
-[WALK] postclick skip: no hwnd
-[WALK] method 3 PostMessage click
-[WALK] responding=True
-[WALK] shot shot-n11-postmsg-after.png
-[WALK] shot shot-n10-esc-before.png
-[WALK] method 4 ESC
-[WALK] responding=True
-[WALK] shot shot-n11-esc-after.png
-[WALK] shot shot-n10-tab-enter-before.png
-[WALK] method 5 TAB+ENTER
-[WALK] responding=True
-[WALK] shot shot-n11-tab-enter-after.png
-[WALK] shot shot-n10-dblclick-before.png
-[WALK] method 6 dblclick trial
-[WALK] responding=True
-[WALK] shot shot-n11-dblclick-after.png
-[WALK] WARN all 6 methods failed; trial dialog possibly still up
-[WALK] win-after: hwnd=131842 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
-[WALK] win-after: hwnd=328210 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
-[WALK] win-after: hwnd=327844 class='TApplication' title='Navicat Premium' rect=(512,384)-(512,384)
-[WALK] shot shot-n20-after-trial.png
-[WALK] after wizard window='Navicat Premium'
+[WALK] WARN trial window not seen; dump windows
+[WALK] win: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] no wizard window; continue
 [WALK] shot shot-n02-main.png
+[WALK] win-main: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win-main: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win-main: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] shot shot-n03-menu.png
-[WALK] menu rows detected: 124
-[WALK] clicked last menu row at y=124
+[WALK] menu rows detected: 
+[WALK] WARN no menu rows detected; fallback click y=270
 [WALK] shot shot-n04-conn-dialog.png
+[WALK] win-conn: hwnd=590286 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win-conn: hwnd=262552 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win-conn: hwnd=459222 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] shot shot-n05-filled.png
 [WALK] shot shot-n06-saved.png
 [WALK] shot shot-n07-tree.png
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
-[WALK] regkey: HKEY_CURRENT_USER\Software\PremiumSoft\NavicatCommon
-[WALK] regkey: HKEY_CURRENT_USER\Software\PremiumSoft\NavicatCommon\uri
-[WALK] regkey: HKEY_CURRENT_USER\Software\PremiumSoft\NavicatCommon\uri\navicat
-[WALK]   regval: DeviceUUID = 4CCD15
-[WALK] regkey: HKEY_CURRENT_USER\Software\PremiumSoft\NavicatPremium
-[WALK] regkey: HKEY_CURRENT_USER\Software\PremiumSoft\NavicatPremium\Registration18XCS
-[WALK]   regval: 612F3B6F0AFFF8BB04E4B5754DED1800 = E57C6B956A6521B28495F2886CA0977A
-[WALK]   regval: 4D746DD8B60D22B7F3441B880CAAE09B = 396649A1EA8979C9DE52962632D2D2657EB0E818154301361F48A836596543BC,4E43692085890E572BF8A591460CA0F35D6F79EAFAFD8D25537723F8CED46962,D2C604C00EFB277EB6B7465747EEB0D786E2966158F52CD0E42593F5AB666E88,12E6E00D6D7DE4A27F02375D7D485DA84DF7A85CDBBB6FB792208B16E42C2255,F5C202B2818BB5D3812BAFE3BE87D377A8CEE3C9506383C548DB4BCE21E67188
-[WALK]   regval: 6E63843F42AF23972CA03282D851044A = D333CF8D5FE05962913B3D5702983AB2
-[WALK]   regval: 2D420603CCC2F6D9A29184AC9D6E7DDD = FD763DABC4DB2C848BA62F583DA86506
-[WALK] v14 done
-video-size=4456484
+[WALK] v15 done
+video-size=11010084
