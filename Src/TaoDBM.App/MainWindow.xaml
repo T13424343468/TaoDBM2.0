@@ -40,6 +40,8 @@
                     </Button>
                     <TextBlock x:Name="AppTitleText" Text="TaoDBM" FontSize="16" FontWeight="SemiBold"
                                Foreground="{ThemeResource AntOnPrimary}" VerticalAlignment="Center"/>
+                    <!-- 发现132：顶部功能域直达——按钮由 MainWindow.LayoutBatch.cs 按域清单生成，当前域 3px 品牌条 -->
+                    <StackPanel x:Name="HeadNav" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="2"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" Spacing="8">
                     <Button x:Name="BtnNewConn" Content="＋ 新建连接" Click="OnNewConn" AutomationProperties.AutomationId="BtnNewConn"
@@ -65,16 +67,31 @@
             </Grid>
         </Border>
 
-        <!-- 主区 -->
+        <!-- 主区：行0 对象联动操作栏（发现133），行1 树/分栏/工作区/详情侧栏（发现134） -->
         <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="TreeCol" Width="300" MinWidth="200"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="MainCol" Width="*" MinWidth="480"/>
+                <ColumnDefinition x:Name="DetailCol" Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <!-- 发现133：对象联动操作栏——按钮随选中对象刷新，无选中给状态一句话 -->
+            <Border x:Name="ActionBar" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4"
+                    Background="{ThemeResource AntCard}" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,0,1">
+                <Grid MinHeight="36">
+                    <StackPanel x:Name="ActionBarHost" Orientation="Horizontal" Margin="8,4" Spacing="6"/>
+                    <TextBlock x:Name="ActionBarHint" Margin="12,4" VerticalAlignment="Center" FontSize="12"
+                               Foreground="{ThemeResource AntTextSub}" Text=""/>
+                </Grid>
+            </Border>
+
             <!-- 左侧连接树：仅显示连接 / 库 / 表；顶部挂元数据失败重试条（s2） -->
-            <Border x:Name="TreeBorder" Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
+            <Border x:Name="TreeBorder" Grid.Row="1" Grid.Column="0" BorderBrush="{ThemeResource AntBorder}" BorderThickness="0,0,1,0" Background="{ThemeResource AntCard}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -103,16 +120,25 @@
 
             <!-- 分栏拖动条：对象树↔主区（第十五章：可拖动调比例，拖完即存重启恢复）；
                  C② affordance：悬停高亮＋加宽＋↔光标，拖完记忆宽度 -->
-            <Border x:Name="TreeSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Left"
+            <Border x:Name="TreeSplitter" Grid.Row="1" Grid.Column="1" Width="6" HorizontalAlignment="Left"
                     Background="Transparent" PointerPressed="OnSplitterPointerPressed"
                     PointerMoved="OnSplitterPointerMoved" PointerReleased="OnSplitterPointerReleased"
                     PointerCaptureLost="OnSplitterPointerReleased"
                     PointerEntered="OnSplitterPointerEntered" PointerExited="OnSplitterPointerExited"/>
 
             <!-- 右侧工作区 -->
-            <TabView x:Name="WorkTabs" Grid.Column="2" Background="{ThemeResource AntBg}"
+            <TabView x:Name="WorkTabs" Grid.Row="1" Grid.Column="2" Background="{ThemeResource AntBg}"
                      TabWidthMode="SizeToContent" CanDragTabs="False"
                      TabCloseRequested="OnTabClose" AddTabButtonClick="OnTabAdd"/>
+
+            <!-- 发现134：详情侧栏——选中即刷新，取不到的字段落「暂不可用」，不弹错误窗 -->
+            <Border x:Name="DetailPanel" Grid.Row="1" Grid.Column="3" Width="260"
+                    BorderBrush="{ThemeResource AntBorder}" BorderThickness="1,0,0,0" Background="{ThemeResource AntCard}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="DetailHost" Margin="12,10" Spacing="6"/>
+                </ScrollViewer>
+            </Border>
         </Grid>
 
         <!-- 状态栏（Navicat 口径：左侧状态文案，右侧连接计数） -->

@@ -13,6 +13,8 @@ public class TabSessionItem
     public string Sql { get; set; } = "";         // Query 模式下的编辑器内容
     /// <summary>P1-03：Query 页签的归属 .sql 文件路径（空=无归属）。</summary>
     public string SourceFile { get; set; } = "";
+    /// <summary>发现135：页签打开时刻（欢迎页「最近打开」相对时间用；旧会话文件无此字段为 null，欢迎页不显时间）。</summary>
+    public DateTime? LastOpened { get; set; }
 }
 
 /// <summary>标签会话存取：%APPDATA%\TaoDBM\tabsession.json；路径可注入便于测试。</summary>

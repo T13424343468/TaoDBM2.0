@@ -81,6 +81,8 @@ public partial class MainWindow : Window
         UI.ToastCenter.RouteRequested += OnToastRoute;
 
         LoadConnections();
+        BuildDomainNav();      // 发现132：顶部功能域直达
+        RefreshActionBar();    // 发现133：操作栏初始态（无选中给状态一句话）
         AddWelcomeTab();
         RestoreSession();
         ApplyWindowState();
@@ -975,6 +977,9 @@ public partial class MainWindow : Window
     {
         var info = SelectedInfo();
         if (info is null) return;
+        RefreshActionBar();                       // 发现133：操作栏随选中联动
+        _ = RefreshDetailPanel(info);             // 发现134：选中即详情
+        UpdateDomainNav();                        // 发现132：域指示随上下文刷新
         switch (info.Kind)
         {
             case NodeKind.Connection:
@@ -1055,6 +1060,8 @@ public partial class MainWindow : Window
     /// <summary>备份 / 还原：MySQL/PG 走官方 CLI，SQL Server 走 T-SQL，SQLite 文件复制。</summary>
     private async void OnBackupSel(object sender, RoutedEventArgs e)
     {
+        _navBackupOpen = true; _navTaskOpen = _navErdOpen = false;   // 发现132：域指示随入口刷新
+        UpdateDomainNav();
         var info = SelectedInfo();
         if (info is null || info.Provider is null) { await InfoAsync("请先选中一个连接（或库、表）再备份 / 还原。"); return; }
         await UI.BackupDialog.Show(this, info);
@@ -1070,6 +1077,8 @@ public partial class MainWindow : Window
     /// <summary>模型设计（ER 图）：库内表结构成图，拖拽排布，导出 PNG，保存 / 打开布局。</summary>
     private async void OnErdSel(object sender, RoutedEventArgs e)
     {
+        _navErdOpen = true; _navBackupOpen = _navTaskOpen = false;   // 发现132：域指示随入口刷新
+        UpdateDomainNav();
         var info = SelectedInfo();
         await UI.ErdDialog.Show(this, _profiles, info?.Profile);
     }
@@ -1087,25 +1096,7 @@ public partial class MainWindow : Window
 
     // ---------- 打开标签页 ----------
 
-    private void AddWelcomeTab()
-    {
-        var welcome = new TextBlock
-        {
-            Margin = new Thickness(24),
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = AntTokens.FontEmphasis,
-            Foreground = UI.Ant.TextSub,
-            Text = "欢迎使用 TaoDBM。\n\n1. 点击右上角“＋ 新建连接”，填好主机、账号后先点“测试连接”。\n2. 连接成功后，在左侧树展开库与表，双击表可浏览数据。\n3. 选中库或表后点“新建查询”，写 SQL 按 F5 执行。\n\n支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL",
-        };
-        var tab = new TabViewItem
-        {
-            Header = "开始",
-            IsClosable = false,
-            Content = new ScrollViewer { Content = welcome, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-        };
-        WorkTabs.TabItems.Add(tab);
-        WorkTabs.SelectedItem = tab;
-    }
+    // 发现135：AddWelcomeTab 重做（新手条＋收藏＋最近打开），实现移至 MainWindow.LayoutBatch.cs 布局批分部。
 
     public void OpenQueryTab(NodeInfo? info, string? initialSql = null)
     {
@@ -1141,6 +1132,8 @@ public partial class MainWindow : Window
             WireDirtyHeader(tab, wt);
             SaveSession();
             WorkTabs.SelectedItem = tab;
+            _navLastMode = "Query"; _navBackupOpen = _navTaskOpen = _navErdOpen = false;   // 发现132
+            UpdateDomainNav();
             Core.AppLog.Write("[新建查询] tab selected");
         }
         catch (Exception ex)
@@ -1233,6 +1226,8 @@ public partial class MainWindow : Window
         WireDirtyHeader(tab, wt);
         SaveSession();
         WorkTabs.SelectedItem = tab;
+        _navLastMode = "TableData"; _navBackupOpen = _navTaskOpen = _navErdOpen = false;   // 发现132
+        UpdateDomainNav();
     }
 
     private void OnTabClose(TabView sender, TabViewTabCloseRequestedEventArgs args)
@@ -1343,6 +1338,7 @@ public partial class MainWindow : Window
                 Child = t.SessionChild,
                 Sql = t.SessionSql,
                 SourceFile = t.SessionSourceFile,
+                LastOpened = t.SessionOpened,   // 发现135：欢迎页「最近打开」相对时间
             }).ToList();
             TabSession.Save(TabSession.FilterValid(items, _profiles));
         }, "会话保存");

@@ -1730,6 +1730,8 @@ public partial class WorkTab : Grid
     public string SessionSql => EditorText;
     /// <summary>P1-03：文件归属随会话落盘（重启恢复后 Ctrl+S 直接回写原文件）。</summary>
     public string SessionSourceFile => SourceFile;
+    /// <summary>发现135：页签打开时刻（欢迎页「最近打开」相对时间口径）。</summary>
+    public DateTime SessionOpened { get; set; } = DateTime.Now;
 
     // ---------- 查询收藏 ----------
 
