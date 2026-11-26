@@ -56,7 +56,9 @@ public static class LayoutBatchCheck
         d("133 连接态含查询/备份/任务中心", actsConn.Select(a => a.Key).SequenceEqual(new[] { "query", "backup", "taskcenter" }), "");
         var (_, actsNone) = ObjectActionBarModel.Build("none");
         d("133 无选中态新建连接为主操作", actsNone.First(a => a.Key == "newconn").Primary, "");
-        d("133 AI 建表占位", actsT.First(a => a.Key == "ai") is { Enabled: false, AiPlaceholder: true, Reason: "随 AI 版批启用" }, "");
+        // 发现138：AI 建表占位改真实入口（第一梯队可点击），开关默认 false 走人话引导
+        d("138 AI 建表真实入口可点击且排新建表后", actsT.First(a => a.Key == "ai") is { Enabled: true }
+            && actsT.Select(a => a.Key).ToList().IndexOf("ai") == actsT.Select(a => a.Key).ToList().IndexOf("newtable") + 1, "");
         d("133 空闲提示分口径", ObjectActionBarModel.IdleHint(0).Contains("还没有连接")
             && ObjectActionBarModel.IdleHint(3).Contains("共 3 个连接"), "");
     }

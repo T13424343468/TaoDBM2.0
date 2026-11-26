@@ -50,7 +50,8 @@ public static class ObjectActionBarModel
                     new ActionItem("open", "打开", Primary: true),
                     new ActionItem("design", "设计", Enabled: canWrite, Reason: canWrite ? "" : "当前账号无结构变更权限"),
                     new ActionItem("newtable", "新建表", Enabled: canWrite, Reason: canWrite ? "" : "当前账号无建表权限"),
-                    new ActionItem("ai", "✦ AI 建表（预留）", Enabled: false, Reason: "随 AI 版批启用", AiPlaceholder: true),
+                    // 发现138：AI 建表占位改真实入口（第一梯队，「新建表」后第 3 位）；模型未并入时点击给人话引导
+                    new ActionItem("ai", "✦ AI 建表", Enabled: true),
                     new ActionItem("import", "导入", Enabled: canWrite, Reason: canWrite ? "" : "当前账号无写入权限"),
                     new ActionItem("export", "导出"),
                     new ActionItem("delete", "删除", Enabled: canDelete, Reason: canDelete ? "" : "当前账号无删除权限"),
@@ -82,6 +83,12 @@ public static class ObjectActionBarModel
     /// <summary>无选中时的状态一句话（原型口径：不留空白）。</summary>
     public static string IdleHint(int connCount) =>
         connCount == 0 ? "还没有连接：点「新建连接」开始。" : $"共 {connCount} 个连接：选中连接 / 库 / 表后，这里给出联动操作。";
+
+    /// <summary>发现138：AI 建表可用开关——模型喂养并入后由 AI 版批置 true，入口即走 AI 建表流程；默认 false 走人话引导。</summary>
+    public static bool AiTableAvailable { get; set; }
+
+    /// <summary>发现138：开关未开时点击 AI 建表的人话引导（不报错不空白）。</summary>
+    public const string AiTableGuide = "AI 建表还没接入：模型喂养完成后随 AI 版生效。现在可以先用「新建表」手工建。";
 }
 
 // 发现134：详情侧栏字段模型——引擎徽标文案＋键值行；任一元数据取不到时该行显「暂不可用」，不弹错误窗。
