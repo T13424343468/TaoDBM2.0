@@ -1,28 +1,46 @@
 env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
-[WALK] v15 start exe=C:\Navicat\navicat.exe
+[WALK] v17 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
-[WALK] WARN trial window not seen; dump windows
-[WALK] win: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
-[WALK] no wizard window; continue
+[WALK] trial window: hwnd=327780 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=327780 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=262488 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win: hwnd=524416 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] trial method 1 ESC
+[WALK] shot shot-n12-trial-esc.png
+[WALK] trial dismissed=True by esc
+[WALK] wizard window: hwnd=131818 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
+[WALK] wizard next click 1
+[WALK] wizard next click 2
+[WALK] wizard next click 3
+[WALK] wizard next click 4
+[WALK] shot shot-n13-wizard-final.png
+[WALK] wizard finish method 1 no-share(746,667)
+[WALK] shot shot-n14-wizard-no-share.png
+[WALK] wizard dismissed=False by no-share
+[WALK] wizard finish method 2 share(887,667)
+[WALK] shot shot-n14-wizard-share.png
+[WALK] wizard dismissed=False by share
+[WALK] wizard finish method 3 ESC
+[WALK] shot shot-n14-wizard-esc.png
+[WALK] wizard dismissed=False by esc
+[WALK] WARN wizard still up after finish methods
 [WALK] shot shot-n02-main.png
-[WALK] win-main: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win-main: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win-main: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] win-main: hwnd=131818 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
+[WALK] win-main: hwnd=393312 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-main: hwnd=524416 class='TApplication' title='Navicat Premium' rect=(512,384)-(512,384)
 [WALK] shot shot-n03-menu.png
-[WALK] menu rows detected: 
-[WALK] WARN no menu rows detected; fallback click y=270
+[WALK] menu rows detected: 124
+[WALK] clicked last menu row at y=124
 [WALK] shot shot-n04-conn-dialog.png
-[WALK] win-conn: hwnd=131656 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win-conn: hwnd=197122 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win-conn: hwnd=327842 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] win-conn: hwnd=131818 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
+[WALK] win-conn: hwnd=393312 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] win-conn: hwnd=524416 class='TApplication' title='Navicat Premium' rect=(512,384)-(512,384)
 [WALK] shot shot-n05-filled.png
 [WALK] shot shot-n06-saved.png
 [WALK] shot shot-n07-tree.png
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
-[WALK] v15 done
-video-size=9699364
+[WALK] v17 done
+video-size=3407908
