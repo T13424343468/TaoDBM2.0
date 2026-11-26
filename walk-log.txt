@@ -1,51 +1,62 @@
 env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
-[WALK] v18 start exe=C:\Navicat\navicat.exe
+[WALK] v19 start exe=C:\Navicat\navicat.exe
 [WALK] db gen exit=0 size=36864
-[WALK] trial window: hwnd=131646 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=131646 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
-[WALK] win: hwnd=262384 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
-[WALK] win: hwnd=655820 class='TApplication' title='navicat' rect=(512,384)-(512,384)
+[WALK] trial window: hwnd=197142 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=197142 class='TRegistrationSubForm' title='' rect=(224,160)-(800,559)
+[WALK] win: hwnd=197000 class='TSplashForm' title='About Navicat' rect=(212,110)-(812,610)
+[WALK] win: hwnd=458772 class='TApplication' title='navicat' rect=(512,384)-(512,384)
 [WALK] trial method 1 ESC
 [WALK] shot shot-n12-trial-esc.png
 [WALK] trial dismissed=True by esc
-[WALK] wizard window: hwnd=131868 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
-[WALK] wizard enter 1
-[WALK] shot shot-n13-wizard-enter1.png
-[WALK] wizard enter 2
-[WALK] shot shot-n13-wizard-enter2.png
-[WALK] wizard enter 3
-[WALK] shot shot-n13-wizard-enter3.png
-[WALK] wizard enter 4
-[WALK] shot shot-n13-wizard-enter4.png
-[WALK] wizard enter 5
-[WALK] shot shot-n13-wizard-enter5.png
-[WALK] wizard enter 6
-[WALK] shot shot-n13-wizard-enter6.png
-[WALK] wizard enter 7
-[WALK] shot shot-n13-wizard-enter7.png
-[WALK] wizard enter 8
-[WALK] shot shot-n13-wizard-enter8.png
-[WALK] wizard dismissed=False by enter-loop
-[WALK] shot shot-n14-wizard-esc.png
-[WALK] wizard dismissed=False by esc
-[WALK] WARN wizard still up after keyboard methods
+[WALK] wizard window: hwnd=131840 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
+[WALK] wizard tab-enter 1
+[WALK] shot shot-n13-wizard-te1.png
+[WALK] wizard tab-enter 2
+[WALK] shot shot-n13-wizard-te2.png
+[WALK] wizard tab-enter 3
+[WALK] shot shot-n13-wizard-te3.png
+[WALK] wizard tab-enter 4
+[WALK] shot shot-n13-wizard-te4.png
+[WALK] wizard tab-enter 5
+[WALK] shot shot-n13-wizard-te5.png
+[WALK] wizard tab-enter 6
+[WALK] shot shot-n13-wizard-te6.png
+[WALK] wizard tab-enter 7
+[WALK] shot shot-n13-wizard-te7.png
+[WALK] wizard tab-enter 8
+[WALK] shot shot-n13-wizard-te8.png
+[WALK] wizard dismissed=False by tab-enter-loop
+[WALK] wizard esc 1
+[WALK] shot shot-n14-wizard-esc1.png
+[WALK] wizard dismissed=False by esc1
+[WALK] wizard esc 2
+[WALK] shot shot-n14-wizard-esc2.png
+[WALK] wizard dismissed=False by esc2
+[WALK] wizard esc 3
+[WALK] shot shot-n14-wizard-esc3.png
+[WALK] wizard dismissed=False by esc3
+[WALK] wizard esc 4
+[WALK] shot shot-n14-wizard-esc4.png
+[WALK] wizard dismissed=True by esc4
 [WALK] shot shot-n02-main.png
-[WALK] win-main: hwnd=131868 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
-[WALK] win-main: hwnd=262718 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
-[WALK] win-main: hwnd=655820 class='TApplication' title='Navicat Premium' rect=(512,384)-(512,384)
+[WALK] win-main: hwnd=262914 class='TFeatureTour' title='' rect=(312,171)-(712,572)
+[WALK] win-main: hwnd=262708 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] cursor after click: 512,384
 [WALK] shot shot-n03-menu.png
-[WALK] menu rows detected: 124
-[WALK] clicked last menu row at y=124
+[WALK] menu rows detected: 96,126
+[WALK] clicked last menu row at y=126
 [WALK] shot shot-n04-conn-dialog.png
-[WALK] win-conn: hwnd=131868 class='TWhatsNew' title='WhatsNew' rect=(71,19)-(953,701)
-[WALK] win-conn: hwnd=262718 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
-[WALK] win-conn: hwnd=655820 class='TApplication' title='Navicat Premium' rect=(512,384)-(512,384)
+[WALK] win-conn: hwnd=262914 class='TFeatureTour' title='' rect=(312,171)-(712,572)
+[WALK] win-conn: hwnd=262708 class='TNavicatMainForm' title='Navicat Premium' rect=(-8,-8)-(1032,728)
+[WALK] no conn dialog; keyboard Alt+F menu probe
+[WALK] shot shot-n15-altf-menu.png
+[WALK] altf menu rows: 82,102,130,154,177,254,282,326
 [WALK] shot shot-n05-filled.png
 [WALK] shot shot-n06-saved.png
 [WALK] shot shot-n07-tree.png
 [WALK] shot shot-n08-db.png
 [WALK] shot shot-n09-data.png
-[WALK] v18 done
-video-size=3670052
+[WALK] v19 done
+video-size=3932196
