@@ -1267,7 +1267,12 @@ public partial class WorkTab : Grid
             if (keyIdx < 0 || keyIdx >= _browseResult.Rows[rowIndex].Length) return;
             var keyVal = _browseResult.Rows[rowIndex][keyIdx];
             var sql = $"UPDATE {_provider.Quote(_child)} SET {_provider.Quote(col.Name)} = {val} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, Exporter.Format(keyVal))}";
-            await ExecWrite(sql, "已保存修改");
+            // 发现88：就地编辑成功后落留痕账（旧值→新值），审计列表可查差异、可单条回滚
+            var audit = ChangeAudit.CaptureRow(_child, KeyCol!.Name, Exporter.Format(keyVal),
+                new Dictionary<string, string?> { [col.Name] = origNull ? null : origText },
+                new Dictionary<string, string?> { [col.Name] = text.Length == 0 ? (CsvImporter.IsNumeric(col.DataType) ? null : "") : text },
+                sql);
+            await ExecWrite(sql, "已保存修改", audit);
         }
         tb.KeyDown += (_, e) =>
         {
@@ -1453,15 +1458,38 @@ public partial class WorkTab : Grid
             if (sets.Count == 0) { _messageBox.Text = "没有可更新的列（主键列不可修改）。"; return; }
             sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
         }
-        await ExecWrite(sql, existing == null ? "已新增 1 行" : "已保存修改");
+        if (existing == null)
+        {
+            await ExecWrite(sql, "已新增 1 行");
+            return;
+        }
+        // 发现88：编辑行弹窗保存后落留痕账——before 取原行镜像，after 按保存口径（NULL 勾选/空串语义）重建，CaptureRow 只记有差异的列
+        var beforeMap = new Dictionary<string, string?>();
+        var afterMap = new Dictionary<string, string?>();
+        for (int i = 0; i < _cols.Count; i++)
+        {
+            if (_cols[i].IsKey) continue;
+            bool isNull = nullChecks[i].IsChecked == true;
+            bool empty = fields[i].GetText().Length == 0;
+            bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
+            string? beforeV = i < existing.Length && existing[i] is not DBNull ? Exporter.Format(existing[i]) : null;
+            beforeMap[_cols[i].Name] = beforeV;
+            afterMap[_cols[i].Name] = (isBin && !fields[i].Dirty) ? beforeV
+                : isNull ? null
+                : empty ? (CsvImporter.IsNumeric(_cols[i].DataType) ? null : "")
+                : fields[i].GetText();
+        }
+        var audit = ChangeAudit.CaptureRow(_child, KeyCol!.Name, Exporter.Format(existing[_cols.IndexOf(KeyCol)]), beforeMap, afterMap, sql);
+        await ExecWrite(sql, "已保存修改", audit);
     }
 
-    private async Task ExecWrite(string sql, string okMsg)
+    private async Task ExecWrite(string sql, string okMsg, AuditEntry? audit = null)
     {
         try
         {
             var list = await _provider.Execute(_db, sql);
             QueryHistory.Add(_provider.EngineName, _db, sql);   // 发现63：行编辑写盘也入查询历史，与手敲执行同口径
+            if (audit is { HasChanges: true }) AuditTrailDialog.Append(audit);   // 发现88：行编辑成功后落留痕账，兑现手册「改动可查可回滚」承诺
             var qr = list.LastOrDefault();
             _messageBox.Text = qr is { Message.Length: > 0 } ? qr.Message : okMsg;
             _owner.SetStatus(okMsg);
