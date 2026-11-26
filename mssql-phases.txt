@@ -1,28 +1,28 @@
-2026-11-26T18:54:08.0898678Z step-start pwsh=7.6.10
-2026-11-26T18:54:12.6267682Z direct-download-ok size=261082544
-2026-11-26T18:54:17.6926537Z unpack-exit=0
-2026-11-26T18:54:17.7042239Z setup-found C:\SQLMedia\SETUP.EXE
-2026-11-26T18:54:17.7073319Z setup-start
-2026-11-26T18:56:35.8295777Z setup-exit=0
-2026-11-26T18:56:40.9031750Z service-running
-2026-11-26T18:56:40.9118749Z registry-key=MSSQL15.SQLEXPRESS
-2026-11-26T18:56:40.9159731Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
-2026-11-26T18:56:40.9170236Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
-2026-11-26T18:56:40.9181994Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
-2026-11-26T18:56:40.9191871Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
-2026-11-26T18:56:40.9201823Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
-2026-11-26T18:56:40.9211307Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
-2026-11-26T18:56:40.9220664Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
-2026-11-26T18:56:40.9230221Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
-2026-11-26T18:56:40.9239601Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
-2026-11-26T18:56:40.9249937Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
-2026-11-26T18:56:40.9259837Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
-2026-11-26T18:56:40.9291422Z ipall-key-ensured
-2026-11-26T18:56:40.9323908Z port-tcpport-set
-2026-11-26T18:56:40.9335224Z port-dynamic-cleared
-2026-11-26T18:56:40.9345901Z port-enabled-set
-2026-11-26T18:56:40.9353730Z skip-restart: use running instance + dynamic-port fallback
-2026-11-26T18:56:59.5534988Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
-2026-11-26T18:57:09.5717370Z dynamic-port-detected=61779
-2026-11-26T18:57:09.5732593Z connect-poll: attempt=0 port=61779
-2026-11-26T18:57:09.6149377Z tcp-connect-ok port=61779
+2026-11-26T19:29:38.5113663Z step-start pwsh=7.6.10
+2026-11-26T19:29:41.3276655Z direct-download-ok size=261082544
+2026-11-26T19:29:45.5603486Z unpack-exit=0
+2026-11-26T19:29:45.5703491Z setup-found C:\SQLMedia\SETUP.EXE
+2026-11-26T19:29:45.5727632Z setup-start
+2026-11-26T19:31:58.8457178Z setup-exit=0
+2026-11-26T19:32:03.9100493Z service-running
+2026-11-26T19:32:03.9188058Z registry-key=MSSQL15.SQLEXPRESS
+2026-11-26T19:32:03.9235903Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection
+2026-11-26T19:32:03.9247275Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp
+2026-11-26T19:32:03.9258851Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Np
+2026-11-26T19:32:03.9269282Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Sm
+2026-11-26T19:32:03.9280860Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp
+2026-11-26T19:32:03.9290739Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP1
+2026-11-26T19:32:03.9300128Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP2
+2026-11-26T19:32:03.9309872Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP3
+2026-11-26T19:32:03.9319696Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IP4
+2026-11-26T19:32:03.9329732Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll
+2026-11-26T19:32:03.9338541Z regtree: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Via
+2026-11-26T19:32:03.9375537Z ipall-key-ensured
+2026-11-26T19:32:03.9413228Z port-tcpport-set
+2026-11-26T19:32:03.9428695Z port-dynamic-cleared
+2026-11-26T19:32:03.9442244Z port-enabled-set
+2026-11-26T19:32:03.9451245Z skip-restart: use running instance + dynamic-port fallback
+2026-11-26T19:32:22.7167923Z connect-first-fail port=1433 : Exception calling "Open" with "0" argument(s): "A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 0 - No connection could be made because the target machine actively refused it.)"
+2026-11-26T19:32:32.7335764Z dynamic-port-detected=62009
+2026-11-26T19:32:32.7349772Z connect-poll: attempt=0 port=62009
+2026-11-26T19:32:32.8826813Z tcp-connect-ok port=62009
