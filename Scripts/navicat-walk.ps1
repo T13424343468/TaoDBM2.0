@@ -1,14 +1,14 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v11：真库对照（2026-11-26 老板令：数据库工具不连真库，对照了个什么）
-# v10 实锤：走查止步 Ctrl+N 连接表单，从未连过任何库。v11 目标：真 SQLite 文件库 → Navicat 建连接 →
-# 展开对象树 → 打开表数据编辑器，全程录屏+分步截图+walk-log 取证。
+﻿# navicat-walk.ps1 — 竞品对照走查 v12：真库对照·像素门控（v11 实锤：试用弹窗出现晚于点击，全程落空；Qt 无 UIA，count=0）
+# v12 策略：① 像素轮询等试用弹窗（白面板检测）再点试用；② 向导/关弹窗沿用 v10 定谳坐标；
+# ③ 连接下拉打开后扫描菜单文字行落日志并点第 6 行（SQLite 猜测位）；④ SQLite 表单盲填路径+保存；
+# ⑤ 树双击展开；⑥ 每步截图；⑦ 落 %APPDATA%\PremiumSoft 文件清单（为 v13 预置连接文件定位）。
 param(
   [Parameter(Mandatory = $true)][string]$ExePath
 )
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName UIAutomationClient
-Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName System.Drawing
 
 function Log([string]$m) {
   $line = "[WALK] $m"
@@ -17,7 +17,6 @@ function Log([string]$m) {
 }
 
 function Shot([string]$name) {
-  Add-Type -AssemblyName System.Drawing
   $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
   $bmp = New-Object System.Drawing.Bitmap($b.Width, $b.Height)
   $g = [System.Drawing.Graphics]::FromImage($bmp)
@@ -28,22 +27,33 @@ function Shot([string]$name) {
   Log "shot $name"
 }
 
+function Get-Pixel([int]$x, [int]$y) {
+  $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+  $bmp = New-Object System.Drawing.Bitmap($b.Width, $b.Height)
+  $g = [System.Drawing.Graphics]::FromImage($bmp)
+  $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+  $g.Dispose()
+  $c = $bmp.GetPixel($x, $y)
+  $bmp.Dispose()
+  return $c
+}
+
 $sig = @'
 using System;
 using System.Runtime.InteropServices;
-public class Win11 {
+public class Win12 {
   [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
 }
 '@
 Add-Type -TypeDefinition $sig
-[Win11]::ShowWindow([Win11]::GetConsoleWindow(), 6) | Out-Null
+[Win12]::ShowWindow([Win12]::GetConsoleWindow(), 6) | Out-Null
 
 $mouseSrc = @'
 using System;
 using System.Runtime.InteropServices;
-public class MouseNative11 {
+public class MouseNative12 {
   [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")] static extern void mouse_event(uint dwFlags, uint dx, uint dwData, IntPtr dwExtraInfo);
   const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004;
@@ -53,37 +63,17 @@ public class MouseNative11 {
 '@
 Add-Type -TypeDefinition $mouseSrc
 
-$AE = [System.Windows.Automation.AutomationElement]
-function Find-ByName($root, $pattern, [int]$maxMs = 4000) {
-  $sw = [System.Diagnostics.Stopwatch]::StartNew()
-  while ($sw.ElapsedMilliseconds -lt $maxMs) {
-    $els = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
-    foreach ($e in $els) {
-      try { if ($e.Current.Name -like "*$pattern*") { return $e } } catch {}
-    }
-    Start-Sleep -Milliseconds 400
-  }
-  return $null
-}
-function Dump-Names($root, $tag) {
-  try {
-    $els = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
-    $names = @()
-    foreach ($e in $els) { $n = $e.Current.Name; if ($n) { $names += "$($e.Current.ControlType.ProgrammaticName):$n" } }
-    Log "uia[$tag] count=$($names.Count) names=$((($names | Select-Object -First 60) -join ' | '))"
-  } catch { Log "uia[$tag] dump failed: $_" }
-}
 function Focus-Navicat {
   $p = Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   if ($p) {
-    [Win11]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
+    [Win12]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
     (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null
     Start-Sleep -Milliseconds 800
   }
   return $p
 }
 
-Log "v11 start exe=$ExePath"
+Log "v12 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -117,104 +107,94 @@ for ($i = 0; $i -lt 12; $i++) {
 if (-not $seen) { Log "ERROR navicat process never appeared"; exit 1 }
 Focus-Navicat | Out-Null
 
-# 1) 试用 → 向导 → 关新功能弹窗（v10 定谳坐标）
-[MouseNative11]::Click(717, 515)
+# 1) 像素轮询等试用弹窗（白面板 @512,300），最长 90s
+$trialReady = $false
+for ($i = 0; $i -lt 45; $i++) {
+  Start-Sleep -Seconds 2
+  try {
+    $c = Get-Pixel 512 300
+    if ($c.R -gt 235 -and $c.G -gt 235 -and $c.B -gt 235) { $trialReady = $true; Log "trial dialog detected at t=$((25+$i*2))s pixel=$($c.R),$($c.G),$($c.B)"; break }
+  } catch {}
+}
+if (-not $trialReady) { Log "WARN trial dialog not detected by pixel; click anyway" }
+Shot "shot-n01-trial.png"
+[MouseNative12]::Click(717, 515)
 Start-Sleep -Seconds 20
-for ($i = 1; $i -le 4; $i++) { [MouseNative11]::Click(869, 669); Start-Sleep -Seconds 6 }
+
+# 2) 向导 4 连击 + 关新功能弹窗（v10 定谳坐标）
+for ($i = 1; $i -le 4; $i++) { [MouseNative12]::Click(869, 669); Start-Sleep -Seconds 6 }
 $p = Focus-Navicat
 Log "after wizard window='$($p.MainWindowTitle)'"
-[MouseNative11]::Click(696, 187)
+[MouseNative12]::Click(696, 187)
 Start-Sleep -Seconds 3
-Shot "shot-n01-main.png"
+Shot "shot-n02-main.png"
 
-# 2) 打开连接类型下拉（工具栏「连接」右侧箭头），UIA 点 SQLite
-[MouseNative11]::Click(48, 75)
+# 3) 连接下拉 → 扫描菜单行 → 点第 6 行（SQLite 猜测位）
+[MouseNative12]::Click(48, 75)
 Start-Sleep -Seconds 3
-Shot "shot-n02-menu.png"
-$fg = $AE::FocusedElement
-if (-not $fg) { $fg = $p }
-Dump-Names $fg "menu"
-$sqlite = Find-ByName $fg "SQLite" 6000
-if ($sqlite) {
-  Log "uia found SQLite element: $($sqlite.Current.ControlType.ProgrammaticName)"
-  try {
-    $cp = $sqlite.GetClickablePoint()
-    [MouseNative11]::Click([int]$cp.X, [int]$cp.Y)
-  } catch {
-    try { $sqlite.SetFocus() } catch {}
-    try { $ip = $sqlite.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern); $ip.Invoke() } catch { [MouseNative11]::Click(48, 75) }
+Shot "shot-n03-menu.png"
+# 扫描菜单文字行：x∈[25,220]，y∈[90,520]，找暗像素行带
+$rows = @()
+$bmp = New-Object System.Drawing.Bitmap(1024, 768)
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$g.CopyFromScreen(0, 0, 0, 0, $bmp.Size)
+$g.Dispose()
+$inBand = $false; $bandStart = 0
+for ($y = 90; $y -lt 520; $y++) {
+  $dark = 0
+  for ($x = 25; $x -lt 220; $x += 2) {
+    $c = $bmp.GetPixel($x, $y)
+    if ($c.R -lt 120 -and $c.G -lt 120 -and $c.B -lt 120) { $dark++ }
   }
-  Log "clicked SQLite menu item"
+  if ($dark -ge 3 -and -not $inBand) { $inBand = $true; $bandStart = $y }
+  elseif ($dark -lt 3 -and $inBand) { $inBand = $false; if ($y - $bandStart -ge 8) { $rows += [int](($bandStart + $y) / 2) } }
+}
+$bmp.Dispose()
+Log "menu rows detected: $($rows -join ',')"
+if ($rows.Count -ge 6) {
+  [MouseNative12]::Click(100, $rows[5])
+  Log "clicked menu row 6 at y=$($rows[5])"
+} elseif ($rows.Count -gt 0) {
+  [MouseNative12]::Click(100, $rows[$rows.Count - 1])
+  Log "clicked last menu row at y=$($rows[$rows.Count - 1])"
 } else {
-  Log "WARN SQLite menu item not found by UIA; fallback keyboard"
-  [System.Windows.Forms.SendKeys]::SendWait("{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{DOWN}{ENTER}")
+  Log "WARN no menu rows detected; fallback click y=249"
+  [MouseNative12]::Click(100, 249)
 }
 Start-Sleep -Seconds 5
-Shot "shot-n03-conn-dialog.png"
+Shot "shot-n04-conn-dialog.png"
 
-# 3) 连接表单：连接名 + 数据库文件（浏览→路径→打开）
-$dlg = $AE::FocusedElement
-Dump-Names $dlg "conn-dialog"
-$nameEl = Find-ByName $dlg "连接名" 3000
-if ($nameEl) {
-  try {
-    $vp = $nameEl.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern); $vp.SetValue("sample-sqlite"); Log "set conn name"
-  } catch {
-    $cp = $nameEl.GetClickablePoint(); [MouseNative11]::Click([int]$cp.X, [int]$cp.Y); [System.Windows.Forms.SendKeys]::SendWait("sample-sqlite")
-  }
-} else { Log "WARN conn-name element not found" }
-$browse = Find-ByName $dlg "浏览" 3000
-if (-not $browse) { $browse = Find-ByName $dlg "..." 2000 }
-if ($browse) {
-  try { $cp = $browse.GetClickablePoint(); [MouseNative11]::Click([int]$cp.X, [int]$cp.Y) } catch { try { $browse.SetFocus() } catch {} }
-  Start-Sleep -Seconds 3
-  [System.Windows.Forms.SendKeys]::SendWait("C:\taodb-sample\sample.db")
-  Start-Sleep -Seconds 1
-  [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
-  Log "file dialog path sent"
-} else { Log "WARN browse button not found" }
-Start-Sleep -Seconds 2
-Shot "shot-n04-filled.png"
-
-# 4) 保存连接
-$ok = Find-ByName $dlg "确定" 3000
-if (-not $ok) { $ok = Find-ByName $dlg "保存" 3000 }
-if (-not $ok) { $ok = Find-ByName $dlg "OK" 2000 }
-if ($ok) {
-  try { $cp = $ok.GetClickablePoint(); [MouseNative11]::Click([int]$cp.X, [int]$cp.Y) } catch { try { ($ok.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke() } catch {} }
-  Log "clicked save/ok"
-} else { Log "WARN ok button not found; fallback Ctrl+S"; [System.Windows.Forms.SendKeys]::SendWait("^s") }
+# 4) SQLite 连接表单：连接名 → 数据库文件路径 → 保存（盲坐标+截图取证）
+[MouseNative12]::Click(450, 180)
+Start-Sleep -Seconds 1
+[System.Windows.Forms.SendKeys]::SendWait("sample-sqlite")
+Start-Sleep -Seconds 1
+[MouseNative12]::Click(450, 265)
+Start-Sleep -Seconds 1
+[System.Windows.Forms.SendKeys]::SendWait("C:\taodb-sample\sample.db")
+Start-Sleep -Seconds 1
+Shot "shot-n05-filled.png"
+[MouseNative12]::Click(640, 660)
 Start-Sleep -Seconds 5
-Shot "shot-n05-saved.png"
+Shot "shot-n06-saved.png"
 
-# 5) 展开连接 → main → 表 → 打开 users 数据编辑器
-$main = Focus-Navicat
-$rootEl = $AE::FromHandle($main.MainWindowHandle)
-$connNode = Find-ByName $rootEl "sample-sqlite" 8000
-if ($connNode) {
-  try { $cp = $connNode.GetClickablePoint(); [MouseNative11]::DblClick([int]$cp.X, [int]$cp.Y) } catch { try { $connNode.SetFocus() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{ENTER}") }
-  Log "expanded connection node"
-} else { Log "WARN connection node not found in tree" }
+# 5) 树：双击连接节点（我的连接下第一项）→ main → users
+[MouseNative12]::DblClick(100, 140)
 Start-Sleep -Seconds 6
-Shot "shot-n06-tree.png"
-$rootEl = $AE::FromHandle((Focus-Navicat).MainWindowHandle)
-$mainNode = Find-ByName $rootEl "main" 5000
-if ($mainNode) {
-  try { $cp = $mainNode.GetClickablePoint(); [MouseNative11]::DblClick([int]$cp.X, [int]$cp.Y) } catch { try { $mainNode.SetFocus() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}") }
-  Log "expanded main db node"
-}
+Shot "shot-n07-tree.png"
+[MouseNative12]::DblClick(120, 170)
 Start-Sleep -Seconds 4
-$rootEl = $AE::FromHandle((Focus-Navicat).MainWindowHandle)
-$usersNode = Find-ByName $rootEl "users" 6000
-if ($usersNode) {
-  try { $cp = $usersNode.GetClickablePoint(); [MouseNative11]::DblClick([int]$cp.X, [int]$cp.Y) } catch { try { $usersNode.SetFocus() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{ENTER}") }
-  Log "opened users table data editor"
-} else { Log "WARN users node not found" }
+Shot "shot-n08-db.png"
+[MouseNative12]::DblClick(250, 220)
 Start-Sleep -Seconds 8
-Shot "shot-n07-data.png"
-Start-Sleep -Seconds 4
-Shot "shot-n08-data2.png"
+Shot "shot-n09-data.png"
 
-Log "v11 done"
+# 6) 落 PremiumSoft 设置目录清单（为 v13 预置连接文件定位）
+try {
+  $dirs = Get-ChildItem "$env:APPDATA\PremiumSoft" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 80
+  foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
+} catch { Log "settings dump failed: $_" }
+
+Log "v12 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
