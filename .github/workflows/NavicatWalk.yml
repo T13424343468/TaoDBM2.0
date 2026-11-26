@@ -97,6 +97,8 @@ jobs:
             git add nav-walk.mp4
           }
           if (Test-Path ..\walk-log.txt) { Copy-Item ..\walk-log.txt -Force; git add walk-log.txt }
+          # v11：分步截图一并回传（真库对照取证）
+          Get-ChildItem ..\shot-n*.png -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName -Force; git add $_.Name }
           git commit --allow-empty -m "navicat walk video run ${{ github.run_id }}" | Out-Null
           $pushOut = git push origin navicat-shots-latest --force 2>&1 | Out-String
           Write-Host "[PUSH-1] exit=$LASTEXITCODE $pushOut"
