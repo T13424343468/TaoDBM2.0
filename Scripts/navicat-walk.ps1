@@ -245,13 +245,16 @@ Start-Sleep -Seconds 3
 Shot "shot-n06-connform.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-form: $w" }
 
-# 6) SQLite 连接表单（键盘）：连接名 → TAB×3 → 数据库文件路径 → ENTER 保存
+# 6) SQLite 连接表单（键盘）：连接名 → TAB×2（v21 实证 TAB×1 落在类型单选钮，再 TAB 才到路径字段）→ 数据库文件路径 → ENTER 保存
 [System.Windows.Forms.SendKeys]::SendWait("sample-sqlite")
 Start-Sleep -Milliseconds 500
 Shot "shot-n06a-name.png"
 [System.Windows.Forms.SendKeys]::SendWait("{TAB}")
 Start-Sleep -Milliseconds 400
 Shot "shot-n06b-tab1.png"
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
+Start-Sleep -Milliseconds 400
+Shot "shot-n06c-tab2.png"
 [System.Windows.Forms.SendKeys]::SendWait("C:\taodb-sample\sample.db")
 Start-Sleep -Milliseconds 500
 Shot "shot-n06e-filled.png"
@@ -271,14 +274,18 @@ for ($i = 1; $i -le 3 -and -not $tourGone2; $i++) {
   Log ("tour2 dismissed=" + $tourGone2 + " by esc" + $i)
 }
 
-# 7) 树：双击连接节点 → main → users
-[MouseNative15]::DblClick(100, 140)
-Start-Sleep -Seconds 6
+# 7) 树展开改纯键盘（v21 实证鼠标注入全程失效，DblClick 三连全落空）：RIGHT 展开连接 → DOWN 到库文件 → RIGHT 展开 → DOWN 到 users → ENTER 打开
+[System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+Start-Sleep -Seconds 5
 Shot "shot-n07-tree.png"
-[MouseNative15]::DblClick(120, 170)
-Start-Sleep -Seconds 4
+[System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+Start-Sleep -Milliseconds 800
+[System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
+Start-Sleep -Seconds 5
 Shot "shot-n08-db.png"
-[MouseNative15]::DblClick(250, 220)
+[System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+Start-Sleep -Milliseconds 800
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
 Start-Sleep -Seconds 8
 Shot "shot-n09-data.png"
 
