@@ -1,4 +1,4 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v20：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
+﻿# navicat-walk.ps1 — 竞品对照走查 v21：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
 # v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v20 start exe=$ExePath"
+Log "v21 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -234,9 +234,9 @@ Start-Sleep -Seconds 3
 Shot "shot-n04-conn-dialog.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-conn: $w" }
 
-# 5.5) 类型选择：方向键 6 下到 SQLite（猜测位）→ ENTER；每步截图留证
-for ($i = 1; $i -le 6; $i++) {
-  [System.Windows.Forms.SendKeys]::SendWait("{DOWN}")
+# 5.5) 类型选择：v20 截图定谳网格第 1 行 = MySQL(默认选中),PostgreSQL,SQL Server,Oracle,SQLite → RIGHT×4 到 SQLite → ENTER
+for ($i = 1; $i -le 4; $i++) {
+  [System.Windows.Forms.SendKeys]::SendWait("{RIGHT}")
   Start-Sleep -Milliseconds 300
 }
 Shot "shot-n05-picker.png"
@@ -250,14 +250,8 @@ foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-form: $w" }
 Start-Sleep -Milliseconds 500
 Shot "shot-n06a-name.png"
 [System.Windows.Forms.SendKeys]::SendWait("{TAB}")
-Start-Sleep -Milliseconds 300
+Start-Sleep -Milliseconds 400
 Shot "shot-n06b-tab1.png"
-[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
-Start-Sleep -Milliseconds 300
-Shot "shot-n06c-tab2.png"
-[System.Windows.Forms.SendKeys]::SendWait("{TAB}")
-Start-Sleep -Milliseconds 300
-Shot "shot-n06d-tab3.png"
 [System.Windows.Forms.SendKeys]::SendWait("C:\taodb-sample\sample.db")
 Start-Sleep -Milliseconds 500
 Shot "shot-n06e-filled.png"
@@ -265,6 +259,17 @@ Shot "shot-n06e-filled.png"
 Start-Sleep -Seconds 5
 Shot "shot-n06f-saved.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-saved: $w" }
+
+# 6.5) 功能导览可能再弹（v20 实证），再关一次
+$tourGone2 = -not (Test-WindowClass -ClassPattern 'TFeatureTour*')
+for ($i = 1; $i -le 3 -and -not $tourGone2; $i++) {
+  Focus-WindowClass -ClassPattern 'TFeatureTour*' | Out-Null
+  [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+  Log "tour2 esc $i"
+  Start-Sleep -Seconds 2
+  $tourGone2 = -not (Test-WindowClass -ClassPattern 'TFeatureTour*')
+  Log ("tour2 dismissed=" + $tourGone2 + " by esc" + $i)
+}
 
 # 7) 树：双击连接节点 → main → users
 [MouseNative15]::DblClick(100, 140)
@@ -283,6 +288,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v20 done"
+Log "v21 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
