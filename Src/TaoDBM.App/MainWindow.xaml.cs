@@ -46,6 +46,8 @@ public partial class MainWindow : Window
         Title = "TaoDBM" + VersionLabel();
         AppTitleText.Text = Title;
         Core.AppLog.Write($"TaoDBM 启动 {Title}");
+        // 发现114：老库兼容降级重连成功后一次性人话提示（状态栏一句话，不弹窗打断）
+        Core.AdaptiveDbConnection.FallbackConnected += msg => _ = DispatcherQueue.TryEnqueue(() => _ = InfoAsync(msg));
         UI.Ant.ThemeApplied += PinTitleBar;
         UI.Ant.ThemeApplied += PinRootTheme;
         PinTitleBar(Core.ThemePalette.Get(Core.ThemeStore.Load()));

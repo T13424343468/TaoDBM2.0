@@ -90,25 +90,47 @@ public sealed class AdaptiveDbConnection : DbConnection
     /// <summary>是否已触发降级重连（诊断与界面提示用）。</summary>
     public bool FallbackUsed => _fallbackTried;
 
+    /// <summary>发现114：老库兼容降级重连成功后的一次性通知（App 层订阅转状态栏人话提示，静态事件、应用级订阅一次）。</summary>
+    public static event Action<string>? FallbackConnected;
+
+    private bool _fallbackNotified;
+    private string? _fallbackReason;
+
     private bool ShouldFallback(Exception ex) => !_fallbackTried && _classifier(ex);
 
-    private void SwapToFallback()
+    private void SwapToFallback(Exception ex)
     {
         _fallbackTried = true;
+        _fallbackReason = ex.Message;
+        AppLog.Write($"[兼容] 老库兼容降级重连：首连握手/认证失败（{ex.Message}），已自动换兼容方式重试");   // 发现114：降级落账，不再无痕
         _inner.Dispose();
         _inner = _fallbackFactory();
+    }
+
+    /// <summary>发现114：降级重连成功后一次性广播（失败不广播，等真正连上再说）。</summary>
+    private void NotifyFallbackOnce()
+    {
+        if (!_fallbackTried || _fallbackNotified) return;
+        _fallbackNotified = true;
+        AppLog.Write("[兼容] 降级重连成功，已广播一次性提示");
+        FallbackConnected?.Invoke("已连上较老版本的服务器：为兼容自动改用了兼容连接方式，此连接可能未加密，请注意网络环境。");
     }
 
     public override void Open()
     {
         try { _inner.Open(); }
-        catch (Exception ex) when (ShouldFallback(ex)) { SwapToFallback(); _inner.Open(); }
+        catch (Exception ex) when (ShouldFallback(ex)) { SwapToFallback(ex); _inner.Open(); NotifyFallbackOnce(); }
     }
 
     public override async Task OpenAsync(CancellationToken cancellationToken)
     {
         try { await _inner.OpenAsync(cancellationToken).ConfigureAwait(false); }
-        catch (Exception ex) when (ShouldFallback(ex)) { SwapToFallback(); await _inner.OpenAsync(cancellationToken).ConfigureAwait(false); }
+        catch (Exception ex) when (ShouldFallback(ex))
+        {
+            SwapToFallback(ex);
+            await _inner.OpenAsync(cancellationToken).ConfigureAwait(false);
+            NotifyFallbackOnce();
+        }
     }
 
     [System.Diagnostics.CodeAnalysis.AllowNull]

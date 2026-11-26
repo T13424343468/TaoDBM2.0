@@ -1,4 +1,6 @@
-﻿using TaoDBM.Core;
+﻿using System.Data;
+using System.Data.Common;
+using TaoDBM.Core;
 using TaoDBM.Infrastructure;
 using TaoDBM.UI;
 
@@ -27,6 +29,7 @@ public static class BatchCheckSweep
         RunTaoPaths(d);            // 发现95/108/112
         RunOdbcEscape(d);          // 发现101
         RunManualContent(d);       // 发现89/92/98/99/128
+        RunFallbackNotice(d);      // 发现114
     }
 
     // 发现81：SQL Server 改默认值——带约束名映射时先 DROP 旧约束再 ADD DEFAULT；无映射保持原口径不 DROP
@@ -231,5 +234,45 @@ public static class BatchCheckSweep
         d("发现89 连接管理章含哨兵与集群", all.Contains("哨兵") && all.Contains("集群"), "");
         d("发现128 卸载口径归真数据根", all.Contains("数据根"), "");
         d("发现128 快捷键章含 F11 专注模式", ch.First(c => c.Title.Contains("快捷键")).Sections.Any(s => s.Body.Contains("F11")), "");
+    }
+
+    // 发现114：老库兼容降级重连——降级成功后一次性广播人话提示，二次打开不重复广播
+    static void RunFallbackNotice(CheckD d)
+    {
+        int fired = 0;
+        string? got = null;
+        AdaptiveDbConnection.FallbackConnected += m => { fired++; got = m; };
+        var c = new AdaptiveDbConnection(new FakeConn(throwOnFirstOpen: true), _ => true, () => new FakeConn(throwOnFirstOpen: false));
+        c.Open();
+        d("发现114 降级成功广播一次", fired == 1 && (got ?? "").Contains("兼容"), $"{fired}|{got ?? "null"}");
+        c.Close();
+        c.Open();
+        d("发现114 同连接二次打开不重复广播", fired == 1, fired.ToString());
+        var plain = new AdaptiveDbConnection(new FakeConn(throwOnFirstOpen: false), _ => true, () => new FakeConn(throwOnFirstOpen: false));
+        plain.Open();
+        d("发现114 未降级不广播", fired == 1, fired.ToString());
+    }
+
+    /// <summary>发现114 测试替身：首开可抛 TLS 症状异常，之后正常打开。</summary>
+    private sealed class FakeConn : DbConnection
+    {
+        private bool _throw;
+        private ConnectionState _state = ConnectionState.Closed;
+        public FakeConn(bool throwOnFirstOpen) => _throw = throwOnFirstOpen;
+        public override string ConnectionString { get; set; } = "";
+        public override string Database => "db";
+        public override string DataSource => "src";
+        public override string ServerVersion => "1.0";
+        public override ConnectionState State => _state;
+        public override int ConnectionTimeout => 5;
+        public override void ChangeDatabase(string databaseName) { }
+        public override void Close() => _state = ConnectionState.Closed;
+        public override void Open()
+        {
+            if (_throw) { _throw = false; throw new InvalidOperationException("ssl security error"); }
+            _state = ConnectionState.Open;
+        }
+        protected override DbTransaction BeginDbTransaction(System.Data.IsolationLevel isolationLevel) => throw new NotSupportedException();
+        protected override DbCommand CreateDbCommand() => throw new NotSupportedException();
     }
 }

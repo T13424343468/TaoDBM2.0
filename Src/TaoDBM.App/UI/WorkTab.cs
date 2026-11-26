@@ -405,6 +405,7 @@ public partial class WorkTab : Grid
         ExportItem("导出 Excel（xlsx）", "ExportExcel", ExportKind.Excel);
         ExportItem("导出 XML", "ExportXml", ExportKind.Xml);
         ExportItem("导出 HTML", "ExportHtml", ExportKind.Html);
+        ExportItem("导出 JSON（.json）", "ExportJson", ExportKind.Json);   // 发现154：接线补齐，菜单可达
         _exportMoreBtn.Flyout = exportMenu;
         _structBtn.Click += (_, _) => _ = ShowStructure();
         _addRowBtn.Click += (_, _) => _ = EditRow(null);
@@ -832,8 +833,8 @@ public partial class WorkTab : Grid
         }
     }
 
-    /// <summary>批次四格1/2：导出格式（CSV / INSERT / Excel xlsx / XML / HTML）。</summary>
-    internal enum ExportKind { Csv, InsertSql, Excel, Xml, Html }
+    /// <summary>批次四格1/2：导出格式（CSV / INSERT / Excel xlsx / XML / HTML / JSON）。</summary>
+    internal enum ExportKind { Csv, InsertSql, Excel, Xml, Html, Json }
 
     private static (string Title, string Filter, string FileName) DialogOf(ExportKind k) => k switch
     {
@@ -841,6 +842,7 @@ public partial class WorkTab : Grid
         ExportKind.InsertSql => ("导出 SQL", "SQL 文件 (*.sql)|*.sql", "taodbm_insert.sql"),
         ExportKind.Excel => ("导出 Excel", "Excel 工作簿 (*.xlsx)|*.xlsx", "taodbm_export.xlsx"),
         ExportKind.Xml => ("导出 XML", "XML 文件 (*.xml)|*.xml", "taodbm_export.xml"),
+        ExportKind.Json => ("导出 JSON", "JSON 文件 (*.json)|*.json", "taodbm_export.json"),
         _ => ("导出 HTML", "HTML 文件 (*.html)|*.html", "taodbm_export.html"),
     };
 
@@ -1014,6 +1016,12 @@ public partial class WorkTab : Grid
                 AppLog.Write($"[导出] xml rows={rows}");   // 批次四格2 验收锚点
                 break;
             }
+            case ExportKind.Json:
+            {
+                System.IO.File.WriteAllText(savePath, Exporter.Json(src0), new System.Text.UTF8Encoding(false));
+                AppLog.Write($"[导出] json rows={src0.Rows.Count}");   // 发现154 接线验收锚点
+                break;
+            }
             default:   // Html
             {
                 using var w = new System.IO.StreamWriter(savePath, false, new System.Text.UTF8Encoding(false));
@@ -1116,6 +1124,10 @@ public partial class WorkTab : Grid
                     case ExportKind.Xml:
                         rows = XmlExporter.WriteStream(pages, columns, w, _exportCts.Token);
                         AppLog.Write($"[导出] xml rows={rows}");   // 批次四格2 验收锚点
+                        break;
+                    case ExportKind.Json:
+                        rows = Exporter.JsonStream(pages, columns, w, _exportCts.Token);
+                        AppLog.Write($"[导出] json rows={rows}");   // 发现154 接线验收锚点
                         break;
                     default:
                         rows = HtmlExporter.WriteStream(pages, columns, _child.Length > 0 ? _child : "结果", w, _exportCts.Token);
