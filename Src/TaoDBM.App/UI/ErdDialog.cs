@@ -388,6 +388,12 @@ public static class ErdDialog
         // 发现147：差异脚本逐条勾选——每条语句一行 CheckBox（默认全勾）＋类型徽标＋表名＋摘要，全文可展开
         var checkList = new StackPanel { Spacing = 4 };
         var checks = new List<(CheckBox Box, string Stmt, TextBlock Result)>();
+        // execBtn 先声明后挂勾选回调（云测 run399：局部函数经 lambda 延后调用，声明须在使用前）
+        var execBtn = new Button
+        {
+            Content = $"执行所选（{checks.Count}/{checks.Count} 条）",
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+        };
         foreach (var s in stmts)
         {
             var box = new CheckBox { Content = UiBatchB.SyncItemLabel(s), IsChecked = true, HorizontalContentAlignment = HorizontalAlignment.Left };
@@ -430,11 +436,6 @@ public static class ErdDialog
             checkList.Children.Add(skipNote);
         }
 
-        var execBtn = new Button
-        {
-            Content = $"执行所选（{checks.Count}/{checks.Count} 条）",
-            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
-        };
         void UpdateExecBtn()
         {
             int n = checks.Count(c => c.Box.IsChecked == true);

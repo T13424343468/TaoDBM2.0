@@ -1005,8 +1005,8 @@ public partial class MainWindow : Window
                 case NodeKind.BackupHistory:
                     // 发现144：备份条目按时间倒序列出（账本本身最新在前）；文件已不在磁盘的置灰标注
                     {
-                        string engineName = EngineInfo.Name(info.Profile.Engine);
-                        var entries = BackupHistory.All().Where(h => h.Engine == engineName).ToList();
+                        // 分支内直接求值（云测 run399：Connection 分支的 engineName 跨分支引用会报未赋值）
+                        var entries = BackupHistory.All().Where(h => h.Engine == EngineInfo.Name(info.Profile.Engine)).ToList();
                         int n = 0;
                         foreach (var e in entries)
                         {

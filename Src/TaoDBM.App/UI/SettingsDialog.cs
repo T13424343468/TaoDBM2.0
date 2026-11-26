@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using TaoDBM.ViewModels;
 
 namespace TaoDBM.UI;
@@ -303,17 +304,19 @@ public static class SettingsDialog
         var done = new TaskCompletionSource<bool>();
         dlg.Closed += (_, _) => done.TrySetResult(false);
 
+        // 修饰键状态本地自记（云测 run399：InputKeyboardSource.GetKeyStateForCurrentRoot 在本项目 WinAppSDK 2.6.5 无此 API）
+        var modsDown = new HashSet<Windows.System.VirtualKey>();
+        capture.KeyUp += (_, e) => modsDown.Remove(e.Key);
         capture.KeyDown += (s, e) =>
         {
             e.Handled = true;
             if (e.Key == Windows.System.VirtualKey.Escape) { done.TrySetResult(false); return; }
             string key = VirtualKeyName(e.Key);
-            if (key.Length == 0) return;   // 只按修饰键不算完整组合
+            if (key.Length == 0) { modsDown.Add(e.Key); return; }   // 只按修饰键不算完整组合，记入按下集合
             var mods = new List<string>();
             void Add(Windows.System.VirtualKey vk, string name)
             {
-                if (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentRoot(vk)
-                    .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down)) mods.Add(name);
+                if (modsDown.Contains(vk)) mods.Add(name);
             }
             Add(Windows.System.VirtualKey.Control, "Ctrl");
             Add(Windows.System.VirtualKey.Shift, "Shift");

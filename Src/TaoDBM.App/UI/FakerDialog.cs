@@ -376,7 +376,7 @@ public static class FakerDialog
                 continue;
             }
             box.Header = "行数";
-            box.Foreground = Ant.TextMain;
+            box.Foreground = Ant.Text;
             counts[name] = n;
         }
         return SeedPlan.PlanFromCounts(counts, tables, _edges);

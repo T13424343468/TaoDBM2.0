@@ -66,7 +66,7 @@ public static class DiagnosticsDialog
             [statPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), statPanel, status, "状态"),
         };
         var loaded = new HashSet<StackPanel>();
-        var tabs = new TabView { IsAddButtonVisible = false, MinWidth = 660 };
+        var tabs = new TabView { MinWidth = 660 };   // WinUI TabView 无 IsAddButtonVisible（云测 run399），加号钮未挂 AddTabButtonClick 不产生行为
         // 发现149：进程页自动刷新开关（默认关，开启后 10 秒一轮，对话框关闭即停）
         var autoRefresh = new CheckBox { Content = $"自动刷新（每 {UiBatchB.AutoRefreshSeconds} 秒）" };
         var procTabContent = new StackPanel { Spacing = 6 };
@@ -96,7 +96,7 @@ public static class DiagnosticsDialog
         refreshTimer.Interval = TimeSpan.FromSeconds(UiBatchB.AutoRefreshSeconds);
         refreshTimer.Tick += async (_, _) =>
         {
-            if (tabs.SelectedItem != procTab) return;   // 不在进程页不空跑查询
+            if (!ReferenceEquals(tabs.SelectedItem, procTab)) return;   // 不在进程页不空跑查询（引用比较避免 CS0252 警告）
             await loadProc();
         };
         autoRefresh.Click += (_, _) =>
@@ -179,7 +179,7 @@ public static class DiagnosticsDialog
                     CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
                     Margin = new Thickness(16, 0, 0, 0),
                 };
-                killBtn.Click += (_, _) => _ = KillSessionAsync(owner, prov, dbName, sid, status);
+                killBtn.Click += (_, _) => _ = KillSessionAsync(owner, engine, prov, dbName, sid, status);
                 panel.Children.Add(killBtn);
             }
             status.Text = "进程清单加载完成（只读）。";
