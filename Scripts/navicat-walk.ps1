@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v15 start exe=$ExePath"
+Log "v16 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -282,6 +282,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v15 done"
+Log "v16 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
