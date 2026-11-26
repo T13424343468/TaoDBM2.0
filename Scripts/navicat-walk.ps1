@@ -1,4 +1,4 @@
-﻿# navicat-walk.ps1 — 竞品对照走查 v18：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
+﻿# navicat-walk.ps1 — 竞品对照走查 v19：真库对照·类名状态机完版（v17 定谳真根因：类名匹配模式缺前导星号，-like 整串匹配时模式锚在 hwnd= 串首永不命中，Wait/Test/Focus 三函数全部失效，关断循环从未执行；v15 双通配诊断不完整；
 # v14 截图定谳：ESC 一招关掉试用弹窗，TAB+ENTER 推进 WhatsNew 向导页，向导末页=改善 Navicat(不共享/共享)
 # v15 策略：① 修 v14 矩形正则 bug（rect=(L,T)-(R,B) 误写为逗号分隔致 dlgHwnd=0）；② 全程以窗口类名做状态机：
 #    等 TRegistrationSubForm→按序 ESC→TAB+ENTER→X(776,175)→试用(717,515) 关断并逐招类名验证；
@@ -120,7 +120,7 @@ function Focus-WindowClass {
   return $false
 }
 
-Log "v18 start exe=$ExePath"
+Log "v19 start exe=$ExePath"
 
 # 0) 真库：Python 内置 sqlite3 生成带脏数据的样例库
 New-Item -ItemType Directory -Force C:\taodb-sample | Out-Null
@@ -186,20 +186,23 @@ if ($wizSeen) {
   for ($i = 1; $i -le 8; $i++) {
     if (-not (Test-WindowClass -ClassPattern 'TWhatsNew*')) { break }
     Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
+    [System.Windows.Forms.SendKeys]::SendWait("{TAB}")
+    Start-Sleep -Milliseconds 500
     [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
-    Log "wizard enter $i"
+    Log "wizard tab-enter $i"
     Start-Sleep -Seconds 3
-    Shot ("shot-n13-wizard-enter" + $i + ".png")
+    Shot ("shot-n13-wizard-te" + $i + ".png")
   }
   $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
-  Log ("wizard dismissed=" + $wizGone + " by enter-loop")
-  if (-not $wizGone) {
+  Log ("wizard dismissed=" + $wizGone + " by tab-enter-loop")
+  for ($i = 1; $i -le 5 -and -not $wizGone; $i++) {
     Focus-WindowClass -ClassPattern 'TWhatsNew*' | Out-Null
     [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    Log "wizard esc $i"
     Start-Sleep -Seconds 3
     $wizGone = -not (Test-WindowClass -ClassPattern 'TWhatsNew*')
-    Shot "shot-n14-wizard-esc.png"
-    Log ("wizard dismissed=" + $wizGone + " by esc")
+    Shot ("shot-n14-wizard-esc" + $i + ".png")
+    Log ("wizard dismissed=" + $wizGone + " by esc" + $i)
   }
   if (-not $wizGone) { Log "WARN wizard still up after keyboard methods" }
 } else { Log "no wizard window; continue" }
@@ -214,7 +217,10 @@ foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-main: $w" }
 
 # 5) 连接下拉 → 扫描菜单行 → 点第 7 行（SQLite 猜测位）
 [MouseNative15]::Click(48, 75)
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 1
+$cp = [System.Windows.Forms.Cursor]::Position
+Log ("cursor after click: " + $cp.X + "," + $cp.Y)
+Start-Sleep -Seconds 2
 Shot "shot-n03-menu.png"
 $rows = @()
 $bmp = New-Object System.Drawing.Bitmap(1024, 768)
@@ -246,6 +252,33 @@ if ($rows.Count -ge 7) {
 Start-Sleep -Seconds 5
 Shot "shot-n04-conn-dialog.png"
 foreach ($w in (Get-NavWindows -ProcId $script:navPid)) { Log "win-conn: $w" }
+$dlgSeen = Get-NavWindows -ProcId $script:navPid | Where-Object { $_ -like "*class='TConnection*'" -or $_ -like "*class='TForm*'" }
+if (-not $dlgSeen) {
+  Log "no conn dialog; keyboard Alt+F menu probe"
+  Focus-WindowClass -ClassPattern 'TNavicatMainForm*' | Out-Null
+  [System.Windows.Forms.SendKeys]::SendWait("%f")
+  Start-Sleep -Seconds 2
+  Shot "shot-n15-altf-menu.png"
+  $bmp2 = New-Object System.Drawing.Bitmap(1024, 768)
+  $g2 = [System.Drawing.Graphics]::FromImage($bmp2)
+  $g2.CopyFromScreen(0, 0, 0, 0, $bmp2.Size)
+  $g2.Dispose()
+  $mrows = @()
+  $inB = $false; $bS = 0
+  for ($y = 40; $y -lt 520; $y++) {
+    $dark = 0
+    for ($x = 5; $x -lt 300; $x += 2) {
+      $c = $bmp2.GetPixel($x, $y)
+      if ($c.R -lt 120 -and $c.G -lt 120 -and $c.B -lt 120) { $dark++ }
+    }
+    if ($dark -ge 3 -and -not $inB) { $inB = $true; $bS = $y }
+    elseif ($dark -lt 3 -and $inB) { $inB = $false; if ($y - $bS -ge 8) { $mrows += [int](($bS + $y) / 2) } }
+  }
+  $bmp2.Dispose()
+  Log "altf menu rows: $($mrows -join ',')"
+  [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+  Start-Sleep -Seconds 1
+}
 
 # 6) SQLite 连接表单：连接名 → 数据库文件路径 → 保存
 [MouseNative15]::Click(450, 180)
@@ -278,6 +311,6 @@ try {
   foreach ($d in $dirs) { Log "settings: $($d.FullName.Replace($env:APPDATA,'~APPDATA'))" }
 } catch { Log "settings dump failed: $_" }
 
-Log "v18 done"
+Log "v19 done"
 Get-Process -Name "navicat" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 exit 0
