@@ -28,8 +28,7 @@ public class ScheduledSqlEntry
 public static class SqlScheduler
 {
     private static readonly object Gate = new();
-    private static readonly string StorePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaoDBM", "scheduled-sql.json");
+    private static readonly string StorePath = TaoPaths.FilePath("scheduled-sql.json");   // 发现108/112：改走数据根
 
     private static List<ScheduledSqlEntry> Load()
     {

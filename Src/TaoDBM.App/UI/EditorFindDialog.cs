@@ -60,9 +60,10 @@ public static class EditorFindDialog
                     ? "没有找到匹配。"
                     : $"共 {hits.Count} 处匹配，预览：\n" + string.Join("\n", lines.Select(l => "· " + (l.Length > 90 ? l[..90] + "…" : l)));
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
-                preview.Text = ex.Message;
+                // 发现91：正则异常转人话，不再把英文原文怼进预览区
+                preview.Text = "查找内容写法不对（开了正则时多半是括号或符号不配对），改一下再试。";
             }
         };
 
@@ -76,7 +77,7 @@ public static class EditorFindDialog
                 var next = hits.FirstOrDefault(h => h.Start >= caret, hits[0]);
                 tab.SelectRange(next.Start, next.Length);
             }
-            catch (ArgumentException ex) { preview.Text = ex.Message; }
+            catch (ArgumentException) { preview.Text = "查找内容写法不对（开了正则时多半是括号或符号不配对），改一下再试。"; }   // 发现91：异常转人话
         };
 
         replBtn.Click += (_, _) =>
@@ -88,7 +89,7 @@ public static class EditorFindDialog
                 tab.EditorText = newText;
                 preview.Text = $"已替换 {count} 处。";
             }
-            catch (ArgumentException ex) { preview.Text = ex.Message; }
+            catch (ArgumentException) { preview.Text = "查找内容写法不对（开了正则时多半是括号或符号不配对），改一下再试。"; }   // 发现91：异常转人话
         };
 
         await dlg.ShowThemedAsync();

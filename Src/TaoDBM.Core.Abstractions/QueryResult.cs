@@ -28,6 +28,8 @@ public class ColumnSpec
     public string DefaultValue { get; set; } = "";
     /// <summary>列注释（发现75：MySQL 内联在列定义里，MODIFY 需原样带回）。</summary>
     public string Comment { get; set; } = "";
+    /// <summary>默认约束名（发现81：SQL Server 读回 sys.default_constraints.name，改表先删旧约束再建新；其他引擎为空）。</summary>
+    public string DefaultConstraintName { get; set; } = "";
 
     public override string ToString() =>
         Name + (string.IsNullOrEmpty(DataType) ? "" : " · " + DataType) + (IsKey ? " · 🔑" : "");

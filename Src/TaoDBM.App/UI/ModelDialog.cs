@@ -175,7 +175,10 @@ public static class ModelDialog
             m.Edges = ErdModel.InferEdgesDeep(m, fkRows);
             ErdModel.AutoLayout(m);
             Place(m);
-            _hint.Text = $"已生成 {m.Tables.Count} 张表、{m.Edges.Count} 条关系线（{ModelLayerInfo.Name(_doc.Current)}层）。";
+            // 发现124：40 表上限不再静默——超限时明示总数与截断口径
+            _hint.Text = tables.Count > 40
+                ? $"已生成 {m.Tables.Count} 张表、{m.Edges.Count} 条关系线（{ModelLayerInfo.Name(_doc.Current)}层）。库共 {tables.Count} 张表，超出渲染上限，仅取前 40 张；模型比较也按此范围。"
+                : $"已生成 {m.Tables.Count} 张表、{m.Edges.Count} 条关系线（{ModelLayerInfo.Name(_doc.Current)}层）。";
         }
         catch (Exception ex) { _hint.Text = HumanError.Say(ex, "生成失败"); }
     }
@@ -266,6 +269,8 @@ public static class ModelDialog
             var diffs = ModelCompare.Diff(_doc.CurrentModel, live);
             AppLog.Write($"[模型比较] 差异={diffs.Count}");   // 批次五格2 验收锚点
             var sb = new System.Text.StringBuilder();
+            // 发现124：比较范围明示——库表超 40 张时差异建立在残缺样本上，须先说清
+            if (tables.Count > 40) sb.AppendLine($"注意：库共 {tables.Count} 张表，本次仅比较前 40 张，其余未纳入差异，差异清单可能不完整。").AppendLine();
             if (diffs.Count == 0) sb.Append("模型与库内结构一致，无差异。");
             foreach (var d in diffs.Take(200)) sb.AppendLine(d.ToString());
             if (diffs.Count > 200) sb.AppendLine($"…（其余 {diffs.Count - 200} 条省略）");

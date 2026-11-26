@@ -59,14 +59,16 @@ public static class SettingsDialog
         var notify = Core.NotifyPrefs.Load();
         var chkNotify = new CheckBox { Content = "启用系统级通知", IsChecked = notify.Enabled };
         var chkDnd = new CheckBox { Content = "免打扰时段", IsChecked = notify.DndEnabled };
-        var tpStart = new TimePicker { Time = new TimeSpan(notify.DndStart.Hour, notify.DndStart.Minute, 0), MinuteIncrement = 30 };
-        var tpEnd = new TimePicker { Time = new TimeSpan(notify.DndEnd.Hour, notify.DndEnd.Minute, 0), MinuteIncrement = 30 };
+        var tpStart = new TimePicker { Time = new TimeSpan(notify.DndStart.Hour, notify.DndStart.Minute, 0), MinuteIncrement = 1 };
+        var tpEnd = new TimePicker { Time = new TimeSpan(notify.DndEnd.Hour, notify.DndEnd.Minute, 0), MinuteIncrement = 1 };
         var dndRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(20, 0, 0, 0) };
         dndRow.Children.Add(chkDnd);
         dndRow.Children.Add(tpStart);
         dndRow.Children.Add(new TextBlock { Text = "到", VerticalAlignment = VerticalAlignment.Center, Foreground = Ant.TextSub });
         dndRow.Children.Add(tpEnd);
         var throttleBox = new TextBox { Header = "同类事件节流（分钟，0 不节流）", Text = notify.ThrottleMinutes.ToString("0.#"), MinWidth = 240 };
+        // 发现106：节流输入非法当场提示，不再静默回默认
+        var throttleHint = new TextBlock { Foreground = Ant.Error, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
         var kindChecks = new Dictionary<Core.NotifyKind, CheckBox>();
         var kindPanel = new StackPanel { Spacing = 4, Margin = new Thickness(20, 0, 0, 0) };
         foreach (Core.NotifyKind kind in Enum.GetValues<Core.NotifyKind>())
@@ -83,16 +85,29 @@ public static class SettingsDialog
         panel.Children.Add(chkNotify);
         panel.Children.Add(dndRow);
         panel.Children.Add(throttleBox);
+        panel.Children.Add(throttleHint);
         panel.Children.Add(new TextBlock { Text = "推送哪些事件：", Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor });
         panel.Children.Add(kindPanel);
 
+        // 发现106：节流输入校验——非法（非数字/NaN/Infinity/负数）返回人话错误，合法时回传归一值
+        string? ValidateThrottle(out double throttle)
+        {
+            throttle = 5;
+            var raw = throttleBox.Text.Trim();
+            bool ok = double.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out throttle) ||
+                      double.TryParse(raw, out throttle);
+            if (!ok || !double.IsFinite(throttle))
+                return "节流分钟数要是 0 以上的数字（0 表示不节流），请改一下再保存。";
+            if (throttle < 0)
+                return "节流分钟数不能是负数，最小填 0（0 表示不节流）。";
+            return null;
+        }
+
         void SaveNotify()
         {
-            var raw = throttleBox.Text.Trim();
-            if (!double.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var throttle) &&
-                !double.TryParse(raw, out throttle))
-                throttle = 5;
-            if (throttle < 0) throttle = 0;
+            var err = ValidateThrottle(out var throttle);
+            if (err is not null) throttle = 0;   // Closing 已拦，不会走到；兜底取不节流
+            throttleBox.Text = throttle.ToString("0.#");   // 实际生效值回显进输入框
             var opts = new Core.NotifyOptions
             {
                 Enabled = chkNotify.IsChecked == true,
@@ -150,6 +165,18 @@ public static class SettingsDialog
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = owner.Content.XamlRoot,
+        };
+        // 发现106：节流输入非法时拦下保存，人话提示不关窗
+        dlg.Closing += (s, args) =>
+        {
+            if (args.Result != ContentDialogResult.Primary) return;
+            var err = ValidateThrottle(out _);
+            if (err is not null)
+            {
+                args.Cancel = true;
+                throttleHint.Text = err;
+                throttleHint.Visibility = Visibility.Visible;
+            }
         };
 
         if (await dlg.ShowThemedAsync() == ContentDialogResult.Primary)

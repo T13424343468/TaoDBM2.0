@@ -153,10 +153,11 @@ public class SqlServerProvider : RelationalProvider
         "SELECT s.name + '.' + t.name FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id ORDER BY 1";
 
     // 发现74/75：第 5 列自增标记（is_identity）、第 6 列默认值定义（default_constraints.definition，形如 ((0))）
+    // 发现81：第 8 列默认约束名（default_constraints.name），改表先删旧约束再建新
     protected override string ListColumnsSql(string db, string table) =>
         "SELECT c.name, t.name + CASE WHEN t.name IN ('nvarchar','varchar','nchar','char') THEN '(' + CAST(c.max_length AS varchar) + ')' ELSE '' END," +
         " c.is_nullable, CASE WHEN ic.column_id IS NOT NULL THEN 'PRI' ELSE '' END," +
-        " CASE WHEN c.is_identity = 1 THEN '1' ELSE '0' END, dc.definition" +
+        " CASE WHEN c.is_identity = 1 THEN '1' ELSE '0' END, dc.definition, NULL, dc.name" +
         " FROM sys.columns c JOIN sys.types t ON t.user_type_id = c.user_type_id" +
         " LEFT JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id" +
         " LEFT JOIN sys.indexes ix ON ix.object_id = ic.object_id AND ix.index_id = ic.index_id AND ix.is_primary_key = 1" +
@@ -261,8 +262,39 @@ public class OracleProvider : RelationalProvider
     protected override string ListChildrenSql(string db) =>
         "SELECT table_name FROM user_tables ORDER BY table_name";
 
-    // 发现74/75：第 5 列自增标记（identity_column 仅 12c+，11g 兼容口径恒 '0'）、第 6 列默认值原样（DATA_DEFAULT，LONG 读回为字符串）
+    // 发现74/75：第 5 列自增标记、第 6 列默认值原样（DATA_DEFAULT，LONG 读回为字符串）
+    // 发现80：12c+ 口径读 user_tab_columns.identity_column（'YES'/'NO'）；11g 无此列，查询报 ORA-00904，由 GetColumns 回退 11g 兼容口径
     protected override string ListColumnsSql(string db, string table) =>
+        "SELECT column_name, data_type || CASE WHEN data_type IN ('VARCHAR2','NVARCHAR2','CHAR') THEN '(' || data_length || ')' ELSE '' END," +
+        " CASE WHEN nullable = 'Y' THEN 'YES' ELSE 'NO' END, '', CASE WHEN identity_column = 'YES' THEN '1' ELSE '0' END, DATA_DEFAULT" +
+        " FROM user_tab_columns WHERE table_name = UPPER('" + table.Replace("'", "''") + "') ORDER BY column_id";
+
+    // 发现80：identity 列读回——identity_column 视图列仅 Oracle 12c+ 存在，11g 报 ORA-00904；
+    // 先按 12c+ 口径取数，失败回退 11g 兼容口径（自增恒 '0'），老库不因升级读列而炸
+    public override async Task<List<ColumnSpec>> GetColumns(string db, string table)
+    {
+        try
+        {
+            return await GetColumnsViaSql(db, ListColumnsSql(db, table));
+        }
+        catch (Exception ex) when (SaysMissingIdentityColumn(ex))
+        {
+            return await GetColumnsViaSql(db, ListColumnsSqlLegacy(table));
+        }
+    }
+
+    // ORA-00904 标识符无效：异常可能被驱动或自适应连接包装，沿内链找
+    static bool SaysMissingIdentityColumn(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+        {
+            if (e.Message.Contains("ORA-00904", StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
+    // 11g 兼容口径：第 5 列自增恒 '0'（11g 无 identity 属性，自增靠序列＋触发器，不在此判定）
+    static string ListColumnsSqlLegacy(string table) =>
         "SELECT column_name, data_type || CASE WHEN data_type IN ('VARCHAR2','NVARCHAR2','CHAR') THEN '(' || data_length || ')' ELSE '' END," +
         " CASE WHEN nullable = 'Y' THEN 'YES' ELSE 'NO' END, '', '0', DATA_DEFAULT" +
         " FROM user_tab_columns WHERE table_name = UPPER('" + table.Replace("'", "''") + "') ORDER BY column_id";

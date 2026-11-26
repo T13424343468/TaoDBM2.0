@@ -25,6 +25,8 @@ public sealed class AlertRule
     public int CooldownMinutes { get; set; } = 5;
     public bool Enabled { get; set; } = true;
     public string? LastFiredUtc { get; set; }
+    /// <summary>发现115：持续判定起点（首次满足条件的时刻，ISO 往返格式）；条件中断即清零。</summary>
+    public string? MetSinceUtc { get; set; }
     public int TriggerCount { get; set; }
 }
 
@@ -74,6 +76,7 @@ public static class AlertEngine
     };
 
     /// <summary>评估一轮：条件满足且不在冷却窗内的规则各出一条事件（每规则至多一条=合并防轰炸）。
+    /// 发现115：持续时长承诺兑现——DurationMinutes>0 时须连续满足（首次满足只记 MetSinceUtc，不满持续分钟数不触发）；
     /// 复制中断为红色（Severity=error），其余 warn。命中后更新规则的 LastFiredUtc/TriggerCount。</summary>
     public static List<AlertEvent> Evaluate(IEnumerable<AlertRule> rules, IReadOnlyDictionary<string, double> metrics, DateTime nowUtc)
     {
@@ -81,7 +84,26 @@ public static class AlertEngine
         foreach (var r in rules)
         {
             if (!r.Enabled || !metrics.TryGetValue(r.Metric, out var v)) continue;
-            if (!IsMet(r, v)) continue;
+            bool met = IsMet(r, v);
+            if (!met)
+            {
+                r.MetSinceUtc = null;   // 中断即清零，重新计时
+                continue;
+            }
+            // 发现115：持续判定——首次满足记起点，未满持续分钟数不触发（文案承诺「持续 N 分钟」即真持续）
+            if (r.DurationMinutes > 0)
+            {
+                if (r.MetSinceUtc is string ms &&
+                    DateTime.TryParse(ms, null, System.Globalization.DateTimeStyles.RoundtripKind, out var since))
+                {
+                    if ((nowUtc - since).TotalMinutes < r.DurationMinutes) continue;
+                }
+                else
+                {
+                    r.MetSinceUtc = nowUtc.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                    continue;
+                }
+            }
             if (r.LastFiredUtc is string lf &&
                 DateTime.TryParse(lf, null, System.Globalization.DateTimeStyles.RoundtripKind, out var last) &&
                 (nowUtc - last).TotalMinutes < r.CooldownMinutes)

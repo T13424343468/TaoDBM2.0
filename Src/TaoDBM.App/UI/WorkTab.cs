@@ -849,6 +849,16 @@ public partial class WorkTab : Grid
         if (_last.Count == 0) { _messageBox.Text = "没有可导出的结果，请先执行。"; return; }
         try
         {
+            // 发现110：浏览模式导出先明示取数范围（当前页/筛选结果/全表），不再静默只导当前页
+            List<QueryResult> sources;
+            if (_mode == WorkMode.TableData && _provider.SupportsBrowse)
+            {
+                var scoped = await PickExportScopeAsync();
+                if (scoped is null) return;
+                sources = new List<QueryResult> { scoped };
+            }
+            else sources = _last;
+
             // #216: WinUI FileSavePicker natively crashes on Windows Server sessions (walk 4/4 app-death);
             // use WinForms save dialog (classic #32770, same on Server/client), failures go to managed catch
             var d = DialogOf(kind);
@@ -862,9 +872,9 @@ public partial class WorkTab : Grid
             var savePath = dlg.FileName;
             // 格6：多结果集先选导出对象（单个 / 全部各存一个文件，文件名 _r2/_r3 序号）
             List<int> picks;
-            if (_last.Count > 1)
+            if (sources.Count > 1)
             {
-                var picked = await PickExportSetAsync();
+                var picked = await PickExportSetAsync(sources);
                 if (picked is null) return;
                 picks = picked;
                 if (picks.Count > 1) AppLog.Write($"[导出] 集={picks.Count}");
@@ -882,7 +892,7 @@ public partial class WorkTab : Grid
                     var ext = System.IO.Path.GetExtension(savePath);
                     path = System.IO.Path.Combine(dir, $"{name}{(idx == 0 ? "" : $"_r{idx + 1}")}{ext}");
                 }
-                await ExportOneAsync(kind, _last[idx], path);
+                await ExportOneAsync(kind, sources[idx], path);
             }
         }
         catch (Exception ex)
@@ -892,10 +902,10 @@ public partial class WorkTab : Grid
     }
 
     /// <summary>格6：多结果集导出选择器（结果集 1..n ＋ 全部）。</summary>
-    private async Task<List<int>?> PickExportSetAsync()
+    private async Task<List<int>?> PickExportSetAsync(List<QueryResult> sources)
     {
         var combo = new ComboBox { MinWidth = 260, Header = "选择结果集" };
-        for (int i = 0; i < _last.Count; i++) combo.Items.Add($"结果集 {i + 1}（{_last[i].Rows.Count} 行）");
+        for (int i = 0; i < sources.Count; i++) combo.Items.Add($"结果集 {i + 1}（{sources[i].Rows.Count} 行）");
         combo.Items.Add("全部（各存一个文件）");
         combo.SelectedIndex = 0;
         var dlg = new ContentDialog
@@ -908,8 +918,63 @@ public partial class WorkTab : Grid
             XamlRoot = _owner.Content.XamlRoot,
         };
         if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return null;
-        if (combo.SelectedIndex == _last.Count) return Enumerable.Range(0, _last.Count).ToList();
+        if (combo.SelectedIndex == sources.Count) return Enumerable.Range(0, sources.Count).ToList();
         return new List<int> { combo.SelectedIndex };
+    }
+
+    /// <summary>发现110：浏览模式导出范围选择——当前页 / 当前页筛选结果 / 全表（逐页取数拼包）。</summary>
+    private async Task<QueryResult?> PickExportScopeAsync()
+    {
+        var cur = _browseResult;
+        if (cur is null) return null;
+        var q = _browseFilterBox.Text?.Trim() ?? "";
+        bool filtered = q.Length > 0;
+        var filteredView = filtered ? FilterResult(cur, q) : null;
+
+        var combo = new ComboBox { MinWidth = 340, Header = "导出范围（浏览模式网格只载当前页，请选清范围）" };
+        combo.Items.Add(filtered
+            ? $"当前页（{cur.Rows.Count} 行，含筛选前全部行）"
+            : $"当前页（{cur.Rows.Count} 行）");
+        int filterHits = filteredView?.Rows.Count ?? 0;
+        bool filterDiffers = filtered && filterHits != cur.Rows.Count;
+        if (filterDiffers) combo.Items.Add($"当前页筛选结果（{filterHits} 行）");
+        combo.Items.Add(cur.TotalRows is long t
+            ? $"全表（共 {t:N0} 行，逐页取数后导出，大表较慢）"
+            : "全表（逐页取数后导出，大表较慢）");
+        combo.SelectedIndex = 0;
+        var dlg = new ContentDialog
+        {
+            Title = "导出范围",
+            Content = combo,
+            PrimaryButtonText = "继续",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = _owner.Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) return null;
+        if (combo.SelectedIndex == 0) return filteredView ?? cur;
+        if (filterDiffers && combo.SelectedIndex == 1) return filteredView;
+
+        // 全表：逐页取数拼包（每页 1000 行），列名取首页
+        var first = await _provider.Browse(_db, _child, 0, 1000);
+        var rows = new List<object?[]>(first.Rows);
+        long total = first.TotalRows ?? rows.Count;
+        long offset = first.Rows.Count;
+        while (rows.Count < total)
+        {
+            var page = await _provider.Browse(_db, _child, offset, 1000);
+            if (page.Rows.Count == 0) break;
+            rows.AddRange(page.Rows);
+            offset += page.Rows.Count;
+        }
+        AppLog.Write($"[导出] 全表取数 table={_child} rows={rows.Count} total={total}");   // 发现110：范围落账
+        return new QueryResult
+        {
+            Title = cur.Title,
+            Columns = first.Columns,
+            Rows = rows,
+            TotalRows = total,
+        };
     }
 
     private async Task ExportOneAsync(ExportKind kind, QueryResult src0, string savePath)

@@ -13,6 +13,8 @@ public class TableColumnDesign
     public string DefaultValue { get; set; } = "";
     /// <summary>列注释：MySQL 内联进列定义（MODIFY 显式带回不丢）；PG/Oracle 走独立 COMMENT ON 语句；SQLite 不支持。</summary>
     public string Comment { get; set; } = "";
+    /// <summary>默认约束名（发现81：SQL Server 目标侧读回，改表先删旧约束再建新；快照/设计器流转用）。</summary>
+    public string DefaultConstraintName { get; set; } = "";
 
     public bool SameNameAs(string? other) => Name.Equals(other, StringComparison.OrdinalIgnoreCase);
 }
@@ -58,6 +60,7 @@ public class TableDesign
             SqlType = s.DataType,
             Nullable = s.Nullable,
             IsPrimaryKey = s.IsKey,
+            DefaultConstraintName = s.DefaultConstraintName,
         }).ToList(),
     };
 }
@@ -180,10 +183,12 @@ public static class TableDdl
 
     /// <summary>生成 ALTER 语句：新增列 / 修改列 / 删除列（与 existingNames 对比）。
     /// SQLite 不支持修改列类型，记入 skipped。modifyExisting=false 只加列不改列；
-    /// dropMissing=false 不删除目标侧多余列（结构同步默认不开删）。</summary>
+    /// dropMissing=false 不删除目标侧多余列（结构同步默认不开删）；
+    /// existingDefaultConstraints（发现81）：目标侧列名→默认约束名，改默认值前先 DROP 旧约束防堆积。</summary>
     public static (List<string> Statements, List<string> Skipped) BuildAlter(
         TableDesign t, IEnumerable<string> existingNames, DbEngine engine, Func<string, string> quote,
-        bool modifyExisting = true, bool dropMissing = true)
+        bool modifyExisting = true, bool dropMissing = true,
+        IReadOnlyDictionary<string, string>? existingDefaultConstraints = null)
     {
         var stmts = new List<string>();
         var skipped = new List<string>();
@@ -241,9 +246,15 @@ public static class TableDdl
                 if (c.DefaultValue.Trim().Length > 0)
                     stmts.Add($"ALTER TABLE {table} ALTER COLUMN {quote(c.Name)} SET DEFAULT {DefaultForModify(c.DefaultValue)}");
             }
-            // 发现75：SQL Server ALTER COLUMN 不支持 DEFAULT，需单独 ADD DEFAULT（列已有默认时新约束后建先生效，值一致无副作用）
+            // 发现75：SQL Server ALTER COLUMN 不支持 DEFAULT，需单独 ADD DEFAULT；
+            // 发现81：列已有默认约束时旧约束不删会堆积（新旧行为看约束顺序），先按读回的约束名 DROP 再 ADD
             if (engine == DbEngine.SqlServer && c.DefaultValue.Trim().Length > 0)
+            {
+                if (existingDefaultConstraints is not null &&
+                    existingDefaultConstraints.TryGetValue(c.Name, out var oldCn) && oldCn.Trim().Length > 0)
+                    stmts.Add($"ALTER TABLE {table} DROP CONSTRAINT {quote(oldCn.Trim())}");
                 stmts.Add($"ALTER TABLE {table} ADD DEFAULT {DefaultForModify(c.DefaultValue)} FOR {quote(c.Name)}");
+            }
         }
 
         // 删除列

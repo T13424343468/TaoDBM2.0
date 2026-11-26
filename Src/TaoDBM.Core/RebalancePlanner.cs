@@ -23,21 +23,35 @@ public static class RebalancePlanner
         public Bucket(string name, long remaining) { Name = name; Remaining = remaining; }
     }
 
-    /// <summary>计算搬迁计划：只搬整数负载，搬迁量为源超出与目标缺口的较小值；无超差时 Balanced=true。</summary>
+    /// <summary>计算搬迁计划：只搬整数负载，搬迁量为源超出与目标缺口的较小值；无超差时 Balanced=true。
+    /// 发现122：输入校验——空名/负负载直接拒绝；发现123：均衡判定改 double 容差比较，不再截断。</summary>
     public static RebalancePlan Plan(IEnumerable<RebalanceShard> shards)
     {
         var list = shards.ToList();
         if (list.Count == 0)
             return new RebalancePlan(0, Array.Empty<RebalanceMove>(), Balanced: true);
 
+        // 发现122：空名与负负载当场拒绝，重复名拒绝（口径含糊无法对账）
+        foreach (var s in list)
+        {
+            if (string.IsNullOrWhiteSpace(s.Name))
+                throw new ArgumentException("分片名不能为空，请给每个分片起名后再算均衡。");
+            if (s.Load < 0)
+                throw new ArgumentException($"分片「{s.Name}」的负载为负数（{s.Load}），请检查输入。");
+        }
+        if (list.Select(s => s.Name).Distinct(StringComparer.Ordinal).Count() != list.Count)
+            throw new ArgumentException("分片名有重复，请核对后再算均衡。");
+
         double mean = list.Average(s => (double)s.Load);
-        var excess = list.Where(s => s.Load > (long)mean)
-            .Select(s => new Bucket(s.Name, s.Load - (long)mean))
+        // 发现123：用 double 容差比较，(long)mean 截断会把「已均衡」误判成要搬
+        const double eps = 1e-9;
+        var excess = list.Where(s => s.Load > mean + eps)
+            .Select(s => new Bucket(s.Name, (long)Math.Ceiling(s.Load - mean)))
             .OrderByDescending(b => b.Remaining)
             .ThenBy(b => b.Name, StringComparer.Ordinal)
             .ToList();
-        var deficit = list.Where(s => s.Load < (long)mean)
-            .Select(s => new Bucket(s.Name, (long)mean - s.Load))
+        var deficit = list.Where(s => s.Load < mean - eps)
+            .Select(s => new Bucket(s.Name, (long)Math.Floor(mean - s.Load)))
             .Where(b => b.Remaining > 0)
             .OrderBy(b => b.Name, StringComparer.Ordinal)
             .ToList();
@@ -55,6 +69,9 @@ public static class RebalancePlanner
             }
         }
 
-        return new RebalancePlan(mean, moves, Balanced: moves.Count == 0);
+        // 发现123：Balanced 只在负载完全一致（差距为 0）时成立；
+        // 有差距但整数搬迁无可行解（如 {1,2}）时 Balanced=false，由界面文案归真「无可行整数搬迁，仍存在差距」
+        var spread = list.Max(s => (double)s.Load) - list.Min(s => (double)s.Load);
+        return new RebalancePlan(mean, moves, Balanced: moves.Count == 0 && spread <= eps);
     }
 }

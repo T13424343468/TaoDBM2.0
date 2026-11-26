@@ -65,10 +65,7 @@ public static class TeamShareMergeDialog
             if (_result is null) { status.Text = "请先预览合并。"; return; }
             try
             {
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "TaoDBM", "teamshare", $"merge-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                var path = TaoPaths.FilePathIn("teamshare", $"merge-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
                 await System.IO.File.WriteAllTextAsync(path, TeamShareMerge.ToJson(_result.Merged));
                 status.Text = $"已保存：{path}";
                 AppLog.Write($"[团队合并] 合并结果落盘: 新增{_result.Added} 更新{_result.Updated} 墓碑{_result.Tombstones} -> {path}");   // 发现145：关键操作补落账

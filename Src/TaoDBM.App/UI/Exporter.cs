@@ -117,24 +117,11 @@ public static class Exporter
         return "'" + input.Replace("'", "''") + "'";
     }
 
-    /// <summary>发现65：按列类型判定二进制列（blob/binary/bytea/image/raw 等）。</summary>
-    public static bool IsBinaryColumn(string? dataType)
-    {
-        if (string.IsNullOrEmpty(dataType)) return false;
-        var dt = dataType.ToLowerInvariant();
-        return dt.Contains("blob") || dt.Contains("binary") || dt.Contains("bytea")
-            || dt.Contains("image") || dt.StartsWith("raw") || dt.Contains("bfile")
-            || dt.Contains("oleobject") || dt.Contains("general");
-    }
+    /// <summary>发现65：按列类型判定二进制列（发现109 已下沉 Core，此处委托保持单一口径）。</summary>
+    public static bool IsBinaryColumn(string? dataType) => CsvImporter.IsBinaryColumn(dataType);
 
-    /// <summary>发现65：十六进制串还原为 X'...' 二进制字面量；非法输入（奇数位/非十六进制字符）抛 ArgumentException。</summary>
-    public static string BinaryLiteral(string input)
-    {
-        var hex = input.Trim();
-        if (hex.Length == 0 || hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
-            throw new ArgumentException($"不是有效的十六进制串（长度 {hex.Length}）");
-        return "X'" + hex.ToUpperInvariant() + "'";
-    }
+    /// <summary>发现65：十六进制串还原为 X'...' 二进制字面量（发现109 已下沉 Core，此处委托保持单一口径）。</summary>
+    public static string BinaryLiteral(string input) => CsvImporter.BinaryLiteral(input);
 
     // 发现50：流式导出重入保护——页序列可能共享连接/游标状态，同一时刻只允许一个流式导出
     private static int _streamBusy;

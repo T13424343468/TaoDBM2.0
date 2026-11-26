@@ -4327,6 +4327,7 @@ TaoDBM.LogicTest.Combo.ComboMatrix.RunAll(Check);
 TaoDBM.LogicTest.KanbanAnalysis.RunAll(Check);   // 批次E：点选式分析 + 看板钉住/定时刷新（独立文件，ComboMatrix 家法）
 TaoDBM.LogicTest.BatchCheck23.RunAll(Check);   // 批次二三：库搜索/监控/INSERT 复制/计划 Kind/连接分组/隧道生命周期
 TaoDBM.LogicTest.BatchCheck45.RunAll(Check);   // 批次四五：xlsx/XML/HTML/备份SQL/账本/DdlParser/三层模型/比较/预设/ERD符号/字典/ODBC
+TaoDBM.LogicTest.BatchCheckSweep.RunAll(Check);   // 落码清扫批：默认约束/identity读回/ER正向同步/二进制字面量/告警持续/种子派生/复制目录/再均衡/迁移清单/ODBC转义/手册口径（2026-11-25）
 TaoDBM.LogicTest.ColumnLazyCheck.RunAll(Check);   // 批次F：宽表列按需加载（2026-11-20 全覆盖令）
 TaoDBM.LogicTest.SqlCompleteCheck.RunAll(Check);   // ㉔㉘：SQL补全别名感知/报表页卡片存储（2026-11-25 设计稿冻结落码）
 

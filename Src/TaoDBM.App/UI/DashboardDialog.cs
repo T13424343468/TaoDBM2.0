@@ -66,8 +66,28 @@ public static class DashboardDialog
         _ = dlg.ShowThemedAsync();
     }
 
-    /// <summary>按布局顺序（新钉的排后面）重建两列网格，并逐卡刷新。</summary>
+    /// <summary>按布局顺序（新钉的排后面）重建两列网格，并逐卡刷新。
+    /// 发现127：重入闸——上一轮刷新没跑完时拒绝重入，防慢查询并发重跑拖垮连接。</summary>
+    private static bool _refreshing;
     private static async Task RefreshAllAsync(IDbProvider? provider, Grid grid, TextBlock status)
+    {
+        if (_refreshing)
+        {
+            status.Text = "上一轮刷新还没跑完，稍候再点（防并发重跑）。";
+            return;
+        }
+        _refreshing = true;
+        try
+        {
+            await RefreshAllCoreAsync(provider, grid, status);
+        }
+        finally
+        {
+            _refreshing = false;
+        }
+    }
+
+    private static async Task RefreshAllCoreAsync(IDbProvider? provider, Grid grid, TextBlock status)
     {
         var pins = KanbanPinStore.All();
         AppLog.Write($"[仪表板] 卡={pins.Count}");   // 批次五格6 验收锚点

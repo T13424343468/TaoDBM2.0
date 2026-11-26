@@ -368,7 +368,15 @@ public static class FakerDialog
         {
             var s = box.Text.Trim();
             if (s.Length == 0) continue;
-            if (!int.TryParse(s, out int n) || n is < 1 or > 100000) continue;
+            // 发现119：非法行数不再静默跳过——当场标红提示，用户看得见哪格没生效
+            if (!int.TryParse(s, out int n) || n is < 1 or > 100000)
+            {
+                box.Header = $"「{s}」不是有效行数（1 – 100000），该表不会生成";
+                box.Foreground = Ant.Error;
+                continue;
+            }
+            box.Header = "行数";
+            box.Foreground = Ant.TextMain;
             counts[name] = n;
         }
         return SeedPlan.PlanFromCounts(counts, tables, _edges);

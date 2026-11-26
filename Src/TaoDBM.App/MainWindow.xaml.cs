@@ -1079,7 +1079,7 @@ public partial class MainWindow : Window
         // 整改三批三-3：版本对齐标题栏 2.0；引擎清单更新为七库＋国产六家口径
         _ = new UI.MessageDialogHelper(this).Show(
             "TaoDBM v2.0",
-            "WinUI3 + .NET 8 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n以及 OceanBase / GaussDB / 达梦 / 金仓 / PolarDB / TDSQL\n\n道生一，一生二，二生三，三生万物。数据即万物。");
+            "WinUI3 + .NET 10 · Ant Design 视觉\n支持 MySQL / PostgreSQL / SQL Server / SQLite / Oracle / MongoDB / Redis\n以及 OceanBase / GaussDB / 达梦 / 金仓 / PolarDB / TDSQL\n\n道生一，一生二，二生三，三生万物。数据即万物。");
     }
 
     /// <summary>操作手册（2026-11-20 老板令）：顶栏「手册」/ 左上菜单「操作手册」/ 全局 F1 三入口，内容离线内置。</summary>

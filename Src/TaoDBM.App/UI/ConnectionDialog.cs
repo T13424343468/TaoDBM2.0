@@ -298,6 +298,20 @@ public class ConnectionDialog
                     _hint.Text = "Master 名称还没填：填哨兵的 master 名称再保存。";
                     continue;
                 }
+                // 发现97：端口零校验——填了就查范围，1-65535 之外当场拦下
+                if (!EngineInfo.IsFileBased(Profile.Engine) && Profile.RedisMode != "sentinel"
+                    && int.TryParse(_port.Text?.Trim(), out var port) && port is < 1 or > 65535)
+                {
+                    _hint.Text = $"端口 {port} 不在有效范围（1-65535），请核对后再保存。";
+                    continue;
+                }
+                // 发现97：SSH 端口同款校验——非法输入不再静默回 22
+                if (_ssh.IsChecked == true
+                    && int.TryParse(_sshPort.Text?.Trim(), out var sport) && sport is < 1 or > 65535)
+                {
+                    _hint.Text = $"SSH 端口 {sport} 不在有效范围（1-65535），请核对后再保存。";
+                    continue;
+                }
             }
             return result == ContentDialogResult.Secondary;
         }

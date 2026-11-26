@@ -96,10 +96,7 @@ public static class MigrationResumeDialog
             if (st is null) { status.Text = "没有可保存的状态（仅全新状态预演可另存）。"; return; }
             try
             {
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "TaoDBM", "migrations", $"migration-state-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                var path = TaoPaths.FilePathIn("migrations", $"migration-state-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
                 await System.IO.File.WriteAllTextAsync(path, MigrationResume.ToJson(st));
                 status.Text = $"已保存：{path}";
             }

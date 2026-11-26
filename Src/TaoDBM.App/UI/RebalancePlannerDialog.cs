@@ -66,11 +66,26 @@ public static class RebalancePlannerDialog
             return;
         }
 
-        var plan = RebalancePlanner.Plan(shards);
+        RebalancePlan plan;
+        try
+        {
+            plan = RebalancePlanner.Plan(shards);
+        }
+        catch (ArgumentException ex)
+        {
+            // 发现122：输入校验（空名/负负载/重复名）人话报错，不崩不静默
+            status.Text = ex.Message;
+            return;
+        }
         AddSection(report, "再均衡计划");
         if (plan.Balanced)
         {
             AddLine(report, "✓ 各分片负载已均衡，无需搬迁。", Ant.Success);
+        }
+        else if (plan.Moves.Count == 0)
+        {
+            // 发现123：有差距但整数搬迁无可行解时文案归真，不再假称「已均衡」
+            AddLine(report, $"均值负载 {plan.MeanLoad:0.##}。各分片间仍有差距，但负载是整数、没有可行的整数搬迁方案（差距不足 1 的部分搬不动），无法靠搬迁进一步均衡。", Ant.Warn);
         }
         else
         {

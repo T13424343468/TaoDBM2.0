@@ -61,10 +61,7 @@ public static class SnapshotPackDialog
             try
             {
                 var json = SnapshotPackFile.ToJson(_pending);
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "TaoDBM", "snapshots", $"snapshot-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                var path = TaoPaths.FilePathIn("snapshots", $"snapshot-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
                 await System.IO.File.WriteAllTextAsync(path, json);
                 status.Text = $"已保存：{path}";
                 AppLog.Write($"[快照包] 打包落盘: {path}");   // 发现145：关键操作补落账

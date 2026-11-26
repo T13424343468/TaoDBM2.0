@@ -163,12 +163,15 @@ public abstract class RelationalProvider : IDbProvider
 
     protected abstract string ListChildrenSql(string db);
 
-    public virtual Task<List<ColumnSpec>> GetColumns(string db, string table) => Task.Run(async () =>
+    public virtual Task<List<ColumnSpec>> GetColumns(string db, string table) => GetColumnsViaSql(db, ListColumnsSql(db, table));
+
+    // 发现80：列清单取数抽成按 SQL 直取的内部通道，供 Oracle 12c+/11g 双口径回退复用
+    protected Task<List<ColumnSpec>> GetColumnsViaSql(string db, string sql) => Task.Run(async () =>
     {
         var list = new List<ColumnSpec>();
         await using var c = Open(db);
         await c.OpenAsync();
-        foreach (var r in await ReadAsync(c, ListColumnsSql(db, table)))
+        foreach (var r in await ReadAsync(c, sql))
         {
             list.Add(new ColumnSpec
             {
@@ -180,6 +183,8 @@ public abstract class RelationalProvider : IDbProvider
                 IsAutoIncrement = r.FieldCount > 4 && Convert.ToString(r.GetValue(4)) == "1",
                 DefaultValue = r.FieldCount > 5 ? Convert.ToString(r.GetValue(5)) ?? "" : "",
                 Comment = r.FieldCount > 6 ? Convert.ToString(r.GetValue(6)) ?? "" : "",
+                // 发现81：第 8 列默认约束名（SQL Server 读回，改表先删旧约束再建新），引擎未给则保持空
+                DefaultConstraintName = r.FieldCount > 7 ? Convert.ToString(r.GetValue(7)) ?? "" : "",
             });
         }
         return list;

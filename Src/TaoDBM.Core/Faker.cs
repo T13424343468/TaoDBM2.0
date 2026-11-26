@@ -292,7 +292,7 @@ public static class Faker
         return kind switch
         {
             SemanticKind.Id => NumericId(col, r, rowNo),
-            SemanticKind.Guid => GuidLike(col, r),
+            SemanticKind.Guid => GuidLike(col, r, rowNo),
             SemanticKind.Code or SemanticKind.OrderNo => CodeLike(kind, col, r, rowNo),
             SemanticKind.PersonName => Truncate(PersonName(r), col),
             SemanticKind.UserName => Truncate(UserName(r, rowNo), col),
@@ -420,10 +420,19 @@ public static class Faker
         _ => (object)(int)rowNo,
     };
 
-    internal static object GuidLike(ColumnCtx col, Random r) =>
-        BaseType(col.RawType) is "UUID" or "UNIQUEIDENTIFIER"
-            ? Guid.NewGuid().ToString()
-            : Guid.NewGuid().ToString("N")[..Math.Max(8, col.MaxLen > 0 ? Math.Min(col.MaxLen, 32) : 32)];
+    internal static object GuidLike(ColumnCtx col, Random r, long rowNo = 0, int seed = 0)
+    {
+        // 发现117：GUID 改种子派生（可重放）——同 seed 同行同列必得同值，不再用 Guid.NewGuid 破坏确定性
+        var bytes = new byte[16];
+        new Random(seed * 1_000_003 + (int)(rowNo % 1_000_003)).NextBytes(bytes);
+        // 保证变体位合法（RFC 4122 v4 口径），避免个别字节组合生成非法 UUID
+        bytes[7] = (byte)((bytes[7] & 0x0F) | 0x40);
+        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+        var g = new Guid(bytes);
+        return BaseType(col.RawType) is "UUID" or "UNIQUEIDENTIFIER"
+            ? g.ToString()
+            : g.ToString("N")[..Math.Max(8, col.MaxLen > 0 ? Math.Min(col.MaxLen, 32) : 32)];
+    }
 
     internal static object CodeLike(SemanticKind kind, ColumnCtx col, Random r, long rowNo)
     {
@@ -440,6 +449,14 @@ public static class Faker
         var (_, scale) = col.Scale > 0 ? (col.Precision, col.Scale) : (0, 2);
         var v = (decimal)(r.NextDouble() * 9999 + 0.01);
         var rounded = Math.Round(v, Math.Clamp(scale, 0, 6));
+        // 发现118：按精度收敛——整数位超精度上限时缩量级，避免 DECIMAL(10,2) 塞进 8 位整数越界
+        if (col.Precision > 0 && col.Scale >= 0)
+        {
+            var intDigits = Math.Max(1, col.Precision - col.Scale);
+            var maxVal = (decimal)Math.Pow(10, intDigits) - 1;
+            if (rounded > maxVal) rounded = Math.Round(maxVal - (rounded % maxVal) * 0.01m, Math.Clamp(scale, 0, 6));
+            if (rounded < 0) rounded = 0;
+        }
         return rounded;
     }
 
@@ -449,7 +466,18 @@ public static class Faker
         return Math.Round((decimal)(r.NextDouble() * 100), Math.Clamp(scale, 0, 4));
     }
 
-    internal static object ClampInt(int v, ColumnCtx col) => v;
+    /// <summary>整数按类型范围收敛（发现118）：TINYINT 0-255、SMALLINT 等各自封顶，不再越界。</summary>
+    internal static object ClampInt(int v, ColumnCtx col)
+    {
+        var t = BaseType(col.RawType);
+        return t switch
+        {
+            "TINYINT" => Math.Clamp(v, 0, 127),
+            "SMALLINT" => Math.Clamp(v, short.MinValue, short.MaxValue),
+            "MEDIUMINT" => Math.Clamp(v, -8388608, 8388607),
+            _ => v,
+        };
+    }
 
     internal static object UnknownValue(ColumnCtx col, Random r, long rowNo)
     {

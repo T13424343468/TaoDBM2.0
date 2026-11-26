@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using TaoDBM.Core;
 
 namespace TaoDBM.Infrastructure;
 
@@ -10,14 +11,13 @@ public sealed class ConnGroup
 }
 
 /// <summary>
-/// 批次二格6：连接虚拟分组——本地 JSON 持久化（%LOCALAPPDATA%\TaoDBM\conn-groups.json），
+/// 批次二格6：连接虚拟分组——本地 JSON 持久化（TaoPaths 数据根 conn-groups.json，D 盘优先），
 /// 不落库、不影响连接本身；删组不删连接。纯逻辑可测试；线程安全（树操作与设置页并发读写）。
 /// </summary>
 public static class ConnectionGroups
 {
     private static readonly object Gate = new();
-    private static readonly string StorePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaoDBM", "conn-groups.json");
+    private static readonly string StorePath = TaoPaths.FilePath("conn-groups.json");   // 发现108/112：改走数据根
 
     private static List<ConnGroup> Load()
     {

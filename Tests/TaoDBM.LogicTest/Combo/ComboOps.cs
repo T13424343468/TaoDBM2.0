@@ -946,19 +946,24 @@ public static class ComboOps
                 Run = (d, eng) =>
                 {
                     var now = DateTime.Parse("2026-11-20T08:00:00Z", null, System.Globalization.DateTimeStyles.RoundtripKind);
-                    var conn = AlertEngine.FromTemplate(AlertEngine.Templates[0]);   // 连接数过高 >80
+                    var conn = AlertEngine.FromTemplate(AlertEngine.Templates[0]);   // 连接数过高 >80，持续 5 分钟
                     var repl = AlertEngine.FromTemplate(AlertEngine.Templates[1]);   // 复制中断 ==1
                     var metrics = new Dictionary<string, double> { ["connections"] = 90, ["replication_break"] = 1 };
-                    var fired = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now);
+                    // 发现115：持续判定——首次满足只记 MetSinceUtc 不触发；复制中断（持续 0 分钟）立即报红
+                    var first = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now);
+                    if (first.Count != 1 || first[0].RuleName != "复制中断") return $"first round expect only replication break, got {first.Count}";
+                    if (first[0].Severity != "error") return "replication break must be red";
+                    if (conn.MetSinceUtc is null) return "sustained start not recorded";
+                    // 满持续分钟数：连接数触发（warn），复制中断冷却 0 分再报
+                    var fired = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now.AddMinutes(5));
                     if (fired.Count != 2) return $"expected 2 fired, got {fired.Count}";
-                    if (fired.Any(f => f.RuleName == "复制中断" && f.Severity != "error")) return "replication break must be red";
                     if (fired.Any(f => f.RuleName == "连接数过高" && f.Severity != "warn")) return "threshold alert must be warn";
-                    if (conn.TriggerCount != 1 || repl.TriggerCount != 1) return "trigger count not updated";
-                    // 防轰炸：冷却窗内重复触发合并（复制中断冷却 0 分仍立即再报；连接数冷却 5 分被合并）
-                    var again = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now.AddMinutes(1));
+                    if (conn.TriggerCount != 1 || repl.TriggerCount != 2) return "trigger count not updated";
+                    // 防轰炸：冷却窗内重复触发合并（连接数冷却 5 分被合并；复制中断冷却 0 分仍立即再报）
+                    var again = AlertEngine.Evaluate(new List<AlertRule> { conn, repl }, metrics, now.AddMinutes(6));
                     if (again.Count != 1 || again[0].RuleName != "复制中断") return $"cooldown merge wrong ({again.Count})";
                     // 冷却窗过后再报
-                    var later = AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(6));
+                    var later = AlertEngine.Evaluate(new List<AlertRule> { conn }, metrics, now.AddMinutes(11));
                     if (later.Count != 1) return "cooldown expiry must re-fire";
                     // 未启用规则不触发
                     conn.Enabled = false;

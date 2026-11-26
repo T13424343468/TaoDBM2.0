@@ -189,7 +189,7 @@ public static class SeedPlan
                 object? v;
                 if (col.IsKey && keepPk)
                 {
-                    v = NextPk(kind, col, autoInc, rnd, rowNo);
+                    v = NextPk(kind, col, autoInc, rnd, rowNo, seed);
                 }
                 else
                 {
@@ -225,9 +225,11 @@ public static class SeedPlan
         return rows;
     }
 
-    private static object NextPk(SemanticKind kind, ColumnSpec col, Dictionary<string, long> autoInc, Random rnd, long rowNo)
+    private static object NextPk(SemanticKind kind, ColumnSpec col, Dictionary<string, long> autoInc, Random rnd, long rowNo, int seed = 0)
     {
-        if (kind == SemanticKind.Guid || Faker.IsUuidType(col.DataType)) return Guid.NewGuid().ToString();
+        // 发现117：GUID 主键同样走种子派生（可重放），不再 Guid.NewGuid
+        if (kind == SemanticKind.Guid || Faker.IsUuidType(col.DataType))
+            return Faker.GuidLike(new ColumnCtx { Name = col.Name, RawType = col.DataType, MaxLen = Faker.ParseLen(col.DataType) }, rnd, rowNo, seed);
         var cur = autoInc.TryGetValue(col.Name, out var v) ? v : 0;
         cur++;
         autoInc[col.Name] = cur;

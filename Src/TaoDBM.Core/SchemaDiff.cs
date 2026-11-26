@@ -133,9 +133,15 @@ public static class SchemaDiff
 
             // 克隆源列定义再进 BuildAlter：BuildAlter 会改写 AutoIncrement，不能污染共享快照
             var design = ToDesign(s);
+            // 发现81：目标侧默认约束名（快照经 GetColumns 读回），改默认值前先 DROP 旧约束
+            var oldDefaults = t.Columns
+                .Where(c => c.DefaultConstraintName.Trim().Length > 0)
+                .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().DefaultConstraintName, StringComparer.OrdinalIgnoreCase);
             var (ss, sk) = TableDdl.BuildAlter(design,
                 t.Columns.Select(c => c.Name), engine, quote,
-                modifyExisting: modify, dropMissing: dropMissing);
+                modifyExisting: modify, dropMissing: dropMissing,
+                existingDefaultConstraints: oldDefaults.Count > 0 ? oldDefaults : null);
             stmts.AddRange(ss);
             skipped.AddRange(sk);
         }

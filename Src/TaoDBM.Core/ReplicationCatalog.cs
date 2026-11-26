@@ -119,7 +119,7 @@ public static class ReplicationCatalog
         {
             var io = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "Replica_IO_Running", "Slave_IO_Running");
             var sql = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "Replica_SQL_Running", "Slave_SQL_Running");
-            var lagStr = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "Seconds_BehindSource", "Seconds_Behind_Master", "Seconds_BehindSource");
+            var lagStr = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "Seconds_Behind_Source", "Seconds_BehindSource", "Seconds_Behind_Master");
             double? lag = double.TryParse(lagStr, out var l) ? l : null;
             var running = string.Equals(io, "Yes", StringComparison.OrdinalIgnoreCase)
                           && string.Equals(sql, "Yes", StringComparison.OrdinalIgnoreCase);
@@ -139,13 +139,21 @@ public static class ReplicationCatalog
         var role = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "role_desc") ?? "UNKNOWN";
         var conn = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "connected_state_desc") ?? "UNKNOWN";
         var health = Col(columns, rows.Count > 0 ? rows[0] : Array.Empty<object?>(), "synchronization_health_desc") ?? "UNKNOWN";
-        var st = conn switch
-        {
-            "CONNECTED" => health == "HEALTHY" ? "正常" : "延迟偏高",
-            "CONNECTING" => "连接中",
-            _ => "已断开",
-        };
-        return new TopologyNode("本机（从库）", "从库", st, null, $"Always On 角色 {role}；连接 {conn} / 同步 {health}");
+        // 发现120：主视角（本机即 PRIMARY）时 connected_state_desc 是本机与 AG 的连接态，
+        // 不能套从库词表——PRIMARY 自身恒为 CONNECTED，套词表会把主库误标；按角色分支映射。
+        var isPrimary = role.Equals("PRIMARY", StringComparison.OrdinalIgnoreCase);
+        var st = isPrimary
+            ? health == "HEALTHY" ? "正常" : "延迟偏高"
+            : conn switch
+            {
+                "CONNECTED" => health == "HEALTHY" ? "正常" : "延迟偏高",
+                "CONNECTING" => "连接中",
+                _ => "已断开",
+            };
+        var detail = isPrimary
+            ? $"Always On 角色 {role}；同步 {health}（主视角：本机即主库，无连接态判定）"
+            : $"Always On 角色 {role}；连接 {conn} / 同步 {health}";
+        return new TopologyNode("本机（从库）", "从库", st, null, detail);
     }
 
     // ---------- 管理操作草稿（仅生成，不执行） ----------

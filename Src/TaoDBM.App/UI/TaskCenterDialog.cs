@@ -101,10 +101,7 @@ public static class TaskCenterDialog
         {
             try
             {
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "TaoDBM", "taskstates", $"tasks-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                var path = TaoPaths.FilePathIn("taskstates", $"tasks-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
                 await System.IO.File.WriteAllTextAsync(path, Shared.ExportStates());
                 status.Text = $"快照已保存：{path}";
             }

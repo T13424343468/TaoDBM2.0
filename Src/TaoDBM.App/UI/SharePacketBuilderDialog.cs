@@ -99,10 +99,7 @@ public static class SharePacketBuilderDialog
             try
             {
                 var json = System.Text.Json.JsonSerializer.Serialize(_pending, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                var path = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "TaoDBM", "share", $"share-packet-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+                var path = TaoPaths.FilePathIn("share", $"share-packet-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
                 await System.IO.File.WriteAllTextAsync(path, json);
                 status.Text = $"已保存：{path}";
             }

@@ -43,6 +43,14 @@ public static class TaoPaths
         return Path.Combine(Root, name);
     }
 
+    /// <summary>数据根下子目录中的文件路径（自动建目录）——发现108/112：旁路统一收口到数据根。</summary>
+    public static string FilePathIn(string subDir, string name)
+    {
+        var dir = Path.Combine(Root, subDir);
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, name);
+    }
+
     /// <summary>旧 C 盘目录（升级迁移来源）：Roaming 与 Local 两处 %APPDATA%。</summary>
     public static IEnumerable<string> LegacyDirs() =>
     [
@@ -50,17 +58,26 @@ public static class TaoPaths
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaoDBM"),
     ];
 
-    /// <summary>把旧目录的数据文件迁到当前 Root；目标已存在则不覆盖。返回实际迁移的文件名。</summary>
+    /// <summary>把旧目录的数据文件迁到当前 Root；目标已存在则不覆盖。返回实际迁移的文件名。
+    /// 发现95：迁移清单补齐全部用户面文件（数据根实际持久化 20+ 个，原清单只有 5 个，升级丢配置）。</summary>
     public static List<string> MigrateLegacyFiles(IEnumerable<string>? legacyDirs = null, string? targetRoot = null)
     {
         var moved = new List<string>();
         try
         {
+            // 发现95：清单扩容——根目录用户面文件全量＋子目录产物（快照/共享包/合并/任务状态/迁移状态）
             string[] dataFiles =
             [
                 "connections.json", "favorites.json", "tabsession.json",
                 "theme.json", "history.json",
+                "appprefs.json", "notify.json", "focusmode.json", "sqlcomplete.json",
+                "kanban-pins.json", "alert-rules.json", "alert-events.jsonl",
+                "followups.json", "dashboard-layout.json", "report-page.json",
+                "sqlopen.json", "windowstate.json", "conn-groups.json",
+                "scheduled-sql.json", "tao_backup_history.json",
             ];
+            // 子目录产物按整目录保守复制（同名不覆盖）
+            string[] subDirs = ["snapshots", "share", "teamshare", "taskstates", "migrations"];
             var root = targetRoot ?? Root;
             Directory.CreateDirectory(root);
             foreach (var oldDir in legacyDirs ?? LegacyDirs())
@@ -73,6 +90,19 @@ public static class TaoPaths
                     if (!System.IO.File.Exists(src) || System.IO.File.Exists(dst)) continue;
                     System.IO.File.Copy(src, dst, overwrite: false);
                     moved.Add(name);
+                }
+                foreach (var sub in subDirs)
+                {
+                    var srcDir = Path.Combine(oldDir, sub);
+                    if (!Directory.Exists(srcDir)) continue;
+                    foreach (var file in Directory.EnumerateFiles(srcDir))
+                    {
+                        var dst = Path.Combine(root, sub, System.IO.Path.GetFileName(file));
+                        Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+                        if (System.IO.File.Exists(dst)) continue;
+                        System.IO.File.Copy(file, dst, overwrite: false);
+                        moved.Add($"{sub}/{System.IO.Path.GetFileName(file)}");
+                    }
                 }
             }
         }

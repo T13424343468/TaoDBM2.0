@@ -581,7 +581,13 @@ public class TableDesignerTab : Grid
         }
         else
         {
-            var (alt, sk1) = TableDdl.BuildAlter(t, _existingNames, engine, s => _prov.Quote(s));
+            // 发现81：旧列的默认约束名（打开表时 GetColumns 读回），改默认值前先 DROP 旧约束
+            var oldDefaults = _existingSpecs
+                .Where(s => s.DefaultConstraintName.Trim().Length > 0)
+                .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().DefaultConstraintName, StringComparer.OrdinalIgnoreCase);
+            var (alt, sk1) = TableDdl.BuildAlter(t, _existingNames, engine, s => _prov.Quote(s),
+                existingDefaultConstraints: oldDefaults.Count > 0 ? oldDefaults : null);
             stmts.AddRange(alt);
             skipped.AddRange(sk1);
             stmts.AddRange(TableDdl.BuildIndexes(t, s => _prov.Quote(s)));

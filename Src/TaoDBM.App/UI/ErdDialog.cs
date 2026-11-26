@@ -114,6 +114,13 @@ public static class ErdDialog
             if (sel is null) return;
             await ReverseDiff(owner, sel.Value.Db, sel.Value.Prov);
         }));
+        // 发现147：正向同步——模型改完同步回库，差异脚本先预览确认再执行
+        canvasMenu.Items.Add(SubItem("同步到库（差异预览）", "ErdCanvas_Sync", async () =>
+        {
+            var sel = await Selected();
+            if (sel is null) return;
+            await SyncToDb(owner, sel.Value.Db, sel.Value.Prov);
+        }));
         canvasMenu.Items.Add(SubItem("重新布局", "ErdCanvas_Layout", () =>
         {
             ErdModel.AutoLayout(_model);
@@ -198,6 +205,7 @@ public static class ErdDialog
         try
         {
             var tables = await prov.GetChildren(db);
+            // 发现124：40 表上限不再静默——超限时明示总数与截断口径
             int limit = Math.Min(tables.Count, 40);
             for (int i = 0; i < limit; i++)
             {
@@ -223,7 +231,9 @@ public static class ErdDialog
             ErdModel.AutoLayout(_model);
             Place(_model);
             int fkReal = fkRows?.Count ?? 0;
-            _hint.Text = $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条，最多取前 40 张表）。";
+            _hint.Text = tables.Count > 40
+                ? $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条）。库共 {tables.Count} 张表，超出渲染上限，仅取前 40 张；比较与逆向也按此范围。"
+                : $"已生成 {_model.Tables.Count} 张表、{_model.Edges.Count} 条关系线（真库外键 {fkReal} 条，最多取前 40 张表）。";
         }
         catch (Exception ex) { _hint.Text = HumanError.Say(ex, "生成失败"); }
     }
@@ -272,6 +282,8 @@ public static class ErdDialog
         foreach (var (name, cols) in added) sb.AppendLine($"【新增表】{name}（{cols.Count} 列）");
         foreach (var (t, _, delta) in changed) sb.AppendLine($"【结构变化】{t.Name}：{string.Join("；", delta)}");
         if (modelOnly.Count > 0) sb.AppendLine($"【仅模型有】{string.Join("、", modelOnly)}（库中不存在，保留不删）");
+        // 发现124：逆向比较同样受 40 表上限，超限时明示范围
+        if (live.Count > 40) sb.AppendLine($"注意：库共 {live.Count} 张表，本次仅比较前 40 张，其余未纳入差异。");
         sb.AppendLine();
         sb.AppendLine($"共 {added.Count} 张新增、{changed.Count} 张结构变化。应用后仅并入新增与更新，不删除模型中的表。");
 
@@ -311,9 +323,120 @@ public static class ErdDialog
         }
         foreach (var (t, cols, _) in changed)
             t.Columns = cols.Select(c => new ErdColumn { Name = c.Name, Type = c.DataType, IsKey = c.IsKey }).ToList();
-        _model.Edges = ErdModel.InferEdges(_model);
+        // 发现105：并入后重取真库外键走深度推断，关系线不再退化为命名约定猜测
+        List<object?[]>? fkRows2 = null;
+        try
+        {
+            var fkSql2 = ObjectTreeCatalog.ListForeignKeys(prov.Profile.Engine, db);
+            var fkRs2 = await prov.Execute(db, fkSql2);
+            fkRows2 = fkRs2.Count > 0 ? fkRs2[0].Rows : null;
+        }
+        catch { /* 无外键视图或权限不足：退命名约定 */ }
+        _model.Edges = ErdModel.InferEdgesDeep(_model, fkRows2);
         Place(_model);
-        _hint.Text = $"已并入 {added.Count} 张新增表、更新 {changed.Count} 张表结构；关系线已按新结构重新推断。";
+        _hint.Text = fkRows2 is not null
+            ? $"已并入 {added.Count} 张新增表、更新 {changed.Count} 张表结构；关系线按真库外键 {fkRows2.Count} 条重新推断。"
+            : $"已并入 {added.Count} 张新增表、更新 {changed.Count} 张表结构；外键清单不可用，关系线按命名约定推断。";
+    }
+
+    // 发现147：正向同步——模型 → 库。先比对模型与真库差异，生成目标方言脚本预览，确认后逐条执行；
+    // 与逆向拉取同一套差异口径（ModelCompare/SchemaDiff），不开删，库中多余列/多余表不动。
+    private static async Task SyncToDb(MainWindow owner, string db, IDbProvider prov)
+    {
+        if (_model.Tables.Count == 0) { _hint.Text = "当前模型为空，请先生成或绘制模型，再同步到库。"; return; }
+        if (prov.IsNoSql) { _hint.Text = "MongoDB / Redis 无表结构 DDL，不支持同步到库。"; return; }
+        List<string> live;
+        try { live = await prov.GetChildren(db); }
+        catch (Exception ex) { _hint.Text = HumanError.Say(ex, "同步到库失败"); return; }
+
+        // 真库列结构（与逆向同口径：最多前 40 张；读不动的表跳过不挡同步）
+        var liveCols = new List<(string Table, List<ColumnSpec> Cols)>();
+        int limit = Math.Min(live.Count, 40);
+        for (int i = 0; i < limit; i++)
+        {
+            try
+            {
+                var cols = await prov.GetColumns(db, live[i]);
+                if (cols.Count > 0) liveCols.Add((live[i], cols));
+            }
+            catch { /* 单表读列失败：跳过该表，其余照常比对 */ }
+        }
+
+        var diffs = ModelCompare.Diff(_model, liveCols);
+        var actionable = diffs.Where(d => d.Actionable).ToList();
+        if (actionable.Count == 0)
+        {
+            _hint.Text = "同步到库：模型与库内结构一致，无差异。";
+            return;
+        }
+
+        // 差异 → 目标方言语句计划（复用 SchemaDiff.PlanSync；不开删）
+        var src = _model.Tables.Select(t => SchemaTableSnapshot.FromSpecs(t.Name, t.Columns.Select(c => new ColumnSpec
+        {
+            Name = c.Name,
+            DataType = c.Type,
+            IsKey = c.IsKey,
+        }))).ToList();
+        var dst = liveCols.Select(x => SchemaTableSnapshot.FromSpecs(x.Table, x.Cols)).ToList();
+        var (stmts, skipped) = SchemaDiff.PlanSync(src, dst, actionable, prov.Profile.Engine, s => prov.Quote(s), dropMissing: false);
+        if (stmts.Count == 0)
+        {
+            _hint.Text = "同步到库：差异均为提示性条目（库中多余对象），无可执行语句。" + (skipped.Count > 0 ? "\n" + string.Join("\n", skipped) : "");
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var d in actionable)
+            sb.AppendLine($"【{d.Table}】{d.Detail}");
+        sb.AppendLine();
+        foreach (var s in stmts) sb.AppendLine(s + ";");
+        if (skipped.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("提示：");
+            foreach (var s in skipped) sb.AppendLine("  " + s);
+        }
+        sb.AppendLine();
+        sb.AppendLine($"共 {stmts.Count} 条语句。执行后新增表 / 补列 / 改列类型会落到库内，不删除库中已有对象。");
+
+        var box = new TextBox
+        {
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            Text = sb.ToString(),
+            FontFamily = new FontFamily("Consolas"),
+            MinWidth = 620,
+            MinHeight = 320,
+            MaxHeight = 420,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var dlg = new ContentDialog
+        {
+            Title = "同步到库 · 差异脚本预览",
+            Content = box,
+            PrimaryButtonText = $"执行同步（{stmts.Count} 条）",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = owner.Content.XamlRoot,
+        };
+        if (await dlg.ShowThemedAsync() != ContentDialogResult.Primary) { _hint.Text = "已取消，库未改动。"; return; }
+
+        int ok = 0;
+        var fails = new List<string>();
+        foreach (var s in stmts)
+        {
+            try
+            {
+                var rs = await prov.Execute(db, s + ";");
+                if (rs.Any(r => r.IsError)) fails.Add(s);
+                else ok++;
+            }
+            catch { fails.Add(s); }
+        }
+        AppLog.Write($"[ER图] 同步到库 db={db} stmts={stmts.Count} ok={ok} fail={fails.Count}");
+        _hint.Text = fails.Count == 0
+            ? $"同步到库完成：{ok}/{stmts.Count} 条语句全部成功。请在左侧树点「刷新」查看结果。"
+            : $"同步到库部分完成：成功 {ok} 条、失败 {fails.Count} 条。首条失败语句：{fails[0]}";
     }
 
     private static void Place(ErdModel m)

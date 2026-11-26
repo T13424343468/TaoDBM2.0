@@ -75,7 +75,7 @@ public static class ProfileCrypto
     }
 }
 
-/// <summary>连接配置存取：%APPDATA%\TaoDBM\connections.json</summary>
+/// <summary>连接配置存取：TaoPaths 数据根 connections.json（D 盘优先，发现96：注释口径与实码对齐）。</summary>
 public static class ConnectionStore
 {
     private static string File => TaoPaths.FilePath("connections.json");   // Tao 系列存储默认 D 盘

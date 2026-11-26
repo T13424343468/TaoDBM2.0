@@ -67,12 +67,17 @@ public static class CsvImporter
         return (headers, rows);
     }
 
-    /// <summary>按各列是否为数字类型决定是否加引号，生成批量 INSERT。</summary>
+    /// <summary>按各列是否为数字类型决定是否加引号，生成批量 INSERT。
+    /// 发现109：二进制列在本层还原 X'hex' 并校验，非法 hex 当场报错行，不再当字符串写坏。</summary>
     public static List<string> BuildInserts(IDbProvider prov, string db, string table,
         List<ColumnSpec> cols, List<string> headers, List<string?[]> rows, int batch = 100)
     {
         var numeric = new HashSet<string>(
             cols.Where(c => IsNumeric(c.DataType)).Select(c => c.Name),
+            StringComparer.OrdinalIgnoreCase);
+        // 发现109：二进制列按表列类型判定（表列名 ↔ CSV 表头同名匹配，与映射口径一致）
+        var binary = new HashSet<string>(
+            cols.Where(c => IsBinaryColumn(c.DataType)).Select(c => c.Name),
             StringComparer.OrdinalIgnoreCase);
         var statements = new List<string>();
         var names = headers.Select(prov.Quote).ToList();
@@ -81,19 +86,32 @@ public static class CsvImporter
         {
             var chunk = rows.Skip(start).Take(batch);
             var sb = new StringBuilder();
+            int rowInBatch = 0;
             foreach (var r in chunk)
             {
                 var vals = new string[r.Length];
                 for (int i = 0; i < r.Length; i++)
                 {
                     string? v = i < headers.Count && i < r.Length ? r[i] : null;
-                    vals[i] = v is null
-                        ? "NULL"
-                        : numeric.Contains(headers[i]) && (double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out _) || v.Length == 0)
-                            ? (v.Length == 0 ? "NULL" : v)
-                            : "'" + v.Replace("'", "''") + "'";
+                    if (v is null) { vals[i] = "NULL"; continue; }
+                    if (binary.Contains(headers[i]))
+                    {
+                        if (v.Length == 0) { vals[i] = "NULL"; continue; }
+                        try { vals[i] = BinaryLiteral(v); }
+                        catch (ArgumentException)
+                        {
+                            // 发现109：非法 hex 当场人话报错行，不静默写坏字节
+                            throw new ArgumentException(
+                                $"第 {start + rowInBatch + 1} 行的「{headers[i]}」列是二进制列，填的值不是有效的十六进制串（须为偶数位 0-9/A-F），请核对后再导入。");
+                        }
+                        continue;
+                    }
+                    vals[i] = numeric.Contains(headers[i]) && (double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out _) || v.Length == 0)
+                        ? (v.Length == 0 ? "NULL" : v)
+                        : "'" + v.Replace("'", "''") + "'";
                 }
                 sb.Append($"INSERT INTO {prov.Quote(table)} ({string.Join(", ", names)}) VALUES ({string.Join(", ", vals)});\n");
+                rowInBatch++;
             }
             statements.Add(sb.ToString());
         }
@@ -106,5 +124,24 @@ public static class CsvImporter
         return t.Contains("int") || t.Contains("decimal") || t.Contains("numeric")
             || t.Contains("float") || t.Contains("double") || t.Contains("real")
             || t.Contains("number") || t == "bit" || t.Contains("money");
+    }
+
+    /// <summary>发现109：二进制列判定下沉 Core（blob/binary/bytea/image/raw 等），与行编辑发现65 同口径。</summary>
+    public static bool IsBinaryColumn(string? dataType)
+    {
+        if (string.IsNullOrEmpty(dataType)) return false;
+        var dt = dataType.ToLowerInvariant();
+        return dt.Contains("blob") || dt.Contains("binary") || dt.Contains("bytea")
+            || dt.Contains("image") || dt.StartsWith("raw") || dt.Contains("bfile")
+            || dt.Contains("oleobject") || dt.Contains("general");
+    }
+
+    /// <summary>发现109：十六进制串还原为 X'...' 二进制字面量；非法输入（奇数位/非十六进制字符）抛 ArgumentException。</summary>
+    public static string BinaryLiteral(string input)
+    {
+        var hex = input.Trim();
+        if (hex.Length == 0 || hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
+            throw new ArgumentException($"不是有效的十六进制串（长度 {hex.Length}）");
+        return "X'" + hex.ToUpperInvariant() + "'";
     }
 }

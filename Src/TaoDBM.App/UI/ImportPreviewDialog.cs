@@ -70,6 +70,10 @@ public static class ImportPreviewDialog
         panel.Children.Add(preview);
         panel.Children.Add(new TextBlock { Text = "列映射（默认按列名同名匹配，可改）：", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         panel.Children.Add(new ScrollViewer { Content = mapGrid, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        // 发现103：表头选项说明后置——先映射，选项说明跟在映射区下方
+        panel.Children.Add(new TextBlock { Text = "「首行为表头」决定首行当列名还是数据；「跳过错误行」出错不中断整批。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        var hint = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+        panel.Children.Add(hint);
         panel.Children.Add(headerCheck);
         panel.Children.Add(skipCheck);
 
@@ -97,7 +101,21 @@ public static class ImportPreviewDialog
                 mappedIdx.Add(i);
             }
         }
-        if (mappedHeaders.Count == 0) return null;
+        // 发现102：映射冲突校验——两个 CSV 列映射到同一表列时当场拦下，不静默覆盖
+        var dup = mappedHeaders.GroupBy(h => h, StringComparer.OrdinalIgnoreCase).FirstOrDefault(g => g.Count() > 1);
+        if (dup is not null)
+        {
+            hint.Visibility = Visibility.Visible;
+            hint.Text = $"映射冲突：表列「{dup.Key}」被多个 CSV 列同时选中，请只保留一个。";
+            return null;
+        }
+        // 发现103：零映射不再静默关窗——明示后让用户改
+        if (mappedHeaders.Count == 0)
+        {
+            hint.Visibility = Visibility.Visible;
+            hint.Text = "还没有任何映射：把至少一个 CSV 列指到表列，或点取消放弃导入。";
+            return null;
+        }
         return new ImportPlan(mappedHeaders, mappedIdx.ToArray(), skipCheck.IsChecked == true, headerCheck.IsChecked == true);
     }
 }

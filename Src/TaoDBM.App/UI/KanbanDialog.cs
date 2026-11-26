@@ -10,9 +10,15 @@ namespace TaoDBM.UI;
 /// 自动刷新与手动刷新同一条更新链路，卡片数字随数据变化。
 /// 整改二批格19（2026-11-23）：刷新后重建卡片视觉——单值大数字（28pt）＋趋势箭头（↑绿↓红）＋头部时间戳；
 /// 重建走「清空 StackPanel→按最新结果重建子树」；刷新中卡片置灰＋加载点。AppLog 锚点 [看板] 刷新 pin= 保持。
-/// 钉住入口在结果网格右键（ResultGridMenu），本弹窗是看板的统一管理面。</summary>
+/// 钉住入口在结果网格右键（ResultGridMenu），本弹窗是看板的统一管理面。
+/// 发现127（2026-11-25）：刷新加重入闸——定时器与手动按钮可能并发重跑同一张卡，按 PinId 跳过在途；
+/// 整轮到期刷新未结束时不再叠开第二轮，避免慢查询堆积把连接打满。</summary>
 public static class KanbanDialog
 {
+    // 发现127：在途闸——同一 PinId 的刷新未返回前，定时器/按钮再触发一律跳过；整轮到期刷新同理
+    static readonly HashSet<string> InFlight = new();
+    static bool RefreshingDue;
+
     public static void Show(MainWindow owner, IDbProvider? provider)
     {
         var pinsHost = new StackPanel { Spacing = 10, MinWidth = 640 };
@@ -97,10 +103,16 @@ public static class KanbanDialog
 
     static async Task RefreshDueAsync(IDbProvider? provider, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)
     {
-        foreach (var pin in KanbanPinStore.Due(DateTimeOffset.UtcNow))
+        if (RefreshingDue) return;   // 发现127：上一轮到期刷新还没跑完，不叠开第二轮
+        RefreshingDue = true;
+        try
         {
-            await RunPinAsync(provider, pin, status, cardData, lastValues);   // 取数走流式底座（QueryRouter 分流），单卡重跑
+            foreach (var pin in KanbanPinStore.Due(DateTimeOffset.UtcNow))
+            {
+                await RunPinAsync(provider, pin, status, cardData, lastValues);   // 取数走流式底座（QueryRouter 分流），单卡重跑
+            }
         }
+        finally { RefreshingDue = false; }
     }
 
     static async Task RunPinAsync(IDbProvider? provider, KanbanPinStore.Pin pin, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)
@@ -110,6 +122,7 @@ public static class KanbanDialog
             status.Text = "无活动连接，暂不能刷新；连上库再点。";
             return;
         }
+        if (!InFlight.Add(pin.PinId)) return;   // 发现127：该卡已在途（定时器或手动触发过），跳过本次
         try
         {
             // 格19：刷新中卡片置灰＋加载点，避免旧数据被误读为最新
@@ -140,6 +153,7 @@ public static class KanbanDialog
             }
             status.Text = HumanError.Say(ex, $"「{pin.Title}」刷新失败");
         }
+        finally { InFlight.Remove(pin.PinId); }   // 发现127：无论成败都放闸，下次可再刷
     }
 
     /// <summary>格19：按最新结果重建卡片视觉——单值大数字（28pt）＋趋势箭头（↑绿↓红，对比上次值）；多行行数大字＋首行快照；头部带刷新时间戳。</summary>

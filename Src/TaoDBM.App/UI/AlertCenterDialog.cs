@@ -89,25 +89,34 @@ public static class AlertCenterDialog
         async Task InspectAsync()
         {
             status.Text = "巡检中：采集指标…";
-            var metrics = await CollectMetrics(prov, db, status);
-            if (metrics.Count == 0)
+            try
             {
-                status.Text = "该引擎暂无可用告警指标（连接数/锁等待/复制仅部分引擎支持），已如实跳过。";
-                return;
+                var metrics = await CollectMetrics(prov, db, status);
+                if (metrics.Count == 0)
+                {
+                    status.Text = "该引擎暂无可用告警指标（连接数/锁等待/复制仅部分引擎支持），已如实跳过。";
+                    return;
+                }
+                var fired = AlertEngine.Evaluate(rules, metrics, DateTime.UtcNow);
+                foreach (var e in fired)
+                {
+                    AlertEngine.AppendEvent(EventsFile, e);
+                    // P-4：应用内为主；系统通知走通知中心开关（HealthCheck 通道）
+                    ToastCenter.Publish(new NotifyEvent(NotifyKind.HealthCheck, e.RuleName, $"告警：{e.RuleName}", e.Message, DateTime.Now));
+                }
+                AlertEngine.SaveRules(RulesFile, rules);
+                RefreshRules();
+                RefreshHistory();
+                status.Text = fired.Count == 0
+                    ? $"巡检完成：{metrics.Count} 项指标在阈值内，无告警。"
+                    : $"巡检完成：触发 {fired.Count} 条告警（已合并防轰炸），见触发记录。";
             }
-            var fired = AlertEngine.Evaluate(rules, metrics, DateTime.UtcNow);
-            foreach (var e in fired)
+            catch (Exception ex)
             {
-                AlertEngine.AppendEvent(EventsFile, e);
-                // P-4：应用内为主；系统通知走通知中心开关（HealthCheck 通道）
-                ToastCenter.Publish(new NotifyEvent(NotifyKind.HealthCheck, e.RuleName, $"告警：{e.RuleName}", e.Message, DateTime.Now));
+                // 发现116：巡检异常不再静默——采集/落盘失败人话回状态栏并落账
+                status.Text = HumanError.Say(ex, "巡检没跑成：指标没采到，请检查连接后重试。");
+                AppLog.Write($"[告警中心] 巡检异常: {ex.Message}");
             }
-            AlertEngine.SaveRules(RulesFile, rules);
-            RefreshRules();
-            RefreshHistory();
-            status.Text = fired.Count == 0
-                ? $"巡检完成：{metrics.Count} 项指标在阈值内，无告警。"
-                : $"巡检完成：触发 {fired.Count} 条告警（已合并防轰炸），见触发记录。";
         }
 
         RefreshRules();

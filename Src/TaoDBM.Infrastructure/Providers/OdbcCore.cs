@@ -133,13 +133,21 @@ public static class OdbcCore
     public static string BuildConnectionString(ConnectionProfile p, string? db = null)
     {
         var dsn = db is { Length: > 0 } ? db : p.Database;
-        var sb = new StringBuilder("DSN=" + dsn);
-        if (p.User.Length > 0) sb.Append(";UID=").Append(p.User);
-        if (p.Password.Length > 0) sb.Append(";PWD=").Append(p.Password);
+        var sb = new StringBuilder("DSN=").Append(EscapeValue(dsn));
+        if (p.User.Length > 0) sb.Append(";UID=").Append(EscapeValue(p.User));
+        if (p.Password.Length > 0) sb.Append(";PWD=").Append(EscapeValue(p.Password));
         if (p.Parameters.Length > 0)
             foreach (var kv in p.Parameters.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 sb.Append(';').Append(kv);
         return sb.ToString();
+    }
+
+    /// <summary>ODBC 连接串值转义（发现101）：分号/花括号等特殊字符包 {} 并对内层 } 翻倍，普通值原样。</summary>
+    internal static string EscapeValue(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        if (value.AsSpan().IndexOfAny(new[] { ';', '{', '}', '=', '(', ')', ',', '\'', '"' }) < 0) return value;
+        return "{" + value.Replace("}", "}}") + "}";
     }
 
     /// <summary>ODBC 连接：SQLDriverConnect（无窗口提示），Dispose 断开。</summary>

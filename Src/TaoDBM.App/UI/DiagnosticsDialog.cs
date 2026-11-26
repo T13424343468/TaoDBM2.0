@@ -54,15 +54,158 @@ public static class DiagnosticsDialog
         panel.Children.Add(sqlRow);
         panel.Children.Add(status);
 
+        // 发现149：进程 / 变量 / 状态页签——运行态观测从体检报告拆出，按引擎口径取数，不支持的引擎如实标注
+        var procPanel = new StackPanel { Spacing = 6 };
+        var varPanel = new StackPanel { Spacing = 6 };
+        var statPanel = new StackPanel { Spacing = 6 };
+        var loaders = new Dictionary<StackPanel, Func<Task>>
+        {
+            [procPanel] = () => LoadProcessesAsync(owner, prov, profile.Engine, ResolveDbAsync(prov, info), procPanel, status),
+            [varPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), varPanel, status, "变量"),
+            [statPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), statPanel, status, "状态"),
+        };
+        var loaded = new HashSet<StackPanel>();
+        var tabs = new TabView { IsAddButtonVisible = false, MinWidth = 660 };
+        tabs.TabItems.Add(new TabViewItem { Header = "体检", IsClosable = false, Content = panel });
+        tabs.TabItems.Add(new TabViewItem { Header = "进程", IsClosable = false, Content = new ScrollViewer { Content = procPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        tabs.TabItems.Add(new TabViewItem { Header = "变量", IsClosable = false, Content = new ScrollViewer { Content = varPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        tabs.TabItems.Add(new TabViewItem { Header = "状态", IsClosable = false, Content = new ScrollViewer { Content = statPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        tabs.SelectionChanged += async (_, _) =>
+        {
+            if (tabs.SelectedItem is not TabViewItem item) return;
+            if (item.Content is not ScrollViewer sv || sv.Content is not StackPanel sp) return;
+            if (loaders.TryGetValue(sp, out var load) && loaded.Add(sp)) await load();
+        };
+
+        var dlgPanel = new StackPanel { Spacing = 10, MinWidth = 660 };
+        dlgPanel.Children.Add(tabs);
+
         var dlg = new ContentDialog
         {
             Title = "一键诊断",
-            Content = panel,
+            Content = dlgPanel,
             CloseButtonText = "关闭",
             XamlRoot = owner.Content.XamlRoot,
         };
         _ = dlg.ShowThemedAsync();
         _ = RunDiagAsync(owner, info, prov, report, status);
+    }
+
+    /// <summary>发现149：库名解析——与体检同口径，info 未带库时取第一个可用库。</summary>
+    private static async Task<string> ResolveDbAsync(IDbProvider prov, NodeInfo info)
+    {
+        var dbName = CurrentDb(info);
+        if (string.IsNullOrEmpty(dbName) && info.Profile.Engine != DbEngine.SQLite)
+        {
+            try
+            {
+                var dbs = await prov.GetDatabases();
+                if (dbs.Count > 0) dbName = dbs[0];
+            }
+            catch { /* 各页签查询会单独报错 */ }
+        }
+        return dbName;
+    }
+
+    /// <summary>发现149：进程页签——MySQL SHOW PROCESSLIST / PG pg_stat_activity / SQL Server sys.dm_exec_sessions；
+    /// 行内带终止按钮（复用 LockAnalyzer.KillSql，草稿口径与锁页一致，确认后执行）。</summary>
+    private static async Task LoadProcessesAsync(MainWindow owner, IDbProvider prov, DbEngine engine, Task<string> dbNameTask,
+        StackPanel panel, TextBlock status)
+    {
+        panel.Children.Clear();
+        status.Text = "进程清单加载中…";
+        string? sql = engine switch
+        {
+            DbEngine.MySQL => "SHOW FULL PROCESSLIST",
+            DbEngine.PostgreSQL => "SELECT pid::text, usename, COALESCE(application_name, ''), COALESCE(client_addr::text, ''), state, COALESCE(wait_event_type, ''), left(query, 80) FROM pg_stat_activity WHERE pid <> pg_backend_pid()",
+            DbEngine.SqlServer => "SELECT session_id, login_name, COALESCE(host_name, ''), status, COALESCE(wait_type, '') FROM sys.dm_exec_sessions WHERE is_user_process = 1",
+            _ => null,
+        };
+        if (sql is null)
+        {
+            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无进程清单口径，此页签不适用。");
+            status.Text = "";
+            return;
+        }
+        try
+        {
+            var dbName = await dbNameTask;
+            var rs = await prov.Execute(dbName, sql);
+            var rows = rs.Count > 0 ? rs[0].Rows : new List<object?[]>();
+            AddSection(panel, $"进程清单（{rows.Count} 条）");
+            if (rows.Count == 0) AddLine(panel, "✓ 当前无其他活动会话。");
+            foreach (var row in rows)
+            {
+                var sid = S(row[0]);
+                AddLine(panel, engine == DbEngine.MySQL
+                    ? $"  [{sid}] {S(row[1])}@{S(row[2])} {S(row[4])} {ToLong(row[5])}s {(row.Length > 7 ? S(row[7]) : "")}"
+                    : $"  [{sid}] {S(row[1])} {S(row[2])} {S(row[3])} {S(row[4])}");
+                var kill = LockAnalyzer.KillSql(sid, engine);
+                if (string.IsNullOrEmpty(kill)) continue;
+                var killBtn = new Button
+                {
+                    Content = $"终止 {sid}",
+                    FontSize = AntTokens.FontCaption,
+                    CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                    Margin = new Thickness(16, 0, 0, 0),
+                };
+                killBtn.Click += (_, _) => _ = KillSessionAsync(owner, prov, dbName, sid, status);
+                panel.Children.Add(killBtn);
+            }
+            status.Text = "进程清单加载完成（只读）。";
+        }
+        catch (Exception ex)
+        {
+            AddLine(panel, HumanError.Say(ex, "进程清单不可用（权限或版本原因）"), Ant.Warn);
+            status.Text = "";
+        }
+    }
+
+    /// <summary>发现149：变量 / 状态页签——MySQL SHOW VARIABLES / SHOW GLOBAL STATUS、
+    /// PG pg_settings / pg_stat_database、SQL Server sys.configurations / sys.dm_os_performance_counters；
+    /// 行数超 200 截断明示，不支持的引擎如实标注。</summary>
+    private static async Task LoadKeyValuesAsync(IDbProvider prov, DbEngine engine, Task<string> dbNameTask,
+        StackPanel panel, TextBlock status, string kind)
+    {
+        panel.Children.Clear();
+        status.Text = $"{kind}加载中…";
+        string? sql = (engine, kind) switch
+        {
+            (DbEngine.MySQL, "变量") => "SHOW VARIABLES",
+            (DbEngine.MySQL, "状态") => "SHOW GLOBAL STATUS",
+            (DbEngine.PostgreSQL, "变量") => "SELECT name, setting, COALESCE(unit, '') FROM pg_settings ORDER BY name",
+            (DbEngine.PostgreSQL, "状态") => "SELECT datname, numbackends::text, xact_commit::text, xact_rollback::text, deadlocks::text FROM pg_stat_database",
+            (DbEngine.SqlServer, "变量") => "SELECT name, CAST(value AS varchar(max)), COALESCE(CAST(value_in_use AS varchar(max)), '') FROM sys.configurations ORDER BY name",
+            (DbEngine.SqlServer, "状态") => "SELECT TOP (200) counter_name, COALESCE(instance_name, ''), cntr_value FROM sys.dm_os_performance_counters WHERE counter_name IN (N'Batch Requests/sec', N'SQL Re-Compilations/sec', N'Errors/sec', N'Deadlocks/sec', N'Processes blocked')",
+            _ => null,
+        };
+        if (sql is null)
+        {
+            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无{kind}口径，此页签不适用。");
+            status.Text = "";
+            return;
+        }
+        try
+        {
+            var dbName = await dbNameTask;
+            var rs = await prov.Execute(dbName, sql);
+            var rows = rs.Count > 0 ? rs[0].Rows : new List<object?[]>();
+            AddSection(panel, $"{kind}（{rows.Count} 条）");
+            int shown = Math.Min(rows.Count, 200);
+            for (int i = 0; i < shown; i++)
+            {
+                var row = rows[i];
+                var vals = string.Join("  ", row.Select(S).Where(v => v.Length > 0));
+                AddLine(panel, $"  {vals}");
+            }
+            if (rows.Count > shown) AddLine(panel, $"  …其余 {rows.Count - shown} 条已截断，完整清单请进查询窗口执行原语句。");
+            status.Text = $"{kind}加载完成（只读）。";
+        }
+        catch (Exception ex)
+        {
+            AddLine(panel, HumanError.Say(ex, $"{kind}不可用（权限或版本原因）"), Ant.Warn);
+            status.Text = "";
+        }
     }
 
     private static string CurrentDb(NodeInfo info)
@@ -330,7 +473,11 @@ public static class DiagnosticsDialog
     }
 
     /// <summary>s16 终止会话：高风险操作，显式输入会话 ID 解除（分级确认），执行后留痕。</summary>
-    private static async Task KillSessionAsync(MainWindow owner, NodeInfo info, IDbProvider prov, string dbName,
+    private static Task KillSessionAsync(MainWindow owner, NodeInfo info, IDbProvider prov, string dbName,
+        string sessionId, TextBlock status)
+        => KillSessionAsync(owner, info.Profile.Engine, prov, dbName, sessionId, status);
+
+    private static async Task KillSessionAsync(MainWindow owner, DbEngine engine, IDbProvider prov, string dbName,
         string sessionId, TextBlock status)
     {
         var confirm = new ContentDialog
@@ -345,7 +492,7 @@ public static class DiagnosticsDialog
         var box = new TextBox { PlaceholderText = $"输入会话 ID {sessionId} 以确认" };
         ((StackPanel)confirm.Content).Children.Add(new TextBlock
         {
-            Text = $"将执行 {LockAnalyzer.KillSql(sessionId, info.Profile.Engine)}，回滚可能需要时间，且该会话未提交事务会丢失。",
+            Text = $"将执行 {LockAnalyzer.KillSql(sessionId, engine)}，回滚可能需要时间，且该会话未提交事务会丢失。",
             TextWrapping = TextWrapping.Wrap,
             FontSize = AntTokens.FontMinor,
             Foreground = Ant.Error,
@@ -355,10 +502,10 @@ public static class DiagnosticsDialog
         if (box.Text.Trim() != sessionId) { status.Text = "会话 ID 不符，未执行。"; return; }
         try
         {
-            var kill = LockAnalyzer.KillSql(sessionId, info.Profile.Engine);
+            var kill = LockAnalyzer.KillSql(sessionId, engine);
             if (string.IsNullOrEmpty(kill)) { status.Text = "该引擎没有可用的终止会话语句。"; return; }
             await prov.Execute(dbName, kill);
-            AppLog.Write($"[终止会话] engine={info.Profile.Engine} session={sessionId}");
+            AppLog.Write($"[终止会话] engine={engine} session={sessionId}");
             status.Text = $"会话 {sessionId} 已终止（回滚由数据库自行进行）。";
         }
         catch (Exception ex) { status.Text = HumanError.Say(ex, "终止会话失败"); }
@@ -412,9 +559,19 @@ public static class DiagnosticsDialog
             catch { continue; }
             foreach (var col in cols.Take(2))
             {
-                long nulls = ToLong(await Scalar(prov, dbName,
-                    $"SELECT COUNT(*) FROM {prov.Quote(table)} WHERE {prov.Quote(col.Name)} IS NULL"));
-                profiles.Add(new ColumnProfile(table, col.Name, rows, nulls, 0));
+                try
+                {
+                    long nulls = ToLong(await Scalar(prov, dbName,
+                        $"SELECT COUNT(*) FROM {prov.Quote(table)} WHERE {prov.Quote(col.Name)} IS NULL"));
+                    profiles.Add(new ColumnProfile(table, col.Name, rows, nulls, 0));
+                }
+                catch (Exception ex)
+                {
+                    // 发现116：巡检异常不再静默——单列计数失败记入报告，人话说明
+                    AddSection(report, "数据体检（抽样）");
+                    AddLine(report, $"⚠ {table}.{col.Name} 计数失败，已跳过：{HumanError.Say(ex, "查询出错")}", Ant.Warn);
+                    AppLog.Write($"[数据体检] sample-fail table={table} col={col.Name} err={ex.Message}");
+                }
             }
         }
         if (profiles.Count == 0)
