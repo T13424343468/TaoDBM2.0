@@ -1,25 +1,24 @@
 env-exists=True
 NavicatExe=C:\Navicat\navicat.exe
 exe=[C:\Navicat\navicat.exe]
-[WALK] console minimized
-[WALK] v9 start exe=C:\Navicat\navicat.exe
-[WALK] t+5s proc count=1 titles='navicat'
-[WALK] t+10s proc count=1 titles='navicat'
-[WALK] t+15s proc count=1 titles='navicat'
-[WALK] t+20s proc count=1 titles='navicat'
-[WALK] t+25s proc count=1 titles='navicat'
-[WALK] t+30s proc count=1 titles='navicat'
-[WALK] t+35s proc count=1 titles='navicat'
-[WALK] t+40s proc count=1 titles='navicat'
-[WALK] t+45s proc count=1 titles='navicat'
-[WALK] t+50s proc count=1 titles='navicat'
-[WALK] t+55s proc count=1 titles='navicat'
-[WALK] t+60s proc count=1 titles='navicat'
-[WALK] after trial click window='Navicat Premium'
-[WALK] wizard click 1 window='Navicat Premium'
-[WALK] wizard click 2 window='Navicat Premium'
-[WALK] wizard click 3 window='Navicat Premium'
-[WALK] wizard click 4 window='Navicat Premium'
-[WALK] after ctrl+n window='Navicat Premium'
-[WALK] v9 done
-video-size=5242916
+[WALK] v11 start exe=C:\Navicat\navicat.exe
+[WALK] db gen exit=0 size=36864
+[WALK] after wizard window='navicat'
+[WALK] shot shot-n01-main.png
+[WALK] shot shot-n02-menu.png
+[WALK] uia[menu] count=0 names=
+[WALK] WARN SQLite menu item not found by UIA; fallback keyboard
+[WALK] shot shot-n03-conn-dialog.png
+[WALK] uia[conn-dialog] count=0 names=
+[WALK] WARN conn-name element not found
+[WALK] WARN browse button not found
+[WALK] shot shot-n04-filled.png
+[WALK] WARN ok button not found; fallback Ctrl+S
+[WALK] shot shot-n05-saved.png
+[WALK] WARN connection node not found in tree
+[WALK] shot shot-n06-tree.png
+[WALK] WARN users node not found
+[WALK] shot shot-n07-data.png
+[WALK] shot shot-n08-data2.png
+[WALK] v11 done
+video-size=7077924
