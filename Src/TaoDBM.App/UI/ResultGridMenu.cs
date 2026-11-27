@@ -50,7 +50,8 @@ public static class ResultGridMenu
         {
             menu.Items.Add(MenuItem("设计助手：图表规范（带本结果）", () => DesignAssistDialog.Show(owner, info, last: r)));   // 三-10：结果快照直进图表输入
             menu.Items.Add(MenuItem("设计助手：表单构建", () => DesignAssistDialog.Show(owner, info)));   // 三-10：连接上下文进表单构建
-            AppLog.Write("[设计助手] grid-context entry");
+            // S20 修红（2026-11-28）：原在此逐格落「grid-context entry」——菜单按格挂接，8 行网格一次渲染刷几十条同文日志，
+            // 把 [执行账] 挤出走查 tail 统计窗（run 46026058698 实锤 34 条刷屏）；无任何断言依赖，删除
         }
         menu.PinTheme();
         host.ContextFlyout = menu;

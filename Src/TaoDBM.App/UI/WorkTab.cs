@@ -857,7 +857,8 @@ public partial class WorkTab : Grid
                         ledger.Append(" | title=").Append(rowItem.Title)
                               .Append(" rows=").Append(rowItem.Rows.Count)
                               .Append(" cols=").Append(string.Join("/", rowItem.Columns));
-                        for (int i = 0; i < rowItem.Rows.Count && i < 3; i++)
+                        // S21 断言修红（2026-11-28）：账本原只记前 3 行，prod-0007 在第 7 行永远对不上（run 46026058698 实锤）——扩到 8 行
+                        for (int i = 0; i < rowItem.Rows.Count && i < 8; i++)
                         {
                             var cells = new string[rowItem.Rows[i].Length];
                             for (int c = 0; c < rowItem.Rows[i].Length; c++) cells[c] = Convert.ToString(rowItem.Rows[i][c]) ?? "";

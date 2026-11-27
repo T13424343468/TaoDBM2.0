@@ -741,14 +741,15 @@ jobs:
       fail-fast: false
       matrix:
         seg:
-          - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S18,S19" }  # S01-S09 建连接+对象树
-          - { name: seg2, skip: "S06,S07,S08,S09,S15,S16,S17,S18,S19" }        # S01-S05 前缀 + S10-S14 SQL真执行
-          - { name: seg3, skip: "S06,S07,S08,S09,S13,S14,S17,S18,S19" }        # S01-S05+S10-S12 前缀 + S15-S16
-          # #213 定谳: 导出步依赖查询后的编辑器状态, 独立段必须带 S10-S12 前置, 否则 work-csv 按钮不存在
-          # #219 定谳: seg4 十一步走查超免费 runner ~6min 回收窗, S18 起步即被掐;
-          # 拆 seg4a(导出)/seg4b(尾页), 每段压回窗口内; S18/S19 为 soft-page 不依赖编辑器状态
-          - { name: seg4a, skip: "S06,S07,S08,S09,S13,S14,S15,S16,S18,S19" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出
-          - { name: seg4b, skip: "S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16,S17" }  # S01-S05 前缀 + S18-S19 尾页
+          # 尾簇归属重排（2026-11-28 二次修红，run 46026058698 实锤）：计划扩到 129 步后五段 skip 名单只盖到 S19，
+          # 尾簇 S20 起无人认领、五段全跑，各自拖过作业级 timeout-minutes:20（五段均整 20 分钟被掐）。
+          # 按前置依赖重新认领：树段带表设计器/菜单尾页，编辑器段带各自 P0/P1 簇，每段压回窗口内。
+          - { name: seg1, skip: "S10,S11,S12,S13,S14,S15,S16,S17,S20,S21,S22,S23,S24,S25,S26,S27,S28,S29,S30,S31,S32,S33,S33b,S34,S35,S36,S37,S38,S39,S40,S40b,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S55,S56,S56b,S56c,S57,S57b,S58,S58b,S58c,S59,S59b,S59c,S60,S60b,S60c,S60d,S60e,S60f,S61,S61b,S61c,S61d,S62,S62b,S62c,S63a,S63b,S63c,S63d,S63e,S63f,S63g,S63h,S63z,S64a,S64b,S64c,S65a,S65b,S65c,S65d,S65e,S66a,S66b,S66c,S66d,S66e,S66f,S66g,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S78" }  # S00A-S09 建连接+对象树 + S18/S19 尾页 + S79-S86c 菜单尾页 + S99A
+          - { name: seg2, skip: "S00A,S06,S06A,S07,S08,S09,S15,S16,S17,S18,S19,S27,S28,S29,S30,S31,S32,S33,S33b,S34,S35,S36,S37,S38,S39,S40,S40b,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S55,S56,S56b,S56c,S57,S57b,S58,S58b,S58c,S59,S59b,S59c,S60,S60b,S60c,S60d,S60e,S60f,S61,S61b,S61c,S61d,S62,S62b,S62c,S63a,S63b,S63c,S63d,S63e,S63f,S63g,S63h,S63z,S64a,S64b,S64c,S65a,S65b,S65c,S65d,S65e,S66a,S66b,S66c,S66d,S66e,S66f,S66g,S68,S69,S70,S71,S72,S73,S78,S79,S80,S81,S82,S83,S84,S85,S85b,S85c,S86,S86b,S86c,S99A" }  # S01-S05 前缀 + S10-S14 SQL真执行 + S20-S26 停止/网格P0-03 + S74-S77 补全
+          - { name: seg3, skip: "S00A,S06,S06A,S07,S08,S09,S13,S14,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S55,S56,S56b,S56c,S57,S57b,S58,S58b,S58c,S59,S59b,S59c,S60,S60b,S60c,S60d,S60e,S60f,S61,S61b,S61c,S61d,S62,S62b,S62c,S63a,S63b,S63c,S63d,S63e,S63f,S63g,S63h,S63z,S64a,S64b,S64c,S65a,S65b,S65c,S65d,S65e,S66a,S66b,S66c,S66d,S66e,S66f,S66g,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S78,S79,S80,S81,S82,S83,S84,S85,S85b,S85c,S86,S86b,S86c,S99A" }  # S01-S05+S10-S12 前缀 + S15-S16 + S27-S52 看板/智能工具/任务中心/部署向导
+          # #219 定谳: seg4 十一步走查超免费 runner ~6min 回收窗, 拆两段各带编辑器前置压回窗口内
+          - { name: seg4a, skip: "S00A,S06,S06A,S07,S08,S09,S13,S14,S15,S16,S18,S19,S20,S21,S22,S23,S24,S25,S26,S27,S28,S29,S30,S31,S32,S33,S33b,S34,S35,S36,S37,S38,S39,S40,S40b,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S55,S56,S56b,S56c,S57,S57b,S58,S58b,S58c,S59,S59b,S59c,S60,S60b,S60c,S60d,S60e,S60f,S61,S61b,S61c,S61d,S62,S62b,S62c,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S79,S80,S81,S82,S83,S84,S85,S85b,S85c,S86,S86b,S86c,S99A" }  # S01-S05 前缀 + S10-S12 编辑器 + S17 导出 + S63a-S66g P1-01/02 + S78 导出流式
+          - { name: seg4b, skip: "S00A,S06,S06A,S07,S08,S09,S13,S14,S15,S16,S17,S18,S19,S20,S21,S22,S23,S24,S25,S26,S27,S28,S29,S30,S31,S32,S33,S33b,S34,S35,S36,S37,S38,S39,S40,S40b,S41,S42,S43,S44,S45,S46,S47,S48,S49,S50,S51,S52,S63a,S63b,S63c,S63d,S63e,S63f,S63g,S63h,S63z,S64a,S64b,S64c,S65a,S65b,S65c,S65d,S65e,S66a,S66b,S66c,S66d,S66e,S66f,S66g,S68,S69,S70,S71,S72,S73,S74,S75,S76,S77,S78,S79,S80,S81,S82,S83,S84,S85,S85b,S85c,S86,S86b,S86c,S99A" }  # S01-S05 前缀 + S10-S12 编辑器 + S55-S62c 批次一编辑器菜单簇
     steps:
       - name: Checkout (walk script from source)
         uses: actions/checkout@v4

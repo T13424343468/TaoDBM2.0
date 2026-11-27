@@ -296,7 +296,8 @@ function Find-ElWait($find, [int]$seconds, $scope) {
   while ((Get-Date) -lt $deadline) {
     $sc = $scope
     if ($null -eq $sc) { $sc = $desktop }
-    $el = Find-El $sc $find
+    # S20 二次修红（2026-11-28）：UI 线程忙时 UIA FindFirst 抛 0x80131505 直接炸步（run 46026058698 S20 实锤）——按未找到续等，到点才判负
+    try { $el = Find-El $sc $find } catch { $el = $null }
     if ($null -ne $el) { return $el }
     Start-Sleep -Milliseconds 500
   }
@@ -1015,7 +1016,10 @@ foreach ($s in $plan.steps) {
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
       'stop-query' {
-        # #01 停止按钮实效断言：长流式查询执行中点停止 → [执行账] cancelled=1（置文走 Set-TextValue，#245 禁 ^a/DEL 叠层）
+        # #01 停止按钮实效断言 v3（2026-11-28 二次修红，run 46026058698 实锤）：长查执行中 UI 线程忙，
+        # UIA FindFirst 找 work-stop 阻塞 100s+（0x80131505），停止根本没点上。改为执行前先定位停止钮
+        # 并缓存屏幕坐标（按钮常驻工具栏仅禁用态，矩形稳定），执行后按坐标实体点击，忙窗零 UIA；
+        # 断言读账 tail-60 扩到 tail-400（设计助手逐格刷屏已删，双保险防执行账被挤出窗）。
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot
         if ($null -eq $ed) { throw "work-editor not found" }
         try { $ed.SetFocus() } catch { }
@@ -1024,17 +1028,21 @@ foreach ($s in $plan.steps) {
         Start-Sleep -Milliseconds 600
         $run = Find-ElWait @{ automationId = 'work-run' } 6 $mainRoot
         if ($null -eq $run) { throw "work-run not found" }
+        $stop = Find-ElWait @{ automationId = 'work-stop' } 6 $mainRoot
+        if ($null -eq $stop) { throw "work-stop not found" }
+        $sr = $stop.Current.BoundingRectangle
+        if ($sr.IsEmpty) { throw "work-stop empty rect" }
+        $sx = [int]($sr.X + $sr.Width / 2)
+        $sy = [int]($sr.Y + $sr.Height / 2)
         Invoke-El $run
         Push-Evidence "$id run-invoked-before-stop"
         Start-Sleep -Seconds 2
-        $stop = Find-ElWait @{ automationId = 'work-stop' } 6 $mainRoot
-        if ($null -eq $stop) { throw "work-stop not found" }
-        Invoke-El $stop
+        [MouseNative]::Click($sx, $sy, $false, $false)
         Push-Evidence "$id stop-invoked"
         $deadline = (Get-Date).AddSeconds(20)
         $hit = $false
         do {
-          $tail = (Get-AppLogTail 60) -join "`n"
+          $tail = (Get-AppLogTail 400) -join "`n"
           if ($tail.Contains('[执行账] cancelled=1')) { $hit = $true; break }
           Start-Sleep -Seconds 1
         } while ((Get-Date) -lt $deadline)
