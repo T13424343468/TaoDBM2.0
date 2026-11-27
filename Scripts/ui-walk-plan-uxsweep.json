@@ -516,6 +516,24 @@
       "allowMiss": true
     },
     {
+      "id": "U045a",
+      "feature": "巡检-执行查询填充结果网格",
+      "action": "click",
+      "find": {
+        "automationId": "work-run"
+      },
+      "note": "评分补步205：先执行查询让结果网格有数据行——run420实锤U046b网格空态右键无菜单可拍（ResultGridMenu按单元格挂载）",
+      "allowMiss": true
+    },
+    {
+      "id": "U045b",
+      "feature": "巡检-结果网格就绪留证",
+      "action": "soft-page",
+      "page": "noop",
+      "note": "评分补步205：留证结果网格已有数据行，供U046b右键命中单元格",
+      "allowMiss": true
+    },
+    {
       "id": "U046a",
       "feature": "巡检-编辑器右键打开菜单",
       "action": "mouse-click",
