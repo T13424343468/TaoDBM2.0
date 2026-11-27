@@ -164,6 +164,61 @@
       "allowMiss": true
     },
     {
+      "id": "U014a",
+      "feature": "巡检-数据网格右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-results"
+      },
+      "button": "right",
+      "note": "评分补步211：数据网格右键打开菜单（✎ 就地编辑入口），实拍留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U014b",
+      "feature": "巡检-就地编辑打开行编辑器",
+      "action": "menu-item",
+      "itemName": "✎ 就地编辑",
+      "note": "评分补步211：行编辑器弹窗（BLOB/TEXT 大字段「编辑大字段」按钮宿主）",
+      "allowMiss": true
+    },
+    {
+      "id": "U014c",
+      "feature": "巡检-行编辑器弹窗留证",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true
+    },
+    {
+      "id": "U014d",
+      "feature": "巡检-编辑大字段按钮",
+      "action": "click",
+      "find": {
+        "automationId": "BlobEdit_note"
+      },
+      "note": "评分补步211：BLOB/TEXT 值超64字节时行编辑器内出现编辑大字段按钮（RowEditorFactory BlobEdit_列名），miss 则该库无超长值属预期",
+      "allowMiss": true
+    },
+    {
+      "id": "U014e",
+      "feature": "巡检-BLOB编辑器弹窗留证",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true
+    },
+    {
+      "id": "U014f",
+      "feature": "巡检-BLOB编辑器收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U014g",
+      "feature": "巡检-行编辑器收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
       "id": "U015",
       "feature": "巡检-表结构按钮",
       "action": "click",
@@ -486,6 +541,31 @@
       "allowMiss": true
     },
     {
+      "id": "U047a",
+      "feature": "巡检-编辑器右键再开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-editor"
+      },
+      "button": "right",
+      "note": "评分补步208：重开编辑器右键菜单以进查找替换",
+      "allowMiss": true
+    },
+    {
+      "id": "U047b",
+      "feature": "巡检-查找替换对话框",
+      "action": "menu-item",
+      "itemName": "查找替换…",
+      "note": "评分补步208：查找替换对话框展开留证（正则/全字/区分大小写/查找下一个/全部替换）",
+      "allowMiss": true
+    },
+    {
+      "id": "U047c",
+      "feature": "巡检-查找替换收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
       "id": "U046b",
       "feature": "巡检-结果网格右键打开菜单",
       "action": "mouse-click",
@@ -590,6 +670,14 @@
       "action": "tree-context",
       "prefix": "main",
       "itemName": "在库中搜索",
+      "allowMiss": true
+    },
+    {
+      "id": "U078a",
+      "feature": "巡检-库中搜索对话框留证",
+      "action": "soft-page",
+      "page": "noop",
+      "note": "评分补步210：U078 调度队列延迟开 DbSearchDialog 后补拍展开态（上轮截图仅主窗口未见对话框）",
       "allowMiss": true
     },
     {
