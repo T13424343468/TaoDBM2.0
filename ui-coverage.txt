@@ -1,10 +1,9 @@
-main-window named-interactive-elements: 31 (visible-list capped 200)
+main-window named-interactive-elements: 30 (visible-list capped 200)
 ControlType.Pane | False | Non Client Input Sink Window
 ControlType.Pane | False | AppWindow Custom Title Bar
 ControlType.Button | False | Minimize
 ControlType.Button | False | Restore
 ControlType.Button | False | Close
-ControlType.Text | False | TaoDBM v2.0.0
 ControlType.Text | False | 表
 ControlType.Text | False | 查询
 ControlType.Text | False | 备份
@@ -86,6 +85,9 @@ feature-level coverage account:
 [U046a] 巡检-编辑器右键打开菜单 => pass
 [U046] 巡检-编辑器右键菜单 => pass
 [U047] 巡检-右键菜单收场 => pass
+[U046b] 巡检-结果网格右键打开菜单 => pass
+[U046c] 巡检-结果网格右键菜单 => miss
+[U046d] 巡检-结果网格右键收场 => pass
 [U050] 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
 [U058] 巡检-数据传输与同步 => pass
 [U059] 巡检-数据同步收场 => pass
