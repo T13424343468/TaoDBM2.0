@@ -37,7 +37,7 @@ FROM (
     FROM users
 ) AS subquery;
 
-[ Prompt: 35.6 t/s | Generation: 10.3 t/s ]
+[ Prompt: 79.0 t/s | Generation: 14.5 t/s ]
 
 
 Exiting...

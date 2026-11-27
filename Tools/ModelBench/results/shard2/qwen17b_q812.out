@@ -35,7 +35,7 @@ SELECT COUNT(*) AS order_count
 FROM orders
 WHERE created_at BETWEEN CURRENT_DATE - INTERVAL '7 days' AND CURRENT_DATE;
 
-[ Prompt: 36.0 t/s | Generation: 10.0 t/s ]
+[ Prompt: 60.3 t/s | Generation: 16.9 t/s ]
 
 
 Exiting...

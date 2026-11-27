@@ -35,7 +35,7 @@ SELECT YEAR(created_at) AS year, COUNT(*) AS user_count
 FROM users
 GROUP BY YEAR(created_at)
 
-[ Prompt: 32.9 t/s | Generation: 10.4 t/s ]
+[ Prompt: 75.0 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

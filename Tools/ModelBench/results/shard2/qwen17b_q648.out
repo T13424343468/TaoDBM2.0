@@ -39,7 +39,7 @@ GROUP BY u.id
 ORDER BY SUM(p.amount) DESC
 LIMIT 4;
 
-[ Prompt: 32.9 t/s | Generation: 9.0 t/s ]
+[ Prompt: 64.0 t/s | Generation: 15.6 t/s ]
 
 
 Exiting...

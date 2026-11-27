@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT created_at FROM users WHERE created_at = CAST(CURDATE() AS DATETIME)
 
-[ Prompt: 39.3 t/s | Generation: 8.1 t/s ]
+[ Prompt: 76.2 t/s | Generation: 14.7 t/s ]
 
 
 Exiting...

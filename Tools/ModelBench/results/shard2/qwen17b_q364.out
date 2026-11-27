@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT ABS(SUM(CASE WHEN stock > 0 THEN 1 ELSE 0 END) - SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END)) AS inventory_change_abs
 FROM products;
 
-[ Prompt: 36.5 t/s | Generation: 8.7 t/s ]
+[ Prompt: 69.0 t/s | Generation: 16.6 t/s ]
 
 
 Exiting...

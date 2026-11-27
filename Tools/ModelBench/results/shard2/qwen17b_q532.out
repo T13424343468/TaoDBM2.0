@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT FROM_UNIXTIME(1700000000)
 
-[ Prompt: 35.8 t/s | Generation: 10.7 t/s ]
+[ Prompt: 76.2 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

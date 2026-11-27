@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT LTRIM(name) AS trimmed_name FROM users;
 
-[ Prompt: 34.2 t/s | Generation: 9.6 t/s ]
+[ Prompt: 58.5 t/s | Generation: 11.8 t/s ]
 
 
 Exiting...

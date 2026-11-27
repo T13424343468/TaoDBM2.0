@@ -41,7 +41,7 @@ SELECT * FROM payments
 UNION ALL
 SELECT * FROM users;
 
-[ Prompt: 37.2 t/s | Generation: 9.6 t/s ]
+[ Prompt: 56.9 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

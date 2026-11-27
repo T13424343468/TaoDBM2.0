@@ -36,7 +36,7 @@ FROM orders
 GROUP BY created_at
 ORDER BY created_at;
 
-[ Prompt: 36.0 t/s | Generation: 10.2 t/s ]
+[ Prompt: 80.5 t/s | Generation: 15.8 t/s ]
 
 
 Exiting...

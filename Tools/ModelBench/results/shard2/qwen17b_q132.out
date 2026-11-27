@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT SUM(LENGTH(name) - LENGTH(REPLACE(name, ' ', '')) + 1) AS total_length
 FROM users;
 
-[ Prompt: 35.3 t/s | Generation: 10.8 t/s ]
+[ Prompt: 68.4 t/s | Generation: 15.1 t/s ]
 
 
 Exiting...

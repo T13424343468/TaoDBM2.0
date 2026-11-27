@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 DELETE FROM orders WHERE user_id = 1;
 
-[ Prompt: 34.5 t/s | Generation: 9.2 t/s ]
+[ Prompt: 63.2 t/s | Generation: 12.5 t/s ]
 
 
 Exiting...

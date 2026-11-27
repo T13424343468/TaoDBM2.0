@@ -36,7 +36,7 @@ FROM users
 GROUP BY month
 ORDER BY month;
 
-[ Prompt: 34.5 t/s | Generation: 9.8 t/s ]
+[ Prompt: 71.3 t/s | Generation: 18.0 t/s ]
 
 
 Exiting...

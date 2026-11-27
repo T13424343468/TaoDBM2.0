@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT name FROM users WHERE city LIKE '%' || RIGHT(name, 3)
 
-[ Prompt: 36.1 t/s | Generation: 9.5 t/s ]
+[ Prompt: 66.6 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

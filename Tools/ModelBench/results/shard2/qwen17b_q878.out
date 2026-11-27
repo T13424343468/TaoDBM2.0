@@ -38,7 +38,7 @@ BEGIN
   WHERE city = city;
 END;
 
-[ Prompt: 34.8 t/s | Generation: 12.8 t/s ]
+[ Prompt: 73.9 t/s | Generation: 15.1 t/s ]
 
 
 Exiting...

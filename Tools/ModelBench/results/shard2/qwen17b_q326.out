@@ -36,7 +36,7 @@ FROM order_items
 JOIN products ON order_items.product_id = products.id
 WHERE order_items.unit_price > 100;
 
-[ Prompt: 36.0 t/s | Generation: 9.0 t/s ]
+[ Prompt: 72.9 t/s | Generation: 15.7 t/s ]
 
 
 Exiting...

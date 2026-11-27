@@ -36,7 +36,7 @@ BEGIN
     SELECT COUNT(*) AS user_count FROM users;
 END;
 
-[ Prompt: 38.6 t/s | Generation: 8.6 t/s ]
+[ Prompt: 69.8 t/s | Generation: 15.2 t/s ]
 
 
 Exiting...

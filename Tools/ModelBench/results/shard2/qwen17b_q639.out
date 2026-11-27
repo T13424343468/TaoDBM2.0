@@ -37,7 +37,7 @@ JOIN orders ON order_items.order_id = orders.id
 GROUP BY user_id
 ORDER BY total_spent DESC;
 
-[ Prompt: 33.9 t/s | Generation: 8.3 t/s ]
+[ Prompt: 71.8 t/s | Generation: 15.2 t/s ]
 
 
 Exiting...

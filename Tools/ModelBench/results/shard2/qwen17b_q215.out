@@ -37,7 +37,7 @@ LEFT JOIN orders ON order_items.order_id = orders.id
 LEFT JOIN payments ON orders.id = payments.order_id
 WHERE orders.id IS NULL;
 
-[ Prompt: 34.8 t/s | Generation: 9.3 t/s ]
+[ Prompt: 58.0 t/s | Generation: 13.2 t/s ]
 
 
 Exiting...

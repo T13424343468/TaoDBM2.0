@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT created_at WEEKDAY(created_at) FROM orders;
 
-[ Prompt: 35.1 t/s | Generation: 11.3 t/s ]
+[ Prompt: 73.0 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

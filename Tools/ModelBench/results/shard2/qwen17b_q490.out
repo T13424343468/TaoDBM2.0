@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT DATEADD(DAY, -7, created_at) as week_ago FROM orders;
 
-[ Prompt: 37.1 t/s | Generation: 8.5 t/s ]
+[ Prompt: 76.6 t/s | Generation: 17.1 t/s ]
 
 
 Exiting...

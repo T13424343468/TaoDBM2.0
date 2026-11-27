@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT name, category, price, stock FROM products ORDER BY category;
 
-[ Prompt: 39.7 t/s | Generation: 8.3 t/s ]
+[ Prompt: 69.4 t/s | Generation: 15.9 t/s ]
 
 
 Exiting...

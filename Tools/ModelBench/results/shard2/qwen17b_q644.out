@@ -37,7 +37,7 @@ JOIN order_items o ON p.id = o.product_id
 GROUP BY p.id
 ORDER BY diff DESC;
 
-[ Prompt: 33.8 t/s | Generation: 8.7 t/s ]
+[ Prompt: 67.2 t/s | Generation: 15.4 t/s ]
 
 
 Exiting...

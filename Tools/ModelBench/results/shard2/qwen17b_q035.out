@@ -39,7 +39,7 @@ WHERE u.id NOT IN (
     WHERE orders.status = 'completed'
 );
 
-[ Prompt: 36.3 t/s | Generation: 9.7 t/s ]
+[ Prompt: 69.1 t/s | Generation: 16.2 t/s ]
 
 
 Exiting...

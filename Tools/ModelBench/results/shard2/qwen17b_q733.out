@@ -37,7 +37,7 @@ FULL JOIN order_items oi ON o.id = oi.order_id
 FULL JOIN payments p ON o.id = p.order_id
 WHERE o.id IS NULL OR oi.id IS NULL;
 
-[ Prompt: 37.3 t/s | Generation: 8.1 t/s ]
+[ Prompt: 54.5 t/s | Generation: 14.5 t/s ]
 
 
 Exiting...

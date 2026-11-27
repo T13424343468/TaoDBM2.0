@@ -37,7 +37,7 @@ JOIN orders o ON oi.order_id = o.id
 JOIN products p ON oi.product_id = p.id
 WHERE o.user_id = (SELECT id FROM users WHERE name = '用户名');
 
-[ Prompt: 33.1 t/s | Generation: 8.1 t/s ]
+[ Prompt: 59.4 t/s | Generation: 15.0 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION get_user_count() RETURNS INT AS $$
 SELECT COUNT(*) FROM users;
 $$ LANGUAGE sql;
 
-[ Prompt: 36.1 t/s | Generation: 10.2 t/s ]
+[ Prompt: 71.4 t/s | Generation: 16.8 t/s ]
 
 
 Exiting...

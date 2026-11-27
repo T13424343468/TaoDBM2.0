@@ -49,7 +49,7 @@ FROM (
     FROM payments
 ) AS subquery;
 
-[ Prompt: 39.1 t/s | Generation: 9.2 t/s ]
+[ Prompt: 69.1 t/s | Generation: 14.9 t/s ]
 
 
 Exiting...

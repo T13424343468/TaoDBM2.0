@@ -36,7 +36,7 @@ FROM order_items
 LEFT JOIN orders ON order_items.order_id = orders.id
 LEFT JOIN users ON orders.user_id = users.id;
 
-[ Prompt: 38.5 t/s | Generation: 8.9 t/s ]
+[ Prompt: 58.3 t/s | Generation: 12.7 t/s ]
 
 
 Exiting...

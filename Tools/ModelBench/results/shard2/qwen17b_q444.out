@@ -35,7 +35,7 @@ SELECT YEAR(created_at) AS year, MONTH(created_at) AS month, COUNT(*) AS count
 FROM users
 GROUP BY year, month;
 
-[ Prompt: 38.8 t/s | Generation: 8.2 t/s ]
+[ Prompt: 72.5 t/s | Generation: 15.2 t/s ]
 
 
 Exiting...

@@ -35,7 +35,7 @@ SELECT unit_price
 FROM order_items
 WHERE unit_price >= FLOOR(unit_price);
 
-[ Prompt: 36.8 t/s | Generation: 10.1 t/s ]
+[ Prompt: 64.0 t/s | Generation: 17.4 t/s ]
 
 
 Exiting...

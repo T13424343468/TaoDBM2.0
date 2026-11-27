@@ -52,7 +52,7 @@ WHERE u.id IN (
     )
 );
 
-[ Prompt: 36.9 t/s | Generation: 8.5 t/s ]
+[ Prompt: 59.7 t/s | Generation: 13.2 t/s ]
 
 
 Exiting...

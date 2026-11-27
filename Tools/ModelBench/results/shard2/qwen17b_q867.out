@@ -39,7 +39,7 @@ BEGIN
     INSERT INTO users (id, name, city, created_at) VALUES (@i, 'User' + CAST(@i AS VARCHAR(10)), 'City' + CAST(@i AS VARCHAR(10)), GETDATE())
 END
 
-[ Prompt: 38.7 t/s | Generation: 8.6 t/s ]
+[ Prompt: 76.1 t/s | Generation: 15.3 t/s ]
 
 
 Exiting...

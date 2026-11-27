@@ -35,7 +35,7 @@ SELECT * FROM orders
 WHERE created_at = CURRENT_TIME
 AND status = 'completed';
 
-[ Prompt: 43.4 t/s | Generation: 12.2 t/s ]
+[ Prompt: 77.4 t/s | Generation: 15.5 t/s ]
 
 
 Exiting...

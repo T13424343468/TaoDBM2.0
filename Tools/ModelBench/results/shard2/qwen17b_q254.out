@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT name AS reversed_name FROM users ORDER BY name DESC;
 
-[ Prompt: 33.9 t/s | Generation: 10.7 t/s ]
+[ Prompt: 73.3 t/s | Generation: 17.2 t/s ]
 
 
 Exiting...

@@ -37,7 +37,7 @@ FROM users u
  CROSS JOIN orders o
  CROSS JOIN order_items pi;
 
-[ Prompt: 34.2 t/s | Generation: 9.0 t/s ]
+[ Prompt: 61.7 t/s | Generation: 13.9 t/s ]
 
 
 Exiting...
