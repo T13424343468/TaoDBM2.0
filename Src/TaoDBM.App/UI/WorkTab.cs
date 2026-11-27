@@ -423,8 +423,7 @@ public partial class WorkTab : Grid
         SetRow(statsStrip, 0);
         resultStack.Children.Add(_resultsHost);
         SetRow(_resultsHost, 1);
-        Children.Add(resultStack);
-        SetRow(resultStack, 3);
+        // 修红：resultStack 只经 lowerRegion/tabContent 上树（根第3行），不得再直挂根 Grid——同一元素两个父级触发 XAML 0x800F1000「No installed components were detected」（新建查询/查看数据页签全炸根因）
 
         var msgBorder = new Border
         {

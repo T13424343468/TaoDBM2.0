@@ -1257,6 +1257,7 @@ public partial class MainWindow : Window
         {
             // #88 S11 红场（0xC000027B）：首跑云路径异常不得带崩整个应用——落账＋界面提示，走查按 work-editor 缺席定谳
             Core.AppLog.Write($"[新建查询] {ex.GetType().Name}: {ex.Message}");
+            Core.AppLog.Write($"[新建查询] stack: {ex.StackTrace}");   // 修红：只有 message 没栈无法定位抛点，补落账
             _ = InfoAsync(HumanError.Say(ex, "新建查询失败"));
         }
     }
