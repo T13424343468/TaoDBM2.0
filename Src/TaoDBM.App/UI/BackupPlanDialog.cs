@@ -146,6 +146,7 @@ public static class BackupPlanDialog
         panel.Children.Add(mountBtn);   // 发现153：挂到任务中心
         panel.Children.Add(schedStatus);
         panel.Children.Add(new ScrollViewer { Content = schedList, MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        panel.Children.Add(BuildHistoryTable(info.Db.Length > 0 ? info.Db : info.Profile.Database));   // 发现302原型：历史执行表
         panel.Children.Add(status);
 
         var dlg = new ContentDialog
@@ -158,7 +159,8 @@ public static class BackupPlanDialog
         await dlg.ShowThemedAsync();
     }
 
-    /// <summary>发现153：已挂备份计划列表（Kind=backup），带停用 / 启用 / 删除，操作落 AppLog。</summary>
+    /// <summary>发现153：已挂备份计划列表（Kind=backup），带停用 / 启用 / 删除，操作落 AppLog。
+    /// 发现302原型：计划条目改卡片式——名称行＋状态徽标＋元信息行，一眼看清启用状态与下次执行。</summary>
     private static void RefreshSched(StackPanel list, string db, TextBlock status)
     {
         list.Children.Clear();
@@ -176,13 +178,34 @@ public static class BackupPlanDialog
         }
         foreach (var e in entries)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
-            row.Children.Add(new TextBlock
+            // 发现302原型：计划卡片——名称＋状态徽标，元信息行（频率 · 下次执行）
+            var card = new Border
             {
-                Text = $"{e.Name} · 每 {e.IntervalMinutes / 60.0:0.#} 小时 · 下次 {e.NextRunAt:MM-dd HH:mm} · {(e.Enabled ? "启用" : "已停用")}",
+                Padding = new Thickness(12, 8, 12, 8),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+                BorderThickness = new Thickness(1),
+                BorderBrush = Ant.Border,
+                Background = (Brush?)Application.Current.Resources["AntCard"],
+            };
+            var col = new StackPanel { Spacing = 4 };
+            var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            nameRow.Children.Add(new TextBlock
+            {
+                Text = e.Name,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                FontSize = AntTokens.FontBody,
                 VerticalAlignment = VerticalAlignment.Center,
-                FontSize = AntTokens.FontMinor,
             });
+            nameRow.Children.Add(MakeBadge(e.Enabled ? "启用" : "已停用", e.Enabled));
+            col.Children.Add(nameRow);
+            col.Children.Add(new TextBlock
+            {
+                Text = $"每 {e.IntervalMinutes / 60.0:0.#} 小时 · 下次 {e.NextRunAt:MM-dd HH:mm}",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            });
+            var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             var toggleBtn = new Button
             {
                 Content = e.Enabled ? "停用" : "启用",
@@ -214,9 +237,104 @@ public static class BackupPlanDialog
                 status.Text = "已删除该备份计划。";
                 RefreshSched(list, db, status);
             };
-            row.Children.Add(toggleBtn);
-            row.Children.Add(delBtn);
-            list.Children.Add(row);
+            btnRow.Children.Add(toggleBtn);
+            btnRow.Children.Add(delBtn);
+            col.Children.Add(btnRow);
+            card.Child = col;
+            list.Children.Add(card);
         }
+    }
+
+    /// <summary>发现302原型：状态徽标——正常绿 / 停用红，圆角胶囊样式。</summary>
+    private static Border MakeBadge(string text, bool ok)
+    {
+        return new Border
+        {
+            Padding = new Thickness(8, 1, 8, 1),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+            Background = ok ? (Brush?)Ant.SuccessBg : (Brush?)Ant.ErrorBg,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = text,
+                FontSize = AntTokens.FontCaption,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = ok ? (Brush?)Ant.Success : (Brush?)Ant.Error,
+            },
+        };
+    }
+
+    /// <summary>发现302原型：历史执行表（最近 5 次）——开始时间 · 类型 · 体积 · 结果，结果列带红绿圆点。</summary>
+    private static UIElement BuildHistoryTable(string db)
+    {
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "历史执行（最近 5 次）",
+            FontSize = AntTokens.FontCaption,
+            Foreground = Ant.TextSub,
+        });
+        var entries = BackupHistory.All().Where(h => h.Db == db).Take(5).ToList();
+        if (entries.Count == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "还没有执行记录；手动备份或到点自动执行后在这里回看。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            });
+            return panel;
+        }
+
+        var grid = new Grid { ColumnSpacing = 12 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        string[] headers = { "开始时间", "类型", "体积", "结果" };
+        for (int c = 0; c < 4; c++)
+        {
+            var head = new TextBlock
+            {
+                Text = headers[c],
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            };
+            head.SetValue(Grid.ColumnProperty, c);
+            var headCell = new Border
+            {
+                Padding = new Thickness(0, 4, 0, 4),
+                Background = Ant.HeadBg,
+                Child = head,
+            };
+            Grid.SetColumn(headCell, c);
+            grid.Children.Add(headCell);
+        }
+        for (int r = 0; r < entries.Count; r++)
+        {
+            var e = entries[r];
+            grid.RowDefinitions.Add(new RowDefinition());
+            var time = new TextBlock { Text = e.Time, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") };
+            var kind = new TextBlock { Text = e.Kind, FontSize = AntTokens.FontMinor };
+            var size = new TextBlock { Text = e.SizeBytes > 0 ? Core.HumanSize.Of(e.SizeBytes) : "—", FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") };
+            var resultRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            var dot = new Microsoft.UI.Xaml.Shapes.Ellipse { Width = 8, Height = 8, Fill = e.Ok ? Ant.Success : Ant.Error, VerticalAlignment = VerticalAlignment.Center };
+            var msg = e.Ok ? "成功" : $"失败：{e.Message.Split('\n')[0].Trim()}";
+            if (msg.Length > 40) msg = msg[..40] + "…";
+            resultRow.Children.Add(dot);
+            resultRow.Children.Add(new TextBlock { Text = msg, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
+            var cells = new[] { time, kind, size, resultRow };
+            for (int c = 0; c < 4; c++)
+            {
+                var cell = new Border { Padding = new Thickness(0, 4, 0, 4), Child = cells[c] };
+                Grid.SetColumn(cell, c);
+                Grid.SetRow(cell, r + 1);
+                grid.Children.Add(cell);
+            }
+        }
+        panel.Children.Add(grid);
+        return panel;
     }
 }
