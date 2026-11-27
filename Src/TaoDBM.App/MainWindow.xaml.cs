@@ -692,7 +692,7 @@ public partial class MainWindow : Window
                 Item("新建查询", (_, _) => OpenQueryTab(info));   // 高频项保留一级
                 Item("查看数据", (_, _) => OpenTableTab(info));
                 Item("设计表", (_, _) => OnDesignSel(this, new RoutedEventArgs()));
-                Item("在库中搜索", async (_, _) => await UI.DbSearchDialog.Show(this, info));   // 批次二格5
+                Item("在库中搜索", (_, _) => DispatcherQueue.TryEnqueue(() => _ = OpenDbSearchSafe(info)));   // 批次二格5；U078 红场：菜单点击内直开 ContentDialog 与 Flyout 收场竞态成 stowed exception（0xC000027B），改调度队列延迟开＋守门不外溢
                 Item("备份 / 还原", (_, _) => OnBackupSel(this, new RoutedEventArgs()));
                 Item("ER 图", (_, _) => OnErdSel(this, new RoutedEventArgs()));
                 Sep();
@@ -777,6 +777,18 @@ public partial class MainWindow : Window
         node.Children.Clear();
         if (_nodeMap.TryGetValue(node, out var i)) i.Loaded = false;
         node.Children.Add(new TreeViewNode { Content = "…" });
+    }
+
+    /// <summary>在库中搜索守门入口（U078 红场修红）：异常只落账不外溢——async void 直抛会成为
+    /// stowed exception（0xC000027B）带崩整个进程，与 #88 S11 同族；Provider 缺失也在此拦成可读提示。</summary>
+    private async Task OpenDbSearchSafe(NodeInfo info)
+    {
+        try
+        {
+            if (info.Provider is null) { AppLog.Write("[库搜索] 打开失败: Provider 为空"); return; }
+            await UI.DbSearchDialog.Show(this, info);
+        }
+        catch (Exception ex) { AppLog.Write($"[库搜索] 打开失败: {ex.Message}"); }
     }
 
     /// <summary>编辑连接（树右键与 Logo 菜单共用）。</summary>
