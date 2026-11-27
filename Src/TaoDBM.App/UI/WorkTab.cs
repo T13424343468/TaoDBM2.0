@@ -269,6 +269,10 @@ public partial class WorkTab : Grid
         _mode = mode;
         SourceFile = sourceFile ?? "";
 
+        // 预修批修红（同根 Grid「F1」游离 tooltip 一类）：本页签也挂加速键（Ctrl+F 等），
+        // 置 Hidden 关掉框架的加速键 tooltip 展示，快捷键行为不变
+        KeyboardAcceleratorPlacementMode = Microsoft.UI.Xaml.Input.KeyboardAcceleratorPlacementMode.Hidden;
+
         // 发现152：外观偏好生效——结果网格字体字号随设置（挂在结果宿主上沿视觉树继承，
         // 单元格未显式设 FontFamily 即生效；字号被单元格令牌显式接管的部分归云测首验）
         var fontPrefs = UiFontPrefs.Load();

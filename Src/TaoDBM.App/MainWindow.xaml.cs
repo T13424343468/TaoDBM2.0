@@ -60,7 +60,11 @@ public partial class MainWindow : Window
         // F1 全局唤起操作手册（2026-11-20 老板令）：挂在根 Grid 上，任何焦点下都响应
         var f1 = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.F1 };
         f1.Invoked += (_, args) => { args.Handled = true; UI.ManualDialog.Show(this); };
-        ((Microsoft.UI.Xaml.Controls.Grid)Content).KeyboardAccelerators.Add(f1);
+        var rootGridF1 = (Microsoft.UI.Xaml.Controls.Grid)Content;
+        rootGridF1.KeyboardAccelerators.Add(f1);
+        // 预修批修红（云测 201/210 实锤）：WinUI 默认（PlacementMode=Auto）把加速键组合渲染成 tooltip，
+        // 树区悬停残留「F1」游离悬浮层；置 Hidden 只关提示展示，F1/F11/Ctrl+N 等唤起行为不变
+        rootGridF1.KeyboardAcceleratorPlacementMode = Microsoft.UI.Xaml.Input.KeyboardAcceleratorPlacementMode.Hidden;
         var trayIcoPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "TaoDBM.ico");
         Safe.Run(() =>
         {
