@@ -288,10 +288,10 @@ public static class BackupPlanDialog
         }
 
         var grid = new Grid { ColumnSpacing = 12 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         string[] headers = { "开始时间", "类型", "体积", "结果" };
         for (int c = 0; c < 4; c++)
         {
@@ -325,7 +325,7 @@ public static class BackupPlanDialog
             if (msg.Length > 40) msg = msg[..40] + "…";
             resultRow.Children.Add(dot);
             resultRow.Children.Add(new TextBlock { Text = msg, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
-            var cells = new[] { time, kind, size, resultRow };
+            var cells = new Microsoft.UI.Xaml.UIElement[] { time, kind, size, resultRow };
             for (int c = 0; c < 4; c++)
             {
                 var cell = new Border { Padding = new Thickness(0, 4, 0, 4), Child = cells[c] };

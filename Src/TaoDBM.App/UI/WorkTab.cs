@@ -1655,7 +1655,7 @@ public partial class WorkTab : Grid
             try { previewSql.Text = BuildPreviewSql(); }
             catch { previewSql.Text = ""; }   // 预览取值失败不打扰编辑，保存时仍走完整校验
         }
-        void HookPreviewTree(Windows.UI.Xaml.DependencyObject el)
+        void HookPreviewTree(Microsoft.UI.Xaml.DependencyObject el)
         {
             switch (el)
             {

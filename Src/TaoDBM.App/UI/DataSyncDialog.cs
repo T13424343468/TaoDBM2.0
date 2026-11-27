@@ -92,7 +92,7 @@ public static class DataSyncDialog
         dstBox.SelectionChanged += async (_, _) => await LoadDbs(dstBox, dstDbBox, output);
         if (srcBox.SelectedItem is not null) await LoadDbs(srcBox, srcDbBox, output);
         if (dstBox.SelectedItem is not null) await LoadDbs(dstBox, dstDbBox, output);
-        RefreshChannel();   // 发现305原型：通道头部卡初始点亮
+        // RefreshChannel 初始点亮移至通道头部卡声明与事件接线之后（run405 定谳：局部函数捕获变量未赋值前调用即 CS0165）
 
         loadBtn.Click += async (_, _) =>
         {
@@ -445,9 +445,9 @@ public static class DataSyncDialog
         ((StackPanel)dstCard.Child).Children.Add(dstName);
         ((StackPanel)dstCard.Child).Children.Add(dstMeta);
         var channelGrid = new Grid { ColumnSpacing = 10 };
-        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var arrow = new TextBlock
         {
             Text = "⇄",
@@ -475,6 +475,7 @@ public static class DataSyncDialog
         dstBox.SelectionChanged += (_, _) => RefreshChannel();
         srcDbBox.SelectionChanged += (_, _) => RefreshChannel();
         dstDbBox.SelectionChanged += (_, _) => RefreshChannel();
+        RefreshChannel();   // 发现305原型：通道头部卡初始点亮（声明后调用）
 
         // 发现305原型：表规则表头——表清单上方加底色表头条
         var tableHead = new Border

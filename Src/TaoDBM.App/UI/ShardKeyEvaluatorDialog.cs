@@ -181,10 +181,10 @@ public static class ShardKeyEvaluatorDialog
         // 发现308原型：逐键结论表——候选键 / 得分 / 建议策略 / 问题，表头底色
         AddSection(report, "逐键结论");
         var grid = new Grid { ColumnSpacing = 10 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         string[] headers = { "候选键", "得分", "建议策略", "问题" };
         for (int c = 0; c < 4; c++)
         {
