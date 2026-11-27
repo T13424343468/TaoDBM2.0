@@ -835,10 +835,10 @@ public partial class WorkTab : Grid
                     if (totalRows > StreamingPrefs.TriggerRows)
                     {
                         StreamingPrefs.NoteLargeResult(totalRows, list[0].Title);
-                        foreach (var r in list.Where(x => x.Rows.Count > 0))
-                            r.Message = string.IsNullOrEmpty(r.Message)
+                        foreach (var res in list.Where(x => x.Rows.Count > 0))
+                            res.Message = string.IsNullOrEmpty(res.Message)
                                 ? $"结果 {totalRows:N0} 行超过流式触发阈值 {StreamingPrefs.TriggerRows:N0}，建议开启流式通道（删除环境变量 DBM_STREAMING=off 后重启）。"
-                                : r.Message;
+                                : res.Message;
                     }
                 }
                 QueryHistory.Add(_provider.EngineName, _db, sql);
