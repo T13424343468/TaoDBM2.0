@@ -157,14 +157,77 @@ public static class ShardKeyEvaluatorDialog
         }
 
         var verdicts = ShardKeyEvaluator.Evaluate(candidates);
-        AddSection(report, "候选键评估（按得分降序）");
-        foreach (var v in verdicts)
+
+        // 发现308原型：结论卡——首键结论成卡，可用绿 / 待斟酌黄
+        var top = verdicts[0];
+        bool ok = top.Score >= 80;
+        report.Children.Add(new Border
         {
-            var brush = v.Score >= 80 ? Ant.Success : v.Score >= 40 ? (Brush?)null : Ant.Error;
-            AddLine(report, $"  {v.Column}  得分 {v.Score}/100  建议 {v.SuggestedStrategy}", brush);
-            foreach (var issue in v.Issues)
-                AddLine(report, $"      · {issue}");
+            Padding = new Thickness(12, 8, 12, 8),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = ok ? Ant.Success : Ant.Warn,
+            Background = ok ? (Brush?)Ant.SuccessBg : (Brush?)Ant.WarnBg,
+            Child = new TextBlock
+            {
+                Text = $"{(ok ? "✓" : "⚠")} 结论：{top.Column} 得分 {top.Score}/100 · 建议 {top.SuggestedStrategy}" + (verdicts.Count > 1 ? "；其余键见逐键结论。" : ""),
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = ok ? (Brush?)Ant.Success : (Brush?)Ant.Warn,
+                TextWrapping = TextWrapping.Wrap,
+            },
+        });
+
+        // 发现308原型：逐键结论表——候选键 / 得分 / 建议策略 / 问题，表头底色
+        AddSection(report, "逐键结论");
+        var grid = new Grid { ColumnSpacing = 10 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        string[] headers = { "候选键", "得分", "建议策略", "问题" };
+        for (int c = 0; c < 4; c++)
+        {
+            var headCell = new Border
+            {
+                Padding = new Thickness(0, 4, 0, 4),
+                Background = Ant.HeadBg,
+                Child = new TextBlock
+                {
+                    Text = headers[c],
+                    FontSize = AntTokens.FontMinor,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = Ant.TextSub,
+                },
+            };
+            Grid.SetColumn(headCell, c);
+            grid.Children.Add(headCell);
         }
+        for (int r = 0; r < verdicts.Count; r++)
+        {
+            var v = verdicts[r];
+            grid.RowDefinitions.Add(new RowDefinition());
+            var name = new TextBlock { Text = v.Column, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") };
+            var scoreBrush = v.Score >= 80 ? Ant.Success : v.Score >= 40 ? Ant.Warn : Ant.Error;
+            var score = new TextBlock { Text = $"{v.Score}/100", FontSize = AntTokens.FontMinor, Foreground = scoreBrush };
+            var strategy = new TextBlock { Text = v.SuggestedStrategy, FontSize = AntTokens.FontMinor };
+            var issues = new TextBlock
+            {
+                Text = v.Issues.Count > 0 ? string.Join("；", v.Issues) : "—",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            };
+            var cells = new UIElement[] { name, score, strategy, issues };
+            for (int c = 0; c < 4; c++)
+            {
+                var cell = new Border { Padding = new Thickness(0, 4, 0, 4), Child = cells[c] };
+                Grid.SetColumn(cell, c);
+                Grid.SetRow(cell, r + 1);
+                grid.Children.Add(cell);
+            }
+        }
+        report.Children.Add(grid);
         status.Text = "评估完成。";
         await Task.CompletedTask;
     }
@@ -183,6 +246,31 @@ public static class ShardKeyEvaluatorDialog
         int shard = ShardKeyEvaluator.HashRoute(key, shardCount);
         AddSection(report, "哈希路由预演");
         AddLine(report, $"键值 {key} → 分片 {shard}（共 {shardCount} 个分片，下标从 0 起）");
+        // 发现308原型：落点带——分片格一字排开，命中格主色高亮
+        var band = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(0, 4, 0, 0) };
+        for (int i = 0; i < shardCount && i < 16; i++)
+        {
+            bool hit = i == shard;
+            band.Children.Add(new Border
+            {
+                Width = 28,
+                Height = 24,
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+                Background = hit ? (Brush?)Ant.Primary : (Brush?)Ant.Bg,
+                BorderThickness = new Thickness(1),
+                BorderBrush = hit ? Ant.Primary : Ant.Border,
+                Child = new TextBlock
+                {
+                    Text = i.ToString(),
+                    FontSize = AntTokens.FontCaption,
+                    Foreground = hit ? Ant.OnPrimary : Ant.TextSub,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            });
+        }
+        report.Children.Add(band);
+        if (shardCount > 16) AddLine(report, $"（仅展示前 16 个分片格，共 {shardCount} 片）");
         status.Text = "哈希路由完成。";
         await Task.CompletedTask;
     }
