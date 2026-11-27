@@ -125,6 +125,7 @@ feature-level coverage account:
 [U088i] 巡检-对账结果留证 => pass
 [U088j] 巡检-对账收场 => pass
 [U088k] 巡检-诊断中心结果态 => pass
+[U088l0] 巡检-切体检页签 => pass
 [U088l] 巡检-开始诊断点击 => pass
 [U088m] 巡检-诊断结果留证 => pass
 [U088n] 巡检-诊断收场 => pass
