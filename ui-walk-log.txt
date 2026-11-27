@@ -1,159 +1,159 @@
 probe quiet-watch start (10s, no UIA)
 probe quiet-watch done
-shot shot-01-start.png 46210 bytes
+shot shot-01-start.png 46195 bytes
 coverage: 30 named elements in main window
-shot sweep-U000.png 46210 bytes
+shot sweep-U000.png 46195 bytes
 coverage-func U000 巡检-主窗口初始态（欢迎页） => pass
-shot sweep-U001.png 62633 bytes
+shot sweep-U001.png 62612 bytes
 coverage-func U001 巡检-新建连接对话框 => pass
-shot sweep-U002.png 61902 bytes
+shot sweep-U002.png 61877 bytes
 coverage-func U002 巡检-连接对话框引擎切换MySQL => pass
-shot sweep-U003.png 62021 bytes
+shot sweep-U003.png 61997 bytes
 coverage-func U003 巡检-连接对话框引擎切换PostgreSQL => pass
-shot sweep-U004.png 61930 bytes
+shot sweep-U004.png 61907 bytes
 coverage-func U004 巡检-连接对话框引擎切换SQLServer => pass
-shot sweep-U005.png 62002 bytes
+shot sweep-U005.png 61961 bytes
 coverage-func U005 巡检-连接对话框引擎切换MongoDB => pass
-shot sweep-U006.png 61810 bytes
+shot sweep-U006.png 61767 bytes
 coverage-func U006 巡检-连接对话框引擎切换Redis => pass
-shot sweep-U007.png 46570 bytes
+shot sweep-U007.png 46536 bytes
 coverage-func U007 巡检-连接对话框收场 => pass
-shot sweep-U007a.png 61692 bytes
+shot sweep-U007a.png 61650 bytes
 coverage-func U007a 巡检-新建连接对话框（建连） => pass
-shot sweep-U007b.png 64571 bytes
+shot sweep-U007b.png 64529 bytes
 coverage-func U007b 巡检-连接选择SQLite引擎 => pass
-shot sweep-U007c.png 64121 bytes
+shot sweep-U007c.png 64087 bytes
 coverage-func U007c 巡检-连接填写名称 => pass
-shot sweep-U007d.png 66160 bytes
+shot sweep-U007d.png 66124 bytes
 coverage-func U007d 巡检-连接填写数据库文件 => pass
-shot sweep-U007e.png 48151 bytes
+shot sweep-U007e.png 48123 bytes
 coverage-func U007e 巡检-连接保存 => pass
-shot sweep-U010.png 48085 bytes
+shot sweep-U010.png 48056 bytes
 coverage-func U010 巡检-展开连接 => pass
-shot sweep-U011.png 57331 bytes
+shot sweep-U011.png 57339 bytes
 coverage-func U011 巡检-展开数据库 => pass
-shot sweep-U012.png 61566 bytes
+shot sweep-U012.png 61577 bytes
 coverage-func U012 巡检-选中表节点 => pass
-shot sweep-U013.png 63850 bytes
+shot sweep-U013.png 64319 bytes
 coverage-func U013 巡检-查看数据页签 => pass
-shot sweep-U014.png 61498 bytes
+shot sweep-U014.png 64319 bytes
 coverage-func U014 巡检-表数据页签工具栏 => pass
-step U015 巡检-表结构按钮 => miss : target not found
-coverage-func U015 巡检-表结构按钮 => miss
-shot sweep-U016.png 61498 bytes
+shot sweep-U015.png 58964 bytes
+coverage-func U015 巡检-表结构按钮 => pass
+shot sweep-U016.png 58964 bytes
 coverage-func U016 巡检-表结构收场 => pass
-step U017a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U017a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U017 巡检-表单视图按钮 => miss : target not found
-coverage-func U017 巡检-表单视图按钮 => miss
-shot sweep-U018.png 61467 bytes
+shot sweep-U017a.png 63284 bytes
+coverage-func U017a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U017.png 59786 bytes
+coverage-func U017 巡检-表单视图按钮 => pass
+shot sweep-U018.png 60598 bytes
 coverage-func U018 巡检-表单视图收场 => pass
 step U019 巡检-拟真数据按钮 => miss : target not found
 coverage-func U019 巡检-拟真数据按钮 => miss
-shot sweep-U020.png 61467 bytes
+shot sweep-U020.png 60591 bytes
 coverage-func U020 巡检-拟真数据收场 => pass
-step U021a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U021a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U021 巡检-粘贴数据按钮 => miss : target not found
-coverage-func U021 巡检-粘贴数据按钮 => miss
-shot sweep-U022.png 61488 bytes
+shot sweep-U021a.png 65786 bytes
+coverage-func U021a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U021.png 59778 bytes
+coverage-func U021 巡检-粘贴数据按钮 => pass
+shot sweep-U022.png 60588 bytes
 coverage-func U022 巡检-粘贴数据收场 => pass
-shot sweep-U023.png 71487 bytes
+shot sweep-U023.png 72747 bytes
 coverage-func U023 巡检-表设计器（列） => pass
-shot sweep-U024.png 71487 bytes
+shot sweep-U024.png 72747 bytes
 coverage-func U024 巡检-表设计器收场 => pass
-shot sweep-U030.png 75050 bytes
+shot sweep-U030.png 56618 bytes
 coverage-func U030 巡检-新建查询页签 => pass
-shot sweep-U031.png 75050 bytes
+shot sweep-U031.png 56618 bytes
 coverage-func U031 巡检-查询页工具栏全貌 => pass
-step U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => miss : target not found
-coverage-func U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => miss
-step U032 巡检-导出CSV按钮 => miss : target not found
-coverage-func U032 巡检-导出CSV按钮 => miss
-shot sweep-U033.png 75067 bytes
+shot sweep-U032open.png 60111 bytes
+coverage-func U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
+shot sweep-U032.png 56041 bytes
+coverage-func U032 巡检-导出CSV按钮 => pass
+shot sweep-U033.png 56041 bytes
 coverage-func U033 巡检-导出CSV收场 => pass
-step U034a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U034a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U034open 巡检-导出菜单展开（D⑤ 收一个菜单） => miss : target not found
-coverage-func U034open 巡检-导出菜单展开（D⑤ 收一个菜单） => miss
-step U034 巡检-导出INSERT按钮 => miss : target not found
-coverage-func U034 巡检-导出INSERT按钮 => miss
-shot sweep-U035.png 75073 bytes
+shot sweep-U034a.png 59827 bytes
+coverage-func U034a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U034open.png 60111 bytes
+coverage-func U034open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
+shot sweep-U034.png 56041 bytes
+coverage-func U034 巡检-导出INSERT按钮 => pass
+shot sweep-U035.png 56041 bytes
 coverage-func U035 巡检-导出INSERT收场 => pass
-step U036 巡检-导出更多菜单 => miss : target not found
-coverage-func U036 巡检-导出更多菜单 => miss
-shot sweep-U037.png 75073 bytes
+shot sweep-U036.png 60111 bytes
+coverage-func U036 巡检-导出更多菜单 => pass
+shot sweep-U037.png 56060 bytes
 coverage-func U037 巡检-导出更多收场 => pass
-step U038a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U038a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U038 巡检-查询收藏 => miss : target not found
-coverage-func U038 巡检-查询收藏 => miss
-shot sweep-U039.png 75071 bytes
+shot sweep-U038a.png 59847 bytes
+coverage-func U038a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U038.png 67784 bytes
+coverage-func U038 巡检-查询收藏 => pass
+shot sweep-U039.png 56060 bytes
 coverage-func U039 巡检-收藏收场 => pass
-step U040a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U040a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U040 巡检-查询历史 => miss : target not found
-coverage-func U040 巡检-查询历史 => miss
-shot sweep-U041.png 75050 bytes
+shot sweep-U040a.png 59847 bytes
+coverage-func U040a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U040.png 66984 bytes
+coverage-func U040 巡检-查询历史 => pass
+shot sweep-U041.png 56060 bytes
 coverage-func U041 巡检-历史收场 => pass
-step U042a 巡检-更多菜单展开（B⑥ 低频收组） => miss : target not found
-coverage-func U042a 巡检-更多菜单展开（B⑥ 低频收组） => miss
-step U042 巡检-报表 => miss : target not found
-coverage-func U042 巡检-报表 => miss
-shot sweep-U043.png 75050 bytes
+shot sweep-U042a.png 59847 bytes
+coverage-func U042a 巡检-更多菜单展开（B⑥ 低频收组） => pass
+shot sweep-U042.png 56060 bytes
+coverage-func U042 巡检-报表 => pass
+shot sweep-U043.png 56060 bytes
 coverage-func U043 巡检-报表收场 => pass
 step U044 巡检-设计辅助 => miss : target not found
 coverage-func U044 巡检-设计辅助 => miss
-shot sweep-U045.png 75069 bytes
+shot sweep-U045.png 56063 bytes
 coverage-func U045 巡检-设计辅助收场 => pass
-step U046a 巡检-编辑器右键打开菜单 => miss : mouse target not found
-coverage-func U046a 巡检-编辑器右键打开菜单 => miss
-step U046 巡检-编辑器右键菜单 => miss : menu item not found: 美化 SQL
-coverage-func U046 巡检-编辑器右键菜单 => miss
-shot sweep-U047.png 75069 bytes
+shot sweep-U046a.png 67712 bytes
+coverage-func U046a 巡检-编辑器右键打开菜单 => pass
+shot sweep-U046.png 56711 bytes
+coverage-func U046 巡检-编辑器右键菜单 => pass
+shot sweep-U047.png 56711 bytes
 coverage-func U047 巡检-右键菜单收场 => pass
-shot tour-conn-01.png 71166 bytes
-shot tour-conn-02.png 76058 bytes
-shot tour-conn-03.png 74440 bytes
-shot tour-conn-04.png 75174 bytes
-shot tour-conn-05.png 67843 bytes
-shot tour-conn-06.png 67912 bytes
-shot tour-conn-07.png 66263 bytes
-shot tour-conn-08.png 74561 bytes
-shot tour-conn-09.png 96839 bytes
-shot tour-conn-10.png 74892 bytes
-shot tour-conn-11.png 65826 bytes
-shot tour-conn-12.png 65840 bytes
-shot tour-conn-13.png 78613 bytes
-shot tour-conn-14.png 67334 bytes
-shot tour-conn-15.png 61939 bytes
-shot tour-conn-16.png 65148 bytes
-shot tour-conn-17.png 71144 bytes
-shot tour-conn-18.png 72982 bytes
-shot tour-conn-19.png 64480 bytes
-shot tour-conn-20.png 68002 bytes
-shot tour-conn-21.png 59034 bytes
+shot tour-conn-01.png 63708 bytes
+shot tour-conn-02.png 62548 bytes
+shot tour-conn-03.png 67174 bytes
+shot tour-conn-04.png 61652 bytes
+shot tour-conn-05.png 67024 bytes
+shot tour-conn-06.png 67093 bytes
+shot tour-conn-07.png 65427 bytes
+shot tour-conn-08.png 75905 bytes
+shot tour-conn-09.png 93606 bytes
+shot tour-conn-10.png 72424 bytes
+shot tour-conn-11.png 65006 bytes
+shot tour-conn-12.png 65023 bytes
+shot tour-conn-13.png 75861 bytes
+shot tour-conn-14.png 65226 bytes
+shot tour-conn-15.png 59790 bytes
+shot tour-conn-16.png 63075 bytes
+shot tour-conn-17.png 71135 bytes
+shot tour-conn-18.png 65771 bytes
+shot tour-conn-19.png 63042 bytes
+shot tour-conn-20.png 69030 bytes
+shot tour-conn-21.png 59257 bytes
 tour done: OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 分片向导 ;; OK 一键诊断 ;; OK 高危 SQL 拦截 ;; OK 上线审查 ;; OK 任务中心 ;; OK 流式开关 ;; OK 读路由预演 ;; OK 热点检测 ;; OK 再均衡规划 ;; OK 分片键评估 ;; OK 迁移续传 ;; OK 团队合并 ;; OK 共享包 ;; OK 智能工具 ;; OK 看板管理 ;; OK 服务器监控 ;; OK 命令监控 ;; OK 仪表板
-shot sweep-U050.png 70395 bytes
+shot sweep-U050.png 52318 bytes
 coverage-func U050 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
-shot sweep-U058.png 73683 bytes
+shot sweep-U058.png 66506 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
-shot sweep-U059.png 70792 bytes
+shot sweep-U059.png 52710 bytes
 coverage-func U059 巡检-数据同步收场 => pass
-shot sweep-U064.png 50370 bytes
+shot sweep-U064.png 50409 bytes
 coverage-func U064 巡检-ER图 => pass
-shot sweep-U065.png 70796 bytes
+shot sweep-U065.png 52706 bytes
 coverage-func U065 巡检-ER图收场 => pass
-shot sweep-U066.png 71070 bytes
+shot sweep-U066.png 69246 bytes
 coverage-func U066 巡检-备份恢复向导 => pass
-shot sweep-U067.png 70806 bytes
+shot sweep-U067.png 52692 bytes
 coverage-func U067 巡检-备份收场 => pass
-shot sweep-U078.png 254027 bytes
+shot sweep-U078.png 254758 bytes
 coverage-func U078 巡检-在库中搜索 => pass
 APP EXITED at step U078 exitcode=-1073741189
-shot shot-99-death-U078.png 254027 bytes
-EVT 11/27/2026 06:39:21 [Application Error] Faulting application name: TaoDBM.exe, version: 2.0.0.0, time stamp: 0x6ae30000 | Faulting module name: CoreMessagingXP.dll, version: 12.6.5.0, time stamp: 0x6ae54998 | Exception code: 0xc000027b | Fault offset: 0x00000000000adf5e | Faulting process id: 0x1DE4 | Faulting application start time: 0x1DD7E37AB22001B | Faulting application path: C:\Program Files\TaoDBM\TaoDBM.exe | Faulting module path: C:\Program Files\TaoDBM\CoreMessagingXP.dll | Report Id: a81cdaa1-568a-495f-833a-82894c928974 | Faulting package full name:  | Faulting package-relative application ID: 
-EVT 11/27/2026 06:22:12 [MsiInstaller] Ending a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 212.
-EVT 11/27/2026 06:22:12 [MsiInstaller] Windows Installer installed the product. Product Name: TaoDBM. Product Version: 2.0.0. Product Language: 0. Manufacturer: TaoDBM. Installation success or error status: 0.
-EVT 11/27/2026 06:22:12 [MsiInstaller] Product: TaoDBM -- Installation completed successfully.
-EVT 11/27/2026 06:22:06 [MsiInstaller] Beginning a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 212.
+shot shot-99-death-U078.png 254738 bytes
+EVT 11/27/2026 08:30:08 [Application Error] Faulting application name: TaoDBM.exe, version: 2.0.0.0, time stamp: 0x6ae30000 | Faulting module name: CoreMessagingXP.dll, version: 12.6.5.0, time stamp: 0x6ae54998 | Exception code: 0xc000027b | Fault offset: 0x00000000000adf5e | Faulting process id: 0x1644 | Faulting application start time: 0x1DD7E47AF61AE27 | Faulting application path: C:\Program Files\TaoDBM\TaoDBM.exe | Faulting module path: C:\Program Files\TaoDBM\CoreMessagingXP.dll | Report Id: b16cc619-addf-452e-9254-5504bac59ebc | Faulting package full name:  | Faulting package-relative application ID: 
+EVT 11/27/2026 08:16:53 [MsiInstaller] Ending a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 9004.
+EVT 11/27/2026 08:16:53 [MsiInstaller] Windows Installer installed the product. Product Name: TaoDBM. Product Version: 2.0.0. Product Language: 0. Manufacturer: TaoDBM. Installation success or error status: 0.
+EVT 11/27/2026 08:16:53 [MsiInstaller] Product: TaoDBM -- Installation completed successfully.
+EVT 11/27/2026 08:16:46 [MsiInstaller] Beginning a Windows Installer transaction: D:\a\TaoDBM2.0\TaoDBM2.0\out\TaoDBM-2.0.0-x64.msi. Client Process Id: 9004.
