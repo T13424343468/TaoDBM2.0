@@ -75,9 +75,10 @@ public static class ManualDialog
             scroll.ChangeView(null, 0, null);
         };
 
+        // 原型212：标题带版本与离线口径
         var dlg = new ContentDialog
         {
-            Title = "操作手册（F1 随时打开）",
+            Title = "用户手册 v2.0.0 · 离线内置（F1 随时打开）",
             Content = grid,
             CloseButtonText = "关闭",
             XamlRoot = owner.Content.XamlRoot,

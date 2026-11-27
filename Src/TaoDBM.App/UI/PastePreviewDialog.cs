@@ -107,12 +107,20 @@ public static class PastePreviewDialog
             preview.AppendLine(string.Join(" | ", cells));
         }
 
+        // 原型207：统计徽标行——将插入行数 / 已映射列 / 未映射列
+        var statLine = new TextBlock
+        {
+            Text = $"将插入 {srcRows.Count:N0} 行 · 已映射 {tCols.Count - unmatched} 列 · 未映射 {unmatched} 列（存 NULL）",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.Text,
+        };
         var dlg = new ContentDialog
         {
             Title = $"粘贴数据到 {table}",
             Content = new StackPanel { Spacing = 8,
                 Children = {
-                    new TextBlock { Text = $"{note} 目标 {tCols.Count} 列，未匹配列将存 NULL（{unmatched} 列）。预览前 {Math.Min(20, srcRows.Count)} 行：", TextWrapping = TextWrapping.Wrap, FontSize = AntTokens.FontMinor },
+                    statLine,
+                    new TextBlock { Text = $"{note} 预览前 {Math.Min(20, srcRows.Count)} 行：", TextWrapping = TextWrapping.Wrap, FontSize = AntTokens.FontMinor },
                     new ScrollViewer { Content = new TextBlock { Text = preview.ToString(), FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), FontSize = AntTokens.FontMinor }, MaxHeight = 300 },
                 } },
             PrimaryButtonText = $"插入 {srcRows.Count} 行",

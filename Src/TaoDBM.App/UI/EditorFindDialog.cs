@@ -12,9 +12,10 @@ public static class EditorFindDialog
     {
         var findBox = new TextBox { PlaceholderText = "查找内容", MinWidth = 320 };
         var replBox = new TextBox { PlaceholderText = "替换为（可留空）", MinWidth = 320 };
-        var rxCheck = new CheckBox { Content = "正则表达式", Margin = new Thickness(0, 4, 12, 0) };
-        var wordCheck = new CheckBox { Content = "全字匹配", Margin = new Thickness(0, 4, 12, 0) };
-        var caseCheck = new CheckBox { Content = "区分大小写", Margin = new Thickness(0, 4, 0, 0) };
+        // 原型208：开关用短标签（Aa 大小写 / ＊ 全词 / .* 正则）
+        var rxCheck = new CheckBox { Content = ".* 正则", Margin = new Thickness(0, 4, 12, 0) };
+        var wordCheck = new CheckBox { Content = "＊ 全词", Margin = new Thickness(0, 4, 12, 0) };
+        var caseCheck = new CheckBox { Content = "Aa 大小写", Margin = new Thickness(0, 4, 0, 0) };
         var optRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
         optRow.Children.Add(rxCheck);
         optRow.Children.Add(wordCheck);
@@ -58,7 +59,7 @@ public static class EditorFindDialog
                 var lines = SqlFindReplace.Preview(tab.EditorText, findBox.Text, Opt());
                 preview.Text = hits.Count == 0
                     ? "没有找到匹配。"
-                    : $"共 {hits.Count} 处匹配，预览：\n" + string.Join("\n", lines.Select(l => "· " + (l.Length > 90 ? l[..90] + "…" : l)));
+                    : $"{hits.Count} 处匹配，预览：\n" + string.Join("\n", lines.Select(l => "· " + (l.Length > 90 ? l[..90] + "…" : l)));   // 原型208：n 处匹配口径
             }
             catch (ArgumentException)
             {

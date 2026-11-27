@@ -75,6 +75,8 @@ public class TableDesignerTab : Grid
     };
     private readonly TextBlock _status = new() { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
     private TextBlock _diffHint = new();   // 格5：删除列红字提示
+    private Microsoft.UI.Xaml.Shapes.Ellipse? _unsavedDot;   // 原型201：未保存点
+    private TextBlock? _structSummary;   // 原型201：状态栏结构统计
     private readonly Button _runBtn = new()
     {
         Content = "执行",
@@ -96,13 +98,34 @@ public class TableDesignerTab : Grid
         _existingSpecs = existing ?? new List<ColumnSpec>();
 
         Background = Ant.Bg;
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 头部面包屑（原型201）
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 工具栏
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });   // 分区
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });   // SQL 预览
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 状态行
 
+        // 原型201：头部路径面包屑 + 未保存点（对齐布局批原型头部 sub 行）
+        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(16, 10, 16, 2) };
+        head.Children.Add(new TextBlock
+        {
+            Text = $"表设计器 · {_db}{(table != null ? " / " + table : "")}",
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = AntTokens.FontBody,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = Ant.Text,
+        });
+        _unsavedDot = new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Width = 7, Height = 7, Margin = new Thickness(0, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Fill = Ant.Warn, Visibility = Visibility.Collapsed,
+        };
+        head.Children.Add(_unsavedDot);
+        Children.Add(head);
+        SetRow(head, 0);
+
         // 工具栏：表名 + 引擎口径 + 执行
-        var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(10, 8, 10, 8) };
+        var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(16, 6, 16, 8) };
         _nameBox.Text = table ?? "";
         if (table != null) _nameBox.IsReadOnly = true;   // 改表不改名，对齐 Navicat
         bar.Children.Add(new TextBlock { Text = "表名", VerticalAlignment = VerticalAlignment.Center });
@@ -116,7 +139,7 @@ public class TableDesignerTab : Grid
         });
         bar.Children.Add(_runBtn);
         Children.Add(bar);
-        SetRow(bar, 0);
+        SetRow(bar, 1);
 
         // 三分区（Navicat 口径：列 / 索引 / 外键）
         if (!_isRelational)
@@ -128,7 +151,7 @@ public class TableDesignerTab : Grid
                 Text = "仅关系型数据库支持可视化建表 / 改表。",
             };
             Children.Add(nosql);
-            SetRow(nosql, 1);
+            SetRow(nosql, 2);
             _runBtn.IsEnabled = false;
             return;
         }
@@ -138,7 +161,7 @@ public class TableDesignerTab : Grid
         pivot.Items.Add(MakeSection("索引", _idxHost, "＋ 加索引", () => AddIdxRow(null)));
         pivot.Items.Add(MakeSection("外键", _fkHost, "＋ 加外键", () => AddFkRow(null)));
         Children.Add(pivot);
-        SetRow(pivot, 1);
+        SetRow(pivot, 2);
 
         if (existing is { Count: > 0 })
             // 发现74/75：旧列的自增 / 默认值 / 注释原样回填，改表 MODIFY 带回不再静默丢
@@ -165,10 +188,31 @@ public class TableDesignerTab : Grid
         previewPanel.Children.Add(_diffHint);
         previewPanel.Children.Add(_preview);
         Children.Add(previewPanel);
-        SetRow(previewPanel, 2);
+        SetRow(previewPanel, 3);
+
+        // 原型201：状态栏（连接·结构统计·右侧引擎字符集口径）
+        var statusbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16, Padding = new Thickness(16, 7, 16, 7) };
+        statusbar.Background = Ant.HeadBg;
+        statusbar.Children.Add(new TextBlock { Text = $"{_prov.EngineName} · {_db}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, VerticalAlignment = VerticalAlignment.Center });
+        _structSummary = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, VerticalAlignment = VerticalAlignment.Center };
+        statusbar.Children.Add(_structSummary);
+        var right = new TextBlock
+        {
+            Text = $"{_prov.EngineName}",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 0),
+        };
+        right.Opacity = 0.9;
+        statusbar.Children.Add(new ContentPresenter { Content = right, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
+        var statusGrid = new Grid();
+        statusGrid.Children.Add(statusbar);
+        Children.Add(statusGrid);
+        SetRow(statusGrid, 4);
 
         Children.Add(_status);
-        SetRow(_status, 3);
+        SetRow(_status, 5);
         _status.Margin = new Thickness(12, 2, 12, 8);
 
         _runBtn.Click += (_, _) => _ = RunAsync();
@@ -617,6 +661,21 @@ public class TableDesignerTab : Grid
     {
         var (_, _, text) = Build();
         _preview.Text = text;
+        RefreshChrome();
+    }
+
+    /// <summary>原型201：头部未保存点 + 状态栏结构统计随编辑刷新。</summary>
+    private void RefreshChrome()
+    {
+        if (_unsavedDot != null)
+            _unsavedDot.Visibility = _table != null ? Visibility.Visible : Visibility.Collapsed;
+        if (_structSummary != null)
+        {
+            int cols = _colRows.Count;
+            int idx = _idxRows.Count;
+            int fk = _fkRows.Count;
+            _structSummary.Text = $"{cols} 列 · {idx} 索引 · {fk} 外键";
+        }
     }
 
     // ---------- 执行 ----------

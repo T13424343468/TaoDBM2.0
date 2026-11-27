@@ -83,10 +83,20 @@ public static class BlobEditorDialog
         }
         else img.Children.Add(new TextBlock { Text = "该值不是 PNG/JPG/BMP 图像（魔数不符），无法预览。", Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
 
+        // 原型211：头部信息行——大小/探测类型（魔数）/修改未存提示
+        string probe = initialBytes is { Length: > 0 }
+            ? (IsImageBytes(initialBytes) ? "图像（魔数 " + Convert.ToHexString(initialBytes[..4]) + "）" : "二进制")
+            : "空值";
+        var headInfo = new TextBlock
+        {
+            Text = $"大小 {initialBytes?.Length ?? 0:N0} B · 探测类型 {probe}",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+        };
         var dlg = new ContentDialog
         {
             Title = $"大字段 · {col.Name}（{col.DataType}）",
-            Content = new StackPanel { Spacing = 8, Children = { tabs } },
+            Content = new StackPanel { Spacing = 8, Children = { headInfo, tabs } },
             PrimaryButtonText = "保存",
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,

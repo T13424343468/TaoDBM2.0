@@ -19,8 +19,15 @@ public static class DbSearchDialog
         var results = new ListView { MaxHeight = 360, SelectionMode = ListViewSelectionMode.Single };
         var cancelCts = new CancellationTokenSource();
 
+        // 原型210：范围徽标行（库·表·深度口径）——打开时填连接概要
+        var scope = new TextBlock
+        {
+            Text = $"{info.Name} · 深度含列/索引/存储过程",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+        };
         var content = new StackPanel { Spacing = 10, MinWidth = 560,
-            Children = { kw, new Button { Content = "开始搜索", HorizontalAlignment = HorizontalAlignment.Left }, progress, status, results } };
+            Children = { scope, kw, new Button { Content = "开始搜索", HorizontalAlignment = HorizontalAlignment.Left }, progress, status, results } };
         var dlg = new ContentDialog
         {
             Title = $"在库中搜索 · {db}",

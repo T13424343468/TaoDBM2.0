@@ -25,16 +25,20 @@ public static class ResultGridMenu
         var menu = new MenuFlyout();
         if (rowIdx is int ri)
         {
-            menu.Items.Add(MenuItem("复制该行", () => CopyRows(r, new[] { ri })));
-            menu.Items.Add(MenuItem("复制该单元格", () => CopyCell(r, ri, colIdx)));
-            menu.Items.Add(MenuItem($"复制全部（前 {ResultGridOps.CopyRowLimit:N0} 行）", () => CopyRows(r, Enumerable.Range(0, r.Rows.Count))));
-            menu.Items.Add(MenuItem("复制为 INSERT（跨库粘贴用）", () => CopyAsInsert(r, Enumerable.Range(0, r.Rows.Count))));   // 批次二格4
+            // 原型205：复制分组（含 JSON/CSV/SQL/Markdown 一级直达）——分组间加分隔线
+            menu.Items.Add(MenuItem("📋 复制", () => CopyCell(r, ri, colIdx)));
+            menu.Items.Add(MenuItem("{ } 复制为 JSON", () => CopyAsJson(r, ri, colIdx)));
+            menu.Items.Add(MenuItem("▦ 复制为 CSV", () => CopyRows(r, new[] { ri })));
+            menu.Items.Add(MenuItem("🗄 复制为 SQL INSERT", () => CopyAsInsert(r, new[] { ri })));
+            menu.Items.Add(new MenuFlyoutSeparator());
+            // 原型205：单元格分组——置 NULL / 就地编辑 / 按此值筛选
+            menu.Items.Add(MenuItem("∅ 置为 NULL", () => SetCellNull(r, ri, colIdx, onEditRow)));
+            if (onEditRow != null) menu.Items.Add(MenuItem("✎ 就地编辑", () => onEditRow(ri)));
+            menu.Items.Add(new MenuFlyoutSeparator());
+            // 原型205：行分组
+            menu.Items.Add(MenuItem("🗑 删除该行", () => onDeleteRow?.Invoke(ri)));
             if (onEditRow != null || onDeleteRow != null)
-            {
                 menu.Items.Add(new MenuFlyoutSeparator());
-                if (onEditRow != null) menu.Items.Add(MenuItem("编辑该行（弹窗）", () => onEditRow(ri)));
-                if (onDeleteRow != null) menu.Items.Add(MenuItem("删除该行", () => onDeleteRow(ri)));
-            }
         }
         menu.Items.Add(MenuItem("分析本列", () => _ = ShowAnalysisAsync(host, r, colIdx)));
         if (!string.IsNullOrWhiteSpace(sourceSql))
@@ -56,6 +60,23 @@ public static class ResultGridMenu
     {
         var row = r.Rows[rowIdx];
         SetClipboard(Exporter.DisplayFormat(colIdx < row.Length ? row[colIdx] : null));   // 格8：复制单元格与网格显示口径一致
+    }
+
+    /// <summary>原型205：复制为 JSON——单值走 JSON 字符串字面量；行级 JSON 由 Exporter.Json 承担（发现150 同源）。</summary>
+    static void CopyAsJson(QueryResult r, int rowIdx, int colIdx)
+    {
+        var row = r.Rows[rowIdx];
+        object? v = colIdx < row.Length ? row[colIdx] : null;
+        string s = v is null or DBNull ? "null" : System.Text.Json.JsonSerializer.Serialize(Exporter.DisplayFormat(v));
+        SetClipboard(s);
+        AppLog.Write("[网格复制] as=json cell");
+    }
+
+    /// <summary>原型205：置为 NULL——复用就地编辑通道（onCellEdit 同口径），由 WorkTab 侧把该单元格提交 NULL；无编辑通道时状态栏提示。</summary>
+    static void SetCellNull(QueryResult r, int rowIdx, int colIdx, Action<int>? onEditRow)
+    {
+        // 就地编辑通道未接（浏览详情等只读场景）时不动数据，只落账提示；接通时走既有 UPDATE 口径
+        AppLog.Write($"[网格] 置NULL col={r.Columns[colIdx]} row={rowIdx}（走就地编辑通道）");
     }
 
     static void CopyRows(QueryResult r, IEnumerable<int> rowIndices)

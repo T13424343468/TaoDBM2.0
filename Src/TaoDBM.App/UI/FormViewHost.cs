@@ -19,12 +19,13 @@ public sealed class FormViewHost : StackPanel
     {
         _tab = tab;
         Spacing = 8;
+        // 原型203：导航条带位置徽标（⏮ ◀ n / N ▶ ⏭ 口径）
         var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         Button B(string text, string id, Action click) { var b = new Button { Content = text }; Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(b, id); b.Click += (_, _) => click(); return b; }
-        nav.Children.Add(B("首行", "FormFirst", () => Go(0)));
-        nav.Children.Add(B("上一行", "FormPrev", () => Go(_rowIdx - 1)));
-        nav.Children.Add(B("下一行", "FormNext", () => Go(_rowIdx + 1)));
-        nav.Children.Add(B("末行", "FormLast", () => Go(Math.Max(0, Rows.Count - 1))));
+        nav.Children.Add(B("⏮", "FormFirst", () => Go(0)));
+        nav.Children.Add(B("◀", "FormPrev", () => Go(_rowIdx - 1)));
+        nav.Children.Add(B("▶", "FormNext", () => Go(_rowIdx + 1)));
+        nav.Children.Add(B("⏭", "FormLast", () => Go(Math.Max(0, Rows.Count - 1))));
         nav.Children.Add(B("编辑本行", "FormEdit", () => _ = _tab.EditRowAt(_rowIdx)));
         nav.Children.Add(_pos);
         Children.Add(nav);
@@ -52,7 +53,7 @@ public sealed class FormViewHost : StackPanel
             f.SetEnabled(false);   // 表单视图只读浏览；编辑走「编辑本行」既有弹层，口径不变
             _fields.Children.Add(f.Control);
         }
-        _pos.Text = $"第 {_rowIdx + 1} / {rows.Count} 行";
+        _pos.Text = $"{_rowIdx + 1} / {rows.Count:N0}";   // 原型203：位置徽标口径
         AppLog.Write($"[表单视图] 行={_rowIdx + 1}");
     }
 

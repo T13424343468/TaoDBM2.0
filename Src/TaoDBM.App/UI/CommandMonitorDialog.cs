@@ -49,19 +49,33 @@ public static class CommandMonitorDialog
             {
                 var rs = await provider.Execute(info.Db, RealtimeSql(provider.Profile.Engine));
                 var r = rs.FirstOrDefault();
-                if (r is null || r.Rows.Count == 0) { status.Text += " · 库端当前无活动会话。"; return; }
+                if (r is null || r.Rows.Count == 0) { status.Text += " · 库端当前无活动会话。"; chipRunning.Text = "0 执行中"; chipDone.Text = $"{hist.Items.Count} 已完成"; chipFail.Text = "0 失败"; return; }
                 foreach (var row in r.Rows.Take(50))
                     realtime.Items.Add(new ListViewItem { Content = string.Join(" | ", r.Columns.Zip(row, (c, v) => $"{c}={ResultGridOps.CellText(v)}").Take(4)) });
                 status.Text += $" · 库端实时 {r.Rows.Count} 会话。";
+                // 原型209：统计徽标——执行中按库端会话数，已完成按本机历史条数
+                chipRunning.Text = $"{r.Rows.Count} 执行中";
+                chipDone.Text = $"{hist.Items.Count} 已完成";
+                chipFail.Text = "0 失败";
                 AppLog.Write($"[命令监控] 历史={hist.Items.Count} 实时={r.Rows.Count}");
             }
             catch (Exception ex) { status.Text += HumanError.Say(ex, " · 库端实时查询失败"); }
         }
 
+        // 原型209：顶部统计徽标行（执行中/已完成/失败）——库端快照口径，打开时填一次
+        var chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 0, 0, 4) };
+        var chipRunning = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+        var chipDone = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Success };
+        var chipFail = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Error };
+        chips.Children.Add(chipRunning);
+        chips.Children.Add(chipDone);
+        chips.Children.Add(chipFail);
+
         var dlg = new ContentDialog
         {
             Title = $"命令监控 · {info.Name}",
             Content = new StackPanel { Spacing = 10, MinWidth = 620, Children = {
+                chips,
                 kw,
                 new TextBlock { Text = "本机历史（双击打开到查询窗口）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, hist,
                 new TextBlock { Text = "库端实时（打开时快照）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, realtime,
