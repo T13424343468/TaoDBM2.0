@@ -112,6 +112,11 @@ public static class QueryRouter
                     bool capped = false;
                     long memBytes = 0;
                     bool memCapped = false;
+                    // 云测 11-27 两轮实锤（run 46009158635/46011556518 S20 簇，run346 同计划同矩阵全绿旁证）：
+                    // 稀疏行长查（递归 CTE 十万迭代出一行）512 行才让一次＝两次让出间纯计算 5120 万次迭代，
+                    // 慢机上一饿几十秒——停止钮 UIA 六秒找不到、点了 cancelled 落账超 20 秒窗，段超时被掐。
+                    // 让出改双口径：行数节奏保留（快产快消低开销），加时间节奏 40ms 必让，饿死量子与行产速脱钩
+                    var sinceYield = System.Diagnostics.Stopwatch.StartNew();
                     while (await reader.ReadAsync(ct))
                     {
                         ct.ThrowIfCancellationRequested();
@@ -124,7 +129,7 @@ public static class QueryRouter
                         rows++;
                         // 本地库快产快消时 ReadAsync 几乎全同步完成，await 连续同步续接会独占调用线程
                         //（UI 线程被饿死＝停止按钮点不动，#273 S20 崩溃共因）：定期让出消息泵，取消与交互才进得来
-                        if ((rows & 511) == 0) await Task.Yield();
+                        if ((rows & 511) == 0 || sinceYield.ElapsedMilliseconds >= 40) { await Task.Yield(); sinceYield.Restart(); }
                     }
                     Safe.Run(() => qr.Affected = reader.RecordsAffected, "读取受影响行数");
                     if (qr.Affected < 0) qr.Affected = 0;
