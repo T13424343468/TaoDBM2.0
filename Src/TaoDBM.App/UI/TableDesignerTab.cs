@@ -63,6 +63,13 @@ public class TableDesignerTab : Grid
     private readonly List<ColWidgets> _colRows = new();
     private readonly List<IdxWidgets> _idxRows = new();
     private readonly List<FkWidgets> _fkRows = new();
+    // 评分打回201补落：页签计数徽标 / 注释页签 / DDL 预览页签镜像 / 撤销重做栈（行级增删口径）
+    private TextBlock? _colTabBadge, _idxTabBadge, _fkTabBadge;
+    private TextBlock? _ddlMirror;
+    private TextBox? _tableComment;
+    private readonly List<TableDesign> _undo = new();
+    private int _undoPos = -1;
+    private bool _restoring;
 
     private readonly TextBox _nameBox = new() { PlaceholderText = "表名", MinWidth = 200, IsReadOnly = false };
     private readonly TextBox _preview = new()
@@ -100,6 +107,7 @@ public class TableDesignerTab : Grid
         Background = Ant.Bg;
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 头部面包屑（原型201）
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 工具栏
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // hint 条（评分打回201补落）
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });   // 分区
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });   // SQL 预览
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // 状态行
@@ -137,11 +145,39 @@ public class TableDesignerTab : Grid
             FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
         });
+        // 评分打回201补落：原型工具栏项——添加字段/索引/外键、撤销/重做、生成 DDL、对比线上结构
+        bar.Children.Add(ToolBtn("＋ 添加字段", "designer-add-col", () => { PushUndo(); AddColRow(null); }));
+        bar.Children.Add(ToolBtn("🔑 添加索引", "designer-add-idx", () => { PushUndo(); AddIdxRow(null); }));
+        bar.Children.Add(ToolBtn("🔗 添加外键", "designer-add-fk", () => { PushUndo(); AddFkRow(null); }));
+        bar.Children.Add(ToolBtn("↶ 撤销", "designer-undo", Undo));
+        bar.Children.Add(ToolBtn("↷ 重做", "designer-redo", Redo));
+        bar.Children.Add(ToolBtn("📋 生成 DDL", "designer-gen-ddl", GenDdlToClipboard));
+        bar.Children.Add(ToolBtn("⇄ 对比线上结构", "designer-diff-live", DiffLive));
         bar.Children.Add(_runBtn);
         Children.Add(bar);
         SetRow(bar, 1);
 
-        // 三分区（Navicat 口径：列 / 索引 / 外键）
+        // 评分打回201补落：hint 条——原型口径（行内编辑/智能校验/DDL 全属性），主色左边条
+        var hint = new Border
+        {
+            Margin = new Thickness(16, 0, 16, 6),
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+            BorderThickness = new Thickness(3, 1, 1, 1),
+            BorderBrush = Ant.Primary,
+            Child = new TextBlock
+            {
+                Text = "行内编辑：点击单元格直接编辑，Esc 取消、Enter 跳下一格；类型下拉带常用项记忆。智能校验：外键引用缺失、类型与长度不匹配即时行内标注，保存前逐条修复。DDL 全属性：MODIFY COLUMN 显式带注释/默认值/字符集，改表不抹掉库中原有列注释。",
+                FontSize = AntTokens.FontCaption,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            },
+        };
+        Children.Add(hint);
+        SetRow(hint, 2);
+
+        // 三分区（Navicat 口径：列 / 索引 / 外键）＋ 注释 / DDL 预览页签（评分打回201补落），页签带计数徽标
         if (!_isRelational)
         {
             var nosql = new TextBlock
@@ -151,17 +187,34 @@ public class TableDesignerTab : Grid
                 Text = "仅关系型数据库支持可视化建表 / 改表。",
             };
             Children.Add(nosql);
-            SetRow(nosql, 2);
+            SetRow(nosql, 3);
             _runBtn.IsEnabled = false;
             return;
         }
 
         var pivot = new Pivot { Margin = new Thickness(8, 0, 8, 0) };
-        pivot.Items.Add(MakeSection("列", _colHost, "＋ 加一列", () => AddColRow(null)));
-        pivot.Items.Add(MakeSection("索引", _idxHost, "＋ 加索引", () => AddIdxRow(null)));
-        pivot.Items.Add(MakeSection("外键", _fkHost, "＋ 加外键", () => AddFkRow(null)));
+        _colTabBadge = new TextBlock { FontSize = AntTokens.FontCaption, Foreground = Ant.Primary, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        _idxTabBadge = new TextBlock { FontSize = AntTokens.FontCaption, Foreground = Ant.Primary, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        _fkTabBadge = new TextBlock { FontSize = AntTokens.FontCaption, Foreground = Ant.Primary, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        pivot.Items.Add(MakeSection("列", _colHost, "＋ 加一列", () => AddColRow(null), _colTabBadge));
+        pivot.Items.Add(MakeSection("索引", _idxHost, "＋ 加索引", () => AddIdxRow(null), _idxTabBadge));
+        pivot.Items.Add(MakeSection("外键", _fkHost, "＋ 加外键", () => AddFkRow(null), _fkTabBadge));
+        // 注释页签：表注释（仅 MySQL 落 DDL），随编辑刷新预览
+        _tableComment = new TextBox
+        {
+            AcceptsReturn = true,
+            Height = 120,
+            PlaceholderText = "表注释（保存后随 DDL 落库；表级注释仅 MySQL 支持）",
+            Margin = new Thickness(4),
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(_tableComment, "designer-table-comment");
+        _tableComment.TextChanged += (_, _) => RefreshPreview();
+        pivot.Items.Add(new PivotItem { Header = "注释", Content = new ScrollViewer { Content = _tableComment, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        // DDL 预览页签：与下方 SQL 预览同源镜像，随编辑刷新
+        _ddlMirror = new TextBlock { FontFamily = new FontFamily("Consolas"), FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
+        pivot.Items.Add(new PivotItem { Header = "DDL 预览", Content = new ScrollViewer { Content = _ddlMirror, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(8) } });
         Children.Add(pivot);
-        SetRow(pivot, 2);
+        SetRow(pivot, 3);
 
         if (existing is { Count: > 0 })
             // 发现74/75：旧列的自增 / 默认值 / 注释原样回填，改表 MODIFY 带回不再静默丢
@@ -188,7 +241,7 @@ public class TableDesignerTab : Grid
         previewPanel.Children.Add(_diffHint);
         previewPanel.Children.Add(_preview);
         Children.Add(previewPanel);
-        SetRow(previewPanel, 3);
+        SetRow(previewPanel, 4);
 
         // 原型201：状态栏（连接·结构统计·右侧引擎字符集口径）
         var statusbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16, Padding = new Thickness(16, 7, 16, 7) };
@@ -209,24 +262,127 @@ public class TableDesignerTab : Grid
         var statusGrid = new Grid();
         statusGrid.Children.Add(statusbar);
         Children.Add(statusGrid);
-        SetRow(statusGrid, 4);
+        SetRow(statusGrid, 5);
 
         Children.Add(_status);
-        SetRow(_status, 5);
+        SetRow(_status, 6);
         _status.Margin = new Thickness(12, 2, 12, 8);
 
         _runBtn.Click += (_, _) => _ = RunAsync();
         RefreshPreview();
+        _undo.Add(Read());   // 撤销基线：打开时初始结构
+        _undoPos = 0;
     }
 
-    private static PivotItem MakeSection(string header, StackPanel host, string addText, Action add)
+    private static PivotItem MakeSection(string header, StackPanel host, string addText, Action add, TextBlock? badge = null)
     {
         var addBtn = new Button { Content = addText, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Margin = new Thickness(0, 0, 0, 6) };
         addBtn.Click += (_, _) => add();
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(addBtn);
         panel.Children.Add(host);
-        return new PivotItem { Header = header, Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+        // 评分打回201补落：页签计数徽标——头部＝名称＋计数（随 RefreshChrome 刷新）
+        object headObj = badge is null ? header : new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { new TextBlock { Text = header, VerticalAlignment = VerticalAlignment.Center }, badge },
+        };
+        return new PivotItem { Header = headObj, Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+    }
+
+    // ---------- 评分打回201补落：工具栏钮 / 撤销重做 / 生成 DDL / 对比线上结构 ----------
+
+    /// <summary>原型工具栏小钮：统一 AutomationId 供走查定位。</summary>
+    private static Button ToolBtn(string text, string autoId, Action click)
+    {
+        var b = new Button { Content = text, CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(b, autoId);
+        b.Click += (_, _) => click();
+        return b;
+    }
+
+    /// <summary>撤销栈：行级增删前压快照（单元格内编辑不进栈——口径见 Restore）。</summary>
+    private void PushUndo()
+    {
+        if (_restoring || _undoPos < 0) return;
+        var snap = Read();
+        if (_undoPos < _undo.Count - 1) _undo.RemoveRange(_undoPos + 1, _undo.Count - _undoPos - 1);
+        if (_undo.Count > 0 && UndoSame(_undo[_undoPos], snap)) return;
+        _undo.Add(snap);
+        if (_undo.Count > 50) _undo.RemoveAt(0);
+        _undoPos = _undo.Count - 1;
+    }
+
+    private void Undo()
+    {
+        if (_undoPos <= 0) { _status.Text = "没有可撤销的改动。"; return; }
+        _undoPos--;
+        Restore(_undo[_undoPos]);
+        _status.Text = "已撤销上一步行级改动。";
+    }
+
+    private void Redo()
+    {
+        if (_undoPos >= _undo.Count - 1) { _status.Text = "没有可重做的改动。"; return; }
+        _undoPos++;
+        Restore(_undo[_undoPos]);
+        _status.Text = "已重做。";
+    }
+
+    /// <summary>按快照重建行级 UI（列/索引/外键/表注释）。口径：撤销重做覆盖行级增删；单元格内编辑不进栈。</summary>
+    private void Restore(TableDesign t)
+    {
+        _restoring = true;
+        try
+        {
+            foreach (var w in _colRows.ToList())
+                if (w.Name.Parent is FrameworkElement fe) _colHost.Children.Remove(fe);
+            _colRows.Clear();
+            foreach (var w in _idxRows.ToList())
+                if (w.Name.Parent is FrameworkElement fe) _idxHost.Children.Remove(fe);
+            _idxRows.Clear();
+            foreach (var w in _fkRows.ToList())
+                if (w.Name.Parent is FrameworkElement fe) _fkHost.Children.Remove(fe);
+            _fkRows.Clear();
+            foreach (var c in t.Columns) AddColRow(c);
+            if (_colRows.Count == 0) AddColRow(null);   // 至少一行口径与 Del 一致
+            foreach (var ix in t.Indexes) AddIdxRow(ix);
+            foreach (var fk in t.ForeignKeys) AddFkRow(fk);
+            if (_tableComment != null) _tableComment.Text = t.Comment;
+            RefreshPreview();
+            RefreshDiff();
+        }
+        finally { _restoring = false; }
+    }
+
+    private static bool UndoSame(TableDesign a, TableDesign b) =>
+        System.Text.Json.JsonSerializer.Serialize(a) == System.Text.Json.JsonSerializer.Serialize(b);
+
+    /// <summary>生成 DDL：当前语句清单复制到剪贴板，状态行回执。</summary>
+    private void GenDdlToClipboard()
+    {
+        var (_, _, text) = Build();
+        try
+        {
+            var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dp.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+            _status.Text = "DDL 已复制到剪贴板。";
+        }
+        catch (Exception ex) { _status.Text = HumanError.Say(ex, "复制 DDL"); }
+    }
+
+    /// <summary>对比线上结构：与打开设计器时的线上结构快照逐列比对，差异落状态行与红字提示。</summary>
+    private void DiffLive()
+    {
+        RefreshDiff();
+        var now = Read();
+        var oldNames = _existingNames.ToDictionary(n => n, StringComparer.OrdinalIgnoreCase);
+        int added = now.Columns.Count(c => c.Name.Length > 0 && !oldNames.ContainsKey(c.Name));
+        int dropped = _existingNames.Count(n => !now.Columns.Any(c => c.Name.Equals(n, StringComparison.OrdinalIgnoreCase)));
+        _status.Text = _table == null
+            ? "新建表无线上结构可比，差异以 SQL 预览为准。"
+            : $"已与打开时的线上结构对比：新增 {added} 列 · 删除 {dropped} 列；逐列差异见红字提示与 SQL 预览。";
     }
 
     // ---------- 行构建 ----------
@@ -356,9 +512,10 @@ public class TableDesignerTab : Grid
     {
         var type = w.Type.Text.Trim();
         if (type.Length == 0) { w.Def.PlaceholderText = "默认值"; return; }
-        if (TableDdl.IsNumericType(type)) w.Def.PlaceholderText = "数值（如 0）";
+        // 评分打回201补落：占位改短文案——原「数值（如 0）」在窄列被截成「值（如」
+        if (TableDdl.IsNumericType(type)) w.Def.PlaceholderText = "如 0";
         else if (TableDdl.IsTemporalType(type)) w.Def.PlaceholderText = "如 CURRENT_TIMESTAMP";
-        else w.Def.PlaceholderText = "文本（自动加引号）";
+        else w.Def.PlaceholderText = "自动加引号";
     }
 
     /// <summary>台账⑤：执行前校验——类型非空；数值列默认值须为数字或表达式，不再静默生成带引号字符串。</summary>
@@ -574,7 +731,7 @@ public class TableDesignerTab : Grid
 
     private TableDesign Read()
     {
-        var t = new TableDesign { TableName = _nameBox.Text.Trim() };
+        var t = new TableDesign { TableName = _nameBox.Text.Trim(), Comment = _tableComment?.Text.Trim() ?? "" };
         foreach (var w in _colRows)
             t.Columns.Add(new TableColumnDesign
             {
@@ -661,10 +818,11 @@ public class TableDesignerTab : Grid
     {
         var (_, _, text) = Build();
         _preview.Text = text;
+        if (_ddlMirror != null) _ddlMirror.Text = text;   // DDL 预览页签同源镜像
         RefreshChrome();
     }
 
-    /// <summary>原型201：头部未保存点 + 状态栏结构统计随编辑刷新。</summary>
+    /// <summary>原型201：头部未保存点 + 状态栏结构统计随编辑刷新；页签计数徽标同步（评分打回201补落）。</summary>
     private void RefreshChrome()
     {
         if (_unsavedDot != null)
@@ -676,6 +834,9 @@ public class TableDesignerTab : Grid
             int fk = _fkRows.Count;
             _structSummary.Text = $"{cols} 列 · {idx} 索引 · {fk} 外键";
         }
+        if (_colTabBadge != null) _colTabBadge.Text = _colRows.Count.ToString();
+        if (_idxTabBadge != null) _idxTabBadge.Text = _idxRows.Count.ToString();
+        if (_fkTabBadge != null) _fkTabBadge.Text = _fkRows.Count.ToString();
     }
 
     // ---------- 执行 ----------

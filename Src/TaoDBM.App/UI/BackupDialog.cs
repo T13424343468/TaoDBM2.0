@@ -44,6 +44,15 @@ public static class BackupDialog
         };
         // 发现301原型：七引擎卡片——当前引擎高亮，不支持引擎置灰并给人话原因
         var engineRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        // 修红（评分打回301）：七卡一行超对话框宽被硬裁右缘——包横滚容器，窄时出滚动条自证，不裁切
+        var engineRowHost = new ScrollViewer
+        {
+            HorizontalScrollMode = ScrollMode.Enabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollMode = ScrollMode.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = engineRow,
+        };
         foreach (DbEngine e in Enum.GetValues<DbEngine>())
         {
             bool current = e == profile.Engine;
@@ -521,7 +530,7 @@ public static class BackupDialog
             cur = i;
             body.Children.Clear();
             body.Children.Add(crumb);        // 发现301原型：头部面包屑常驻
-            body.Children.Add(engineRow);    // 发现301原型：七引擎卡片常驻
+            body.Children.Add(engineRowHost);    // 发现301原型：七引擎卡片常驻（横滚容器防裁切）
             body.Children.Add(engineNote);
             body.Children.Add(stepBar);
             var head = new TextBlock { Text = $"步骤 {i + 1}/4 · {StepNames[i]}", FontSize = AntTokens.FontTitle, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };

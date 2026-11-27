@@ -828,7 +828,19 @@ public partial class WorkTab : Grid
                     list = await QueryRouter.ExecuteLazyAsync(lazyProv, _db, sql, 64, _runCts.Token);
                 }
                 else
+                {
                     list = await _provider.Execute(_db, sql);
+                    // 评分打回311补落：整包回退模式下结果超过流式触发阈值——落提示引导开流式，不擅自改通道
+                    long totalRows = list.Sum(r => (long)r.Rows.Count);
+                    if (totalRows > StreamingPrefs.TriggerRows)
+                    {
+                        StreamingPrefs.NoteLargeResult(totalRows, list[0].Title);
+                        foreach (var r in list.Where(r => r.Rows.Count > 0))
+                            r.Message = string.IsNullOrEmpty(r.Message)
+                                ? $"结果 {totalRows:N0} 行超过流式触发阈值 {StreamingPrefs.TriggerRows:N0}，建议开启流式通道（删除环境变量 DBM_STREAMING=off 后重启）。"
+                                : r.Message;
+                    }
+                }
                 QueryHistory.Add(_provider.EngineName, _db, sql);
                 ShowResults(list);
                 // 执行账（2026-11-19）：执行值直接落应用日志，供云端走查零 UIA 对账（run 94-96 实锤 UIA 读结果轮询带走云机器）

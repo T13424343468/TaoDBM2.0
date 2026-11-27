@@ -75,6 +75,32 @@ public static class ServerMonitorDialog
                     metricsPanel.Children.Add(StatCard(key, v, trend, trendBrush));
                 }
                 DrawCurve(curve, history);
+                // 修红（评分打回310）：单文件引擎无指标可采，空态给明确说明与引导，不留白板
+                if (metricsPanel.Children.Count == 0)
+                {
+                    curve.Visibility = Visibility.Collapsed;
+                    sessions.Visibility = Visibility.Collapsed;
+                    metricsPanel.Children.Add(new Border
+                    {
+                        Padding = new Thickness(16, 12, 16, 12),
+                        CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                        BorderThickness = new Thickness(1),
+                        BorderBrush = Ant.Border,
+                        Background = (Brush?)Application.Current.Resources["AntCard"],
+                        Child = new StackPanel { Spacing = 4, Children =
+                        {
+                            new TextBlock { Text = "ℹ️ 该引擎暂无服务器级指标", FontSize = AntTokens.FontMinor, Foreground = Ant.TextMain },
+                            new TextBlock { Text = engine == DbEngine.SQLite
+                                ? "SQLite 是单文件引擎，没有服务器进程，因此没有连接数、QPS、会话列表等监控指标。需要服务器监控请连接 MySQL / PostgreSQL / SQL Server / Oracle 等客户端-服务器引擎。"
+                                : "本次采样未取得指标数据，请检查连接与权限后重试。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap },
+                        } },
+                    });
+                }
+                else
+                {
+                    curve.Visibility = Visibility.Visible;
+                    sessions.Visibility = Visibility.Visible;
+                }
                 // 会话清单：取最后一个带行的结果集
                 var sess = results.LastOrDefault(r => r.Rows.Count > 0 && r.Columns.Any(c => c.ToLowerInvariant().Contains("sessionid") || c.ToLowerInvariant() == "id" || c.ToLowerInvariant() == "pid"));
                 sessions.Items.Clear();

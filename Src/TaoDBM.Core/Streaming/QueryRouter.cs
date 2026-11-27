@@ -9,6 +9,15 @@ public static class QueryRouter
     /// 0 = 不封顶。默认 200_000 行，防异常大结果集拖垮内存。</summary>
     public static long MaxRowsPerStatement { get; set; } = 200_000;
 
+    /// <summary>单行物化字节数估算（评分打回311补落）：对象头/引用 64B＋每格 32B＋字符串 2B/字符。
+    /// 估算是口径不是精测——封顶判定宁可略早，不拖垮内存。</summary>
+    internal static long EstimateRowBytes(object?[] row)
+    {
+        long bytes = 64;
+        foreach (var v in row) bytes += 32 + (v?.ToString()?.Length ?? 0) * 2;
+        return bytes;
+    }
+
     /// <summary>流式执行：跑完返回整包结果（与旧 Execute 同形），内部逐页取数，无 5000 截断。</summary>
     public static async Task<List<QueryResult>> ExecuteAsync(RelationalProvider provider, string? db, string script, CancellationToken ct)
     {
@@ -26,6 +35,8 @@ public static class QueryRouter
                 qr.Columns.AddRange(sq.Columns);
                 long rows = 0;
                 bool capped = false;
+                long memBytes = 0;
+                bool memCapped = false;
                 while (true)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -35,12 +46,18 @@ public static class QueryRouter
                     foreach (var row in page.Rows)
                     {
                         if (MaxRowsPerStatement > 0 && rows >= MaxRowsPerStatement) { capped = true; break; }
+                        // 评分打回311补落：单查询内存上限（MB）——物化字节数估算超限即封顶，与行数封顶同口径落账
+                        memBytes += EstimateRowBytes(row);
+                        if (memBytes >= (long)StreamingPrefs.MemoryLimitMb * 1024 * 1024) { capped = true; memCapped = true; break; }
                         qr.Rows.Add(row);
                         rows++;
                     }
                     if (capped || !page.HasMore) break;
                 }
-                if (capped) qr.Message = $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
+                if (capped) qr.Message = memCapped
+                    ? $"结果已达单查询内存上限 {StreamingPrefs.MemoryLimitMb} MB，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。"
+                    : $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
+                StreamingPrefs.NoteLargeResult(rows, qr.Title);
                 Safe.Run(() => qr.Affected = sq.Affected, "读取受影响行数");
                 if (qr.Columns.Count == 0 && qr.Affected < 0) qr.Affected = 0;
             }
@@ -93,11 +110,16 @@ public static class QueryRouter
                     for (int b = 0; b < nVis; b++) bufs[b] = new List<object?>();
                     int rows = 0;
                     bool capped = false;
+                    long memBytes = 0;
+                    bool memCapped = false;
                     while (await reader.ReadAsync(ct))
                     {
                         ct.ThrowIfCancellationRequested();
                         // 内存封顶与整包通道 ExecuteAsync 同口径：#273 实锤无封顶时 1 亿行递归 CTE 把应用吃爆（0xC0000407 fail-fast）
                         if (MaxRowsPerStatement > 0 && rows >= MaxRowsPerStatement) { capped = true; break; }
+                        // 评分打回311补落：单查询内存上限（MB）——物化字节数按可见列估算，超限即封顶
+                        memBytes += nVis * 48;
+                        if (memBytes >= (long)StreamingPrefs.MemoryLimitMb * 1024 * 1024) { capped = true; memCapped = true; break; }
                         for (int b = 0; b < nVis; b++) bufs[b].Add(reader.GetValue(vis[b]));
                         rows++;
                         // 本地库快产快消时 ReadAsync 几乎全同步完成，await 连续同步续接会独占调用线程
@@ -113,7 +135,10 @@ public static class QueryRouter
                     store.SeedColumns(vis, bufs.Select(b => b.ToArray()).ToArray());
                     sw.Stop();
                     var lazy = new LazyQueryResult(store, vis, qr.Title, sw.Elapsed);
-                    if (capped) lazy.Message = $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
+                    if (capped) lazy.Message = memCapped
+                        ? $"结果已达单查询内存上限 {StreamingPrefs.MemoryLimitMb} MB，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。"
+                        : $"结果已达内存封顶 {MaxRowsPerStatement:N0} 行，超出部分未取（可加 WHERE/TOP/LIMIT 收窄后重查）。";
+                    StreamingPrefs.NoteLargeResult(rows, qr.Title);
                     results.Add(lazy);
                     continue;
                 }
