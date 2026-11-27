@@ -1,10 +1,9 @@
-main-window named-interactive-elements: 31 (visible-list capped 200)
+main-window named-interactive-elements: 30 (visible-list capped 200)
 ControlType.Pane | False | Non Client Input Sink Window
 ControlType.Pane | False | AppWindow Custom Title Bar
 ControlType.Button | False | Minimize
 ControlType.Button | False | Restore
 ControlType.Button | False | Close
-ControlType.Text | False | TaoDBM v2.0.0
 ControlType.Text | False | 表
 ControlType.Text | False | 查询
 ControlType.Text | False | 备份
@@ -49,42 +48,42 @@ feature-level coverage account:
 [U012] 巡检-选中表节点 => pass
 [U013] 巡检-查看数据页签 => pass
 [U014] 巡检-表数据页签工具栏 => pass
-[U015] 巡检-表结构按钮 => pass
+[U015] 巡检-表结构按钮 => miss
 [U016] 巡检-表结构收场 => pass
-[U017a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U017] 巡检-表单视图按钮 => pass
+[U017a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U017] 巡检-表单视图按钮 => miss
 [U018] 巡检-表单视图收场 => pass
 [U019] 巡检-拟真数据按钮 => miss
 [U020] 巡检-拟真数据收场 => pass
-[U021a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U021] 巡检-粘贴数据按钮 => pass
+[U021a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U021] 巡检-粘贴数据按钮 => miss
 [U022] 巡检-粘贴数据收场 => pass
 [U023] 巡检-表设计器（列） => pass
 [U024] 巡检-表设计器收场 => pass
 [U030] 巡检-新建查询页签 => pass
 [U031] 巡检-查询页工具栏全貌 => pass
-[U032open] 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
-[U032] 巡检-导出CSV按钮 => pass
+[U032open] 巡检-导出菜单展开（D⑤ 收一个菜单） => miss
+[U032] 巡检-导出CSV按钮 => miss
 [U033] 巡检-导出CSV收场 => pass
-[U034a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U034open] 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
-[U034] 巡检-导出INSERT按钮 => pass
+[U034a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U034open] 巡检-导出菜单展开（D⑤ 收一个菜单） => miss
+[U034] 巡检-导出INSERT按钮 => miss
 [U035] 巡检-导出INSERT收场 => pass
-[U036] 巡检-导出更多菜单 => pass
+[U036] 巡检-导出更多菜单 => miss
 [U037] 巡检-导出更多收场 => pass
-[U038a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U038] 巡检-查询收藏 => pass
+[U038a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U038] 巡检-查询收藏 => miss
 [U039] 巡检-收藏收场 => pass
-[U040a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U040] 巡检-查询历史 => pass
+[U040a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U040] 巡检-查询历史 => miss
 [U041] 巡检-历史收场 => pass
-[U042a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
-[U042] 巡检-报表 => pass
+[U042a] 巡检-更多菜单展开（B⑥ 低频收组） => miss
+[U042] 巡检-报表 => miss
 [U043] 巡检-报表收场 => pass
 [U044] 巡检-设计辅助 => miss
 [U045] 巡检-设计辅助收场 => pass
-[U046a] 巡检-编辑器右键打开菜单 => pass
-[U046] 巡检-编辑器右键菜单 => pass
+[U046a] 巡检-编辑器右键打开菜单 => miss
+[U046] 巡检-编辑器右键菜单 => miss
 [U047] 巡检-右键菜单收场 => pass
 [U050] 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
 [U058] 巡检-数据传输与同步 => pass
@@ -94,13 +93,3 @@ feature-level coverage account:
 [U066] 巡检-备份恢复向导 => pass
 [U067] 巡检-备份收场 => pass
 [U078] 巡检-在库中搜索 => pass
-[U079] 巡检-库搜索收场 => pass
-[U088] 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
-[U104] 巡检-设置入口真拍 => pass
-[U104a] 巡检-设置菜单项点击 => pass
-[U104b] 巡检-设置收场 => pass
-[U105] 巡检-手册 => pass
-[U106] 巡检-手册收场 => pass
-[U107] 巡检-关于 => pass
-[U108] 巡检-主题入口 => pass
-[U109] 巡检-收尾主窗口 => pass
