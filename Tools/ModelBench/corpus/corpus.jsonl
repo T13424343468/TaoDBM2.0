@@ -33,7 +33,7 @@
 {"id": "T07", "cat": "time", "q": "昨天一天卖出了多少件商品？", "expected": "SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE DATE(o.created_at) = CURDATE() - INTERVAL 1 DAY", "note": "昨天+关联求和"}
 {"id": "T08", "cat": "time", "q": "最近30天每个城市的成交额排行。", "expected": "SELECT u.city, SUM(p.amount) AS total FROM payments p JOIN orders o ON o.id = p.order_id JOIN users u ON u.id = o.user_id WHERE p.paid_at >= CURDATE() - INTERVAL 30 DAY GROUP BY u.city ORDER BY total DESC", "note": "时间窗口+关联+排序"}
 
-{"id": "J01", "cat": "join", "q": "每个用户各下了多少单？", "expected": "SELECT u.name, COUNT(o.id) FROM users u LEFT JOIN orders o ON o.user_id = u.id GROUP BY u.id", "note": "左连接分组"}
+{"id": "J01", "cat": "join", "q": "每个用户各下了多少单？", "expected": "SELECT u.name, COUNT(o.id) FROM users u LEFT JOIN orders o ON o.user_id = u.id GROUP BY u.id, u.name", "note": "左连接分组"}
 {"id": "J02", "cat": "join", "q": "买过商品名带'壳'的商品的用户有谁？", "expected": "SELECT DISTINCT u.name FROM users u JOIN orders o ON o.user_id = u.id JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE p.name LIKE '%壳%'", "note": "三表去重"}
 {"id": "J03", "cat": "join", "q": "每个分类的销售总额是多少？", "expected": "SELECT p.category, SUM(oi.quantity * oi.unit_price) FROM order_items oi JOIN products p ON p.id = oi.product_id GROUP BY p.category", "note": "连接聚合"}
 {"id": "J04", "cat": "join", "q": "从来没用过订单的用户有哪些？", "expected": "SELECT * FROM users u LEFT JOIN orders o ON o.user_id = u.id WHERE o.id IS NULL", "note": "反连接"}
