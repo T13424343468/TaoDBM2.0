@@ -89,7 +89,7 @@ public static class ServerMonitorDialog
                         Background = (Brush?)Application.Current.Resources["AntCard"],
                         Child = new StackPanel { Spacing = 4, Children =
                         {
-                            new TextBlock { Text = "ℹ️ 该引擎暂无服务器级指标", FontSize = AntTokens.FontMinor, Foreground = Ant.TextMain },
+                            new TextBlock { Text = "ℹ️ 该引擎暂无服务器级指标", FontSize = AntTokens.FontMinor, Foreground = Ant.Text },
                             new TextBlock { Text = engine == DbEngine.SQLite
                                 ? "SQLite 是单文件引擎，没有服务器进程，因此没有连接数、QPS、会话列表等监控指标。需要服务器监控请连接 MySQL / PostgreSQL / SQL Server / Oracle 等客户端-服务器引擎。"
                                 : "本次采样未取得指标数据，请检查连接与权限后重试。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap },

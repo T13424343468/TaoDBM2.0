@@ -166,7 +166,7 @@ public static class StreamingSwitchDialog
         static long SliderToRows(double v) => (long)Math.Round(1000 * Math.Pow(10, v / 100.0));
         static double RowsToSlider(long rows) => Math.Round(Math.Log10(rows / 1000.0) * 100);
 
-        var slider = new Slider { Minimum = 0, Maximum = 400, Step = 10, Value = RowsToSlider(StreamingPrefs.TriggerRows), Width = 360 };
+        var slider = new Slider { Minimum = 0, Maximum = 400, StepFrequency = 10, Value = RowsToSlider(StreamingPrefs.TriggerRows), Width = 360 };
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(slider, "stream-trigger-slider");
         var sliderVal = new TextBlock
         {
