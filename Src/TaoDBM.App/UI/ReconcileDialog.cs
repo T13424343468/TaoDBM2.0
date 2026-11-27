@@ -53,12 +53,23 @@ public static class ReconcileDialog
         };
 
         var runBtn = new Button { Content = "开始对账", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+
+        // 发现306原型：汇总徽标行——源/目标行数、校验和、结论四张小卡，对账完即点亮
+        var summaryPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        summaryPanel.Children.Add(new TextBlock
+        {
+            Text = "对账汇总：填好两端库表后点「开始对账」。",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+        });
+
         runBtn.Click += async (_, _) =>
         {
             sampleBtn.Visibility = Visibility.Collapsed;
             sampleSql = "";
             var sample = await RunAsync(prov, S(srcDbBox.SelectedItem), srcTableBox.Text, S(dstDbBox.SelectedItem),
-                dstTableBox.Text, whereBox.Text, output, status);
+                dstTableBox.Text, whereBox.Text, output, status, summaryPanel);
             if (sample is not null)
             {
                 sampleSql = sample;
@@ -82,7 +93,23 @@ public static class ReconcileDialog
             TextWrapping = TextWrapping.Wrap,
         });
         panel.Children.Add(row1);
+        panel.Children.Add(summaryPanel);   // 发现306原型：汇总徽标行
         panel.Children.Add(whereBox);
+
+        // 发现306原型：差异清单表头——结果区上方加底色表头条
+        panel.Children.Add(new Border
+        {
+            Padding = new Thickness(8, 4, 8, 4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+            Background = Ant.HeadBg,
+            Child = new TextBlock
+            {
+                Text = "对账结果（行数 · 校验和 · 结论）",
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            },
+        });
         panel.Children.Add(runBtn);
         panel.Children.Add(output);
         panel.Children.Add(sampleBtn);
@@ -107,6 +134,24 @@ public static class ReconcileDialog
 
     private static string S(object? v) => v is null ? "" : v.ToString() ?? "";
 
+    /// <summary>发现306原型：汇总小卡——数值＋标签，结论卡按通过绿 / 差异黄着色。</summary>
+    private static Border StatCard(string value, string label, bool? ok)
+    {
+        var valColor = ok switch { true => Ant.Success, false => Ant.Warn, null => Ant.Text };
+        var col = new StackPanel { Spacing = 0 };
+        col.Children.Add(new TextBlock { Text = value, FontSize = AntTokens.FontEmphasis, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = valColor });
+        col.Children.Add(new TextBlock { Text = label, FontSize = AntTokens.FontCaption, Foreground = Ant.TextSub });
+        return new Border
+        {
+            Padding = new Thickness(12, 6, 12, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+            Child = col,
+        };
+    }
+
     private static async Task<long> ScalarLong(IDbProvider prov, string db, string sql, string col, string caller)
     {
         var rs = await prov.Execute(db, sql);
@@ -119,9 +164,10 @@ public static class ReconcileDialog
         return v is null ? 0 : long.TryParse(v.ToString(), out var n) ? n : 0;
     }
 
-    /// <summary>执行对账；结论不一致时返回源端抽样 SQL，否则返回 null。</summary>
+    /// <summary>执行对账；结论不一致时返回源端抽样 SQL，否则返回 null。
+    /// 发现306原型：对账完点亮汇总徽标行（源/目标行数、校验和、结论）。</summary>
     private static async Task<string?> RunAsync(IDbProvider prov, string srcDb, string srcTable, string dstDb, string dstTable,
-        string where, TextBox output, TextBlock status)
+        string where, TextBox output, TextBlock status, StackPanel summaryPanel)
     {
         srcTable = (srcTable ?? "").Trim();
         dstTable = (dstTable ?? "").Trim();
@@ -159,6 +205,14 @@ public static class ReconcileDialog
             }
 
             var verdict = ReconcileEngine.Compare(srcCount, dstCount, srcSum, dstSum);
+
+            // 发现306原型：汇总徽标行——行数、校验和、结论三张小卡
+            summaryPanel.Children.Clear();
+            summaryPanel.Children.Add(StatCard(srcCount.ToString("N0"), "源端行数", null));
+            summaryPanel.Children.Add(StatCard(dstCount.ToString("N0"), "目标端行数", null));
+            if (srcSum.HasValue || dstSum.HasValue)
+                summaryPanel.Children.Add(StatCard(srcSum == dstSum ? "一致" : "不一致", "校验和比对", srcSum == dstSum));
+            summaryPanel.Children.Add(StatCard(verdict.Level == "match" ? "✓ 通过" : "⚠ 有差异", "对账结论", verdict.Level == "match"));
 
             var sb = new StringBuilder();
             sb.AppendLine($"源 {srcDb}.{srcTable}：{srcCount} 行" + (srcSum.HasValue ? $"，校验和 {srcSum}" : ""));
