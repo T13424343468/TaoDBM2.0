@@ -1156,6 +1156,30 @@ foreach ($s in $plan.steps) {
         Close-ExtraWindows $handle
         Push-Evidence "SP closed"
       }
+      'set-text' {
+        # 评分补步通用置文：按 find 选择器（automationId/name）定位对话框输入框，SetValue＋回读校验（editor-set 同口径，3 轮重试）
+        $target = $null
+        foreach ($attempt in 1..3) {
+          if ($s.find.automationId) { $target = Find-ElWait @{ automationId = (Tpl $s.find.automationId) } 6 $mainRoot }
+          elseif ($s.find.name) { $target = Find-ElWait @{ controlType = 'Edit'; name = (Tpl $s.find.name) } 6 $mainRoot }
+          if ($null -ne $target) { break }
+          Start-Sleep -Seconds 1
+        }
+        if ($null -eq $target) { throw "set-text target not found: $($s.find.automationId)$($s.find.name)" }
+        $want = Tpl ([string]$s.value)
+        $done = $false
+        foreach ($attempt in 1..3) {
+          if (Set-TextValue $target $want) {
+            try {
+              $vp = $target.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+              if ($vp.Current.Value -eq $want) { $done = $true; break }
+            } catch { }
+          }
+          Start-Sleep -Milliseconds 500
+        }
+        if (-not $done) { throw "set-text readback mismatch: $($s.find.automationId)" }
+        Push-Evidence "$id set-text ok"
+      }
       'editor-set' {
         # 编辑器整段置文＋回读校验（#312：S63 轮执行账落 ELECT *＝首字符被吃，SetValue 竞态/回退路径静默失败）
         $ed = Find-ElWait @{ automationId = 'work-editor' } 15 $mainRoot

@@ -48,7 +48,8 @@ public static class BackupDialog
         var engineRowHost = new ScrollViewer
         {
             HorizontalScrollMode = ScrollMode.Enabled,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            // 评分复拍轮2口径：滚动须自证——滚动条常驻可见，窄屏一眼看出可横滚，不再似裁切
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
             VerticalScrollMode = ScrollMode.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = engineRow,

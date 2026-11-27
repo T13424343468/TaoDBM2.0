@@ -27,11 +27,13 @@ public static class ReconcileDialog
         else if (dbs.Count > 0) srcDbBox.SelectedIndex = 0;
 
         var srcTableBox = new TextBox { PlaceholderText = "源表名", MinWidth = 130 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(srcTableBox, "Reconcile_SrcTable");   // 评分补步306：走查置文定位
         var dstDbBox = new ComboBox { MinWidth = 150, PlaceholderText = "目标库" };
         foreach (var d in dbs) dstDbBox.Items.Add(d);
         if (profile.Engine != DbEngine.SQLite && dbs.Count > 0) dstDbBox.SelectedIndex = 0;
 
         var dstTableBox = new TextBox { PlaceholderText = "目标表名", MinWidth = 130 };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(dstTableBox, "Reconcile_DstTable");   // 评分补步306：走查置文定位
         var whereBox = new TextBox { PlaceholderText = "可选 WHERE 条件（不含 WHERE 关键字）", MinWidth = 560 };
 
         var output = new TextBox
