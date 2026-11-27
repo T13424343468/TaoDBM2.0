@@ -831,7 +831,7 @@ public partial class WorkTab : Grid
                 {
                     list = await _provider.Execute(_db, sql);
                     // 评分打回311补落：整包回退模式下结果超过流式触发阈值——落提示引导开流式，不擅自改通道
-                    long totalRows = list.Sum(r => (long)r.Rows.Count);
+                    long totalRows = list.Sum(seg => (long)seg.Rows.Count);
                     if (totalRows > StreamingPrefs.TriggerRows)
                     {
                         StreamingPrefs.NoteLargeResult(totalRows, list[0].Title);
