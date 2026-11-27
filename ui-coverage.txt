@@ -48,6 +48,13 @@ feature-level coverage account:
 [U012] 巡检-选中表节点 => pass
 [U013] 巡检-查看数据页签 => pass
 [U014] 巡检-表数据页签工具栏 => pass
+[U014a] 巡检-数据网格右键打开菜单 => pass
+[U014b] 巡检-就地编辑打开行编辑器 => miss
+[U014c] 巡检-行编辑器弹窗留证 => pass
+[U014d] 巡检-编辑大字段按钮 => miss
+[U014e] 巡检-BLOB编辑器弹窗留证 => pass
+[U014f] 巡检-BLOB编辑器收场 => pass
+[U014g] 巡检-行编辑器收场 => pass
 [U015] 巡检-表结构按钮 => pass
 [U016] 巡检-表结构收场 => pass
 [U017a] 巡检-更多菜单展开（B⑥ 低频收组） => pass
@@ -85,6 +92,9 @@ feature-level coverage account:
 [U046a] 巡检-编辑器右键打开菜单 => pass
 [U046] 巡检-编辑器右键菜单 => pass
 [U047] 巡检-右键菜单收场 => pass
+[U047a] 巡检-编辑器右键再开菜单 => pass
+[U047b] 巡检-查找替换对话框 => pass
+[U047c] 巡检-查找替换收场 => pass
 [U046b] 巡检-结果网格右键打开菜单 => pass
 [U046c] 巡检-结果网格右键菜单 => miss
 [U046d] 巡检-结果网格右键收场 => pass
@@ -96,6 +106,7 @@ feature-level coverage account:
 [U066] 巡检-备份恢复向导 => pass
 [U067] 巡检-备份收场 => pass
 [U078] 巡检-在库中搜索 => pass
+[U078a] 巡检-库中搜索对话框留证 => pass
 [U079] 巡检-库搜索收场 => pass
 [U088] 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
 [U104] 巡检-设置入口真拍 => pass
