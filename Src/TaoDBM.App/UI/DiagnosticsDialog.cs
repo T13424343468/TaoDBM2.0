@@ -163,6 +163,8 @@ public static class DiagnosticsDialog
             var rs = await prov.Execute(dbName, sql);
             var rows = rs.Count > 0 ? rs[0].Rows : new List<object?[]>();
             AddSection(panel, $"进程清单（{rows.Count} 条）");
+            // 发现312原型：连接池观察卡——活跃/空闲占比条（按进程清单口径，只读统计）
+            panel.Children.Add(PoolGaugeRow(rows.Count, rows.Count(r => IsSessionActive(engine, r))));
             if (rows.Count == 0) AddLine(panel, "✓ 当前无其他活动会话。");
             foreach (var row in rows)
             {
@@ -239,6 +241,95 @@ public static class DiagnosticsDialog
             status.Text = "";
         }
     }
+
+    /// <summary>发现312原型：锁等待链——持锁节点 → 等待节点，被阻塞方标红（ErrorBg 底色）。</summary>
+    private static StackPanel LockChainRow(LockWait w)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 2, 0, 2) };
+        row.Children.Add(LockNode($"Sess {w.Holder} · 持锁", victim: false));
+        row.Children.Add(new TextBlock { Text = "→", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, VerticalAlignment = VerticalAlignment.Center });
+        string res = w.Resource.Length > 0 ? $" · {w.Resource}" : "";
+        row.Children.Add(LockNode($"Sess {w.Waiter} · 等待{res}", victim: true));
+        return row;
+    }
+
+    private static Border LockNode(string text, bool victim)
+    {
+        return new Border
+        {
+            Padding = new Thickness(10, 5, 10, 5),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+            BorderThickness = new Thickness(1),
+            BorderBrush = victim ? Ant.Error : Ant.Border,
+            Background = victim ? Ant.ErrorBg : (Brush?)Application.Current.Resources["AntCard"],
+            Child = new TextBlock
+            {
+                Text = text,
+                FontSize = AntTokens.FontCaption,
+                FontFamily = new FontFamily("Consolas"),
+                Foreground = victim ? Ant.Error : Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            },
+        };
+    }
+
+    /// <summary>发现312原型：连接池观察卡——活跃/空闲占比条（按进程清单口径，只读统计）。</summary>
+    private static StackPanel PoolGaugeRow(int total, int active)
+    {
+        int idle = Math.Max(total - active, 0);
+        double activePct = total > 0 ? (double)active / total : 0;
+        double idlePct = total > 0 ? (double)idle / total : 0;
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0) };
+        row.Children.Add(GaugeCard("活跃会话", activePct, Ant.Primary, $"{active} 个"));
+        row.Children.Add(GaugeCard("空闲会话", idlePct, Ant.TextSub, $"{idle} 个"));
+        return row;
+    }
+
+    private static Border GaugeCard(string label, double pct, Brush barBrush, string value)
+    {
+        var body = new StackPanel { Spacing = 4, MinWidth = 160 };
+        body.Children.Add(new TextBlock { Text = label, FontSize = AntTokens.FontCaption, Foreground = Ant.TextSub });
+        var track = new Border
+        {
+            Height = 8,
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+            Background = (Brush?)Application.Current.Resources["AntAltRow"],
+        };
+        track.Child = new Border
+        {
+            Width = Math.Max(2, 160 * Math.Clamp(pct, 0, 1)),
+            Height = 8,
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+            Background = barBrush,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        body.Children.Add(track);
+        body.Children.Add(new TextBlock
+        {
+            Text = value,
+            FontSize = AntTokens.FontMinor,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontFamily = new FontFamily("Consolas"),
+        });
+        return new Border
+        {
+            Padding = new Thickness(12, 8, 12, 8),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+            Child = body,
+        };
+    }
+
+    /// <summary>进程清单里的会话是否活跃（按引擎状态列口径，纯读行内数据）。</summary>
+    private static bool IsSessionActive(DbEngine engine, object?[] row) => engine switch
+    {
+        DbEngine.MySQL => S(row.Length > 4 ? row[4] : null) is "Query" or "Execute",
+        DbEngine.PostgreSQL => S(row.Length > 4 ? row[4] : null) == "active",
+        DbEngine.SqlServer => S(row.Length > 3 ? row[3] : null) == "running",
+        _ => true,
+    };
 
     private static string CurrentDb(NodeInfo info)
     {
@@ -442,7 +533,8 @@ public static class DiagnosticsDialog
         }
 
         AddLine(report, $"共有 {waits.Count} 条等待边：");
-        foreach (var w in waits) AddLine(report, $"  {w.Waiter} 等 {w.Holder}（{w.Resource}）");
+        // 发现312原型：锁等待链——持锁节点 → 等待节点，被阻塞方标红（ErrorBg 底色）
+        foreach (var w in waits) report.Children.Add(LockChainRow(w));
 
         // s16：冻结快照 + 终止会话（危险确认+留痕）+ 复制诊断包
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
@@ -682,6 +774,46 @@ public static class DiagnosticsDialog
                 {
                     AddLine(report, $"  [{f.Code}] {f.Message}", Sev(f.Severity));
                     AddLine(report, "      建议：" + f.Suggestion, Ant.TextSub);
+                }
+            }
+
+            // 发现312原型：SQL 静态体检表——表头底色，级别徽标三档着色（danger 红 / warn 黄 / info 主色）
+            var staticFindings = SlowQueryDiagnoser.Analyze(sql);
+            if (staticFindings.Count > 0)
+            {
+                AddSection(report, $"SQL 静态体检（{staticFindings.Count} 项）");
+                var header = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 12,
+                    Background = (Brush?)Application.Current.Resources["AntHeadBg"],
+                    Padding = new Thickness(10, 5, 10, 5),
+                };
+                foreach (var (t, w) in new[] { ("规则", 60), ("级别", 70), ("问题", 260), ("建议", 0) })
+                    header.Children.Add(new TextBlock
+                    {
+                        Text = t,
+                        Width = w > 0 ? w : double.NaN,
+                        FontSize = AntTokens.FontMinor,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = Ant.TextSub,
+                    });
+                report.Children.Add(header);
+                foreach (var f in staticFindings)
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Padding = new Thickness(10, 4, 10, 4) };
+                    row.Children.Add(new TextBlock { Text = f.Code, Width = 60, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") });
+                    row.Children.Add(new TextBlock
+                    {
+                        Text = f.Severity switch { "danger" => "危险", "warn" => "注意", _ => "提示" },
+                        Width = 70,
+                        FontSize = AntTokens.FontMinor,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = f.Severity switch { "danger" => Ant.Error, "warn" => Ant.Warn, _ => Ant.Primary },
+                    });
+                    row.Children.Add(new TextBlock { Text = f.Message, Width = 260, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
+                    row.Children.Add(new TextBlock { Text = f.Suggestion ?? "", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+                    report.Children.Add(row);
                 }
             }
             status.Text = "执行计划诊断完成（只跑 EXPLAIN，未执行原 SQL）。";
