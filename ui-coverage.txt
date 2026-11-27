@@ -89,6 +89,8 @@ feature-level coverage account:
 [U043] 巡检-报表收场 => pass
 [U044] 巡检-设计辅助 => miss
 [U045] 巡检-设计辅助收场 => pass
+[U045a] 巡检-执行查询填充结果网格 => pass
+[U045b] 巡检-结果网格就绪留证 => pass
 [U046a] 巡检-编辑器右键打开菜单 => pass
 [U046] 巡检-编辑器右键菜单 => pass
 [U047] 巡检-右键菜单收场 => pass
