@@ -552,13 +552,14 @@ public partial class WorkTab : Grid
         {
             if (_cancelable)
             {
-                // 发现175拍板方案2（2026-11-28 老板令）：SQLite 驱动不支持中断运行中的命令，令牌收不到实效——
-                // 点停给明示＋落账，查询完成后正常出结果；其余引擎照旧令牌中止
+                // 发现175拍板方案2（2026-11-28 老板令，177 修正）：SQLite 驱动不支持中断运行中的命令——
+                // 点停只给明示＋落账，不取消令牌，查询自然完成、结果正常出显；其余引擎照旧令牌中止
                 if (_provider is SqliteProvider)
                 {
                     _owner.SetStatus("SQLite 暂不支持中断运行中的查询，本查询完成后即停止");
                     _messageBox.Text = "已请求停止：SQLite 驱动不支持中断运行中的查询，本查询完成后即停止。";
                     AppLog.Write("[执行账] stop-sqlite-noninterruptible=1");
+                    return;
                 }
                 _runCts?.Cancel();
                 return;
