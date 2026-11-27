@@ -87,6 +87,10 @@ public static class ServerMonitorDialog
                         BorderThickness = new Thickness(1),
                         BorderBrush = Ant.Border,
                         Background = (Brush?)Application.Current.Resources["AntCard"],
+                        // 修红（复拍轮2定谳310）：横向 StackPanel 对子项按无限宽测量，Wrap 不生效致右缘截断——
+                        // 空态卡限宽（弹窗 MinWidth 620 内留边距）让说明文字真实换行
+                        MaxWidth = 560,
+                        HorizontalAlignment = HorizontalAlignment.Left,
                         Child = new StackPanel { Spacing = 4, Children =
                         {
                             new TextBlock { Text = "ℹ️ 该引擎暂无服务器级指标", FontSize = AntTokens.FontMinor, Foreground = Ant.Text },
