@@ -85,6 +85,19 @@ else
   fi
 fi
 
+# ── 6) 视觉比对记录在位（视觉模型比对与评分制度 2026-11-26 22:48，403 违规交付回灌）──
+VIS_DIR="Docs/视觉比对"
+if [ ! -d "$VIS_DIR" ] || [ -z "$(ls -1 "$VIS_DIR"/*.md 2>/dev/null)" ]; then
+  echo "[PACK-GATE 6] 视觉比对记录缺失：$VIS_DIR/ 无比对结论——制度四环节（编码/验收/测试/产品验收）比对未落档，不出包"; fail=1
+else
+  LATEST_VIS=$(ls -1t "$VIS_DIR"/*.md 2>/dev/null | head -1)
+  if grep -qE '全满分|全维度.*100|PASS' "$LATEST_VIS"; then
+    echo "[PACK-GATE 6] 视觉比对记录在位且全过（$LATEST_VIS）"
+  else
+    echo "[PACK-GATE 6] 视觉比对记录未全过或缺满分结论：$LATEST_VIS——缺一分打回重做"; fail=1
+  fi
+fi
+
 echo "==="
 if [ "$fail" = 0 ]; then
   echo "PACK-GATE-PASS"
