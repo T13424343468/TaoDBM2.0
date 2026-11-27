@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 DROP DATABASE mydb;
 
-[ Prompt: 22.3 t/s | Generation: 8.7 t/s ]
+[ Prompt: 20.6 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

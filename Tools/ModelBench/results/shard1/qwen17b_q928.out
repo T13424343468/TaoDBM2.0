@@ -34,7 +34,7 @@ CREATE TABLE order_items (id INT ... (truncated)
 SELECT * FROM orders
 ORDER BY category, price;
 
-[ Prompt: 22.3 t/s | Generation: 8.3 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.3 t/s ]
 
 
 Exiting...

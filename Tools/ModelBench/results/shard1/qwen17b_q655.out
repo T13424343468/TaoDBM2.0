@@ -39,7 +39,7 @@ JOIN payments pa ON o2.id = pa.order_id
 WHERE pa.paid_at = (SELECT MAX(paid_at) FROM payments)
 AND o2.user_id = (SELECT id FROM users WHERE name = 'John Doe');
 
-[ Prompt: 21.8 t/s | Generation: 8.3 t/s ]
+[ Prompt: 20.4 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

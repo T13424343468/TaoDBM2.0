@@ -39,7 +39,7 @@ LEFT JOIN order_items oi ON o.id = oi.order_id
 LEFT JOIN payments pa ON o.id = pa.order_id
 WHERE 1=1;
 
-[ Prompt: 22.8 t/s | Generation: 8.2 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

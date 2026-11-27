@@ -38,7 +38,7 @@ JOIN order_items pi ON o.id = pi.order_id
 JOIN payments p ON o.id = p.order_id
 WHERE o.created_at = (SELECT MAX(created_at) FROM orders)
 
-[ Prompt: 22.6 t/s | Generation: 8.0 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

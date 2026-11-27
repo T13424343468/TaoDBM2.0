@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (i ... (truncated)
 SELECT * FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE created_at BETWEEN '2023-01-01' AND '2023-12-31') AND status = 'completed';
 
-[ Prompt: 21.7 t/s | Generation: 8.8 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

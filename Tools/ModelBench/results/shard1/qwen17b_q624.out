@@ -36,7 +36,7 @@ FROM orders o1
 JOIN orders o2 ON o2.id = o1.id + 1
 WHERE o2.user_id = o1.user_id;
 
-[ Prompt: 22.1 t/s | Generation: 8.7 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

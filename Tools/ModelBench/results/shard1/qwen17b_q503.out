@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id IN ... (truncated)
 SELECT STR_TO_DATE('2026-01-01', '%Y-%m-%d');
 
-[ Prompt: 22.5 t/s | Generation: 7.8 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

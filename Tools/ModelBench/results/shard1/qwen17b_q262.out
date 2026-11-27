@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT name, CHARINDEX('a', name) AS index
 FROM users;
 
-[ Prompt: 22.7 t/s | Generation: 8.4 t/s ]
+[ Prompt: 20.9 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

@@ -36,7 +36,7 @@ FROM order_items
 JOIN products ON order_items.product_id = products.id
 WHERE order_items.status = 'completed';
 
-[ Prompt: 22.9 t/s | Generation: 7.8 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

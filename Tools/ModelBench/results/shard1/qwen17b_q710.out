@@ -37,7 +37,7 @@ LEFT JOIN order_items o ON p.id = o.product_id
 LEFT JOIN payments p2 ON o.order_id = p2.order_id
 WHERE p2.order_id IS NOT NULL;
 
-[ Prompt: 21.4 t/s | Generation: 8.6 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.4 t/s ]
 
 
 Exiting...

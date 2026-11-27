@@ -35,7 +35,7 @@ SELECT product_id, category, price, stock
 FROM products
 ORDER BY category;
 
-[ Prompt: 22.1 t/s | Generation: 8.6 t/s ]
+[ Prompt: 20.8 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

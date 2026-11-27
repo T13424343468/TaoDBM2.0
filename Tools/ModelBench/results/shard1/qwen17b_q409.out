@@ -34,7 +34,7 @@ CREATE TABLE order_items (i ... (truncated)
 SELECT product_id, price, power(price, 2) AS squared_price
 FROM products;
 
-[ Prompt: 23.0 t/s | Generation: 8.0 t/s ]
+[ Prompt: 21.8 t/s | Generation: 7.6 t/s ]
 
 
 Exiting...

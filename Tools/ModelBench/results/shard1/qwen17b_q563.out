@@ -35,7 +35,7 @@ SELECT COUNT(*) FROM orders
 WHERE created_at >= CURRENT_TIME
 AND created_at < CURRENT_TIME + INTERVAL '1 hour'
 
-[ Prompt: 22.7 t/s | Generation: 8.1 t/s ]
+[ Prompt: 20.5 t/s | Generation: 8.1 t/s ]
 
 
 Exiting...

@@ -38,7 +38,7 @@ JOIN products p ON o_i.product_id = p.id
 JOIN users u ON o.user_id = u.id
 WHERE o_i.order_id = o.id;
 
-[ Prompt: 21.8 t/s | Generation: 8.1 t/s ]
+[ Prompt: 20.9 t/s | Generation: 7.1 t/s ]
 
 
 Exiting...

@@ -36,7 +36,7 @@ FROM users u
 JOIN orders o ON u.id = o.user_id
 ORDER BY rank;
 
-[ Prompt: 21.1 t/s | Generation: 8.5 t/s ]
+[ Prompt: 20.5 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

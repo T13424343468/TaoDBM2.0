@@ -36,7 +36,7 @@ BEGIN
   RETURN SELECT * FROM users WHERE city = city;
 END;
 
-[ Prompt: 22.5 t/s | Generation: 8.3 t/s ]
+[ Prompt: 20.6 t/s | Generation: 7.5 t/s ]
 
 
 Exiting...

@@ -33,7 +33,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), create
 CREATE TABLE order_items (id INT ... (truncated)
 SELECT MAX(created_at) AS latest_order_time FROM orders;
 
-[ Prompt: 28.8 t/s | Generation: 10.4 t/s ]
+[ Prompt: 27.1 t/s | Generation: 8.9 t/s ]
 
 
 Exiting...

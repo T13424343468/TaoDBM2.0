@@ -43,7 +43,7 @@ FROM
     JOIN order_items ON orders.id = order_items.order_id
     JOIN payments ON orders.id = payments.order_id;
 
-[ Prompt: 22.2 t/s | Generation: 8.2 t/s ]
+[ Prompt: 20.8 t/s | Generation: 7.7 t/s ]
 
 
 Exiting...

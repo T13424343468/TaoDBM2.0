@@ -38,7 +38,7 @@ JOIN orders o2 ON o.order_id = o2.id
 JOIN users u ON o2.user_id = u.id
 WHERE o2.status = 'paid';
 
-[ Prompt: 22.4 t/s | Generation: 8.2 t/s ]
+[ Prompt: 21.1 t/s | Generation: 7.8 t/s ]
 
 
 Exiting...
