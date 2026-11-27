@@ -229,7 +229,7 @@ public static class ReadRouterDialog
 
         AddSection(report, "读流量分配建议");
         var serveList = ReadRouter.AutoToggle(nodes, maxLag).ToList();
-        int serving = serveList.Count(s => s.shouldServe);
+        int serving = serveList.Count(s => s.ShouldServeReads);
         // 发现309原型：权重卡——健康副本均分读流量，摘除节点置灰
         var cardRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         foreach (var (name, shouldServe) in serveList)
