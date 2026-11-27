@@ -42,6 +42,16 @@ public static class CommandMonitorDialog
         }
         kw.TextChanged += (_, _) => FillHistory();
 
+        // 原型209：顶部统计徽标行（执行中/已完成/失败）——库端快照口径，打开时填一次
+        // 声明段先于 FillRealtime 定义（局部函数引用后声明会 CS841，run404 定谳）
+        var chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 0, 0, 4) };
+        var chipRunning = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+        var chipDone = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Success };
+        var chipFail = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Error };
+        chips.Children.Add(chipRunning);
+        chips.Children.Add(chipDone);
+        chips.Children.Add(chipFail);
+
         async Task FillRealtime()
         {
             realtime.Items.Clear();
@@ -61,15 +71,6 @@ public static class CommandMonitorDialog
             }
             catch (Exception ex) { status.Text += HumanError.Say(ex, " · 库端实时查询失败"); }
         }
-
-        // 原型209：顶部统计徽标行（执行中/已完成/失败）——库端快照口径，打开时填一次
-        var chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 0, 0, 4) };
-        var chipRunning = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
-        var chipDone = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Success };
-        var chipFail = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.Error };
-        chips.Children.Add(chipRunning);
-        chips.Children.Add(chipDone);
-        chips.Children.Add(chipFail);
 
         var dlg = new ContentDialog
         {
