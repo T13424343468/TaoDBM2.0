@@ -30,6 +30,17 @@ public sealed class FormViewHost : StackPanel
         nav.Children.Add(_pos);
         Children.Add(nav);
         Children.Add(new ScrollViewer { Content = _fields, MaxHeight = 460, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        // 原型203：提示条（复拍轮1定谳缩窄项补落）——浏览态说明，不改行为
+        var hint = new TextBlock
+        {
+            Text = "表单视图：宽表逐列编辑不再横向滚动，字段按主键→业务→时间排序分组；NULL 勾选即时置灰输入框。\n校验前置：外键存在性、格式与范围在输入时校验，错误不阻塞浏览但保存前必须修复。",
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(hint, "FormHint");
+        Children.Add(hint);
     }
 
     private System.Collections.Generic.IReadOnlyList<object?[]> Rows =>
