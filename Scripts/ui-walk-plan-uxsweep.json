@@ -860,6 +860,17 @@
       "group": "库工具"
     },
     {
+      "id": "U088l0",
+      "feature": "巡检-切体检页签",
+      "action": "click",
+      "find": {
+        "controlType": "TabItem",
+        "name": "体检"
+      },
+      "allowMiss": true,
+      "note": "312页签重排（老板令照原型：慢查询/锁等待/连接池/会话前置，体检/变量/状态保留在后）——「开始诊断」在体检页签，先切页签再点按钮"
+    },
+    {
       "id": "U088l",
       "feature": "巡检-开始诊断点击",
       "action": "click",

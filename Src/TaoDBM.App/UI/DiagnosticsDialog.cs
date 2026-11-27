@@ -17,6 +17,13 @@ public static class DiagnosticsDialog
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
+        var planReport = new StackPanel { Spacing = 10 };
+        var lockReport = new StackPanel { Spacing = 6 };
+        var slowListPanel = new StackPanel { Spacing = 4 };
+        var poolPanel = new StackPanel { Spacing = 6 };
+        var procPanel = new StackPanel { Spacing = 6 };
+        var varPanel = new StackPanel { Spacing = 6 };
+        var statPanel = new StackPanel { Spacing = 6 };
 
         var runBtn = new Button { Content = "开始诊断", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
         var sqlBox = new TextBox
@@ -27,7 +34,7 @@ public static class DiagnosticsDialog
         var planBtn = new Button { Content = "诊断这条 SQL", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
 
         runBtn.Click += async (_, _) => await RunDiagAsync(owner, info, prov, report, status);
-        planBtn.Click += async (_, _) => await RunPlanAsync(prov, CurrentDb(info), sqlBox.Text, report, status);
+        planBtn.Click += async (_, _) => await RunPlanAsync(prov, CurrentDb(info), sqlBox.Text, planReport, status);
 
         var topBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         topBar.Children.Add(runBtn);
@@ -36,10 +43,67 @@ public static class DiagnosticsDialog
         sqlRow.Children.Add(sqlBox);
         sqlRow.Children.Add(planBtn);
 
+        // 发现312老板令：照原型重排页签——慢查询 / 锁等待 / 连接池 / 会话 四页签前置；
+        // 既有体检 / 变量 / 状态内容保留在后不丢功能。各页签口径不变，只动结构。
+        var slowTabContent = new StackPanel { Spacing = 10, MinWidth = 660 };
+        slowTabContent.Children.Add(new TextBlock
+        {
+            Text = "慢查询清单来自本机查询历史逐条静态体检；耗时与扫描行数以引擎侧慢日志为准，本机历史无此口径，如实不估算。下方粘贴 SQL 可跑执行计划诊断（只跑 EXPLAIN，不改数据）。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            FontSize = AntTokens.FontMinor,
+        });
+        slowTabContent.Children.Add(sqlRow);
+        slowTabContent.Children.Add(new ScrollViewer { Content = planReport, MaxHeight = 300, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        AddSection(slowTabContent, "最近语句静态体检（本机查询历史）");
+        slowTabContent.Children.Add(new ScrollViewer { Content = slowListPanel, MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        var slowTab = new TabViewItem { Header = "慢查询", IsClosable = false, Content = slowTabContent };
+
+        var lockTabContent = new StackPanel { Spacing = 10, MinWidth = 660 };
+        lockTabContent.Children.Add(new TextBlock
+        {
+            Text = "锁等待与死锁检出（LockAnalyzer）：持锁 → 等待链可视化，被阻塞方标红；发现的阻塞会话只生成 KILL 草稿，确认后才执行。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            FontSize = AntTokens.FontMinor,
+        });
+        var lockTab = new TabViewItem { Header = "锁等待", IsClosable = false, Content = lockTabContent };
+        Func<Task> loadLock = async () =>
+        {
+            lockReport.Children.Clear();
+            status.Text = "锁等待检测中…";
+            var dbName = await ResolveDbAsync(prov, info);
+            int n = await CheckLocks(owner, info, prov, dbName, lockReport, status);
+            lockTab.Header = n > 0 ? $"锁等待 ({n})" : "锁等待";
+            status.Text = "锁等待检测完成（只读，未改任何数据）。";
+        };
+        var lockBtn = new Button { Content = "检测锁等待", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        lockBtn.Click += (_, _) => _ = loadLock();
+        lockTabContent.Children.Add(lockBtn);
+        lockTabContent.Children.Add(new ScrollViewer { Content = lockReport, MaxHeight = 440, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+
+        var poolTabContent = new StackPanel { Spacing = 10, MinWidth = 660 };
+        poolTabContent.Children.Add(new TextBlock
+        {
+            Text = "连接池观察卡按进程清单口径只读统计；等待获取连接均值 / 泄漏疑似需引擎侧连接池指标，暂不估算。",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            FontSize = AntTokens.FontMinor,
+        });
+        poolTabContent.Children.Add(new ScrollViewer { Content = poolPanel, MaxHeight = 440, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        var poolTab = new TabViewItem { Header = "连接池", IsClosable = false, Content = poolTabContent };
+
+        // 发现149：会话页自动刷新开关（默认关，开启后 10 秒一轮，对话框关闭即停）——页签随原型由「进程」更名「会话」
+        var autoRefresh = new CheckBox { Content = $"自动刷新（每 {UiBatchB.AutoRefreshSeconds} 秒）" };
+        var procTabContent = new StackPanel { Spacing = 6 };
+        procTabContent.Children.Add(autoRefresh);
+        procTabContent.Children.Add(new ScrollViewer { Content = procPanel, MaxHeight = 440, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        var procTab = new TabViewItem { Header = "会话", IsClosable = false, Content = procTabContent };
+
         var panel = new StackPanel { Spacing = 12, MinWidth = 640 };
         panel.Children.Add(new TextBlock
         {
-            Text = "只读体检：连通性 / 版本 / 规模 / 锁等待与死锁 / 数据抽样体检；SQL 计划诊断只跑 EXPLAIN，不改数据。",
+            Text = "只读体检：连通性 / 版本 / 规模 / 数据抽样体检；锁等待与慢查询诊断已拆独立页签，口径不变。",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Ant.TextSub,
             FontSize = AntTokens.FontMinor,
@@ -51,63 +115,56 @@ public static class DiagnosticsDialog
             MaxHeight = 360,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         });
-        panel.Children.Add(sqlRow);
-        panel.Children.Add(status);
+        var healthTab = new TabViewItem { Header = "体检", IsClosable = false, Content = panel };
 
-        // 发现149：进程 / 变量 / 状态页签——运行态观测从体检报告拆出，按引擎口径取数，不支持的引擎如实标注
-        var procPanel = new StackPanel { Spacing = 6 };
-        var varPanel = new StackPanel { Spacing = 6 };
-        var statPanel = new StackPanel { Spacing = 6 };
-        Func<Task> loadProc = () => LoadProcessesAsync(owner, prov, profile.Engine, ResolveDbAsync(prov, info), procPanel, status);
-        var loaders = new Dictionary<StackPanel, Func<Task>>
-        {
-            [procPanel] = loadProc,
-            [varPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), varPanel, status, "变量"),
-            [statPanel] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), statPanel, status, "状态"),
-        };
-        var loaded = new HashSet<StackPanel>();
+        // 发现149：变量 / 状态页签——运行态观测从体检报告拆出，按引擎口径取数，不支持的引擎如实标注
+        var varTab = new TabViewItem { Header = "变量", IsClosable = false, Content = new ScrollViewer { Content = varPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+        var statTab = new TabViewItem { Header = "状态", IsClosable = false, Content = new ScrollViewer { Content = statPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+
         var tabs = new TabView { MinWidth = 660 };   // WinUI TabView 无 IsAddButtonVisible（云测 run399），加号钮未挂 AddTabButtonClick 不产生行为
-        // 发现149：进程页自动刷新开关（默认关，开启后 10 秒一轮，对话框关闭即停）
-        var autoRefresh = new CheckBox { Content = $"自动刷新（每 {UiBatchB.AutoRefreshSeconds} 秒）" };
-        var procTabContent = new StackPanel { Spacing = 6 };
-        procTabContent.Children.Add(autoRefresh);
-        procTabContent.Children.Add(new ScrollViewer { Content = procPanel, MaxHeight = 440, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
-        var procTab = new TabViewItem { Header = "进程", IsClosable = false, Content = procTabContent };
-        tabs.TabItems.Add(new TabViewItem { Header = "体检", IsClosable = false, Content = panel });
+        tabs.TabItems.Add(slowTab);
+        tabs.TabItems.Add(lockTab);
+        tabs.TabItems.Add(poolTab);
         tabs.TabItems.Add(procTab);
-        tabs.TabItems.Add(new TabViewItem { Header = "变量", IsClosable = false, Content = new ScrollViewer { Content = varPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
-        tabs.TabItems.Add(new TabViewItem { Header = "状态", IsClosable = false, Content = new ScrollViewer { Content = statPanel, MaxHeight = 480, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        tabs.TabItems.Add(healthTab);
+        tabs.TabItems.Add(varTab);
+        tabs.TabItems.Add(statTab);
+
+        Func<Task> loadProc = () => LoadProcessesAsync(owner, prov, profile.Engine, ResolveDbAsync(prov, info), procPanel, status);
+        var loaded = new HashSet<TabViewItem>();
+        var loaders = new Dictionary<TabViewItem, Func<Task>>
+        {
+            [slowTab] = () => LoadSlowQueriesAsync(slowListPanel, slowTab, status),
+            [lockTab] = loadLock,
+            [poolTab] = () => LoadPoolAsync(prov, profile.Engine, ResolveDbAsync(prov, info), poolPanel, status, poolTab),
+            [procTab] = loadProc,
+            [varTab] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), varPanel, status, "变量"),
+            [statTab] = () => LoadKeyValuesAsync(prov, profile.Engine, ResolveDbAsync(prov, info), statPanel, status, "状态"),
+        };
         tabs.SelectionChanged += async (_, _) =>
         {
             if (tabs.SelectedItem is not TabViewItem item) return;
-            // 进程页签内容外层是开关行＋滚动区，滚动区里才是加载面板；其余页签滚动区直挂面板
-            StackPanel? sp = item.Content switch
-            {
-                ScrollViewer sv => sv.Content as StackPanel,
-                StackPanel root => root.Children.OfType<ScrollViewer>().FirstOrDefault()?.Content as StackPanel,
-                _ => null,
-            };
-            if (sp is null) return;
-            if (loaders.TryGetValue(sp, out var load) && loaded.Add(sp)) await load();
+            if (loaders.TryGetValue(item, out var load) && loaded.Add(item)) await load();
         };
 
-        // 发现149：自动刷新定时器——只在进程页签可见时刷新，对话框关闭即停（无泄漏）
+        // 发现149：自动刷新定时器——只在会话页签可见时刷新，对话框关闭即停（无泄漏）
         var refreshTimer = owner.DispatcherQueue.CreateTimer();
         refreshTimer.Interval = TimeSpan.FromSeconds(UiBatchB.AutoRefreshSeconds);
         refreshTimer.Tick += async (_, _) =>
         {
-            if (!ReferenceEquals(tabs.SelectedItem, procTab)) return;   // 不在进程页不空跑查询（引用比较避免 CS0252 警告）
+            if (!ReferenceEquals(tabs.SelectedItem, procTab)) return;   // 不在会话页不空跑查询（引用比较避免 CS0252 警告）
             await loadProc();
         };
         autoRefresh.Click += (_, _) =>
         {
             bool on = autoRefresh.IsChecked == true;
             if (on) refreshTimer.Start(); else refreshTimer.Stop();
-            AppLog.Write($"[诊断] 进程页自动刷新 {(on ? "开" : "关")}");
+            AppLog.Write($"[诊断] 会话页自动刷新 {(on ? "开" : "关")}");
         };
 
         var dlgPanel = new StackPanel { Spacing = 10, MinWidth = 660 };
         dlgPanel.Children.Add(tabs);
+        dlgPanel.Children.Add(status);   // 共享状态行：各页签加载 / 诊断结果统一回显
 
         var dlg = new ContentDialog
         {
@@ -118,6 +175,7 @@ public static class DiagnosticsDialog
         };
         dlg.Closed += (_, _) => refreshTimer.Stop();   // 发现149：对话框关闭即停自动刷新，无泄漏
         _ = dlg.ShowThemedAsync();
+        _ = LoadSlowQueriesAsync(slowListPanel, slowTab, status);   // 首页签默认选中不触发 SelectionChanged，显式加载
         _ = RunDiagAsync(owner, info, prov, report, status);
     }
 
@@ -137,23 +195,17 @@ public static class DiagnosticsDialog
         return dbName;
     }
 
-    /// <summary>发现149：进程页签——MySQL SHOW PROCESSLIST / PG pg_stat_activity / SQL Server sys.dm_exec_sessions；
+    /// <summary>发现149：会话页签——MySQL SHOW PROCESSLIST / PG pg_stat_activity / SQL Server sys.dm_exec_sessions；
     /// 行内带终止按钮（复用 LockAnalyzer.KillSql，草稿口径与锁页一致，确认后执行）。</summary>
     private static async Task LoadProcessesAsync(MainWindow owner, IDbProvider prov, DbEngine engine, Task<string> dbNameTask,
         StackPanel panel, TextBlock status)
     {
         panel.Children.Clear();
-        status.Text = "进程清单加载中…";
-        string? sql = engine switch
-        {
-            DbEngine.MySQL => "SHOW FULL PROCESSLIST",
-            DbEngine.PostgreSQL => "SELECT pid::text, usename, COALESCE(application_name, ''), COALESCE(client_addr::text, ''), state, COALESCE(wait_event_type, ''), left(query, 80) FROM pg_stat_activity WHERE pid <> pg_backend_pid()",
-            DbEngine.SqlServer => "SELECT session_id, login_name, COALESCE(host_name, ''), status, COALESCE(wait_type, '') FROM sys.dm_exec_sessions WHERE is_user_process = 1",
-            _ => null,
-        };
+        status.Text = "会话清单加载中…";
+        string? sql = ProcessListSql(engine);
         if (sql is null)
         {
-            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无进程清单口径，此页签不适用。");
+            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无会话清单口径，此页签不适用。");
             status.Text = "";
             return;
         }
@@ -162,9 +214,7 @@ public static class DiagnosticsDialog
             var dbName = await dbNameTask;
             var rs = await prov.Execute(dbName, sql);
             var rows = rs.Count > 0 ? rs[0].Rows : new List<object?[]>();
-            AddSection(panel, $"进程清单（{rows.Count} 条）");
-            // 发现312原型：连接池观察卡——活跃/空闲占比条（按进程清单口径，只读统计）
-            panel.Children.Add(PoolGaugeRow(rows.Count, rows.Count(r => IsSessionActive(engine, r))));
+            AddSection(panel, $"会话清单（{rows.Count} 条）");
             if (rows.Count == 0) AddLine(panel, "✓ 当前无其他活动会话。");
             foreach (var row in rows)
             {
@@ -184,13 +234,119 @@ public static class DiagnosticsDialog
                 killBtn.Click += (_, _) => _ = KillSessionAsync(owner, engine, prov, dbName, sid, status);
                 panel.Children.Add(killBtn);
             }
-            status.Text = "进程清单加载完成（只读）。";
+            status.Text = "会话清单加载完成（只读）。";
         }
         catch (Exception ex)
         {
-            AddLine(panel, HumanError.Say(ex, "进程清单不可用（权限或版本原因）"), Ant.Warn);
+            AddLine(panel, HumanError.Say(ex, "会话清单不可用（权限或版本原因）"), Ant.Warn);
             status.Text = "";
         }
+    }
+
+    /// <summary>发现312原型：进程清单口径——MySQL / PG / SQL Server 各自的会话清单只读语句，连接池观察卡与会话页签共用。</summary>
+    private static string? ProcessListSql(DbEngine engine) => engine switch
+    {
+        DbEngine.MySQL => "SHOW FULL PROCESSLIST",
+        DbEngine.PostgreSQL => "SELECT pid::text, usename, COALESCE(application_name, ''), COALESCE(client_addr::text, ''), state, COALESCE(wait_event_type, ''), left(query, 80) FROM pg_stat_activity WHERE pid <> pg_backend_pid()",
+        DbEngine.SqlServer => "SELECT session_id, login_name, COALESCE(host_name, ''), status, COALESCE(wait_type, '') FROM sys.dm_exec_sessions WHERE is_user_process = 1",
+        _ => null,
+    };
+
+    /// <summary>发现312原型：连接池页签——观察卡按进程清单口径只读统计（活跃/空闲占比条）；
+    /// 等待获取连接均值 / 泄漏疑似需引擎侧连接池指标，如实不估算。</summary>
+    private static async Task LoadPoolAsync(IDbProvider prov, DbEngine engine, Task<string> dbNameTask,
+        StackPanel panel, TextBlock status, TabViewItem tab)
+    {
+        panel.Children.Clear();
+        status.Text = "连接池观察加载中…";
+        string? sql = ProcessListSql(engine);
+        if (sql is null)
+        {
+            AddLine(panel, $"{EngineInfo.Name(engine)} 暂无会话清单口径，连接池观察不适用。");
+            status.Text = "";
+            return;
+        }
+        try
+        {
+            var dbName = await dbNameTask;
+            var rs = await prov.Execute(dbName, sql);
+            var rows = rs.Count > 0 ? rs[0].Rows : new List<object?[]>();
+            int active = rows.Count(r => IsSessionActive(engine, r));
+            AddSection(panel, $"连接池观察（按进程清单口径，共 {rows.Count} 个会话）");
+            panel.Children.Add(PoolGaugeRow(rows.Count, active));
+            AddLine(panel, "等待获取连接均值 / 泄漏疑似需引擎侧连接池指标，当前按进程清单口径如实统计，不估算。");
+            status.Text = "连接池观察加载完成（只读）。";
+            tab.Header = rows.Count > 0 ? $"连接池 ({rows.Count})" : "连接池";
+        }
+        catch (Exception ex)
+        {
+            AddLine(panel, HumanError.Say(ex, "连接池观察不可用（权限或版本原因）"), Ant.Warn);
+            status.Text = "";
+        }
+    }
+
+    /// <summary>发现312原型：慢查询页签——本机查询历史逐条静态体检（SlowQueryDiagnoser），
+    /// 列：时间 / 库 / SQL 摘要 / 级别 / 建议；耗时与扫描行数本机历史无口径，如实不估算。</summary>
+    private static Task LoadSlowQueriesAsync(StackPanel panel, TabViewItem tab, TextBlock status)
+    {
+        panel.Children.Clear();
+        status.Text = "慢查询清单扫描中…";
+        var hits = new List<(HistoryEntry Entry, SlowQueryFinding Finding)>();
+        foreach (var e in QueryHistory.Items)
+            foreach (var f in SlowQueryDiagnoser.Analyze(e.Sql))
+                hits.Add((e, f));
+        tab.Header = hits.Count > 0 ? $"慢查询 ({hits.Count})" : "慢查询";
+        if (hits.Count == 0)
+        {
+            AddLine(panel, "✓ 本机查询历史未检出慢查询模式（静态体检口径）。");
+            status.Text = "";
+            return Task.CompletedTask;
+        }
+        panel.Children.Add(HeaderRow(new[] { ("时间", 70.0), ("库", 90.0), ("SQL 摘要", 240.0), ("级别", 50.0), ("建议", 0.0) }));
+        foreach (var (e, f) in hits.Take(20))
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Padding = new Thickness(10, 4, 10, 4) };
+            row.Children.Add(new TextBlock { Text = e.Time.ToString("HH:mm:ss"), Width = 70, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") });
+            row.Children.Add(new TextBlock { Text = e.Database.Length > 0 ? e.Database : "—", Width = 90, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
+            var sql1 = e.Sql.Split('\n', 2)[0];
+            if (sql1.Length > 80) sql1 = sql1[..80] + "…";
+            row.Children.Add(new TextBlock { Text = sql1, Width = 240, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap });
+            row.Children.Add(new TextBlock
+            {
+                Text = f.Severity switch { "danger" => "危险", "warn" => "注意", _ => "提示" },
+                Width = 50,
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = f.Severity switch { "danger" => Ant.Error, "warn" => Ant.Warn, _ => Ant.Primary },
+            });
+            row.Children.Add(new TextBlock { Text = $"{f.Message}；{f.Suggestion}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+            panel.Children.Add(row);
+        }
+        if (hits.Count > 20) AddLine(panel, $"…其余 {hits.Count - 20} 条已截断，完整清单请进命令监控查看。");
+        status.Text = "慢查询清单扫描完成（静态体检口径，只读）。";
+        return Task.CompletedTask;
+    }
+
+    /// <summary>发现312原型：表头行——表头底色（AntHeadBg），列宽 0 表示自适应。</summary>
+    private static StackPanel HeaderRow((string Text, double Width)[] cells)
+    {
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            Background = (Brush?)Application.Current.Resources["AntHeadBg"],
+            Padding = new Thickness(10, 5, 10, 5),
+        };
+        foreach (var (t, w) in cells)
+            header.Children.Add(new TextBlock
+            {
+                Text = t,
+                Width = w > 0 ? w : double.NaN,
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            });
+        return header;
     }
 
     /// <summary>发现149：变量 / 状态页签——MySQL SHOW VARIABLES / SHOW GLOBAL STATUS、
@@ -473,7 +629,8 @@ public static class DiagnosticsDialog
         status.Text = "诊断完成（只读，未改任何数据）。";
     }
 
-    private static async Task CheckLocks(MainWindow owner, NodeInfo info, IDbProvider prov,
+    /// <summary>锁等待与死锁检出：返回等待边条数（供锁等待页签计数徽标；体检报告沿用不接收）。</summary>
+    private static async Task<int> CheckLocks(MainWindow owner, NodeInfo info, IDbProvider prov,
         string dbName, StackPanel report, TextBlock status)
     {
         var waits = new List<LockWait>();
@@ -522,14 +679,14 @@ public static class DiagnosticsDialog
         catch (Exception ex)
         {
             AddLine(report, HumanError.Say(ex, "锁等待快照不可用（权限或版本原因）"), Ant.Primary);
-            return;
+            return 0;
         }
 
         AddSection(report, "锁等待 / 死锁");
         if (waits.Count == 0)
         {
             AddLine(report, "✓ 当前无锁等待。");
-            return;
+            return 0;
         }
 
         AddLine(report, $"共有 {waits.Count} 条等待边：");
@@ -560,7 +717,7 @@ public static class DiagnosticsDialog
         if (cycles.Count == 0)
         {
             AddLine(report, "未检出死锁环（纯链式等待会自行解开）。");
-            return;
+            return waits.Count;
         }
 
         AddLine(report, $"⚠ 检出 {cycles.Count} 个死锁环：", Ant.Error);
@@ -577,6 +734,7 @@ public static class DiagnosticsDialog
         AddLine(report, "建议终止回滚代价最小的会话解开环。以下草稿已放进查询窗口，确认后再执行：", Ant.Primary);
         foreach (var d in drafts) AddLine(report, "  " + d, Ant.Primary);
         if (drafts.Count > 0) owner.OpenQueryTab(info, string.Join(";\n", drafts));
+        return waits.Count;
     }
 
     /// <summary>s16 冻结快照：把当前锁等待现场原样落盘（含时间戳），供事后回溯比对。</summary>
@@ -782,23 +940,7 @@ public static class DiagnosticsDialog
             if (staticFindings.Count > 0)
             {
                 AddSection(report, $"SQL 静态体检（{staticFindings.Count} 项）");
-                var header = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 12,
-                    Background = (Brush?)Application.Current.Resources["AntHeadBg"],
-                    Padding = new Thickness(10, 5, 10, 5),
-                };
-                foreach (var (t, w) in new[] { ("规则", 60), ("级别", 70), ("问题", 260), ("建议", 0) })
-                    header.Children.Add(new TextBlock
-                    {
-                        Text = t,
-                        Width = w > 0 ? w : double.NaN,
-                        FontSize = AntTokens.FontMinor,
-                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                        Foreground = Ant.TextSub,
-                    });
-                report.Children.Add(header);
+                report.Children.Add(HeaderRow(new[] { ("规则", 60.0), ("级别", 70.0), ("问题", 260.0), ("建议", 0.0) }));
                 foreach (var f in staticFindings)
                 {
                     var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Padding = new Thickness(10, 4, 10, 4) };
