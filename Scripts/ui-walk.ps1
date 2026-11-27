@@ -1437,7 +1437,25 @@ foreach ($s in $plan.steps) {
         $item = Find-ElWait @{ controlType = 'TreeItem'; name = (Tpl $s.prefix) } 10 $mainRoot
         if ($null -eq $item) { throw "tree item not found: $(Tpl $s.prefix)" }
         $needle = Tpl ([string]$s.itemName)
-        $mi = Open-TreeContextFlyout $item $needle $s.prefix
+        # 复拍轮3 修红（run 46019515974 定谳）：二级分组项（库工具/工具与向导 SubItem）不展开不在 UIA 树，
+        # tree-context 直找 needle 全 miss（U079a/U088a/e/k 假阳性留证的根因）。补：可选 group 字段，
+        # 先展开分组再找项；分组路径失败再退回原直找路径。
+        $mi = $null
+        if ($s.PSObject.Properties['group'] -and [string]$s.group) {
+          $grp = Open-TreeContextFlyout $item (Tpl ([string]$s.group)) "$($s.prefix)-group"
+          if ($null -ne $grp) {
+            $expanded = $false
+            try {
+              $ec = $grp.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+              $ec.Expand(); $expanded = $true
+            } catch { }
+            if (-not $expanded) { Invoke-El $grp | Out-Null }
+            Start-Sleep -Milliseconds 900
+            $mi = Find-ElWait @{ name = $needle } 6 $mainRoot
+            if ($null -eq $mi) { $mi = Find-ElWait @{ name = $needle } 4 $null }
+          }
+        }
+        if ($null -eq $mi) { $mi = Open-TreeContextFlyout $item $needle $s.prefix }
         if ($null -eq $mi) { throw "context item not found: $($s.itemName)" }
         Invoke-El $mi
         Start-Sleep -Seconds 3

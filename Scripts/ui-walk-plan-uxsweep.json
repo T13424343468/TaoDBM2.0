@@ -1,949 +1,953 @@
 {
- "steps": [
-  {
-   "id": "U000",
-   "feature": "巡检-主窗口初始态（欢迎页）",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u000-evidence.png"
-  },
-  {
-   "id": "U001",
-   "feature": "巡检-新建连接对话框",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "＋ 新建连接"
-   },
-   "allowMiss": false
-  },
-  {
-   "id": "U002",
-   "feature": "巡检-连接对话框引擎切换MySQL",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "MySQL",
-   "allowMiss": true
-  },
-  {
-   "id": "U003",
-   "feature": "巡检-连接对话框引擎切换PostgreSQL",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "PostgreSQL",
-   "allowMiss": true
-  },
-  {
-   "id": "U004",
-   "feature": "巡检-连接对话框引擎切换SQLServer",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "SQL Server",
-   "allowMiss": true
-  },
-  {
-   "id": "U005",
-   "feature": "巡检-连接对话框引擎切换MongoDB",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "MongoDB",
-   "allowMiss": true
-  },
-  {
-   "id": "U006",
-   "feature": "巡检-连接对话框引擎切换Redis",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "Redis",
-   "allowMiss": true
-  },
-  {
-   "id": "U007",
-   "feature": "巡检-连接对话框收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U007a",
-   "feature": "巡检-新建连接对话框（建连）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "＋ 新建连接"
-   },
-   "allowMiss": false
-  },
-  {
-   "id": "U007b",
-   "feature": "巡检-连接选择SQLite引擎",
-   "action": "setcombo",
-   "find": {
-    "automationId": "conn-engine"
-   },
-   "value": "SQLite",
-   "allowMiss": true
-  },
-  {
-   "id": "U007c",
-   "feature": "巡检-连接填写名称",
-   "action": "setvalue",
-   "find": {
-    "automationId": "conn-name"
-   },
-   "value": "__CONN_NAME__",
-   "allowMiss": true
-  },
-  {
-   "id": "U007d",
-   "feature": "巡检-连接填写数据库文件",
-   "action": "setvalue",
-   "find": {
-    "automationId": "conn-file"
-   },
-   "value": "__DBFILE__",
-   "allowMiss": true
-  },
-  {
-   "id": "U007e",
-   "feature": "巡检-连接保存",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "保存"
-   },
-   "critical": true,
-   "allowMiss": false
-  },
-  {
-   "id": "U010",
-   "feature": "巡检-展开连接",
-   "action": "expand",
-   "prefix": "__CONN_NAME__",
-   "sleepAfter": 6,
-   "critical": true
-  },
-  {
-   "id": "U011",
-   "feature": "巡检-展开数据库",
-   "action": "expand-keyboard",
-   "selectPrefix": "__CONN_NAME__",
-   "childPrefix": "main",
-   "sleepAfter": 6,
-   "critical": true
-  },
-  {
-   "id": "U012",
-   "feature": "巡检-选中表节点",
-   "action": "select",
-   "prefix": "__TBL1__",
-   "critical": true
-  },
-  {
-   "id": "U013",
-   "feature": "巡检-查看数据页签",
-   "action": "tree-context",
-   "prefix": "__TBL1__",
-   "itemName": "查看数据",
-   "critical": true
-  },
-  {
-   "id": "U014",
-   "feature": "巡检-表数据页签工具栏",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u014-evidence.png"
-  },
-  {
-   "id": "U014a",
-   "feature": "巡检-数据网格右键打开菜单",
-   "action": "mouse-click",
-   "find": {
-    "automationId": "work-results"
-   },
-   "button": "right",
-   "note": "评分补步211：数据网格右键打开菜单（✎ 就地编辑入口），实拍留证",
-   "allowMiss": true
-  },
-  {
-   "id": "U014b",
-   "feature": "巡检-就地编辑打开行编辑器",
-   "action": "menu-item",
-   "itemName": "✎ 就地编辑",
-   "note": "评分补步211：行编辑器弹窗（BLOB/TEXT 大字段「编辑大字段」按钮宿主）",
-   "allowMiss": true
-  },
-  {
-   "id": "U014c",
-   "feature": "巡检-行编辑器弹窗留证",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u014c-evidence.png"
-  },
-  {
-   "id": "U014d",
-   "feature": "巡检-编辑大字段按钮",
-   "action": "click",
-   "find": {
-    "automationId": "BlobEdit_note"
-   },
-   "note": "评分补步211：BLOB/TEXT 值超64字节时行编辑器内出现编辑大字段按钮（RowEditorFactory BlobEdit_列名），miss 则该库无超长值属预期",
-   "allowMiss": true
-  },
-  {
-   "id": "U014e",
-   "feature": "巡检-BLOB编辑器弹窗留证",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u014e-evidence.png"
-  },
-  {
-   "id": "U014f",
-   "feature": "巡检-BLOB编辑器收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U014g",
-   "feature": "巡检-行编辑器收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U015",
-   "feature": "巡检-表结构按钮",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "结构"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U016",
-   "feature": "巡检-表结构收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U017a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U017",
-   "feature": "巡检-表单视图按钮",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "表单"
-   },
-   "note": "㉜脚本修准：实际按钮名「表单」非「表单视图」，且仅关系库浏览页显示（SQLite 场景不出现，allowMiss 承接分支断言）",
-   "allowMiss": true
-  },
-  {
-   "id": "U018",
-   "feature": "巡检-表单视图收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U019",
-   "feature": "巡检-拟真数据按钮",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "拟真数据"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U020",
-   "feature": "巡检-拟真数据收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U021a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U021",
-   "feature": "巡检-粘贴数据按钮",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "粘贴数据"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U022",
-   "feature": "巡检-粘贴数据收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U023",
-   "feature": "巡检-表设计器（列）",
-   "action": "tree-context",
-   "prefix": "__TBL1__",
-   "itemName": "设计表",
-   "critical": true
-  },
-  {
-   "id": "U024",
-   "feature": "巡检-表设计器收场",
-   "action": "press-esc",
-   "critical": true
-  },
-  {
-   "id": "U030",
-   "feature": "巡检-新建查询页签",
-   "action": "menu",
-   "buttonAutomationId": "BtnLogo",
-   "itemName": "新建查询",
-   "critical": true
-  },
-  {
-   "id": "U031",
-   "feature": "巡检-查询页工具栏全貌",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u031-evidence.png"
-  },
-  {
-   "id": "U032open",
-   "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "导出 ▾"
-   },
-   "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
-   "allowMiss": true
-  },
-  {
-   "id": "U032",
-   "feature": "巡检-导出CSV按钮",
-   "action": "click",
-   "find": {
-    "controlType": "MenuItem",
-    "name": "导出 CSV（.csv）"
-   },
-   "allowMiss": true,
-   "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
-  },
-  {
-   "id": "U033",
-   "feature": "巡检-导出CSV收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U034a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U034open",
-   "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "导出 ▾"
-   },
-   "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
-   "allowMiss": true
-  },
-  {
-   "id": "U034",
-   "feature": "巡检-导出INSERT按钮",
-   "action": "click",
-   "find": {
-    "controlType": "MenuItem",
-    "name": "导出 INSERT SQL（.sql）"
-   },
-   "allowMiss": true,
-   "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
-  },
-  {
-   "id": "U035",
-   "feature": "巡检-导出INSERT收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U036",
-   "feature": "巡检-导出更多菜单",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "导出 ▾"
-   },
-   "note": "㉜脚本修准：实际按钮字符为 U+25BE（▾），原目标 U+25BC（▼）与控件不符",
-   "allowMiss": true
-  },
-  {
-   "id": "U037",
-   "feature": "巡检-导出更多收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U038a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U038",
-   "feature": "巡检-查询收藏",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "收藏"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U039",
-   "feature": "巡检-收藏收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U040a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U040",
-   "feature": "巡检-查询历史",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "历史"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U041",
-   "feature": "巡检-历史收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U042a",
-   "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "更多 ▾"
-   },
-   "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
-   "allowMiss": true
-  },
-  {
-   "id": "U042",
-   "feature": "巡检-报表",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "报表"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U043",
-   "feature": "巡检-报表收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U044",
-   "feature": "巡检-设计辅助",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "设计辅助"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U045",
-   "feature": "巡检-设计辅助收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U045a",
-   "feature": "巡检-执行查询填充结果网格",
-   "action": "click",
-   "find": {
-    "automationId": "work-run"
-   },
-   "note": "评分补步205：先执行查询让结果网格有数据行——run420实锤U046b网格空态右键无菜单可拍（ResultGridMenu按单元格挂载）",
-   "allowMiss": true
-  },
-  {
-   "id": "U045b",
-   "feature": "巡检-结果网格就绪留证",
-   "action": "soft-page",
-   "page": "noop",
-   "note": "评分补步205：留证结果网格已有数据行，供U046b右键命中单元格",
-   "allowMiss": true,
-   "shot": "ux-u045b-evidence.png"
-  },
-  {
-   "id": "U046a",
-   "feature": "巡检-编辑器右键打开菜单",
-   "action": "mouse-click",
-   "find": {
-    "automationId": "work-editor"
-   },
-   "button": "right",
-   "note": "㉜脚本修准：U046 原 menu-item 假定菜单已开，实为右键从未命中——补真实右键（实体鼠标事件）打开编辑器上下文菜单",
-   "allowMiss": true
-  },
-  {
-   "id": "U046",
-   "feature": "巡检-编辑器右键菜单",
-   "action": "menu-item",
-   "itemName": "美化 SQL",
-   "note": "㉜脚本修准：菜单项源码存在（EditorOps），右键命中后按名点击；坐标命中复验随本轮走查",
-   "allowMiss": true
-  },
-  {
-   "id": "U047",
-   "feature": "巡检-右键菜单收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U047a",
-   "feature": "巡检-编辑器右键再开菜单",
-   "action": "mouse-click",
-   "find": {
-    "automationId": "work-editor"
-   },
-   "button": "right",
-   "note": "评分补步208：重开编辑器右键菜单以进查找替换",
-   "allowMiss": true
-  },
-  {
-   "id": "U047b",
-   "feature": "巡检-查找替换对话框",
-   "action": "menu-item",
-   "itemName": "查找替换…",
-   "note": "评分补步208：查找替换对话框展开留证（正则/全字/区分大小写/查找下一个/全部替换）",
-   "allowMiss": true
-  },
-  {
-   "id": "U047c",
-   "feature": "巡检-查找替换收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U046b",
-   "feature": "巡检-结果网格右键打开菜单",
-   "action": "mouse-click",
-   "find": {
-    "automationId": "work-results"
-   },
-   "button": "right",
-   "note": "评分打回205补步：结果网格右键打开菜单（复制 JSON/CSV/SQL INSERT＋置 NULL＋行组），实拍留证",
-   "allowMiss": true
-  },
-  {
-   "id": "U046c",
-   "feature": "巡检-结果网格右键菜单",
-   "action": "menu-item",
-   "itemName": "{ } 复制为 JSON",
-   "note": "评分打回205补步：菜单项源码存在（ResultGridMenu），按名点击留证",
-   "allowMiss": true
-  },
-  {
-   "id": "U046d",
-   "feature": "巡检-结果网格右键收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U050",
-   "feature": "巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证）",
-   "action": "context-tour",
-   "prefix": "__CONN_NAME__",
-   "group": "工具与向导",
-   "items": [
-    "权限审计",
-    "主从管理面",
-    "部署向导",
-    "分片向导",
-    "一键诊断",
-    "高危 SQL 拦截",
-    "上线审查",
-    "任务中心",
-    "流式开关",
-    "读路由预演",
-    "热点检测",
-    "再均衡规划",
-    "分片键评估",
-    "迁移续传",
-    "团队合并",
-    "共享包",
-    "智能工具",
-    "看板管理",
-    "服务器监控",
-    "命令监控",
-    "仪表板"
-   ],
-   "tourPrefix": "tour-conn",
-   "allowMiss": true
-  },
-  {
-   "id": "U058",
-   "feature": "巡检-数据传输与同步",
-   "action": "menu",
-   "buttonAutomationId": "BtnLogo",
-   "itemName": "传输",
-   "allowMiss": true
-  },
-  {
-   "id": "U059",
-   "feature": "巡检-数据同步收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U064",
-   "feature": "巡检-ER图",
-   "action": "menu",
-   "buttonAutomationId": "BtnLogo",
-   "itemName": "ER 图",
-   "allowMiss": true
-  },
-  {
-   "id": "U065",
-   "feature": "巡检-ER图收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U066",
-   "feature": "巡检-备份恢复向导",
-   "action": "menu",
-   "buttonAutomationId": "BtnLogo",
-   "itemName": "备份 / 还原",
-   "allowMiss": true
-  },
-  {
-   "id": "U067",
-   "feature": "巡检-备份收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U078",
-   "feature": "巡检-在库中搜索",
-   "action": "tree-context",
-   "prefix": "main",
-   "itemName": "在库中搜索",
-   "allowMiss": true
-  },
-  {
-   "id": "U078a",
-   "feature": "巡检-库中搜索对话框留证",
-   "action": "soft-page",
-   "page": "noop",
-   "shot": "ux-u078a-dbsearch.png",
-   "note": "评分补步210：U078 调度队列延迟开 DbSearchDialog 后补拍展开态（复拍轮2实锤步骤 pass 但无截图留证，补 shot 字段）",
-   "allowMiss": true
-  },
-  {
-   "id": "U079",
-   "feature": "巡检-库搜索收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U079a",
-   "feature": "巡检-命令监控结果态",
-   "action": "tree-context",
-   "prefix": "main",
-   "itemName": "命令监控",
-   "allowMiss": true,
-   "note": "评分补步209：查询执行后开命令监控拍本机历史列表态（tour-conn-20 仅空初始态）"
-  },
-  {
-   "id": "U079b",
-   "feature": "巡检-命令监控留证",
-   "action": "soft-page",
-   "page": "noop",
-   "shot": "ux-u079b-cmdmon.png",
-   "allowMiss": true
-  },
-  {
-   "id": "U079c",
-   "feature": "巡检-命令监控收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U088",
-   "feature": "巡检-库节点·库工具全巡览（14 弹窗逐项留证）",
-   "action": "context-tour",
-   "prefix": "main",
-   "group": "库工具",
-   "items": [
-    "备份计划",
-    "备份演练",
-    "数据脱敏",
-    "数据对账",
-    "误删恢复",
-    "留痕审计",
-    "问库",
-    "快照包",
-    "批量清理",
-    "设计辅助",
-    "例程管理",
-    "一键诊断",
-    "告警中心",
-    "三层模型"
-   ],
-   "tourPrefix": "tour-db",
-   "allowMiss": true
-  },
-  {
-   "id": "U088a",
-   "feature": "巡检-备份计划结果态",
-   "action": "tree-context",
-   "prefix": "main",
-   "itemName": "备份计划",
-   "allowMiss": true,
-   "note": "评分补步302：重开备份计划对话框拍生成计划结果态（tour-db-01 仅初始态）"
-  },
-  {
-   "id": "U088b",
-   "feature": "巡检-生成计划点击",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "生成计划"
-   },
-   "allowMiss": true,
-   "note": "302 结果态：策略默认 168/24/3，点生成计划出预览"
-  },
-  {
-   "id": "U088c",
-   "feature": "巡检-备份计划结果留证",
-   "action": "soft-page",
-   "page": "noop",
-   "shot": "ux-u088c-planresult.png",
-   "allowMiss": true
-  },
-  {
-   "id": "U088d",
-   "feature": "巡检-备份计划收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U088e",
-   "feature": "巡检-数据对账结果态",
-   "action": "tree-context",
-   "prefix": "main",
-   "itemName": "数据对账",
-   "allowMiss": true,
-   "note": "评分补步306：重开对账对话框填两端表名拍对账结果态"
-  },
-  {
-   "id": "U088f",
-   "feature": "巡检-对账源表填入",
-   "action": "set-text",
-   "find": {
-    "automationId": "Reconcile_SrcTable"
-   },
-   "value": "orders",
-   "allowMiss": true
-  },
-  {
-   "id": "U088g",
-   "feature": "巡检-对账目标表填入",
-   "action": "set-text",
-   "find": {
-    "automationId": "Reconcile_DstTable"
-   },
-   "value": "orders",
-   "allowMiss": true
-  },
-  {
-   "id": "U088h",
-   "feature": "巡检-开始对账点击",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "开始对账"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U088i",
-   "feature": "巡检-对账结果留证",
-   "action": "soft-page",
-   "page": "noop",
-   "shot": "ux-u088i-reconresult.png",
-   "allowMiss": true
-  },
-  {
-   "id": "U088j",
-   "feature": "巡检-对账收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U088k",
-   "feature": "巡检-诊断中心结果态",
-   "action": "tree-context",
-   "prefix": "main",
-   "itemName": "一键诊断",
-   "allowMiss": true,
-   "note": "评分补步312：重开诊断中心拍诊断结果态（tour-conn-05 仅初始态）"
-  },
-  {
-   "id": "U088l",
-   "feature": "巡检-开始诊断点击",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "开始诊断"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U088m",
-   "feature": "巡检-诊断结果留证",
-   "action": "soft-page",
-   "page": "noop",
-   "shot": "ux-u088m-diagresult.png",
-   "allowMiss": true
-  },
-  {
-   "id": "U088n",
-   "feature": "巡检-诊断收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U104",
-   "feature": "巡检-设置入口真拍",
-   "action": "click",
-   "find": {
-    "automationId": "BtnLogo"
-   },
-   "note": "㉗巡检补真实点击：原 soft-page noop 假步骤改为点开主菜单",
-   "allowMiss": true
-  },
-  {
-   "id": "U104a",
-   "feature": "巡检-设置菜单项点击",
-   "action": "menu-item",
-   "itemName": "设置",
-   "note": "㉗巡检补真实点击：主菜单中点「设置」打开设置对话框",
-   "allowMiss": true
-  },
-  {
-   "id": "U104b",
-   "feature": "巡检-设置收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U105",
-   "feature": "巡检-手册",
-   "action": "click",
-   "find": {
-    "controlType": "Button",
-    "name": "手册"
-   },
-   "allowMiss": true
-  },
-  {
-   "id": "U106",
-   "feature": "巡检-手册收场",
-   "action": "press-esc",
-   "allowMiss": true
-  },
-  {
-   "id": "U107",
-   "feature": "巡检-关于",
-   "action": "soft-page",
-   "page": "about",
-   "shot": "ux-u107-about.png",
-   "note": "㉗巡检补真实点击：about 分支本就真点 BtnAbout，补截图留证",
-   "allowMiss": true
-  },
-  {
-   "id": "U108",
-   "feature": "巡检-主题入口",
-   "action": "soft-page",
-   "page": "theme",
-   "shot": "ux-u108-theme.png",
-   "note": "㉗巡检留证：主题切换动作按 2026-11-22 老板令摘除（云机扛不住全屏重绘），保留入口可达真验＋截图，外观由逐屏对稿线兜底",
-   "allowMiss": true
-  },
-  {
-   "id": "U109",
-   "feature": "巡检-收尾主窗口",
-   "action": "soft-page",
-   "page": "noop",
-   "allowMiss": true,
-   "shot": "ux-u109-evidence.png"
-  }
- ]
+  "steps": [
+    {
+      "id": "U000",
+      "feature": "巡检-主窗口初始态（欢迎页）",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u000-evidence.png"
+    },
+    {
+      "id": "U001",
+      "feature": "巡检-新建连接对话框",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "＋ 新建连接"
+      },
+      "allowMiss": false
+    },
+    {
+      "id": "U002",
+      "feature": "巡检-连接对话框引擎切换MySQL",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "MySQL",
+      "allowMiss": true
+    },
+    {
+      "id": "U003",
+      "feature": "巡检-连接对话框引擎切换PostgreSQL",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "PostgreSQL",
+      "allowMiss": true
+    },
+    {
+      "id": "U004",
+      "feature": "巡检-连接对话框引擎切换SQLServer",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "SQL Server",
+      "allowMiss": true
+    },
+    {
+      "id": "U005",
+      "feature": "巡检-连接对话框引擎切换MongoDB",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "MongoDB",
+      "allowMiss": true
+    },
+    {
+      "id": "U006",
+      "feature": "巡检-连接对话框引擎切换Redis",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "Redis",
+      "allowMiss": true
+    },
+    {
+      "id": "U007",
+      "feature": "巡检-连接对话框收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U007a",
+      "feature": "巡检-新建连接对话框（建连）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "＋ 新建连接"
+      },
+      "allowMiss": false
+    },
+    {
+      "id": "U007b",
+      "feature": "巡检-连接选择SQLite引擎",
+      "action": "setcombo",
+      "find": {
+        "automationId": "conn-engine"
+      },
+      "value": "SQLite",
+      "allowMiss": true
+    },
+    {
+      "id": "U007c",
+      "feature": "巡检-连接填写名称",
+      "action": "setvalue",
+      "find": {
+        "automationId": "conn-name"
+      },
+      "value": "__CONN_NAME__",
+      "allowMiss": true
+    },
+    {
+      "id": "U007d",
+      "feature": "巡检-连接填写数据库文件",
+      "action": "setvalue",
+      "find": {
+        "automationId": "conn-file"
+      },
+      "value": "__DBFILE__",
+      "allowMiss": true
+    },
+    {
+      "id": "U007e",
+      "feature": "巡检-连接保存",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "保存"
+      },
+      "critical": true,
+      "allowMiss": false
+    },
+    {
+      "id": "U010",
+      "feature": "巡检-展开连接",
+      "action": "expand",
+      "prefix": "__CONN_NAME__",
+      "sleepAfter": 6,
+      "critical": true
+    },
+    {
+      "id": "U011",
+      "feature": "巡检-展开数据库",
+      "action": "expand-keyboard",
+      "selectPrefix": "__CONN_NAME__",
+      "childPrefix": "main",
+      "sleepAfter": 6,
+      "critical": true
+    },
+    {
+      "id": "U012",
+      "feature": "巡检-选中表节点",
+      "action": "select",
+      "prefix": "__TBL1__",
+      "critical": true
+    },
+    {
+      "id": "U013",
+      "feature": "巡检-查看数据页签",
+      "action": "tree-context",
+      "prefix": "__TBL1__",
+      "itemName": "查看数据",
+      "critical": true
+    },
+    {
+      "id": "U014",
+      "feature": "巡检-表数据页签工具栏",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u014-evidence.png"
+    },
+    {
+      "id": "U014a",
+      "feature": "巡检-数据网格右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-results"
+      },
+      "button": "right",
+      "note": "评分补步211：数据网格右键打开菜单（✎ 就地编辑入口），实拍留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U014b",
+      "feature": "巡检-就地编辑打开行编辑器",
+      "action": "menu-item",
+      "itemName": "✎ 就地编辑",
+      "note": "评分补步211：行编辑器弹窗（BLOB/TEXT 大字段「编辑大字段」按钮宿主）",
+      "allowMiss": true
+    },
+    {
+      "id": "U014c",
+      "feature": "巡检-行编辑器弹窗留证",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u014c-evidence.png"
+    },
+    {
+      "id": "U014d",
+      "feature": "巡检-编辑大字段按钮",
+      "action": "click",
+      "find": {
+        "automationId": "BlobEdit_note"
+      },
+      "note": "评分补步211：BLOB/TEXT 值超64字节时行编辑器内出现编辑大字段按钮（RowEditorFactory BlobEdit_列名），miss 则该库无超长值属预期",
+      "allowMiss": true
+    },
+    {
+      "id": "U014e",
+      "feature": "巡检-BLOB编辑器弹窗留证",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u014e-evidence.png"
+    },
+    {
+      "id": "U014f",
+      "feature": "巡检-BLOB编辑器收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U014g",
+      "feature": "巡检-行编辑器收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U015",
+      "feature": "巡检-表结构按钮",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "结构"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U016",
+      "feature": "巡检-表结构收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U017a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U017",
+      "feature": "巡检-表单视图按钮",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "表单"
+      },
+      "note": "㉜脚本修准：实际按钮名「表单」非「表单视图」，且仅关系库浏览页显示（SQLite 场景不出现，allowMiss 承接分支断言）",
+      "allowMiss": true
+    },
+    {
+      "id": "U018",
+      "feature": "巡检-表单视图收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U019",
+      "feature": "巡检-拟真数据按钮",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "拟真数据"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U020",
+      "feature": "巡检-拟真数据收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U021a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U021",
+      "feature": "巡检-粘贴数据按钮",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "粘贴数据"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U022",
+      "feature": "巡检-粘贴数据收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U023",
+      "feature": "巡检-表设计器（列）",
+      "action": "tree-context",
+      "prefix": "__TBL1__",
+      "itemName": "设计表",
+      "critical": true
+    },
+    {
+      "id": "U024",
+      "feature": "巡检-表设计器收场",
+      "action": "press-esc",
+      "critical": true
+    },
+    {
+      "id": "U030",
+      "feature": "巡检-新建查询页签",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "新建查询",
+      "critical": true
+    },
+    {
+      "id": "U031",
+      "feature": "巡检-查询页工具栏全貌",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u031-evidence.png"
+    },
+    {
+      "id": "U032open",
+      "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "导出 ▾"
+      },
+      "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
+      "allowMiss": true
+    },
+    {
+      "id": "U032",
+      "feature": "巡检-导出CSV按钮",
+      "action": "click",
+      "find": {
+        "controlType": "MenuItem",
+        "name": "导出 CSV（.csv）"
+      },
+      "allowMiss": true,
+      "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
+    },
+    {
+      "id": "U033",
+      "feature": "巡检-导出CSV收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U034a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U034open",
+      "feature": "巡检-导出菜单展开（D⑤ 收一个菜单）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "导出 ▾"
+      },
+      "note": "D⑤ 导出收成一个菜单：先展开「导出 ▾」再点菜单项",
+      "allowMiss": true
+    },
+    {
+      "id": "U034",
+      "feature": "巡检-导出INSERT按钮",
+      "action": "click",
+      "find": {
+        "controlType": "MenuItem",
+        "name": "导出 INSERT SQL（.sql）"
+      },
+      "allowMiss": true,
+      "note": "D⑤ 导出收成一个菜单：先点「导出 ▾」再点菜单项（前置步 U036a 已展开）"
+    },
+    {
+      "id": "U035",
+      "feature": "巡检-导出INSERT收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U036",
+      "feature": "巡检-导出更多菜单",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "导出 ▾"
+      },
+      "note": "㉜脚本修准：实际按钮字符为 U+25BE（▾），原目标 U+25BC（▼）与控件不符",
+      "allowMiss": true
+    },
+    {
+      "id": "U037",
+      "feature": "巡检-导出更多收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U038a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U038",
+      "feature": "巡检-查询收藏",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "收藏"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U039",
+      "feature": "巡检-收藏收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U040a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U040",
+      "feature": "巡检-查询历史",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "历史"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U041",
+      "feature": "巡检-历史收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U042a",
+      "feature": "巡检-更多菜单展开（B⑥ 低频收组）",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "更多 ▾"
+      },
+      "note": "B⑥ 工具栏低频项收「更多 ▾」，目标按钮入 Flyout 后先展开再点",
+      "allowMiss": true
+    },
+    {
+      "id": "U042",
+      "feature": "巡检-报表",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "报表"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U043",
+      "feature": "巡检-报表收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U044",
+      "feature": "巡检-设计辅助",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "设计辅助"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U045",
+      "feature": "巡检-设计辅助收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U045a",
+      "feature": "巡检-执行查询填充结果网格",
+      "action": "click",
+      "find": {
+        "automationId": "work-run"
+      },
+      "note": "评分补步205：先执行查询让结果网格有数据行——run420实锤U046b网格空态右键无菜单可拍（ResultGridMenu按单元格挂载）",
+      "allowMiss": true
+    },
+    {
+      "id": "U045b",
+      "feature": "巡检-结果网格就绪留证",
+      "action": "soft-page",
+      "page": "noop",
+      "note": "评分补步205：留证结果网格已有数据行，供U046b右键命中单元格",
+      "allowMiss": true,
+      "shot": "ux-u045b-evidence.png"
+    },
+    {
+      "id": "U046a",
+      "feature": "巡检-编辑器右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-editor"
+      },
+      "button": "right",
+      "note": "㉜脚本修准：U046 原 menu-item 假定菜单已开，实为右键从未命中——补真实右键（实体鼠标事件）打开编辑器上下文菜单",
+      "allowMiss": true
+    },
+    {
+      "id": "U046",
+      "feature": "巡检-编辑器右键菜单",
+      "action": "menu-item",
+      "itemName": "美化 SQL",
+      "note": "㉜脚本修准：菜单项源码存在（EditorOps），右键命中后按名点击；坐标命中复验随本轮走查",
+      "allowMiss": true
+    },
+    {
+      "id": "U047",
+      "feature": "巡检-右键菜单收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U047a",
+      "feature": "巡检-编辑器右键再开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-editor"
+      },
+      "button": "right",
+      "note": "评分补步208：重开编辑器右键菜单以进查找替换",
+      "allowMiss": true
+    },
+    {
+      "id": "U047b",
+      "feature": "巡检-查找替换对话框",
+      "action": "menu-item",
+      "itemName": "查找替换…",
+      "note": "评分补步208：查找替换对话框展开留证（正则/全字/区分大小写/查找下一个/全部替换）",
+      "allowMiss": true
+    },
+    {
+      "id": "U047c",
+      "feature": "巡检-查找替换收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U046b",
+      "feature": "巡检-结果网格右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-results"
+      },
+      "button": "right",
+      "note": "评分打回205补步：结果网格右键打开菜单（复制 JSON/CSV/SQL INSERT＋置 NULL＋行组），实拍留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U046c",
+      "feature": "巡检-结果网格右键菜单",
+      "action": "menu-item",
+      "itemName": "{ } 复制为 JSON",
+      "note": "评分打回205补步：菜单项源码存在（ResultGridMenu），按名点击留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U046d",
+      "feature": "巡检-结果网格右键收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U050",
+      "feature": "巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证）",
+      "action": "context-tour",
+      "prefix": "__CONN_NAME__",
+      "group": "工具与向导",
+      "items": [
+        "权限审计",
+        "主从管理面",
+        "部署向导",
+        "分片向导",
+        "一键诊断",
+        "高危 SQL 拦截",
+        "上线审查",
+        "任务中心",
+        "流式开关",
+        "读路由预演",
+        "热点检测",
+        "再均衡规划",
+        "分片键评估",
+        "迁移续传",
+        "团队合并",
+        "共享包",
+        "智能工具",
+        "看板管理",
+        "服务器监控",
+        "命令监控",
+        "仪表板"
+      ],
+      "tourPrefix": "tour-conn",
+      "allowMiss": true
+    },
+    {
+      "id": "U058",
+      "feature": "巡检-数据传输与同步",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "传输",
+      "allowMiss": true
+    },
+    {
+      "id": "U059",
+      "feature": "巡检-数据同步收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U064",
+      "feature": "巡检-ER图",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "ER 图",
+      "allowMiss": true
+    },
+    {
+      "id": "U065",
+      "feature": "巡检-ER图收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U066",
+      "feature": "巡检-备份恢复向导",
+      "action": "menu",
+      "buttonAutomationId": "BtnLogo",
+      "itemName": "备份 / 还原",
+      "allowMiss": true
+    },
+    {
+      "id": "U067",
+      "feature": "巡检-备份收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U078",
+      "feature": "巡检-在库中搜索",
+      "action": "tree-context",
+      "prefix": "main",
+      "itemName": "在库中搜索",
+      "allowMiss": true
+    },
+    {
+      "id": "U078a",
+      "feature": "巡检-库中搜索对话框留证",
+      "action": "soft-page",
+      "page": "noop",
+      "shot": "ux-u078a-dbsearch.png",
+      "note": "评分补步210：U078 调度队列延迟开 DbSearchDialog 后补拍展开态（复拍轮2实锤步骤 pass 但无截图留证，补 shot 字段）",
+      "allowMiss": true
+    },
+    {
+      "id": "U079",
+      "feature": "巡检-库搜索收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U079a",
+      "feature": "巡检-命令监控结果态",
+      "action": "tree-context",
+      "prefix": "__CONN_NAME__",
+      "itemName": "命令监控",
+      "allowMiss": true,
+      "note": "评分补步209：查询执行后开命令监控拍本机历史列表态；复拍轮3修红——命令监控在连接节点「工具与向导」分组内，原 prefix=main（库节点）无此菜单项必 miss，改连节点＋分组展开",
+      "group": "工具与向导"
+    },
+    {
+      "id": "U079b",
+      "feature": "巡检-命令监控留证",
+      "action": "soft-page",
+      "page": "noop",
+      "shot": "ux-u079b-cmdmon.png",
+      "allowMiss": true
+    },
+    {
+      "id": "U079c",
+      "feature": "巡检-命令监控收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U088",
+      "feature": "巡检-库节点·库工具全巡览（14 弹窗逐项留证）",
+      "action": "context-tour",
+      "prefix": "main",
+      "group": "库工具",
+      "items": [
+        "备份计划",
+        "备份演练",
+        "数据脱敏",
+        "数据对账",
+        "误删恢复",
+        "留痕审计",
+        "问库",
+        "快照包",
+        "批量清理",
+        "设计辅助",
+        "例程管理",
+        "一键诊断",
+        "告警中心",
+        "三层模型"
+      ],
+      "tourPrefix": "tour-db",
+      "allowMiss": true
+    },
+    {
+      "id": "U088a",
+      "feature": "巡检-备份计划结果态",
+      "action": "tree-context",
+      "prefix": "main",
+      "itemName": "备份计划",
+      "allowMiss": true,
+      "note": "评分补步302：重开备份计划对话框拍生成计划结果态（tour-db-01 仅初始态）；复拍轮3修红——SubItem 须先展开「库工具」分组（走查脚本已支持 group 字段）",
+      "group": "库工具"
+    },
+    {
+      "id": "U088b",
+      "feature": "巡检-生成计划点击",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "生成计划"
+      },
+      "allowMiss": true,
+      "note": "302 结果态：策略默认 168/24/3，点生成计划出预览"
+    },
+    {
+      "id": "U088c",
+      "feature": "巡检-备份计划结果留证",
+      "action": "soft-page",
+      "page": "noop",
+      "shot": "ux-u088c-planresult.png",
+      "allowMiss": true
+    },
+    {
+      "id": "U088d",
+      "feature": "巡检-备份计划收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U088e",
+      "feature": "巡检-数据对账结果态",
+      "action": "tree-context",
+      "prefix": "main",
+      "itemName": "数据对账",
+      "allowMiss": true,
+      "note": "评分补步306：重开对账对话框填两端表名拍对账结果态；复拍轮3修红——SubItem 须先展开「库工具」分组（走查脚本已支持 group 字段）",
+      "group": "库工具"
+    },
+    {
+      "id": "U088f",
+      "feature": "巡检-对账源表填入",
+      "action": "set-text",
+      "find": {
+        "automationId": "Reconcile_SrcTable"
+      },
+      "value": "orders",
+      "allowMiss": true
+    },
+    {
+      "id": "U088g",
+      "feature": "巡检-对账目标表填入",
+      "action": "set-text",
+      "find": {
+        "automationId": "Reconcile_DstTable"
+      },
+      "value": "orders",
+      "allowMiss": true
+    },
+    {
+      "id": "U088h",
+      "feature": "巡检-开始对账点击",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "开始对账"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U088i",
+      "feature": "巡检-对账结果留证",
+      "action": "soft-page",
+      "page": "noop",
+      "shot": "ux-u088i-reconresult.png",
+      "allowMiss": true
+    },
+    {
+      "id": "U088j",
+      "feature": "巡检-对账收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U088k",
+      "feature": "巡检-诊断中心结果态",
+      "action": "tree-context",
+      "prefix": "main",
+      "itemName": "一键诊断",
+      "allowMiss": true,
+      "note": "评分补步312：重开诊断中心拍诊断结果态（tour-conn-05 仅初始态）；复拍轮3修红——SubItem 须先展开「库工具」分组（走查脚本已支持 group 字段）",
+      "group": "库工具"
+    },
+    {
+      "id": "U088l",
+      "feature": "巡检-开始诊断点击",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "开始诊断"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U088m",
+      "feature": "巡检-诊断结果留证",
+      "action": "soft-page",
+      "page": "noop",
+      "shot": "ux-u088m-diagresult.png",
+      "allowMiss": true
+    },
+    {
+      "id": "U088n",
+      "feature": "巡检-诊断收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U104",
+      "feature": "巡检-设置入口真拍",
+      "action": "click",
+      "find": {
+        "automationId": "BtnLogo"
+      },
+      "note": "㉗巡检补真实点击：原 soft-page noop 假步骤改为点开主菜单",
+      "allowMiss": true
+    },
+    {
+      "id": "U104a",
+      "feature": "巡检-设置菜单项点击",
+      "action": "menu-item",
+      "itemName": "设置",
+      "note": "㉗巡检补真实点击：主菜单中点「设置」打开设置对话框",
+      "allowMiss": true
+    },
+    {
+      "id": "U104b",
+      "feature": "巡检-设置收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U105",
+      "feature": "巡检-手册",
+      "action": "click",
+      "find": {
+        "controlType": "Button",
+        "name": "手册"
+      },
+      "allowMiss": true
+    },
+    {
+      "id": "U106",
+      "feature": "巡检-手册收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
+      "id": "U107",
+      "feature": "巡检-关于",
+      "action": "soft-page",
+      "page": "about",
+      "shot": "ux-u107-about.png",
+      "note": "㉗巡检补真实点击：about 分支本就真点 BtnAbout，补截图留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U108",
+      "feature": "巡检-主题入口",
+      "action": "soft-page",
+      "page": "theme",
+      "shot": "ux-u108-theme.png",
+      "note": "㉗巡检留证：主题切换动作按 2026-11-22 老板令摘除（云机扛不住全屏重绘），保留入口可达真验＋截图，外观由逐屏对稿线兜底",
+      "allowMiss": true
+    },
+    {
+      "id": "U109",
+      "feature": "巡检-收尾主窗口",
+      "action": "soft-page",
+      "page": "noop",
+      "allowMiss": true,
+      "shot": "ux-u109-evidence.png"
+    }
+  ]
 }
