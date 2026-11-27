@@ -106,6 +106,18 @@ public partial class WorkTab : Grid
     };
     private List<QueryResult> _lastFull = new();
 
+    // 原型202：下部页签容器——[结果/执行计划/消息]（Navicat 式下部页签），三视图收进同一页签区
+    private readonly Button _tabResultBtn = new() { Content = "结果" };
+    private readonly Button _tabPlanBtn = new() { Content = "执行计划" };
+    private readonly Button _tabMsgBtn = new() { Content = "消息" };
+    private readonly ScrollViewer _planHost = new()
+    {
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        Padding = new Thickness(8),
+    };
+    private FrameworkElement? _viewResults, _viewPlan, _viewMsg;
+
     private List<QueryResult> _last = new();
     private QueryResult? _browseResult;
     private List<ColumnSpec> _cols = new();
@@ -162,6 +174,7 @@ public partial class WorkTab : Grid
         _errorText.Text = msg;
         _errorBanner.Visibility = Visibility.Visible;
         _messageBox.Text = "";
+        SwitchLowerTab(2);   // 原型202：出错自动切到消息页签，横幅可见
         Core.AppLog.Write($"[错误横幅] {msg}");
     }
 
@@ -171,6 +184,80 @@ public partial class WorkTab : Grid
         if (_errorBanner.Visibility == Visibility.Collapsed) return;
         _errorBanner.Visibility = Visibility.Collapsed;
         Core.AppLog.Write("[错误横幅] 收起");
+    }
+
+    /// <summary>原型202：下部页签切换——0 结果 / 1 执行计划 / 2 消息（Navicat 式下部页签）；布局未建好时静默跳过。</summary>
+    private void SwitchLowerTab(int idx)
+    {
+        if (_viewResults is null || _viewPlan is null || _viewMsg is null) return;
+        var views = new[] { _viewResults, _viewPlan, _viewMsg };
+        var tabs = new[] { _tabResultBtn, _tabPlanBtn, _tabMsgBtn };
+        for (int i = 0; i < views.Length; i++)
+        {
+            bool on = i == idx;
+            views[i].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+            tabs[i].Background = on ? Ant.Card : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            tabs[i].Foreground = on ? Ant.Text : Ant.TextSub;
+            tabs[i].BorderBrush = on ? Ant.Primary : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        }
+    }
+
+    /// <summary>原型202：执行计划页签——取最近一次 EXPLAIN 结果解析成计划树＋瓶颈注记（与诊断中心同源 ExplainPlanEngine.Parse/Annotate）。</summary>
+    private void RenderPlanTab()
+    {
+        var panel = new StackPanel { Spacing = 4 };
+        var lines = new List<string>();
+        foreach (var r in _last)
+        {
+            int ci = 0;
+            var cols = r.Columns;
+            for (int i = 0; i < cols.Count; i++)
+            {
+                var n = (cols[i] ?? "").ToLowerInvariant();
+                if (n.Contains("detail") || n.Contains("plan") || n.Contains("explain")) { ci = i; break; }
+            }
+            foreach (var row in r.Rows)
+                if (row is not null && row.Length > ci)
+                    lines.Add(Convert.ToString(row[ci]) ?? "");
+        }
+        if (lines.Count == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "（暂无执行计划：点工具栏「⏱ 解释计划」或编辑器右键「执行计划」。）",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
+        else
+        {
+            var plan = ExplainPlanEngine.Parse(string.Join("\n", lines));
+            var findings = ExplainPlanEngine.Annotate(plan);
+            foreach (var node in plan.Flat)
+                panel.Children.Add(new TextBlock
+                {
+                    Text = node.Text,
+                    FontSize = AntTokens.FontMinor,
+                    Margin = new Thickness(Math.Min(node.Depth, 8) * 16, 0, 0, 0),
+                    Foreground = Ant.Text,
+                    FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
+                    TextWrapping = TextWrapping.Wrap,
+                });
+            if (findings.Count == 0)
+            {
+                panel.Children.Add(new TextBlock { Text = "✓ 未发现全表扫描 / 文件排序 / 临时表等瓶颈。", FontSize = AntTokens.FontMinor, Foreground = Ant.Primary });
+            }
+            else
+            {
+                foreach (var f in findings)
+                {
+                    panel.Children.Add(new TextBlock { Text = $"[{f.Code}] {f.Message}", FontSize = AntTokens.FontMinor, Foreground = f.Severity == "danger" ? Ant.Error : Ant.Primary, TextWrapping = TextWrapping.Wrap });
+                    panel.Children.Add(new TextBlock { Text = "    建议：" + f.Suggestion, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+                }
+            }
+        }
+        _planHost.Content = panel;
     }
 
     public WorkTab(MainWindow owner, IDbProvider provider, string db, string child, WorkMode mode, string? initialSql, string? sourceFile = null)
@@ -212,7 +299,7 @@ public partial class WorkTab : Grid
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });                                     // 3 结果区
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 4 B⑦ 查找条（默认收起）
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 5 B② 结果条（钉底固定行高）
-        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                                                          // 6 消息区
+        // 原型202：消息区收进下部页签容器（原第 6 行撤除），与结果/执行计划同区切换
 
         // 工具栏（B⑥：高频留一级，低频收「更多」分组菜单）
         var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Padding = new Thickness(10, 8, 10, 8) };
@@ -371,8 +458,38 @@ public partial class WorkTab : Grid
         var msgArea = new StackPanel { Margin = new Thickness(8, 4, 8, 8) };
         msgArea.Children.Add(_errorBanner);
         msgArea.Children.Add(msgBorder);
-        Children.Add(msgArea);
-        SetRow(msgArea, 6);   // D-8 修红：消息区随结果区上移；B② 结果条占第 5 行钉底
+
+        // 原型202：下部页签容器——[结果/执行计划/消息]（Navicat 式），结果区/消息区/计划区收进同一页签区
+        _viewResults = resultStack;
+        _viewPlan = _planHost;
+        _viewMsg = msgArea;
+        var tabHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Padding = new Thickness(8, 4, 8, 0) };
+        var tabBtns = new[] { _tabResultBtn, _tabPlanBtn, _tabMsgBtn };
+        var tabIds = new[] { "work-tab-result", "work-tab-plan", "work-tab-message" };
+        for (int i = 0; i < tabBtns.Length; i++)
+        {
+            var idx = i;
+            tabBtns[i].CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd);
+            tabBtns[i].Padding = new Thickness(12, 4, 12, 4);
+            tabBtns[i].BorderThickness = new Thickness(0, 0, 0, 2);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(tabBtns[i], tabIds[i]);
+            tabBtns[i].Click += (_, _) => SwitchLowerTab(idx);
+            tabHeader.Children.Add(tabBtns[i]);
+        }
+        var tabContent = new Grid();
+        tabContent.Children.Add(_viewResults);
+        tabContent.Children.Add(_viewPlan);
+        tabContent.Children.Add(_viewMsg);
+        var lowerRegion = new Grid();
+        lowerRegion.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        lowerRegion.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        lowerRegion.Children.Add(tabHeader);
+        SetRow(tabHeader, 0);
+        lowerRegion.Children.Add(tabContent);
+        SetRow(tabContent, 1);
+        Children.Add(lowerRegion);
+        SetRow(lowerRegion, 3);
+        SwitchLowerTab(0);   // 默认落在结果页签
 
         // B②：底部结果条钉死页签底部、固定行高——行数 · 耗时 · 时间，数据多走内部滚动
         var resultBarHost = new Border
@@ -826,6 +943,7 @@ public partial class WorkTab : Grid
             return;
         }
         ClearError();
+        SwitchLowerTab(0);   // 原型202：执行成功自动落回结果页签
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
         // ㊲验证坐实：结果条计数在流式/分页结果上只报已物化页行数，改用 TotalRows 优先（无则回落物化行数）
         _resultBar.Text = $"{list.Sum(x => x.TotalRows ?? x.Rows.Count):N0} 行 · {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
@@ -854,6 +972,7 @@ public partial class WorkTab : Grid
         }
         else el = GridBuilder.Build(r, null, EditorText, _provider.EngineName, _colWidths, WidthKey(), _owner, AssistInfo());
         _resultsHost.Content = el;
+        SwitchLowerTab(0);   // 原型202：结果刷新自动落回结果页签
         _messageBox.Text = r.Message.Length > 0 ? r.Message
             : (onRowTap is not null
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
@@ -1598,7 +1717,115 @@ public partial class WorkTab : Grid
         panel.Children.Add(previewSql);
         RefreshPreview();
 
-        var dlg = new ContentDialog
+        ContentDialog dlg = null!;   // 原型206：「应用并下一条」按钮先于弹层创建，闭包引用须先声明（run404 CS841 同族教训）
+        // 原型206：「应用并下一条」——保存当前行后游标移到下一行重新打开编辑弹层（Navicat/DBeaver 行编辑主流做法）；
+        // 保存逻辑复用下方 SaveRow 同一口径，保存失败（校验不过/执行报错）留在当前行
+        var applyNextBtn = new Button
+        {
+            Content = "应用并下一条 ▸",
+            BorderThickness = new Thickness(1),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            Padding = new Thickness(10, 4, 10, 4),
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(applyNextBtn, "work-editrow-apply-next");
+        applyNextBtn.Click += async (_, _) =>
+        {
+            dlg.Hide();   // 关当前弹层（ShowThemedAsync 以 None 收束，外层直接返回，不与新弹层冲突）
+            bool ok = await SaveRow();
+            if (!ok) return;   // 保存失败：错误横幅已示，留在当前行
+            if (rowIndex.HasValue && _browseResult != null && rowIndex.Value + 1 < _browseResult.Rows.Count)
+                await EditRow(rowIndex.Value + 1);   // 编辑模式：游标移到下一行
+            else if (!rowIndex.HasValue)
+                await EditRow(null);   // 新增模式：继续下一行新增
+            else
+                _messageBox.Text = "已到最后一行。";
+        };
+        panel.Children.Add(applyNextBtn);
+
+        async Task<bool> SaveRow()
+        {
+            // 保存：UPDATE 或 INSERT。NULL 勾选语义：勾选＝存 NULL；未勾选＋留空＝数字列存 NULL、文本列存空字符串。
+            var sets = new List<string>();
+            var insCols = new List<string>();
+            var insVals = new List<string>();
+            for (int i = 0; i < _cols.Count; i++)
+            {
+                bool isNull = nullChecks[i].IsChecked == true;
+                bool empty = fields[i].GetText().Length == 0;
+                // 发现65：二进制列——未改动不回写（防 hex 展示值整列覆盖改坏 BLOB）；改动值须为偶数位十六进制
+                bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
+                if (isBin && existing != null && !_cols[i].IsKey && !fields[i].Dirty) continue;
+                if (isBin && !isNull && !empty)
+                {
+                    var hex = fields[i].GetText().Trim();
+                    if (hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
+                    {
+                        _messageBox.Text = $"{_cols[i].Name} 是二进制列：请填偶数位的十六进制（0-9、A-F），或勾选 NULL。";
+                        return false;
+                    }
+                }
+                string val;
+                if (isNull)
+                {
+                    val = "NULL";
+                }
+                else if (empty)
+                {
+                    val = CsvImporter.IsNumeric(_cols[i].DataType) ? "NULL" : "''";
+                }
+                else
+                {
+                    val = Exporter.Literal(_cols[i], fields[i].GetText());
+                }
+
+                if (existing == null)
+                {
+                    // 新增：勾选 NULL 或填了值才纳入列；未勾选且留空省略，保留列默认值语义。
+                    if (isNull || !empty) { insCols.Add(_provider.Quote(_cols[i].Name)); insVals.Add(val); }
+                }
+                else if (!_cols[i].IsKey)
+                {
+                    sets.Add($"{_provider.Quote(_cols[i].Name)} = {val}");
+                }
+            }
+
+            string sql;
+            if (existing == null)
+            {
+                if (insCols.Count == 0) { _messageBox.Text = "没有填写任何值。"; return false; }
+                sql = $"INSERT INTO {_provider.Quote(_child)} ({string.Join(", ", insCols)}) VALUES ({string.Join(", ", insVals)})";
+            }
+            else
+            {
+                if (sets.Count == 0) { _messageBox.Text = "没有可更新的列（主键列不可修改）。"; return false; }
+                sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
+            }
+            if (existing == null)
+            {
+                return await ExecWrite(sql, "已新增 1 行");
+            }
+            // 发现88：编辑行弹窗保存后落留痕账——before 取原行镜像，after 按保存口径（NULL 勾选/空串语义）重建，CaptureRow 只记有差异的列
+            var beforeMap = new Dictionary<string, string?>();
+            var afterMap = new Dictionary<string, string?>();
+            for (int i = 0; i < _cols.Count; i++)
+            {
+                if (_cols[i].IsKey) continue;
+                bool isNull = nullChecks[i].IsChecked == true;
+                bool empty = fields[i].GetText().Length == 0;
+                bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
+                string? beforeV = i < existing.Length && existing[i] is not DBNull ? Exporter.Format(existing[i]) : null;
+                beforeMap[_cols[i].Name] = beforeV;
+                afterMap[_cols[i].Name] = (isBin && !fields[i].Dirty) ? beforeV
+                    : isNull ? null
+                    : empty ? (CsvImporter.IsNumeric(_cols[i].DataType) ? null : "")
+                    : fields[i].GetText();
+            }
+            var audit = ChangeAudit.CaptureRow(_child, KeyCol!.Name, Exporter.Format(existing[_cols.IndexOf(KeyCol)]), beforeMap, afterMap, sql);
+            return await ExecWrite(sql, "已保存修改", audit);
+        }
+
+        dlg = new ContentDialog
         {
             Title = existing == null ? $"新增行 · {_child}" : $"编辑行 · {_child}",
             Content = new ScrollViewer { Content = panel, MaxHeight = 420, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
@@ -1635,88 +1862,12 @@ public partial class WorkTab : Grid
             return;
         }
 
-        // 保存：UPDATE 或 INSERT。NULL 勾选语义：勾选＝存 NULL；未勾选＋留空＝数字列存 NULL、文本列存空字符串。
-        var sets = new List<string>();
-        var insCols = new List<string>();
-        var insVals = new List<string>();
-        for (int i = 0; i < _cols.Count; i++)
-        {
-            bool isNull = nullChecks[i].IsChecked == true;
-            bool empty = fields[i].GetText().Length == 0;
-            // 发现65：二进制列——未改动不回写（防 hex 展示值整列覆盖改坏 BLOB）；改动值须为偶数位十六进制
-            bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
-            if (isBin && existing != null && !_cols[i].IsKey && !fields[i].Dirty) continue;
-            if (isBin && !isNull && !empty)
-            {
-                var hex = fields[i].GetText().Trim();
-                if (hex.Length % 2 != 0 || hex.Any(c => !Uri.IsHexDigit(c)))
-                {
-                    _messageBox.Text = $"{_cols[i].Name} 是二进制列：请填偶数位的十六进制（0-9、A-F），或勾选 NULL。";
-                    return;
-                }
-            }
-            string val;
-            if (isNull)
-            {
-                val = "NULL";
-            }
-            else if (empty)
-            {
-                val = CsvImporter.IsNumeric(_cols[i].DataType) ? "NULL" : "''";
-            }
-            else
-            {
-                val = Exporter.Literal(_cols[i], fields[i].GetText());
-            }
-
-            if (existing == null)
-            {
-                // 新增：勾选 NULL 或填了值才纳入列；未勾选且留空省略，保留列默认值语义。
-                if (isNull || !empty) { insCols.Add(_provider.Quote(_cols[i].Name)); insVals.Add(val); }
-            }
-            else if (!_cols[i].IsKey)
-            {
-                sets.Add($"{_provider.Quote(_cols[i].Name)} = {val}");
-            }
-        }
-
-        string sql;
-        if (existing == null)
-        {
-            if (insCols.Count == 0) { _messageBox.Text = "没有填写任何值。"; return; }
-            sql = $"INSERT INTO {_provider.Quote(_child)} ({string.Join(", ", insCols)}) VALUES ({string.Join(", ", insVals)})";
-        }
-        else
-        {
-            if (sets.Count == 0) { _messageBox.Text = "没有可更新的列（主键列不可修改）。"; return; }
-            sql = $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
-        }
-        if (existing == null)
-        {
-            await ExecWrite(sql, "已新增 1 行");
-            return;
-        }
-        // 发现88：编辑行弹窗保存后落留痕账——before 取原行镜像，after 按保存口径（NULL 勾选/空串语义）重建，CaptureRow 只记有差异的列
-        var beforeMap = new Dictionary<string, string?>();
-        var afterMap = new Dictionary<string, string?>();
-        for (int i = 0; i < _cols.Count; i++)
-        {
-            if (_cols[i].IsKey) continue;
-            bool isNull = nullChecks[i].IsChecked == true;
-            bool empty = fields[i].GetText().Length == 0;
-            bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
-            string? beforeV = i < existing.Length && existing[i] is not DBNull ? Exporter.Format(existing[i]) : null;
-            beforeMap[_cols[i].Name] = beforeV;
-            afterMap[_cols[i].Name] = (isBin && !fields[i].Dirty) ? beforeV
-                : isNull ? null
-                : empty ? (CsvImporter.IsNumeric(_cols[i].DataType) ? null : "")
-                : fields[i].GetText();
-        }
-        var audit = ChangeAudit.CaptureRow(_child, KeyCol!.Name, Exporter.Format(existing[_cols.IndexOf(KeyCol)]), beforeMap, afterMap, sql);
-        await ExecWrite(sql, "已保存修改", audit);
+        // 保存（原型206：与「应用并下一条」共用 SaveRow 同一口径）
+        await SaveRow();
     }
 
-    private async Task ExecWrite(string sql, string okMsg, AuditEntry? audit = null)
+    /// <summary>执行写语句（行编辑/删除共用）。返回是否成功——原型206「应用并下一条」凭此决定是否继续下一行。</summary>
+    private async Task<bool> ExecWrite(string sql, string okMsg, AuditEntry? audit = null)
     {
         try
         {
@@ -1733,12 +1884,14 @@ public partial class WorkTab : Grid
                 _offset = Math.Max(0, _offset - _pageSize);
                 await RunOrRefresh();
             }
+            return true;
         }
         catch (Exception ex)
         {
             // 发现79：行编辑执行错误横幅与查询路径同口径补「执行失败」前缀
             var humanRow = HumanError.Say(ex, "执行失败");
             ShowError(humanRow.StartsWith("执行没成功：", StringComparison.Ordinal) ? "执行失败：" + humanRow["执行".Length..] : humanRow);
+            return false;
         }
     }
 

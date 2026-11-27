@@ -175,6 +175,9 @@ public partial class WorkTab
         try { planSql = ExplainPlanEngine.PlanSql(_provider.Profile.Engine, stmt); }
         catch (NotSupportedException ex) { _messageBox.Text = HumanError.Say(ex, "执行计划"); return; }
         await RunOrRefresh(planSql);
+        // 原型202：EXPLAIN 原始输出仍落结果网格，这里同步解析成计划树＋瓶颈注记落「执行计划」页签并切过去
+        RenderPlanTab();
+        SwitchLowerTab(1);
     }
 
     private async void ShowSnippets()
