@@ -34,6 +34,46 @@ public static class BackupDialog
         var body = new StackPanel { Spacing = 10, MinWidth = 620 };
         ContentDialog? dlg = null;
 
+        // 发现301原型：头部面包屑——连接 · 数据库，一眼确认操作对象
+        var crumb = new TextBlock
+        {
+            Text = $"{profile.DisplayName ?? profile.Host} · {profile.Database}",
+            FontSize = AntTokens.FontBody,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        // 发现301原型：七引擎卡片——当前引擎高亮，不支持引擎置灰并给人话原因
+        var engineRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        foreach (DbEngine e in Enum.GetValues<DbEngine>())
+        {
+            bool current = e == profile.Engine;
+            bool usable = BackupTools.Supported(e);
+            var card = new Border
+            {
+                Padding = new Thickness(10, 4, 10, 4),
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                BorderThickness = new Thickness(1),
+                BorderBrush = current ? Ant.Primary : Ant.Border,
+                Background = current ? Ant.PrimaryBg : (Brush?)Application.Current.Resources["AntCard"],
+                Opacity = usable ? 1.0 : 0.55,
+            };
+            card.Child = new TextBlock
+            {
+                Text = EngineInfo.Name(e) + (usable ? "" : " ⚠"),
+                FontSize = AntTokens.FontMinor,
+                Foreground = current ? Ant.Primary : Ant.TextSub,
+            };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(card, $"EngineCard_{e}");
+            engineRow.Children.Add(card);
+        }
+        var engineNote = new TextBlock
+        {
+            Text = BackupTools.Supported(profile.Engine) ? $"备份引擎：{EngineInfo.Name(profile.Engine)}（官方命令行工具）" : BackupTools.UnsupportedReason(profile.Engine),
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.TextSub,
+            TextWrapping = TextWrapping.Wrap,
+        };
+
         void UpdateStepBar()
         {
             var parts = new List<string>();
@@ -214,12 +254,99 @@ public static class BackupDialog
             FontSize = AntTokens.FontMinor,
             Text = "确认无误后点「开始」。",
         };
+        // 发现301原型：执行进度区——状态行＋进度条＋SHA-256 校验行＋磁盘空间提示
+        var progStatus = new TextBlock { FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = Ant.Primary, Text = "● 待执行" };
+        var progPercent = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub };
+        var progTop = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        progTop.Children.Add(progStatus);
+        progTop.Children.Add(progPercent);
+        var progBar = new Microsoft.UI.Xaml.Controls.ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = false };
+        var progMeta = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var checksumLabel = new TextBlock { Text = "SHA-256 校验值", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = Ant.Primary, VerticalAlignment = VerticalAlignment.Center };
+        var checksumText = new TextBlock
+        {
+            FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
+            FontSize = AntTokens.FontMinor,
+            Foreground = Ant.Text,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var checksumRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        checksumRow.Children.Add(checksumLabel);
+        checksumRow.Children.Add(checksumText);
+        var checksumCard = new Border
+        {
+            Padding = new Thickness(12, 6, 12, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Primary,
+            Background = Ant.PrimaryBg,
+            Visibility = Visibility.Collapsed,
+        };
+        checksumCard.Child = checksumRow;
+        var diskText = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
+        var diskTip = new Border
+        {
+            Padding = new Thickness(12, 6, 12, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            BorderThickness = new Thickness(1),
+            Visibility = Visibility.Collapsed,
+        };
+        diskTip.Child = diskText;
+        var progWrap = new StackPanel { Spacing = 6 };
+        progWrap.Children.Add(progTop);
+        progWrap.Children.Add(progBar);
+        progWrap.Children.Add(progMeta);
+        progWrap.Children.Add(checksumCard);
+        progWrap.Children.Add(diskTip);
         var step4 = new StackPanel { Spacing = 8 };
         step4.Children.Add(confirmBox);
         step4.Children.Add(drillHint);
         step4.Children.Add(drillBtn);
         step4.Children.Add(execRow);
+        step4.Children.Add(progWrap);
         step4.Children.Add(output);
+
+        // 发现301原型：磁盘空间提示——目标盘剩余空间偏紧时给警告色人话提示
+        void ShowDiskTip()
+        {
+            try
+            {
+                string file = fileBox.Text.Trim();
+                string root = file.Length > 0 ? Path.GetPathRoot(Path.GetFullPath(file)) ?? "" : "";
+                if (root.Length == 0 || !new DriveInfo(root).IsReady) { diskTip.Visibility = Visibility.Collapsed; return; }
+                long free = new DriveInfo(root).AvailableFreeSpace;
+                bool tight = free < 1024L * 1024 * 1024;
+                diskText.Text = tight
+                    ? $"⚠ 目标目录所在磁盘剩余空间 {Core.HumanSize.Of(free)}，空间偏紧，建议更换保存位置或清理旧备份。"
+                    : $"目标目录所在磁盘剩余空间 {Core.HumanSize.Of(free)}。";
+                diskText.Foreground = tight ? Ant.Warn : Ant.TextSub;
+                diskTip.BorderBrush = tight ? Ant.Warn : Ant.Border;
+                diskTip.Background = tight ? (Brush?)Ant.WarnBg : (Brush?)Application.Current.Resources["AntCard"];
+                diskTip.Visibility = Visibility.Visible;
+            }
+            catch { diskTip.Visibility = Visibility.Collapsed; }
+        }
+        fileBox.TextChanged += (_, _) => ShowDiskTip();
+
+        // 发现301原型：SHA-256 校验行——备份文件存在时展示校验值前缀，便于完成后核对一致性
+        async Task ShowChecksumAsync(string file)
+        {
+            checksumCard.Visibility = Visibility.Collapsed;
+            try
+            {
+                if (file.Length == 0 || !File.Exists(file)) return;
+                checksumText.Text = "计算中…";
+                checksumCard.Visibility = Visibility.Visible;
+                string hex = await Task.Run(() =>
+                {
+                    using var fs = File.OpenRead(file);
+                    return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs));
+                });
+                checksumText.Text = $"{hex[..16]}…（可用于校验备份文件一致性）";
+            }
+            catch { checksumCard.Visibility = Visibility.Collapsed; }
+        }
 
         void RefreshConfirm()
         {
@@ -258,6 +385,9 @@ public static class BackupDialog
         {
             cur = i;
             body.Children.Clear();
+            body.Children.Add(crumb);        // 发现301原型：头部面包屑常驻
+            body.Children.Add(engineRow);    // 发现301原型：七引擎卡片常驻
+            body.Children.Add(engineNote);
             body.Children.Add(stepBar);
             var head = new TextBlock { Text = $"步骤 {i + 1}/4 · {StepNames[i]}", FontSize = AntTokens.FontTitle, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
             body.Children.Add(head);
@@ -424,10 +554,23 @@ public static class BackupDialog
             // 格10：后台化执行＋可取消（进度行数进 output，取消立即 Kill/检查点）
             using var cts = new CancellationTokenSource();
             liveCts = cts;
-            var progress = new Progress<int>(n => output.Text = $"执行中…（已读工具输出 {n} 行）");
+            var progress = new Progress<int>(n =>
+            {
+                output.Text = $"执行中…（已读工具输出 {n} 行）";
+                progStatus.Text = "● 执行中";
+                progBar.IsIndeterminate = true;
+                progMeta.Text = $"已读工具输出 {n} 行";
+            });
             startBtn.IsEnabled = false;
             cancelBtn.IsEnabled = true;
             output.Text = "执行中…";
+            // 发现301原型：执行时点亮进度区
+            progStatus.Text = $"● 正在{(backup ? "备份" : "恢复")}";
+            progPercent.Text = "";
+            progMeta.Text = "";
+            progBar.IsIndeterminate = true;
+            checksumCard.Visibility = Visibility.Collapsed;
+            ShowDiskTip();
             try
             {
                 string result;
@@ -452,8 +595,13 @@ public static class BackupDialog
                     result = await RunRestoreAsync(db, file, cts.Token, progress);
                 }
                 output.Text = result;
-                // 批次四格4：备份 / 还原落 tao_backup_history 本地账（成功失败都记，可回看）
+                // 发现301原型：完成后进度区收口＋SHA-256 校验行
                 bool okResult = result.StartsWith(backup ? "备份完成" : "还原完成", StringComparison.Ordinal);
+                progBar.IsIndeterminate = false;
+                progStatus.Text = okResult ? "● 完成" : "● 已停止";
+                progPercent.Text = okResult ? "100%" : "";
+                if (okResult && backup) await ShowChecksumAsync(file);
+                // 批次四格4：备份 / 还原落 tao_backup_history 本地账（成功失败都记，可回看）
                 long sizeBytes = 0;
                 try { if (okResult && File.Exists(file) && (backup ? File.GetAttributes(file) & FileAttributes.Directory : 0) == 0) sizeBytes = new FileInfo(file).Length; } catch { /* 目录口径不取大小 */ }
                 BackupHistory.Add(prov.EngineName, db, backup ? "备份" : "还原", file, okResult, sizeBytes, result.Split('\n')[0].Trim());
@@ -468,6 +616,7 @@ public static class BackupDialog
             catch (OperationCanceledException)
             {
                 output.Text = "已取消。";
+                progStatus.Text = "● 已取消";
                 AppLog.Write("[备份] cancel");
             }
             catch (Exception ex)
@@ -475,10 +624,12 @@ public static class BackupDialog
                 output.Text = (ex is System.ComponentModel.Win32Exception
                     ? "未找到命令行工具。请安装 MySQL / PostgreSQL 客户端工具并加入 PATH 后重试。\n"
                     : "") + HumanError.Say(ex, "失败");
+                progStatus.Text = "● 失败";
             }
             finally
             {
                 cancelBtn.IsEnabled = false;
+                progBar.IsIndeterminate = false;
                 RefreshConfirm();
             }
         }
