@@ -154,6 +154,77 @@ public static class BackupDialog
         step2.Children.Add(row2);
         step2.Children.Add(fileInfo);
 
+        // 发现303原型：备份集列表——本地账最近 5 次成功备份，点「选用」即填入文件路径
+        var restoreSetList = new StackPanel { Spacing = 6 };
+        var restoreSetWrap = new StackPanel { Spacing = 4 };
+        restoreSetWrap.Children.Add(new TextBlock { Text = "备份集（本地账最近 5 次）", FontSize = AntTokens.FontCaption, Foreground = Ant.TextSub });
+        restoreSetWrap.Children.Add(restoreSetList);
+
+        void RefreshRestoreSets()
+        {
+            restoreSetList.Children.Clear();
+            string db = dbBox.SelectedItem as string ?? profile.Database;
+            var sets = BackupHistory.All().Where(h => h.Kind == "备份" && h.Db == db && h.Ok).Take(5).ToList();
+            if (sets.Count == 0)
+            {
+                restoreSetList.Children.Add(new TextBlock
+                {
+                    Text = "本地账暂无该库备份记录；用「选择文件…」挑备份文件。",
+                    FontSize = AntTokens.FontMinor,
+                    Foreground = Ant.TextSub,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                return;
+            }
+            foreach (var s in sets)
+            {
+                bool exists = File.Exists(s.File);
+                var card = new Border
+                {
+                    Padding = new Thickness(10, 6, 10, 6),
+                    CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = Ant.Border,
+                    Background = (Brush?)Application.Current.Resources["AntCard"],
+                    Opacity = exists ? 1.0 : 0.55,
+                };
+                var nameRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                nameRow.Children.Add(new TextBlock
+                {
+                    Text = System.IO.Path.GetFileName(s.File),
+                    FontSize = AntTokens.FontMinor,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                var col = new StackPanel { Spacing = 2 };
+                col.Children.Add(nameRow);
+                col.Children.Add(new TextBlock
+                {
+                    Text = $"{s.Time} · {s.Kind} · {(s.SizeBytes > 0 ? Core.HumanSize.Of(s.SizeBytes) : "—")}{(exists ? " · 已落账 ✓" : " · 文件已不在，不可用")}",
+                    FontSize = AntTokens.FontCaption,
+                    Foreground = Ant.TextSub,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                card.Child = col;
+                if (exists)
+                {
+                    var useBtn = new Button
+                    {
+                        Content = "选用",
+                        FontSize = AntTokens.FontMinor,
+                        Padding = new Thickness(8, 0, 8, 0),
+                        CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+                        VerticalAlignment = VerticalAlignment.Center,
+                    };
+                    var f = s.File;
+                    useBtn.Click += (_, _) => { fileBox.Text = f; };
+                    nameRow.Children.Add(useBtn);
+                }
+                restoreSetList.Children.Add(card);
+            }
+        }
+        step2.Children.Add(restoreSetWrap);
+
         void ShowFileInfo()
         {
             string file = fileBox.Text.Trim();
@@ -191,6 +262,65 @@ public static class BackupDialog
         step3.Children.Add(impactBox);
         step3.Children.Add(backupNote);
 
+        // 发现303原型：演练预检卡——自动备份 / 磁盘空间 / 目标库覆盖三行体检，恢复模式才显示
+        int impactTables = -1;
+        var precheckList = new StackPanel { Spacing = 4 };
+        var precheckCard = new Border
+        {
+            Padding = new Thickness(12, 8, 12, 8),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+        };
+        precheckCard.Child = new StackPanel { Spacing = 4 };
+        ((StackPanel)precheckCard.Child).Children.Add(new TextBlock
+        {
+            Text = "🩺 恢复预检",
+            FontSize = AntTokens.FontMinor,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+        });
+        ((StackPanel)precheckCard.Child).Children.Add(precheckList);
+
+        static StackPanel PrecheckRow(bool ok, string text)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            row.Children.Add(new TextBlock
+            {
+                Text = ok ? "✓" : "⚠",
+                Foreground = ok ? Ant.Success : Ant.Warn,
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            });
+            row.Children.Add(new TextBlock { Text = text, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap });
+            return row;
+        }
+
+        void RefreshPrecheck()
+        {
+            precheckList.Children.Clear();
+            bool autoOn = autoBackup.IsChecked == true;
+            precheckList.Children.Add(PrecheckRow(autoOn, autoOn ? "恢复前自动备份：已开启（安全快照可回退）" : "恢复前自动备份：未开启，建议开启"));
+            try
+            {
+                string file = fileBox.Text.Trim();
+                string root = file.Length > 0 ? Path.GetPathRoot(Path.GetFullPath(file)) ?? "" : "";
+                if (root.Length > 0 && new DriveInfo(root).IsReady)
+                {
+                    long free = new DriveInfo(root).AvailableFreeSpace;
+                    bool enough = free >= 1024L * 1024 * 1024;
+                    precheckList.Children.Add(PrecheckRow(enough, $"磁盘空间：目标盘剩余 {Core.HumanSize.Of(free)}{(enough ? "" : "，空间偏紧")}"));
+                }
+            }
+            catch { /* 盘符取不到就跳过该行 */ }
+            precheckList.Children.Add(PrecheckRow(impactTables >= 0, impactTables >= 0
+                ? $"目标库现有 {impactTables} 张表，恢复将覆盖（详见影响预览）"
+                : "目标库影响：点「刷新影响预览」查看将覆盖的表"));
+        }
+        autoBackup.Checked += (_, _) => RefreshPrecheck();
+        autoBackup.Unchecked += (_, _) => RefreshPrecheck();
+        step3.Children.Add(precheckCard);
+
         async void LoadImpact()
         {
             string db = targetBox.Text.Trim();
@@ -199,7 +329,9 @@ public static class BackupDialog
             try
             {
                 var tables = await prov.GetChildren(db);
-                if (tables.Count == 0) { impactBox.Text = $"目标库 {db} 当前没有表。"; return; }
+                if (tables.Count == 0) { impactBox.Text = $"目标库 {db} 当前没有表。"; impactTables = 0; RefreshPrecheck(); return; }
+                impactTables = tables.Count;
+                RefreshPrecheck();
                 var lines = new List<string> { $"将覆盖目标库 {db}：共 {tables.Count} 张表。" };
                 int shown = Math.Min(tables.Count, 20);
                 for (int i = 0; i < shown; i++)
@@ -355,6 +487,9 @@ public static class BackupDialog
             confirmBox.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
             drillHint.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
             drillBtn.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;
+            restoreSetWrap.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;   // 发现303原型：备份集列表仅恢复模式
+            precheckCard.Visibility = restore ? Visibility.Visible : Visibility.Collapsed;     // 发现303原型：预检卡仅恢复模式
+            if (restore) { RefreshRestoreSets(); RefreshPrecheck(); }
             startBtn.IsEnabled = !restore || (targetBox.Text.Trim().Length > 0 && confirmBox.Text.Trim() == targetBox.Text.Trim());
         }
         confirmBox.TextChanged += (_, _) => RefreshConfirm();
