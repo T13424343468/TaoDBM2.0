@@ -486,6 +486,31 @@
       "allowMiss": true
     },
     {
+      "id": "U046b",
+      "feature": "巡检-结果网格右键打开菜单",
+      "action": "mouse-click",
+      "find": {
+        "automationId": "work-results"
+      },
+      "button": "right",
+      "note": "评分打回205补步：结果网格右键打开菜单（复制 JSON/CSV/SQL INSERT＋置 NULL＋行组），实拍留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U046c",
+      "feature": "巡检-结果网格右键菜单",
+      "action": "menu-item",
+      "itemName": "{ } 复制为 JSON",
+      "note": "评分打回205补步：菜单项源码存在（ResultGridMenu），按名点击留证",
+      "allowMiss": true
+    },
+    {
+      "id": "U046d",
+      "feature": "巡检-结果网格右键收场",
+      "action": "press-esc",
+      "allowMiss": true
+    },
+    {
       "id": "U050",
       "feature": "巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证）",
       "action": "context-tour",
