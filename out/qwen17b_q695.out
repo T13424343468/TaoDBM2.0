@@ -1,0 +1,50 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b12559-7e960f40f
+model      : models/Qwen3-1.7B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> /no_think
+你是一个数据库助手。根据表结构和问题，写出 PostgreSQL 查询语句，只输出一条 SQL，不要任何解释。
+表结构：
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), created_at DATETIME);
+CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
+CREATE TABLE order_items (i ... (truncated)
+WITH user_max_order AS (
+    SELECT user_id, MAX(order_id) AS max_order_id
+    FROM orders
+    GROUP BY user_id
+),
+user_order_details AS (
+    SELECT o.id AS order_id, o.user_id, o.status, o.created_at, i.product_id, i.quantity, i.unit_price
+    FROM orders o
+    JOIN order_items i ON o.id = i.order_id
+    WHERE o.user_id IN (SELECT user_id FROM user_max_order)
+)
+SELECT * FROM user_order_details;
+
+[ Prompt: 66.1 t/s | Generation: 13.5 t/s ]
+
+
+Exiting...
