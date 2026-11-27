@@ -86,6 +86,10 @@ public partial class WorkTab : Grid
         Margin = new Thickness(10, 0, 10, 0),
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
+    // 原型204：结果统计徽标——总行数/列数/虚拟滚动口径（真实数据，不造数；随结果刷新）
+    private readonly TextBlock _statRows = new() { FontSize = AntTokens.FontMinor, Foreground = Ant.Primary, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+    private readonly TextBlock _statCols = new() { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub };
+    private readonly TextBlock _statVirt = new() { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, Text = "虚拟滚动 开" };
     // B⑦：Ctrl+F 结果集查找条——按关键字过滤当前结果行，Esc 清空恢复
     private readonly TextBox _findBox = new()
     {
@@ -215,6 +219,28 @@ public partial class WorkTab : Grid
         bar.Children.Add(_dbBox);
         bar.Children.Add(_runBtn);
         bar.Children.Add(_stopBtn);
+        if (mode == WorkMode.Query)
+        {
+            // 原型202：工具栏高频四件套——运行/解释计划/格式化/仅选中（解释计划与格式化接右键菜单同源操作，不另造实现）
+            var explainBtn = new Button { Content = "⏱ 解释计划", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(explainBtn, "work-explain");
+            explainBtn.Click += (_, _) => _ = ExplainCurrent();
+            var formatBtn = new Button { Content = "✨ 格式化", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(formatBtn, "work-format");
+            formatBtn.Click += (_, _) => BeautifySql();
+            var selOnlyBtn = new Microsoft.UI.Xaml.Controls.Primitives.ToggleButton { Content = "☑ 仅选中", BorderThickness = new Thickness(1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), Padding = new Thickness(10, 4, 10, 4) };
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(selOnlyBtn, "work-run-selection");
+            selOnlyBtn.Click += (_, _) =>
+            {
+                if (selOnlyBtn.IsChecked != true) return;
+                var sel = SelectedText();
+                if (sel.Length == 0) { _messageBox.Text = "仅选中已开：先在编辑器里选中要执行的语句，再点「▶ 执行」。"; selOnlyBtn.IsChecked = false; return; }
+                _ = RunOrRefresh(sel);
+            };
+            bar.Children.Add(explainBtn);
+            bar.Children.Add(formatBtn);
+            bar.Children.Add(selOnlyBtn);
+        }
         // D⑤：导出收成一个菜单——CSV / INSERT 并入「导出 ▾」（原三个并列按钮）
         // B⑥：低频项收进「更多 ▾」——Flyout 内保留原按钮（名称/AutomationId 不变，走查先点「更多」再点目标）
         var morePanel = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6, Margin = new Thickness(10) };
@@ -298,8 +324,20 @@ public partial class WorkTab : Grid
         }
 
         _resultsHost.Padding = new Thickness(4);
-        Children.Add(_resultsHost);
-        SetRow(_resultsHost, 3);
+        // 原型204：结果区顶部统计徽标行——总行数/列数/虚拟滚动（真实口径，随结果刷新）；结果宿主下移一行
+        var statsStrip = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Padding = new Thickness(10, 4, 10, 4) };
+        statsStrip.Children.Add(_statRows);
+        statsStrip.Children.Add(_statCols);
+        statsStrip.Children.Add(_statVirt);
+        var resultStack = new Grid();
+        resultStack.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        resultStack.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        resultStack.Children.Add(statsStrip);
+        SetRow(statsStrip, 0);
+        resultStack.Children.Add(_resultsHost);
+        SetRow(_resultsHost, 1);
+        Children.Add(resultStack);
+        SetRow(resultStack, 3);
 
         var msgBorder = new Border
         {
@@ -791,6 +829,9 @@ public partial class WorkTab : Grid
         _messageBox.Text = msgs.Length > 0 ? msgs.ToString() : $"{list.Count} 条结果 · 总耗时 {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms";
         // ㊲验证坐实：结果条计数在流式/分页结果上只报已物化页行数，改用 TotalRows 优先（无则回落物化行数）
         _resultBar.Text = $"{list.Sum(x => x.TotalRows ?? x.Rows.Count):N0} 行 · {list.Sum(x => x.Elapsed.TotalMilliseconds):N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条
+        // 原型204：统计徽标随结果刷新——总行数/列数（真实口径，不造渲染内存数）
+        _statRows.Text = $"{list.Sum(x => x.TotalRows ?? x.Rows.Count):N0} 行";
+        _statCols.Text = $"{(list.Count > 0 ? list[0].Columns.Count : 0)} 列";
     }
 
     /// <summary>整改三批三-10：结果网格右键设计助手入口的连接上下文（与 _assistBtn 同构）。</summary>
@@ -818,6 +859,9 @@ public partial class WorkTab : Grid
                 ? $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · 单击行进入详情"
                 : $"{r.Rows.Count} 行 · {r.Elapsed.TotalMilliseconds:N0} ms" + (editable && _isRelational ? " · 双击单元格就地编辑 · 右键编辑/删除该行" : ""));
         _resultBar.Text = $"{(r.TotalRows ?? r.Rows.Count):N0} 行 · {r.Elapsed.TotalMilliseconds:N0} ms · {DateTime.Now:MM-dd HH:mm:ss}";   // B② 结果条（㊲：总行数优先）
+        // 原型204：统计徽标随结果刷新
+        _statRows.Text = $"{(r.TotalRows ?? r.Rows.Count):N0} 行";
+        _statCols.Text = $"{r.Columns.Count} 列";
     }
 
     /// <summary>Redis 键列表：单击某键 → 打开该键详情页。</summary>
@@ -1450,6 +1494,70 @@ public partial class WorkTab : Grid
         var nullChecks = new List<CheckBox>();
         var panel = new StackPanel { Spacing = 10, MinWidth = 380, Margin = new Thickness(0, 0, 12, 0) };
         panel.Children.Add(new TextBlock { Text = "勾选 NULL＝存 NULL；留空＝存空字符串（数字列留空仍按 NULL）。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        // 原型206：预览SQL——实时反映当前填写状态将生成的语句（只读可复制，不落库；保存口径与下方保存段同源）
+        var previewSql = new TextBlock
+        {
+            FontSize = AntTokens.FontMinor,
+            FontFamily = (FontFamily)Application.Current.Resources["AntMono"],
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Ant.TextSub,
+            IsTextSelectionEnabled = true,
+            MaxHeight = 90,
+        };
+        string BuildPreviewSql()
+        {
+            var sets = new List<string>();
+            var insCols = new List<string>();
+            var insVals = new List<string>();
+            for (int i = 0; i < _cols.Count; i++)
+            {
+                bool isNull = nullChecks[i].IsChecked == true;
+                bool empty = fields[i].GetText().Length == 0;
+                bool isBin = Exporter.IsBinaryColumn(_cols[i].DataType);
+                if (isBin && existing != null && !_cols[i].IsKey && !fields[i].Dirty) continue;
+                string val = isNull ? "NULL"
+                    : empty ? (CsvImporter.IsNumeric(_cols[i].DataType) ? "NULL" : "''")
+                    : Exporter.Literal(_cols[i], fields[i].GetText());
+                if (existing == null)
+                {
+                    if (isNull || !empty) { insCols.Add(_provider.Quote(_cols[i].Name)); insVals.Add(val); }
+                }
+                else if (!_cols[i].IsKey)
+                {
+                    sets.Add($"{_provider.Quote(_cols[i].Name)} = {val}");
+                }
+            }
+            if (existing == null)
+                return insCols.Count == 0 ? "" : $"INSERT INTO {_provider.Quote(_child)} ({string.Join(", ", insCols)}) VALUES ({string.Join(", ", insVals)})";
+            return sets.Count == 0 ? "" : $"UPDATE {_provider.Quote(_child)} SET {string.Join(", ", sets)} WHERE {_provider.Quote(KeyCol!.Name)} = {Exporter.Literal(KeyCol, fields[_cols.IndexOf(KeyCol)].GetText())}";
+        }
+        void RefreshPreview()
+        {
+            try { previewSql.Text = BuildPreviewSql(); }
+            catch { previewSql.Text = ""; }   // 预览取值失败不打扰编辑，保存时仍走完整校验
+        }
+        void HookPreviewTree(Windows.UI.Xaml.DependencyObject el)
+        {
+            switch (el)
+            {
+                case TextBox tb: tb.TextChanged += (_, _) => RefreshPreview(); break;
+                case NumberBox nb: nb.ValueChanged += (_, _) => RefreshPreview(); break;
+                case ComboBox cb:
+                    cb.SelectionChanged += (_, _) => RefreshPreview();
+                    cb.TextSubmitted += (_, _) => RefreshPreview();
+                    break;
+                case CheckBox chk:
+                    chk.Checked += (_, _) => RefreshPreview();
+                    chk.Unchecked += (_, _) => RefreshPreview();
+                    break;
+                case DatePicker dp: dp.SelectedDateChanged += (_, _) => RefreshPreview(); break;
+                case TimePicker tp: tp.SelectedTimeChanged += (_, _) => RefreshPreview(); break;
+            }
+            if (el is Panel p)
+            {
+                foreach (var c in p.Children) HookPreviewTree(c);
+            }
+        }
         RowEditorFactory.BlobOwner = _owner;   // 批次二格2：大字段弹层宿主
         // 批次二格3：外键候选预取（2 秒超时回退普通文本框，不阻断编辑；异步等待不阻塞 UI 线程）
         var fkMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -1474,9 +1582,10 @@ public partial class WorkTab : Grid
             var field = fkMap.TryGetValue(_cols[i].Name, out var cands) && cands.Count > 0 && !_cols[i].IsKey
                 ? RowEditorFactory.CreateFk(_cols[i], initialText, cands)
                 : RowEditorFactory.Create(_cols[i], initialText, readOnly: _cols[i].IsKey);   // 格4：按列类型出控件
-            nullCheck.Checked += (_, _) => field.SetEnabled(false);
-            nullCheck.Unchecked += (_, _) => field.SetEnabled(true);
+            nullCheck.Checked += (_, _) => { field.SetEnabled(false); RefreshPreview(); };
+            nullCheck.Unchecked += (_, _) => { field.SetEnabled(true); RefreshPreview(); };
             if (nullCheck.IsChecked == true) field.SetEnabled(false);
+            HookPreviewTree(field.Control);   // 原型206：字段值变化即刷新预览SQL
             fields.Add(field);
             nullChecks.Add(nullCheck);
             var fieldRow = new StackPanel { Spacing = 4 };
@@ -1484,6 +1593,10 @@ public partial class WorkTab : Grid
             fieldRow.Children.Add(nullCheck);
             panel.Children.Add(fieldRow);
         }
+        // 原型206：预览SQL区块——置于字段区末尾，保存前所见即所得
+        panel.Children.Add(new TextBlock { Text = "将执行的 SQL（预览）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
+        panel.Children.Add(previewSql);
+        RefreshPreview();
 
         var dlg = new ContentDialog
         {
