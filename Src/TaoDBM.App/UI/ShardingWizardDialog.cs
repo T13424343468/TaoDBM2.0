@@ -79,9 +79,12 @@ public static class ShardingWizardDialog
             FontSize = AntTokens.FontMinor,
         };
         var keyHint = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
+        // 发现307原型：候选分片键卡片——有索引依据字段逐个成卡，首个标 ★ 推荐
+        var keyCardRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         var keyPanel = new StackPanel { Spacing = 10 };
         keyPanel.Children.Add(keyBox);
         keyPanel.Children.Add(keyHint);
+        keyPanel.Children.Add(keyCardRow);
         keyPanel.Children.Add(expertCheck);
         stepPanels.Children.Add(Wrap(keyPanel, StepKey));
 
@@ -91,6 +94,20 @@ public static class ShardingWizardDialog
         var execBtn = new Button { Content = "预览并执行方案", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), IsEnabled = false };
         var confirmPanel = new StackPanel { Spacing = 10 };
         confirmPanel.Children.Add(summaryText);
+        // 发现307原型：SQL 改写预览表头——草稿区上方加底色表头条
+        confirmPanel.Children.Add(new Border
+        {
+            Padding = new Thickness(8, 4, 8, 4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+            Background = Ant.HeadBg,
+            Child = new TextBlock
+            {
+                Text = "SQL 改写预览（草稿逐条，执行前逐条勾选）",
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            },
+        });
         confirmPanel.Children.Add(new ScrollViewer { Content = planPanel, MaxHeight = 220, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         confirmPanel.Children.Add(execBtn);
         stepPanels.Children.Add(Wrap(confirmPanel, StepConfirm));
@@ -199,6 +216,23 @@ public static class ShardingWizardDialog
                 keyBox.Items.Add(item);
             }
             keyBox.SelectedIndex = keyBox.Items.Count > 0 ? 0 : -1;
+            // 发现307原型：候选分片键卡片——有索引依据字段逐个成卡，首个标 ★ 推荐
+            keyCardRow.Children.Clear();
+            int carded = 0;
+            foreach (var c in allCols)
+            {
+                if (!indexedCols.Contains(c)) continue;
+                if (carded >= 6) break;
+                keyCardRow.Children.Add(KeyCard(c, carded == 0));
+                carded++;
+            }
+            if (carded == 0)
+                keyCardRow.Children.Add(new TextBlock
+                {
+                    Text = "暂无有索引依据的候选键。",
+                    FontSize = AntTokens.FontCaption,
+                    Foreground = Ant.TextSub,
+                });
         }
 
         // 熟手开关：解锁动作本身写操作记录（permops.log 审计留痕）。
@@ -396,14 +430,35 @@ public static class ShardingWizardDialog
                 long maxRows = sorted[0].Rows;
                 foreach (var p in sorted)
                 {
-                    var line = new TextBlock
+                    // 发现307原型：分布条形——按行数占比画横条，倾斜分片标红
+                    double frac = maxRows > 0 ? (double)p.Rows / maxRows : 0;
+                    bool hot = skewed && p.Rows == maxRows;
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                    row.Children.Add(new TextBlock
                     {
-                        Text = $"{p.Name}｜{p.Rows} 行",
-                        FontFamily = new FontFamily("Consolas"),
+                        Text = p.Name,
+                        Width = 130,
                         FontSize = AntTokens.FontMinor,
-                    };
-                    if (skewed && p.Rows == maxRows) line.Foreground = Ant.Error; // 跟主题走的警示红
-                    distPanel.Children.Add(line);
+                        FontFamily = new FontFamily("Consolas"),
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    });
+                    row.Children.Add(new Border
+                    {
+                        Width = 140 * frac,
+                        Height = 8,
+                        CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+                        Background = hot ? (Brush?)Ant.Error : (Brush?)Ant.Primary,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    });
+                    row.Children.Add(new TextBlock
+                    {
+                        Text = $"{p.Rows} 行",
+                        FontSize = AntTokens.FontMinor,
+                        Foreground = hot ? Ant.Error : Ant.TextSub,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    });
+                    distPanel.Children.Add(row);
                 }
                 status.Text = skewed
                     ? "分布倾斜：最大分片超过最小分片 1.5 倍，建议重新分片或对热点键盐化。"
@@ -616,6 +671,28 @@ public static class ShardingWizardDialog
         Visibility = step == StepTable ? Visibility.Visible : Visibility.Collapsed,
         Child = content,
     };
+
+    /// <summary>发现307原型：候选分片键卡片——推荐键主色高亮，其余常规卡。</summary>
+    private static Border KeyCard(string col, bool recommended)
+    {
+        var col2 = new StackPanel { Spacing = 2 };
+        col2.Children.Add(new TextBlock { Text = col, FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        col2.Children.Add(new TextBlock
+        {
+            Text = recommended ? "★ 推荐（有索引依据）" : "有索引依据 ✓",
+            FontSize = AntTokens.FontCaption,
+            Foreground = recommended ? Ant.Primary : Ant.TextSub,
+        });
+        return new Border
+        {
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            BorderThickness = new Thickness(1),
+            BorderBrush = recommended ? Ant.Primary : Ant.Border,
+            Background = recommended ? (Brush?)Ant.PrimaryBg : (Brush?)Application.Current.Resources["AntCard"],
+            Child = col2,
+        };
+    }
 
     /// <summary>取 ComboBox 选中项的 Tag（表名 / 列名都放 Tag）。</summary>
     private static string? Selected(ComboBox box) =>
