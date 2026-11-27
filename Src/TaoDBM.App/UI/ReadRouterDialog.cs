@@ -228,7 +228,17 @@ public static class ReadRouterDialog
         }
 
         AddSection(report, "读流量分配建议");
-        foreach (var (name, shouldServe) in ReadRouter.AutoToggle(nodes, maxLag))
+        var serveList = ReadRouter.AutoToggle(nodes, maxLag).ToList();
+        int serving = serveList.Count(s => s.shouldServe);
+        // 发现309原型：权重卡——健康副本均分读流量，摘除节点置灰
+        var cardRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        foreach (var (name, shouldServe) in serveList)
+        {
+            double share = shouldServe && serving > 0 ? 1.0 / serving : 0;
+            cardRow.Children.Add(WeightCard(name, share, shouldServe));
+        }
+        report.Children.Add(cardRow);
+        foreach (var (name, shouldServe) in serveList)
             AddLine(report, $"  {name}：{(shouldServe ? "继续承接读流量" : "建议摘除读流量")}", shouldServe ? null : Ant.Warn);
 
         status.Text = "路由预演完成（纯计算，未触库）。";
@@ -251,10 +261,93 @@ public static class ReadRouterDialog
         }
 
         AddSection(report, $"摘除 / 加回建议（阈值 {maxLag} 秒）");
+        // 发现309原型：拓扑健康表——节点/健康/建议，表头底色，摘除行标红
+        var table = new StackPanel { Spacing = 0 };
+        var header = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            Background = (Brush?)Application.Current.Resources["AntHeadBg"],
+            Padding = new Thickness(10, 5, 10, 5),
+        };
+        foreach (var h in new[] { "节点", "健康", "建议" })
+            header.Children.Add(new TextBlock
+            {
+                Text = h,
+                Width = h == "节点" ? 160 : 110,
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            });
+        table.Children.Add(header);
         foreach (var (name, shouldServe) in ReadRouter.AutoToggle(nodes, maxLag))
-            AddLine(report, $"  {name}：{(shouldServe ? "加回读流量" : "摘除读流量")}", shouldServe ? Ant.Success : Ant.Warn);
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Padding = new Thickness(10, 4, 10, 4) };
+            row.Children.Add(new TextBlock { Text = name, Width = 160, FontSize = AntTokens.FontMinor, FontFamily = new FontFamily("Consolas") });
+            row.Children.Add(new TextBlock
+            {
+                Text = shouldServe ? "健康" : "已摘除",
+                Width = 110,
+                FontSize = AntTokens.FontMinor,
+                Foreground = shouldServe ? Ant.Success : Ant.Error,
+            });
+            row.Children.Add(new TextBlock
+            {
+                Text = shouldServe ? "加回读流量" : "摘除读流量（延迟超阈值）",
+                FontSize = AntTokens.FontMinor,
+                Foreground = shouldServe ? Ant.TextSub : Ant.Warn,
+                TextWrapping = TextWrapping.Wrap,
+            });
+            table.Children.Add(row);
+        }
+        report.Children.Add(table);
         status.Text = "建议已生成（只读，不改流量开关）。";
         return Task.CompletedTask;
+    }
+
+    /// <summary>发现309原型：权重卡——健康副本均分读流量（比例条主色），摘除节点整卡置灰、比例条归零。</summary>
+    private static Border WeightCard(string name, double share, bool serving)
+    {
+        var body = new StackPanel { Spacing = 3, Opacity = serving ? 1.0 : 0.55 };
+        body.Children.Add(new TextBlock
+        {
+            Text = name,
+            FontSize = AntTokens.FontMinor,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontFamily = new FontFamily("Consolas"),
+        });
+        var track = new Border
+        {
+            Width = 100,
+            Height = 8,
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+            Background = (Brush?)Application.Current.Resources["AntAltRow"],
+        };
+        if (serving)
+            track.Child = new Border
+            {
+                Width = Math.Max(2, 100 * share),
+                Height = 8,
+                CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusBadge),
+                Background = Ant.Primary,
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+        body.Children.Add(track);
+        body.Children.Add(new TextBlock
+        {
+            Text = serving ? $"读权重 {share:P0}" : "已摘除",
+            FontSize = AntTokens.FontCaption,
+            Foreground = serving ? Ant.TextSub : Ant.Error,
+        });
+        return new Border
+        {
+            Padding = new Thickness(12, 6, 12, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+            Child = body,
+        };
     }
 
     private static List<ReplicaNode> ParseNodes(string text, out string error)
