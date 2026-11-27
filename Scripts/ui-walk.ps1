@@ -1037,17 +1037,31 @@ foreach ($s in $plan.steps) {
         Invoke-El $run
         Push-Evidence "$id run-invoked-before-stop"
         Start-Sleep -Seconds 2
+        $beforeSql = ([regex]::Matches(((Get-AppLogTail 400) -join "`n"), [regex]::Escape('[执行账] sql='))).Count
         [MouseNative]::Click($sx, $sy, $false, $false)
         Push-Evidence "$id stop-invoked"
+        # 发现175拍板方案2（2026-11-28 老板令）：SQLite 驱动不支持中断运行中的命令——停止实效口径改为
+        # 「点停出回执（cancelled=1 或 stop-sqlite-noninterruptible=1）＋查询完成后正常落账」
         $deadline = (Get-Date).AddSeconds(20)
         $hit = $false
         do {
           $tail = (Get-AppLogTail 400) -join "`n"
-          if ($tail.Contains('[执行账] cancelled=1')) { $hit = $true; break }
+          if ($tail.Contains('[执行账] cancelled=1') -or $tail.Contains('[执行账] stop-sqlite-noninterruptible=1')) { $hit = $true; break }
           Start-Sleep -Seconds 1
         } while ((Get-Date) -lt $deadline)
-        if (-not $hit) { throw "stop not effective: no [执行账] cancelled=1 in applog" }
-        Push-Evidence "$id cancelled-hit"
+        if (-not $hit) { throw "stop not effective: no stop receipt in applog" }
+        Push-Evidence "$id stop-receipt-hit"
+        $deadline = (Get-Date).AddSeconds(90)
+        $hit = $false
+        do {
+          $tailArr = Get-AppLogTail 400
+          $tail = $tailArr -join "`n"
+          $afterSql = ([regex]::Matches($tail, [regex]::Escape('[执行账] sql='))).Count
+          if ($tail.Contains('[执行账] cancelled=1') -or $afterSql -gt $beforeSql) { $hit = $true; break }
+          Start-Sleep -Seconds 1
+        } while ((Get-Date) -lt $deadline)
+        if (-not $hit) { throw "stop not effective: no completion ledger in applog" }
+        Push-Evidence "$id completion-hit"
         if ($s.shot) { Save-Shot (Tpl $s.shot) }
       }
 
