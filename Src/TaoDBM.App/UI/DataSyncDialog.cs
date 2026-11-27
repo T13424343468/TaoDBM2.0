@@ -92,6 +92,7 @@ public static class DataSyncDialog
         dstBox.SelectionChanged += async (_, _) => await LoadDbs(dstBox, dstDbBox, output);
         if (srcBox.SelectedItem is not null) await LoadDbs(srcBox, srcDbBox, output);
         if (dstBox.SelectedItem is not null) await LoadDbs(dstBox, dstDbBox, output);
+        RefreshChannel();   // 发现305原型：通道头部卡初始点亮
 
         loadBtn.Click += async (_, _) =>
         {
@@ -412,6 +413,84 @@ public static class DataSyncDialog
             catch (Exception ex) { output.Text = HumanError.Say(ex, "挂任务失败"); }
         };
 
+        // 发现305原型：通道头部卡——源端 A ⇄ 目标端 B，选好连接与库即实时点亮
+        var srcRole = new TextBlock { Text = "源端 A", FontSize = AntTokens.FontCaption, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = Ant.Primary };
+        var srcName = new TextBlock { Text = "（未选）", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var srcMeta = new TextBlock { FontSize = AntTokens.FontCaption, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var dstRole = new TextBlock { Text = "目标端 B", FontSize = AntTokens.FontCaption, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = Ant.Primary };
+        var dstName = new TextBlock { Text = "（未选）", FontSize = AntTokens.FontMinor, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var dstMeta = new TextBlock { FontSize = AntTokens.FontCaption, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
+        var srcCard = new Border
+        {
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+        };
+        srcCard.Child = new StackPanel { Spacing = 2 };
+        ((StackPanel)srcCard.Child).Children.Add(srcRole);
+        ((StackPanel)srcCard.Child).Children.Add(srcName);
+        ((StackPanel)srcCard.Child).Children.Add(srcMeta);
+        var dstCard = new Border
+        {
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusLg),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Ant.Border,
+            Background = (Brush?)Application.Current.Resources["AntCard"],
+        };
+        dstCard.Child = new StackPanel { Spacing = 2 };
+        ((StackPanel)dstCard.Child).Children.Add(dstRole);
+        ((StackPanel)dstCard.Child).Children.Add(dstName);
+        ((StackPanel)dstCard.Child).Children.Add(dstMeta);
+        var channelGrid = new Grid { ColumnSpacing = 10 };
+        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        channelGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, Star) });
+        var arrow = new TextBlock
+        {
+            Text = "⇄",
+            FontSize = AntTokens.FontTitle,
+            Foreground = Ant.Primary,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(srcCard, 0);
+        Grid.SetColumn(arrow, 1);
+        Grid.SetColumn(dstCard, 2);
+        channelGrid.Children.Add(srcCard);
+        channelGrid.Children.Add(arrow);
+        channelGrid.Children.Add(dstCard);
+
+        void RefreshChannel()
+        {
+            var s = srcBox.SelectedItem as ConnectionProfile;
+            var d = dstBox.SelectedItem as ConnectionProfile;
+            srcName.Text = s?.DisplayName ?? "（未选）";
+            srcMeta.Text = s is null ? "选好源连接后这里显示主机与库" : $"{s.Host}:{(s.Port > 0 ? s.Port : EngineInfo.DefaultPort(s.Engine))} · {srcDbBox.SelectedItem as string ?? "—"}";
+            dstName.Text = d?.DisplayName ?? "（未选）";
+            dstMeta.Text = d is null ? "选好目标连接后这里显示主机与库" : $"{d.Host}:{(d.Port > 0 ? d.Port : EngineInfo.DefaultPort(d.Engine))} · {dstDbBox.SelectedItem as string ?? "—"}";
+        }
+        srcBox.SelectionChanged += (_, _) => RefreshChannel();
+        dstBox.SelectionChanged += (_, _) => RefreshChannel();
+        srcDbBox.SelectionChanged += (_, _) => RefreshChannel();
+        dstDbBox.SelectionChanged += (_, _) => RefreshChannel();
+
+        // 发现305原型：表规则表头——表清单上方加底色表头条
+        var tableHead = new Border
+        {
+            Padding = new Thickness(8, 4, 8, 4),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusSm),
+            Background = Ant.HeadBg,
+            Child = new TextBlock
+            {
+                Text = "表清单（勾选要传的表）",
+                FontSize = AntTokens.FontMinor,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = Ant.TextSub,
+            },
+        };
+
         var content = new StackPanel { Spacing = 10, MinWidth = 620, Margin = new Thickness(0, 0, 12, 0) };
         content.Children.Add(new TextBlock
         {
@@ -420,6 +499,7 @@ public static class DataSyncDialog
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
         });
+        content.Children.Add(channelGrid);   // 发现305原型：通道头部卡
         var rowA = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         rowA.Children.Add(new TextBlock { Text = "源", VerticalAlignment = VerticalAlignment.Center });
         rowA.Children.Add(srcBox);
@@ -447,6 +527,7 @@ public static class DataSyncDialog
         rowC.Children.Add(loadBtn);
         rowC.Children.Add(chkAll);
         content.Children.Add(rowC);
+        content.Children.Add(tableHead);   // 发现305原型：表规则表头
         content.Children.Add(tableList);
         content.Children.Add(syncStruct);
         content.Children.Add(alignTypes);
