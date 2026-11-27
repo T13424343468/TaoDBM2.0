@@ -31,11 +31,11 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-EXECUTE AS OWNER = 'dbo';
-EXEC sp_add_job @name = 'Archive Storage Procedure', @job_id = 'ArchiveJob', @enabled = 1, @schedule_id = 'Monthly 1st 00:00';
-EXEC sp_add_job_schedule @name = 'ArchiveJob', @job_id = 'ArchiveJob', @enabled = 1, @schedule_type = 1, @freq_type = 4, @freq_interval = 1, @freq_subday = 1, @freq_subday_interval = 1, @active = 1;
+EXECUTE AS OWNER = 'archive_owner';
+EXECUTE AS USER = 'archive_user';
+EXECUTE dbo.archive_storage_procedure;
 
-[ Prompt: 37.1 t/s | Generation: 8.9 t/s ]
+[ Prompt: 20.3 t/s | Generation: 6.9 t/s ]
 
 
 Exiting...

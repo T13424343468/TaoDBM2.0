@@ -31,11 +31,9 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50), city VARCHAR(50), crea
 CREATE TABLE products (id INT PRIMARY KEY, name VARCHAR(100), category VARCHAR(50), price DECIMAL(10,2), stock INT);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, status VARCHAR(20), created_at DATETIME);
 CREATE TABLE order_items (i ... (truncated)
-SELECT unit_price
-FROM order_items
-WHERE e^price = unit_price;
+SELECT unit_price * EXP(price) AS adjusted_price FROM order_items;
 
-[ Prompt: 39.5 t/s | Generation: 8.8 t/s ]
+[ Prompt: 21.2 t/s | Generation: 7.3 t/s ]
 
 
 Exiting...

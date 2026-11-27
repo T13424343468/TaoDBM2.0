@@ -37,7 +37,7 @@ GROUP BY created_at
 ORDER BY order_count DESC
 LIMIT 1;
 
-[ Prompt: 36.6 t/s | Generation: 10.0 t/s ]
+[ Prompt: 20.3 t/s | Generation: 7.2 t/s ]
 
 
 Exiting...

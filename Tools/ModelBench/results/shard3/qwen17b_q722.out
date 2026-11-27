@@ -35,7 +35,7 @@ SELECT * FROM orders
 UNION ALL
 SELECT * FROM payments;
 
-[ Prompt: 34.7 t/s | Generation: 8.1 t/s ]
+[ Prompt: 20.0 t/s | Generation: 7.0 t/s ]
 
 
 Exiting...
