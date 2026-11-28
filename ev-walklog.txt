@@ -48,3 +48,6 @@ step S15 SQL真实执行-取值比对 => fail : execution error: 2026-11-28 15:3
 shot ev-shot-fail-S15.png 48154 bytes
 coverage-func S15 SQL真实执行-取值比对 => fail
 shot ev-shot-result-S16.png 48842 bytes
+S16 ledger: 2026-11-28 15:32:36.701 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+step S16 SQL真实执行-脏数据行 => fail : execution error: 2026-11-28 15:32:36.701 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+shot ev-shot-fail-S16.png 48842 bytes
