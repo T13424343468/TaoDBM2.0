@@ -147,3 +147,4 @@ tag=step-start S74 time=2026-11-28T15:35:28.7083171+00:00 appMem=147 MB
 tag=S74 editor-dirty, fresh tab time=2026-11-28T15:35:30.1985259+00:00 appMem=144 MB
 tag=red S74 time=2026-11-28T15:35:57.8894000+00:00 appMem=180 MB
 tag=step-start S75 time=2026-11-28T15:35:59.4694173+00:00 appMem=172 MB
+tag=S75 focus-guard fallback SetFocus time=2026-11-28T15:36:02.0225506+00:00 appMem=170 MB
