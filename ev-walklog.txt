@@ -142,3 +142,5 @@ shot sweep-U047b.png 75523 bytes
 coverage-func U047b 巡检-查找替换对话框 => pass
 shot sweep-U047c.png 63263 bytes
 coverage-func U047c 巡检-查找替换收场 => pass
+shot sweep-U046b.png 63263 bytes
+coverage-func U046b 巡检-结果网格右键打开菜单 => pass
