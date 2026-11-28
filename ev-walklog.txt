@@ -47,3 +47,4 @@ step S19 skipped (SkipIds)
 coverage-func S19 关于页 => skip
 step S20 P0-01 停止按钮-执行中点停 => fail : stop not effective: no stop receipt in applog
 shot ev-shot-fail-S20.png 51208 bytes
+coverage-func S20 P0-01 停止按钮-执行中点停 => fail
