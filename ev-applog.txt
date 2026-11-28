@@ -17,3 +17,4 @@
 2026-11-28 15:29:01.586 [新建查询] worktab built db=taodbmui
 2026-11-28 15:29:01.591 [新建查询] tab selected
 2026-11-28 15:29:01.591 [库下拉] 已加载 5 个库
+2026-11-28 15:29:08.502 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
