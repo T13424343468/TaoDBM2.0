@@ -99,3 +99,4 @@ tag=S63f keys-arrival-retry time=2026-11-28T15:33:37.7685550+00:00 appMem=143 MB
 tag=S63f keys-fallback-invoke time=2026-11-28T15:33:40.9891935+00:00 appMem=142 MB
 tag=S63f keys-sent {F6} time=2026-11-28T15:33:43.5975620+00:00 appMem=142 MB
 tag=step-start S63g time=2026-11-28T15:33:45.1608302+00:00 appMem=145 MB
+tag=red S63g time=2026-11-28T15:34:03.0861609+00:00 appMem=140 MB
