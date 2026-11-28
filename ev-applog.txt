@@ -1,4 +1,3 @@
-2026-11-28 15:29:26.702 [人话文案] 执行失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:29:26.703 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
 2026-11-28 15:29:26.703 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:29:36.341 [Flyout] opening
@@ -58,3 +57,4 @@
 2026-11-28 15:33:44.232 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
 2026-11-28 15:33:44.232 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:34:37.777 [Flyout] opening
+2026-11-28 15:34:40.818 [引导提示] 请选中一个表 / 集合 / 键后查看数据。
