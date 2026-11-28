@@ -25,3 +25,89 @@ coverage-func S10 查询-选中连接 => pass
 coverage-func S11 查询-新建查询入口 => pass
 shot ev-shot-result-S12.png 51267 bytes
 S12 ledger: 2026-11-28 15:26:13.380 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-08-count-5000.png 51267 bytes
+coverage-func S12 SQL真实执行-计数 => pass
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题入口可达（切换摘除） => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
+step S20 skipped (SkipIds)
+coverage-func S20 P0-01 停止按钮-执行中点停 => skip
+step S21 skipped (SkipIds)
+coverage-func S21 P0-03 前置-重查小结果集 => skip
+step S22 skipped (SkipIds)
+coverage-func S22 P0-03 网格-列头点击循环排序 => skip
+step S23 skipped (SkipIds)
+coverage-func S23 P0-03 排序实效断言 => skip
+step S24 skipped (SkipIds)
+coverage-func S24 P0-03 网格-右键复制该行 => skip
+step S25 skipped (SkipIds)
+coverage-func S25 P0-03 复制实效断言 => skip
+step S26 skipped (SkipIds)
+coverage-func S26 P0-03 复制落账断言 => skip
+step S27 skipped (SkipIds)
+coverage-func S27 P0-04 网格-钉住到看板 => skip
+step S28 skipped (SkipIds)
+coverage-func S28 P0-04 钉住菜单项 => skip
+step S29 skipped (SkipIds)
+coverage-func S29 P0-04 钉住确认 => skip
+step S30 skipped (SkipIds)
+coverage-func S30 P0-04 钉住落账断言 => skip
+step S31 skipped (SkipIds)
+coverage-func S31 P0-04 看板-打开管理 => skip
+step S32 skipped (SkipIds)
+coverage-func S32 P0-04 看板-立即刷新 => skip
+step S33 skipped (SkipIds)
+coverage-func S33 P0-04 刷新实效断言 => skip
+step S33b skipped (SkipIds)
+coverage-func S33b P0-04 看板收场 => skip
+step S34 skipped (SkipIds)
+coverage-func S34 P0-05 智能工具-打开 => skip
+step S35 skipped (SkipIds)
+coverage-func S35 P0-05 回访-填标题 => skip
+step S36 skipped (SkipIds)
+coverage-func S36 P0-05 回访-填SQL => skip
+step S37 skipped (SkipIds)
+coverage-func S37 P0-05 回访-登记（异步不卡界面） => skip
+step S38 skipped (SkipIds)
+coverage-func S38 P0-05 登记实效断言 => skip
+step S39 skipped (SkipIds)
+coverage-func S39 P0-05 回访-并入任务中心 => skip
+step S40 skipped (SkipIds)
+coverage-func S40 P0-05 任务真执行终态断言 => skip
+step S40b skipped (SkipIds)
+coverage-func S40b P0-05 智能工具收场 => skip
+step S41 skipped (SkipIds)
+coverage-func S41 P0-05 任务中心-打开 => skip
+step S42 skipped (SkipIds)
+coverage-func S42 P0-05 任务中心-填标题 => skip
+step S43 skipped (SkipIds)
+coverage-func S43 P0-05 任务中心-填SQL => skip
+step S44 skipped (SkipIds)
+coverage-func S44 P0-05 任务中心-提交真执行 => skip
+step S45 skipped (SkipIds)
+coverage-func S45 P0-05 任务真执行终态断言 => skip
+step S46 skipped (SkipIds)
+coverage-func S46 P0-05 任务中心收场 => skip
+step S47 skipped (SkipIds)
+coverage-func S47 P0-06 部署向导-打开 => skip
+step S48 skipped (SkipIds)
+coverage-func S48 P0-06 向导-下一步单步 => skip
+step S49 skipped (SkipIds)
+coverage-func S49 P0-06 单步导航断言（停在步骤2不跳步） => skip
+step S50 skipped (SkipIds)
+coverage-func S50 P0-06 向导-上一步单步 => skip
+step S51 skipped (SkipIds)
+coverage-func S51 P0-06 回退断言（停在步骤1） => skip
+step S52 skipped (SkipIds)
+coverage-func S52 P0-06 向导收场 => skip
