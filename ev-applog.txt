@@ -42,3 +42,7 @@
 2026-11-28 15:29:39.079 [编辑器] beautify
 2026-11-28 15:29:59.693 [执行账] sql=SELECT 1; SELECT 2;  | title=SELECT 1 rows=1 cols=1 row0=1 | title=SELECT 2 rows=1 cols=2 row0=2
 2026-11-28 15:30:10.311 [编辑器] comment-toggle
+2026-11-28 15:30:20.196 [编辑器] explain engine=MySQL
+2026-11-28 15:30:20.212 [人话文案] 执行｜原始异常 MySqlException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
+2026-11-28 15:30:20.215 [错误横幅] 执行失败：没成功：SQL 语法没通过。建议检查语句拼写；可单独执行定位出错位置
+2026-11-28 15:30:20.215 [执行账] sql=EXPLAIN -- SELECT 1; SELECT 2 | title=EXPLAIN -- SELECT 1; SELECT 2 rows=0 cols=
