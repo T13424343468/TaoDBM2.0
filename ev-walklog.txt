@@ -37,3 +37,25 @@ shot shot-11-cell-value.png 58643 bytes
 coverage-func S15 SQL真实执行-取值比对 => pass
 shot ev-shot-result-S16.png 51704 bytes
 S16 ledger: 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
+shot shot-12-dirty-rows.png 51704 bytes
+coverage-func S16 SQL真实执行-脏数据行 => pass
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题入口可达（切换摘除） => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
+step S20 skipped (SkipIds)
+coverage-func S20 P0-01 停止按钮-执行中点停 => skip
+step S21 skipped (SkipIds)
+coverage-func S21 P0-03 前置-重查小结果集 => skip
+step S22 skipped (SkipIds)
+coverage-func S22 P0-03 网格-列头点击循环排序 => skip
+step S23 skipped (SkipIds)
+coverage-func S23 P0-03 排序实效断言 => skip
+step S24 skipped (SkipIds)
+coverage-func S24 P0-03 网格-右键复制该行 => skip
+step S25 skipped (SkipIds)
+coverage-func S25 P0-03 复制实效断言 => skip
+step S26 skipped (SkipIds)
+coverage-func S26 P0-03 复制落账断言 => skip
