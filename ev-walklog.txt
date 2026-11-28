@@ -85,3 +85,4 @@ coverage-func S32 P0-04 看板-立即刷新 => fail
 step S33 P0-04 刷新实效断言 => fail : applog anchor missing: [看板] 刷新 pin= got-tail=[ | 2026-11-28 15:26:16.758 [库下拉] 已加载 1 个库 | 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening]
 shot ev-shot-fail-S33.png 51221 bytes
 coverage-func S33 P0-04 刷新实效断言 => fail
+coverage-func S33b P0-04 看板收场 => pass
