@@ -66,3 +66,4 @@ tag=step-start S42 time=2026-11-28T15:31:53.1988859+00:00 appMem=105 MB
 tag=red S42 time=2026-11-28T15:32:04.1833491+00:00 appMem=106 MB
 tag=step-start S43 time=2026-11-28T15:32:05.7799681+00:00 appMem=103 MB
 tag=red S43 time=2026-11-28T15:32:17.1858034+00:00 appMem=101 MB
+tag=step-start S44 time=2026-11-28T15:32:18.8843160+00:00 appMem=101 MB
