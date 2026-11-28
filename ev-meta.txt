@@ -146,3 +146,4 @@ tag=S66d window-hit ● 查询 time=2026-11-28T15:36:00.0607157+00:00 appMem=166
 tag=step-start S66e time=2026-11-28T15:36:01.4305529+00:00 appMem=166 MB
 tag=empty-rect-tabs ● 查询 · SQL[19x32@359,124] | ● 查询 · SQL[115x32@378,124] | ● 查询 · SQL[115x32@493,124] | ● 查询 · SQL[115x32@608,124] | ● 查询 · SQL[115x32@723,124] | ● 查询 · SQL[100x32@838,124] time=2026-11-28T15:36:03.0356095+00:00 appMem=164 MB
 tag=red S66e time=2026-11-28T15:36:05.7854185+00:00 appMem=162 MB
+tag=step-start S66f time=2026-11-28T15:36:07.2052140+00:00 appMem=161 MB
