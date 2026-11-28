@@ -132,3 +132,4 @@ tag=S65c keys-sent ^s time=2026-11-28T15:35:06.9265450+00:00 appMem=167 MB
 tag=step-start S65d time=2026-11-28T15:35:08.5473287+00:00 appMem=174 MB
 tag=step-start S65e time=2026-11-28T15:35:18.1717842+00:00 appMem=170 MB
 tag=S65e window-hit ● 查询 time=2026-11-28T15:35:19.6452288+00:00 appMem=170 MB
+tag=step-start S66a time=2026-11-28T15:35:21.1084648+00:00 appMem=170 MB
