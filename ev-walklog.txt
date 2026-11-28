@@ -135,3 +135,4 @@ shot ev-shot-fail-S69.png 78041 bytes
 coverage-func S69 P1-格5 改表弹窗断言 => fail
 step S70 P1-格5 索引外键区可见 => fail : window text missing: 索引（勾选删除） got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S70.png 78041 bytes
+coverage-func S70 P1-格5 索引外键区可见 => fail
