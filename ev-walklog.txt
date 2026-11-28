@@ -62,3 +62,5 @@ coverage-func S24 P0-03 网格-右键复制该行 => fail
 step S25 P0-03 复制实效断言 => fail : menu item not found: 复制该行
 shot ev-shot-fail-S25.png 55134 bytes
 coverage-func S25 P0-03 复制实效断言 => fail
+step S26 P0-03 复制落账断言 => fail : applog anchor missing: [网格复制] rows=1 got-tail=[ 2026-11-28 15:28:40.290 [执行账] sql=SELECT id, name FROM products ORDER BY id LIMIT 8;  | title=SELECT id, name FROM products ORDER BY id LIMIT 8 rows=8 cols=id/name row0=1,prod-0001 row1=2,prod-0002 row2=3,prod-0003 row3=4,prod-0004 row4=5,prod-0005 row5=6,prod-0006 row6=7,prod-0007 row7=8,prod-0008]
+shot ev-shot-fail-S26.png 55134 bytes
