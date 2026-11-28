@@ -68,3 +68,4 @@ tag=red S61c time=2026-11-28T15:31:28.1641859+00:00 appMem=170 MB
 tag=step-start S61d time=2026-11-28T15:31:29.8213643+00:00 appMem=169 MB
 tag=step-start S62 time=2026-11-28T15:31:39.3871704+00:00 appMem=161 MB
 tag=S62 focus-guard fallback SetFocus time=2026-11-28T15:31:42.0541726+00:00 appMem=160 MB
+tag=S62 keys-sent ^f time=2026-11-28T15:31:44.5984524+00:00 appMem=160 MB
