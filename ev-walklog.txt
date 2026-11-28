@@ -202,3 +202,4 @@ shot tour-db-01.png 59313 bytes
 shot tour-db-02.png 58131 bytes
 shot tour-db-03.png 53494 bytes
 shot tour-db-04.png 56705 bytes
+shot tour-db-05.png 56260 bytes
