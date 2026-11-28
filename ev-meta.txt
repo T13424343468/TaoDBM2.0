@@ -157,3 +157,4 @@ tag=step-start S73 time=2026-11-28T15:36:08.9175656+00:00 appMem=149 MB
 tag=step-start S74 time=2026-11-28T15:36:18.2694720+00:00 appMem=143 MB
 tag=S74 editor-dirty, fresh tab time=2026-11-28T15:36:19.7550569+00:00 appMem=143 MB
 tag=red S74 time=2026-11-28T15:36:47.6987630+00:00 appMem=172 MB
+tag=step-start S75 time=2026-11-28T15:36:49.5493483+00:00 appMem=171 MB
