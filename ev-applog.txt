@@ -7,3 +7,4 @@
 2026-11-28 15:26:55.450 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:27:36.873 [连接树] filter= shown=1 groups=0 hidden=0
 2026-11-28 15:27:48.101 [对象树] 连接展开 engine=MySQL dbs=5 [information_schema,mysql,performance_schema,sys,taodbmui]
+2026-11-28 15:28:01.297 [对象树] 库展开 db=taodbmui children=2 [orders,products]
