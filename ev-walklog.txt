@@ -76,3 +76,5 @@ ctx retry __CONN_NAME__ : select-then-rightclick
 ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
 ctx retry __CONN_NAME__ : shift-f10
 ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+step S31 P0-04 看板-打开管理 => fail : context item not found: 看板管理
+shot ev-shot-fail-S31.png 51221 bytes
