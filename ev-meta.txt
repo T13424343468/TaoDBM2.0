@@ -103,3 +103,4 @@ tag=S63e editor-set done time=2026-11-28T15:33:24.9373201+00:00 appMem=150 MB
 tag=step-start S63f time=2026-11-28T15:33:26.3122674+00:00 appMem=147 MB
 tag=S63f focus-guard fallback SetFocus time=2026-11-28T15:33:28.8820597+00:00 appMem=147 MB
 tag=S63f keys-arrival-retry time=2026-11-28T15:33:37.3674927+00:00 appMem=146 MB
+tag=S63f keys-fallback-invoke time=2026-11-28T15:33:40.6139599+00:00 appMem=146 MB
