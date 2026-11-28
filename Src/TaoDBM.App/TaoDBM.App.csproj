@@ -48,7 +48,7 @@
     <Content Include="Assets\TaoDBM.png" CopyToOutputDirectory="PreserveNewest" />
     <!-- 拍板（2026-11-28）：网页版手册随包——Scripts/gen_manual_html.py 与程序内手册同源生成，
          随发布产物进安装目录（MSI PublishComponents 按 $(PublishDir)\** 收齐），不装程序双击就能看 -->
-    <Content Include="..\Docs\UserManual.html" Link="UserManual.html" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\Docs\UserManual.html" Link="UserManual.html" CopyToOutputDirectory="PreserveNewest" />
     <None Update="App.manifest" />
   </ItemGroup>
 
