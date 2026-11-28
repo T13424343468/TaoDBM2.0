@@ -48,3 +48,4 @@ tag=menu-item-invoked time=2026-11-28T15:29:16.2847359+00:00 appMem=193 MB
 tag=step-start S64b time=2026-11-28T15:29:20.6255210+00:00 appMem=190 MB
 tag=S64b applog-hit [引导提示] 请选中一个表 / 集合 / 键后查看数据 time=2026-11-28T15:29:22.1706472+00:00 appMem=188 MB
 tag=step-start S64c time=2026-11-28T15:29:23.6301566+00:00 appMem=188 MB
+tag=S64c window-hit 请选中一个表 / 集合 / 键后查看数据 time=2026-11-28T15:29:25.2672166+00:00 appMem=187 MB
