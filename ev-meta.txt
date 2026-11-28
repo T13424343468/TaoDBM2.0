@@ -15,3 +15,4 @@ tag=S19 pre-close time=2026-11-28T15:28:06.1465215+00:00 appMem=160 MB
 tag=SP closed time=2026-11-28T15:28:09.0009178+00:00 appMem=162 MB
 tag=step-start S54 time=2026-11-28T15:28:10.3609777+00:00 appMem=162 MB
 tag=menu-find-start time=2026-11-28T15:28:11.7410416+00:00 appMem=162 MB
+tag=menu-button-found time=2026-11-28T15:28:13.1171824+00:00 appMem=162 MB
