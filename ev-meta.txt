@@ -1,2 +1,3 @@
 tag=step-start S00A time=2026-11-28T15:25:01.3632824+00:00 appMem=129 MB
 tag=S00A winsize 1366x768 time=2026-11-28T15:25:05.0173130+00:00 appMem=129 MB
+tag=step-start S01 time=2026-11-28T15:25:06.2555138+00:00 appMem=129 MB
