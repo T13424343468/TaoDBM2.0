@@ -9,3 +9,8 @@ coverage-func S03 连接-填写名称 => pass
 coverage-func S04 连接-填写主机 => pass
 coverage-func S04b 连接-填写端口 => pass
 coverage-func S04c 连接-填写账号 => pass
+S04d setvalue retry 1 (readback got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
+S04d setvalue retry 2 (readback got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
+S04d setvalue retry 3 (readback got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
+step S04d 连接-填写密码 => fail : set value verify failed (got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
+shot ev-shot-fail-S04d.png 46572 bytes
