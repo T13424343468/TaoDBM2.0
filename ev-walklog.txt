@@ -122,3 +122,4 @@ shot ev-shot-fail-S43.png 51493 bytes
 coverage-func S43 P0-05 任务中心-填SQL => fail
 step S44 P0-05 任务中心-提交真执行 => fail : mouse target not found
 shot ev-shot-fail-S44.png 51493 bytes
+coverage-func S44 P0-05 任务中心-提交真执行 => fail
