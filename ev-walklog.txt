@@ -58,3 +58,5 @@ shot sweep-U014g.png 63570 bytes
 coverage-func U014g 巡检-行编辑器收场 => pass
 shot sweep-U015.png 58265 bytes
 coverage-func U015 巡检-表结构按钮 => pass
+shot sweep-U016.png 58213 bytes
+coverage-func U016 巡检-表结构收场 => pass
