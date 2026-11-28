@@ -13,3 +13,4 @@ tag=click-fail-buttons Minimize | Restore | Close | ＋ 新建连接 | 主题 | 
 tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent | System Properties | Program Manager time=2026-11-28T15:28:57.3912750+00:00 appMem=160 MB
 tag=red S05 time=2026-11-28T15:29:00.2343735+00:00 appMem=160 MB
 tag=step-start S06 time=2026-11-28T15:29:01.7400398+00:00 appMem=160 MB
+tag=red S06 time=2026-11-28T15:30:16.6065930+00:00 appMem=143 MB
