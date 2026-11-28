@@ -24,3 +24,7 @@
 2026-11-28 15:29:31.108 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
 2026-11-28 15:29:31.108 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:29:39.919 [编辑器] comment-toggle
+2026-11-28 15:29:50.360 [编辑器] explain engine=MySQL
+2026-11-28 15:29:52.367 [人话文案] 执行失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:29:52.367 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
+2026-11-28 15:29:52.367 [执行账] error=Unable to connect to any of the specified MySQL hosts.
