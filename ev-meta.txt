@@ -108,3 +108,4 @@ tag=tour-ok 高危 SQL 拦截 tour-conn-06.png time=2026-11-28T15:34:50.3083090+
 tag=tour-ok 上线审查 tour-conn-07.png time=2026-11-28T15:35:04.7414844+00:00 appMem=196 MB
 tag=tour-ok 任务中心 tour-conn-08.png time=2026-11-28T15:35:16.8754310+00:00 appMem=196 MB
 tag=tour-ok 流式开关 tour-conn-09.png time=2026-11-28T15:35:26.6194216+00:00 appMem=200 MB
+tag=tour-ok 读路由预演 tour-conn-10.png time=2026-11-28T15:35:41.0814491+00:00 appMem=198 MB
