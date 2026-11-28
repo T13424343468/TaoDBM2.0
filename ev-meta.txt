@@ -128,3 +128,4 @@ tag=S65e window-hit ● 查询 time=2026-11-28T15:35:34.2864995+00:00 appMem=166
 tag=step-start S66a time=2026-11-28T15:35:35.8109802+00:00 appMem=166 MB
 tag=step-start S66b time=2026-11-28T15:35:39.7504424+00:00 appMem=166 MB
 tag=red S66b time=2026-11-28T15:35:53.4912677+00:00 appMem=164 MB
+tag=step-start S66c time=2026-11-28T15:35:55.4992428+00:00 appMem=164 MB
