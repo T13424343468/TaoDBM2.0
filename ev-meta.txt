@@ -29,3 +29,4 @@ tag=step-start S17 time=2026-11-28T15:29:48.2093268+00:00 appMem=197 MB
 tag=S17a start time=2026-11-28T15:29:49.7290668+00:00 appMem=196 MB
 tag=S17a btn-found=False time=2026-11-28T15:29:57.4538255+00:00 appMem=194 MB
 tag=step-start S54 time=2026-11-28T15:30:00.4488228+00:00 appMem=193 MB
+tag=menu-find-start time=2026-11-28T15:30:02.0054229+00:00 appMem=192 MB
