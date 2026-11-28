@@ -34,3 +34,6 @@ shot ev-shot-fail-S10.png 46562 bytes
 coverage-func S10 查询-选中连接 => fail
 coverage-func S11 查询-新建查询入口 => pass
 shot ev-shot-result-S12.png 47893 bytes
+S12 ledger: 2026-11-28 15:29:26.703 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+step S12 SQL真实执行-计数 => fail : execution error: 2026-11-28 15:29:26.703 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+shot ev-shot-fail-S12.png 47893 bytes
