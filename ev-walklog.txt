@@ -54,3 +54,5 @@ shot sweep-U014e.png 63558 bytes
 coverage-func U014e 巡检-BLOB编辑器弹窗留证 => pass
 shot sweep-U014f.png 63570 bytes
 coverage-func U014f 巡检-BLOB编辑器收场 => pass
+shot sweep-U014g.png 63570 bytes
+coverage-func U014g 巡检-行编辑器收场 => pass
