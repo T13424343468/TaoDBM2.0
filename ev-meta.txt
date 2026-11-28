@@ -9,3 +9,4 @@ tag=red S04d time=2026-11-28T15:27:54.0548318+00:00 appMem=160 MB
 tag=step-start S04e time=2026-11-28T15:27:55.6086278+00:00 appMem=160 MB
 tag=red S04e time=2026-11-28T15:28:06.9774975+00:00 appMem=160 MB
 tag=step-start S05 time=2026-11-28T15:28:08.6201679+00:00 appMem=160 MB
+tag=click-fail-buttons Minimize | Restore | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Add New Tab | 知道了 time=2026-11-28T15:28:18.8341673+00:00 appMem=161 MB
