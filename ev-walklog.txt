@@ -64,3 +64,5 @@ shot sweep-U017a.png 63293 bytes
 coverage-func U017a 巡检-更多菜单展开（B⑥ 低频收组） => pass
 shot sweep-U017.png 65934 bytes
 coverage-func U017 巡检-表单视图按钮 => pass
+shot sweep-U018.png 65898 bytes
+coverage-func U018 巡检-表单视图收场 => pass
