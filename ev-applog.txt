@@ -42,3 +42,4 @@
 2026-11-28 15:30:08.444 [库下拉] 已加载 5 个库
 2026-11-28 15:30:21.553 [编辑器] beautify
 2026-11-28 15:30:42.757 [执行账] sql=SELECT 1; SELECT 2;  | title=SELECT 1 rows=1 cols=1 row0=1 | title=SELECT 2 rows=1 cols=2 row0=2
+2026-11-28 15:30:53.896 [编辑器] comment-toggle
