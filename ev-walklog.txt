@@ -118,3 +118,4 @@ shot ev-shot-fail-S63z.png 47384 bytes
 coverage-func S63z P1-01 引导降模态-选中连接节点 => fail
 coverage-func S64a P1-01 引导降模态-触发引导 => pass
 coverage-func S64b P1-01 引导降模态-非模态落账 => pass
+coverage-func S64c P1-01 引导降模态-状态栏可见 => pass
