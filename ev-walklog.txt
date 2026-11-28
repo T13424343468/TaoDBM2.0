@@ -31,3 +31,4 @@ step S09 skipped (SkipIds)
 coverage-func S09 对象树-真实表清单 => skip
 step S10 查询-选中连接 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S10.png 46541 bytes
+coverage-func S10 查询-选中连接 => fail
