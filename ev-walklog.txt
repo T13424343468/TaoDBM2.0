@@ -175,3 +175,4 @@ shot ev-shot-fail-S86.png 77030 bytes
 coverage-func S86 P1-格16 权限-打开审计 => fail
 step S86b P1-格16 权限-弹窗断言 => fail : window text missing: 用户与权限审计 got-tail=[New Tab | 生成 ER 图 | 操作 ▾ | 适应窗口 | 选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。 | Vertical | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S86b.png 76970 bytes
+coverage-func S86b P1-格16 权限-弹窗断言 => fail
