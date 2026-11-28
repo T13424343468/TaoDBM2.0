@@ -25,3 +25,9 @@ coverage-func S10 查询-选中连接 => pass
 coverage-func S11 查询-新建查询入口 => pass
 shot ev-shot-result-S12.png 51264 bytes
 S12 ledger: 2026-11-28 15:25:49.956 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-08-count-5000.png 51264 bytes
+coverage-func S12 SQL真实执行-计数 => pass
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
