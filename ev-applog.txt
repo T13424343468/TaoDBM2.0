@@ -30,3 +30,4 @@
 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
 2026-11-28 15:27:32.312 [Flyout] opening
 2026-11-28 15:27:44.301 [Flyout] opening
+2026-11-28 15:28:56.237 [Flyout] opening
