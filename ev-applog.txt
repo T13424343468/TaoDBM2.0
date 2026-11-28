@@ -11,3 +11,9 @@
 2026-11-28 15:28:53.155 [新建查询] worktab built db=taodbmui
 2026-11-28 15:28:53.171 [新建查询] tab selected
 2026-11-28 15:28:53.438 [库下拉] 已加载 5 个库
+2026-11-28 15:29:01.557 [Flyout] opening
+2026-11-28 15:29:01.575 [操作栏] click key=query kind=Connection name=ui-auto-mysql
+2026-11-28 15:29:01.576 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:29:01.586 [新建查询] worktab built db=taodbmui
+2026-11-28 15:29:01.591 [新建查询] tab selected
+2026-11-28 15:29:01.591 [库下拉] 已加载 5 个库
