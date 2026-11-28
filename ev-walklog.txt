@@ -149,3 +149,4 @@ shot ev-shot-fail-S68.png 77569 bytes
 coverage-func S68 P1-格5 表设计器-改表模式打开 => fail
 step S69 P1-格5 改表弹窗断言 => fail : window text missing: 改表结构 · orders got-tail=[划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行 | 结果 | 执行计划 | 消息 | ⚠ | 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」 | 复制详情 | 消息 | 请选中一个表 / 集合 / 键后查看数据。 | 0 连接 · 0 已连接 | ]
 shot ev-shot-fail-S69.png 77569 bytes
+coverage-func S69 P1-格5 改表弹窗断言 => fail
