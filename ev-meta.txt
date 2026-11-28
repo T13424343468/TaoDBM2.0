@@ -204,3 +204,4 @@ tag=U108 pre-close time=2026-11-28T15:46:16.3324360+00:00 appMem=248 MB
 tag=SP closed time=2026-11-28T15:46:19.0984183+00:00 appMem=244 MB
 tag=step-start U109 time=2026-11-28T15:46:21.5018994+00:00 appMem=237 MB
 tag=U109 pre-close time=2026-11-28T15:46:23.9990821+00:00 appMem=237 MB
+tag=SP closed time=2026-11-28T15:46:26.7380566+00:00 appMem=236 MB
