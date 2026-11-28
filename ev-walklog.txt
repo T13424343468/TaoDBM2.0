@@ -162,3 +162,5 @@ step S76 P1-格1 补全-浮层落账 => fail : applog anchor missing: [补全] �
 shot ev-shot-fail-S76.png 78271 bytes
 coverage-func S76 P1-格1 补全-浮层落账 => fail
 coverage-func S77 P1-格1 补全-收场 => pass
+step S78 P1-格7 导出流式-真实导出 => miss : work-csv not found
+coverage-func S78 P1-格7 导出流式-真实导出 => miss
