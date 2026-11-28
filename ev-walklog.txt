@@ -139,3 +139,4 @@ coverage-func S61b 批次一-堆栈菜单项 => pass
 step S61c 批次一-堆栈弹层断言 => fail : window text missing: 剪贴板堆栈 got-tail=[果 | 执行计划 | 消息 | 2 行 | 1 列 | 虚拟滚动 开 | 1 | 1 | 2 | 2 | 2 行 · 0 ms · 11-28 15:26:59 | 详情 | 对象 | ui-auto-sqlite | 引擎 | SQLite | 主机 | 127.0.0.1 | 端口 | 暂不可用 | 状态 | 未连接 | SQLite · main 执行完成 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S61c.png 51061 bytes
 coverage-func S61c 批次一-堆栈弹层断言 => fail
+coverage-func S61d 批次一-堆栈收场 => pass
