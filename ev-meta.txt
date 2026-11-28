@@ -58,3 +58,4 @@ tag=step-start S65c time=2026-11-28T15:29:37.5633776+00:00 appMem=178 MB
 tag=S65c focus-guard fallback SetFocus time=2026-11-28T15:29:40.0689754+00:00 appMem=175 MB
 tag=S65c keys-sent ^s time=2026-11-28T15:29:42.5455345+00:00 appMem=203 MB
 tag=step-start S65d time=2026-11-28T15:29:44.3270541+00:00 appMem=207 MB
+tag=step-start S65e time=2026-11-28T15:29:53.7839208+00:00 appMem=197 MB
