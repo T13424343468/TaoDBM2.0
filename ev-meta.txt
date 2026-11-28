@@ -72,3 +72,4 @@ tag=S63b keys-arrival-retry time=2026-11-28T15:31:07.1983587+00:00 appMem=163 MB
 tag=S63b keys-fallback-invoke time=2026-11-28T15:31:10.3548340+00:00 appMem=161 MB
 tag=S63b keys-sent {F6} time=2026-11-28T15:31:12.6054104+00:00 appMem=162 MB
 tag=step-start S63c time=2026-11-28T15:31:13.8724118+00:00 appMem=159 MB
+tag=S63c applog-hit [错误横幅] 执行失败 time=2026-11-28T15:31:15.4972414+00:00 appMem=158 MB
