@@ -23,3 +23,4 @@ N12 ledger: 2026-11-28 15:26:00.336 [执行账] sql=SELECT COUNT(*) AS c FROM or
 shot shot-n12-count.png 50374 bytes
 coverage-func N12 新用户-首条查询出数 => pass
 shot ev-shot-result-N13.png 50652 bytes
+N13 ledger: 2026-11-28 15:26:17.168 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
