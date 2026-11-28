@@ -25,3 +25,5 @@ shot sweep-U007b.png 64556 bytes
 coverage-func U007b 巡检-连接选择SQLite引擎 => pass
 shot sweep-U007c.png 64113 bytes
 coverage-func U007c 巡检-连接填写名称 => pass
+shot sweep-U007d.png 66151 bytes
+coverage-func U007d 巡检-连接填写数据库文件 => pass
