@@ -27,3 +27,4 @@ tag=red S09 time=2026-11-28T15:32:10.8709586+00:00 appMem=55 MB
 tag=step-start S54 time=2026-11-28T15:32:12.5169352+00:00 appMem=54 MB
 tag=menu-find-start time=2026-11-28T15:32:13.9801880+00:00 appMem=54 MB
 tag=menu-button-found time=2026-11-28T15:32:15.3723977+00:00 appMem=53 MB
+tag=menu-button-invoked time=2026-11-28T15:32:16.9293897+00:00 appMem=73 MB
