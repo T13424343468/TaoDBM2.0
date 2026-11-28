@@ -172,3 +172,4 @@ tag=step-start S75 time=2026-11-28T15:41:53.1025112+00:00 appMem=167 MB
 tag=S75 focus-guard fallback SetFocus time=2026-11-28T15:41:55.8074912+00:00 appMem=167 MB
 tag=S75 keys-sent ^  time=2026-11-28T15:41:58.4273256+00:00 appMem=166 MB
 tag=step-start S76 time=2026-11-28T15:42:00.2841034+00:00 appMem=166 MB
+tag=red S76 time=2026-11-28T15:42:18.3233387+00:00 appMem=159 MB
