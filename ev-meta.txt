@@ -183,3 +183,4 @@ tag=step-start S82 time=2026-11-28T15:39:36.8197460+00:00 appMem=182 MB
 tag=menu-find-start time=2026-11-28T15:39:38.4716957+00:00 appMem=182 MB
 tag=menu-button-found time=2026-11-28T15:39:40.1006718+00:00 appMem=182 MB
 tag=menu-button-invoked time=2026-11-28T15:39:42.1612790+00:00 appMem=182 MB
+tag=menu-item-found time=2026-11-28T15:39:43.6543850+00:00 appMem=187 MB
