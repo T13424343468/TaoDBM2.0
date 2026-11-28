@@ -63,3 +63,4 @@ tag=S65e window-hit ● 查询 time=2026-11-28T15:29:55.3243510+00:00 appMem=197
 tag=step-start S66a time=2026-11-28T15:29:56.6543621+00:00 appMem=196 MB
 tag=step-start S66b time=2026-11-28T15:30:00.6311036+00:00 appMem=194 MB
 tag=red S66b time=2026-11-28T15:30:14.3097780+00:00 appMem=186 MB
+tag=step-start S66c time=2026-11-28T15:30:15.7600965+00:00 appMem=186 MB
