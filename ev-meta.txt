@@ -85,3 +85,4 @@ tag=S62 keys-sent ^f time=2026-11-28T15:35:12.5823459+00:00 appMem=147 MB
 tag=step-start S62b time=2026-11-28T15:35:14.1825808+00:00 appMem=151 MB
 tag=S62b window-hit 查找替换 time=2026-11-28T15:35:15.7115039+00:00 appMem=151 MB
 tag=step-start S62c time=2026-11-28T15:35:17.2221551+00:00 appMem=151 MB
+tag=step-start S63a time=2026-11-28T15:35:26.9547173+00:00 appMem=142 MB
