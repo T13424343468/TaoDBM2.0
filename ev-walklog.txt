@@ -152,3 +152,4 @@ coverage-func S79 P1-格10 备份-打开向导 => pass
 step S80 P1-格10 备份-弹窗断言 => fail : window text missing: 备份 / 恢复向导 got-tail=[4 · 选库/表 | 备份到文件 | 从文件还原 | 数据库 | 整库口径：taodbmui 共 2 张表；备份 / 恢复按整库进行。 | 上一步 | 下一步 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S80.png 76621 bytes
 coverage-func S80 P1-格10 备份-弹窗断言 => fail
+coverage-func S81 P1-格10 备份-收场 => pass
