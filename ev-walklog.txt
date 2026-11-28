@@ -92,3 +92,4 @@ S63a editor-set retry 2 (readback mismatch got=SELECT * FROM __no_such_table_p1_
 coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
 S63b keys focus-guard: focus not on editor, mouse-click into editor
 S63b keys arrival missing, retry once with foreground+focus
+S63b keys still not arrived, fallback invoke work-run
