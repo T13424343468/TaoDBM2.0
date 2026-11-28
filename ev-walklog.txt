@@ -143,3 +143,4 @@ shot ev-shot-fail-S66f.png 77598 bytes
 coverage-func S66f P1-02 未保存保护-点不保存 => fail
 step S66g P1-02 未保存保护-页签移除 => fail : window negative anchor hit: ● 查询
 shot ev-shot-fail-S66g.png 77598 bytes
+coverage-func S66g P1-02 未保存保护-页签移除 => fail
