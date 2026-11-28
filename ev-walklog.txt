@@ -83,3 +83,4 @@ shot ev-shot-fail-S61c.png 44463 bytes
 coverage-func S61c 批次一-堆栈弹层断言 => fail
 coverage-func S61d 批次一-堆栈收场 => pass
 S62 keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S62 批次一-Ctrl+F查找替换 => pass
