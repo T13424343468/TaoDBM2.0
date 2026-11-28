@@ -5,3 +5,4 @@ tag=step-start S04 time=2026-11-28T15:25:26.4263471+00:00 appMem=159 MB
 tag=step-start S05 time=2026-11-28T15:25:28.4011719+00:00 appMem=159 MB
 tag=step-start S10 time=2026-11-28T15:25:31.9828885+00:00 appMem=159 MB
 tag=step-start S11 time=2026-11-28T15:25:34.4011377+00:00 appMem=160 MB
+tag=menu-find-start time=2026-11-28T15:25:35.7642970+00:00 appMem=160 MB
