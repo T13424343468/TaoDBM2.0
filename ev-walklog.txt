@@ -88,3 +88,4 @@ coverage-func S63g P1-01 错误横幅-收起落账 => pass
 step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[Enter 执行 | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 1 ms · 11-28 15:31:54 | 详情 | 对象 | taodbmui | 引擎 | MySQL | 子对象 | 2 个 | 字符集 | 暂不可用 | 注释 | 暂不可用 | MySQL · taodbmui 执行完成 | 1 连接 · 1 已连接 | ]
 shot ev-shot-fail-S63h.png 55714 bytes
 coverage-func S63h P1-01 错误横幅-横幅消失 => fail
+coverage-func S63z P1-01 引导降模态-选中连接节点 => pass
