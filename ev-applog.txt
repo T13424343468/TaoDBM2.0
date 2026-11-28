@@ -6,3 +6,4 @@
 2026-11-28 15:27:56.707 [连接树] filter= shown=0 groups=0 hidden=0
 2026-11-28 15:27:57.341 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:28:40.566 [连接树] filter= shown=1 groups=0 hidden=0
+2026-11-28 15:28:50.089 [Flyout] opening
