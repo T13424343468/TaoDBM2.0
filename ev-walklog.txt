@@ -115,3 +115,4 @@ shot ev-shot-fail-S63h.png 47384 bytes
 coverage-func S63h P1-01 错误横幅-横幅消失 => fail
 step S63z P1-01 引导降模态-选中连接节点 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S63z.png 47384 bytes
+coverage-func S63z P1-01 引导降模态-选中连接节点 => fail
