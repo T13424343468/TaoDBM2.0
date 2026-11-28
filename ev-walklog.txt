@@ -66,3 +66,5 @@ shot sweep-U017.png 65934 bytes
 coverage-func U017 巡检-表单视图按钮 => pass
 shot sweep-U018.png 65898 bytes
 coverage-func U018 巡检-表单视图收场 => pass
+step U019 巡检-拟真数据按钮 => miss : target not found
+coverage-func U019 巡检-拟真数据按钮 => miss
