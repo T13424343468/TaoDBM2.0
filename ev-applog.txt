@@ -20,3 +20,4 @@
 2026-11-28 15:32:05.746 [执行账] sql=SELECT * FROM orders LIMIT 50;  | title=SELECT * FROM orders LIMIT 50 rows=50 cols=id/product_id/amount/note row0=1,4,137,order note 1 row1=2,7,174,order note 2 row2=3,10,211,order note 3 row3=4,13,248,order note 4 row4=5,16,285,order note 5 row5=6,19,322,order note 6 row6=7,22,359,order note 7 row7=8,25,396,order note 8
 2026-11-28 15:32:20.612 [编辑器] beautify
 2026-11-28 15:33:25.917 [Flyout] opening
+2026-11-28 15:33:40.264 [Flyout] opening
