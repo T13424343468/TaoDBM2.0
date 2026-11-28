@@ -29,3 +29,4 @@
 2026-11-28 15:28:58.572 [新建查询] worktab built db=taodbmui
 2026-11-28 15:28:58.575 [新建查询] tab selected
 2026-11-28 15:28:58.575 [库下拉] 已加载 5 个库
+2026-11-28 15:29:05.781 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92
