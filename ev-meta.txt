@@ -159,3 +159,4 @@ tag=red S69 time=2026-11-28T15:36:55.9204372+00:00 appMem=153 MB
 tag=step-start S70 time=2026-11-28T15:36:57.2527030+00:00 appMem=152 MB
 tag=red S70 time=2026-11-28T15:37:10.9742259+00:00 appMem=138 MB
 tag=step-start S71 time=2026-11-28T15:37:12.4506038+00:00 appMem=137 MB
+tag=click-fail-buttons &Help | View Slider | Organize | New folder | Filter dropdown | Filter dropdown | Filter dropdown | Filter dropdown | Search | Minimize | Maximize | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 结果 | 执行计划 | 消息 | 复制详情 time=2026-11-28T15:37:22.4716052+00:00 appMem=131 MB
