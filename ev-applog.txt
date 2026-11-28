@@ -8,3 +8,5 @@
 2026-11-28 15:26:09.035 [连接树] filter= shown=1 groups=0 hidden=0
 2026-11-28 15:26:11.588 [对象树] 连接展开 engine=SQLite dbs=1 [main]
 2026-11-28 15:26:25.769 [对象树] 库展开 db=main children=2 [orders,products]
+2026-11-28 15:26:47.792 [Flyout] opening
+2026-11-28 15:26:48.852 [库下拉] 已加载 1 个库
