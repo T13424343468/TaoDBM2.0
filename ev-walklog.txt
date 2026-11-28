@@ -42,3 +42,5 @@ shot sweep-U014.png 63549 bytes
 coverage-func U014 巡检-表数据页签工具栏 => pass
 shot sweep-U014a.png 63558 bytes
 coverage-func U014a 巡检-数据网格右键打开菜单 => pass
+step U014b 巡检-就地编辑打开行编辑器 => miss : menu item not found: ✎ 就地编辑
+coverage-func U014b 巡检-就地编辑打开行编辑器 => miss
