@@ -165,3 +165,4 @@ tag=tour-ok 批量清理 tour-db-09.png time=2026-11-28T15:42:40.0307876+00:00 a
 tag=tour-ok 设计辅助 tour-db-10.png time=2026-11-28T15:42:54.5730267+00:00 appMem=244 MB
 tag=tour-ok 例程管理 tour-db-11.png time=2026-11-28T15:43:09.3433816+00:00 appMem=250 MB
 tag=tour-ok 一键诊断 tour-db-12.png time=2026-11-28T15:43:24.0120083+00:00 appMem=259 MB
+tag=tour-ok 告警中心 tour-db-13.png time=2026-11-28T15:43:38.5492843+00:00 appMem=261 MB
