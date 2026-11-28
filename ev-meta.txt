@@ -115,3 +115,4 @@ tag=S64b applog-hit [引导提示] 请选中一个表 / 集合 / 键后查看数
 tag=step-start S64c time=2026-11-28T15:34:50.2747927+00:00 appMem=135 MB
 tag=S64c window-hit 请选中一个表 / 集合 / 键后查看数据 time=2026-11-28T15:34:51.7758774+00:00 appMem=135 MB
 tag=step-start S65a time=2026-11-28T15:34:53.3295962+00:00 appMem=134 MB
+tag=S65a same-tab clear time=2026-11-28T15:34:54.8417685+00:00 appMem=134 MB
