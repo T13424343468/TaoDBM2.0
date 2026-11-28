@@ -18,3 +18,4 @@ tag=N12 result-shot time=2026-11-28T15:26:05.0926398+00:00 appMem=201 MB
 tag=N12 ledger-hit time=2026-11-28T15:26:06.6786883+00:00 appMem=202 MB
 tag=step-start N14 time=2026-11-28T15:26:08.3170929+00:00 appMem=202 MB
 tag=S17a start time=2026-11-28T15:26:09.8371664+00:00 appMem=203 MB
+tag=S17a btn-found=False time=2026-11-28T15:26:17.6479253+00:00 appMem=203 MB
