@@ -6,3 +6,4 @@ tag=step-start N05 time=2026-11-28T15:25:12.1670750+00:00 appMem=159 MB
 tag=step-start N06 time=2026-11-28T15:25:15.6251957+00:00 appMem=162 MB
 tag=step-start N07 time=2026-11-28T15:25:23.2666545+00:00 appMem=162 MB
 tag=expand-ok ui-auto-sqlite time=2026-11-28T15:25:24.7553225+00:00 appMem=164 MB
+tag=step-start N08 time=2026-11-28T15:25:32.2605640+00:00 appMem=167 MB
