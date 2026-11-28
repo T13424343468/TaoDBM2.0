@@ -62,3 +62,5 @@ coverage-func S26 P0-03 复制落账断言 => skip
 step S27 P0-04 网格-钉住到看板 => fail : mouse target not found
 shot ev-shot-fail-S27.png 51704 bytes
 coverage-func S27 P0-04 网格-钉住到看板 => fail
+step S28 P0-04 钉住菜单项 => fail : menu item not found: 钉住到看板
+shot ev-shot-fail-S28.png 51704 bytes
