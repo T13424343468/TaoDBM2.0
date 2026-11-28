@@ -14,3 +14,4 @@ S04d setvalue retry 2 (readback got=●●●●●●●●●●●● want=Ta
 S04d setvalue retry 3 (readback got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
 step S04d 连接-填写密码 => fail : set value verify failed (got=●●●●●●●●●●●● want=Ta0DBM-ui!42)
 shot ev-shot-fail-S04d.png 46555 bytes
+coverage-func S04d 连接-填写密码 => fail
