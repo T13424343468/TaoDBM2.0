@@ -84,3 +84,5 @@ S60f keys focus-guard: focus not on editor, mouse-click into editor
 coverage-func S60f 批次一-复制入堆栈 => pass
 coverage-func S61 批次一-右键剪贴板堆栈 => pass
 coverage-func S61b 批次一-堆栈菜单项 => pass
+step S61c 批次一-堆栈弹层断言 => fail : window text missing: 剪贴板堆栈 got-tail=[L | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行 | 结果 | 执行计划 | 消息 | （暂无执行计划：点工具栏「⏱ 解释计划」或编辑器右键「执行计划」。） | 执行出错 | 0 连接 · 0 已连接 | ]
+shot ev-shot-fail-S61c.png 44395 bytes
