@@ -4,3 +4,4 @@ shot shot-01-start.png 46186 bytes
 coverage: 30 named elements in main window
 shot shot-n01-newconn.png 61444 bytes
 coverage-func N01 新用户-打开新建连接对话框 => pass
+coverage-func N02 新用户-选择SQLite引擎 => pass
