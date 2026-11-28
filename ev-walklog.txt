@@ -9,3 +9,5 @@ shot sweep-U001.png 61660 bytes
 coverage-func U001 巡检-新建连接对话框 => pass
 shot sweep-U002.png 61868 bytes
 coverage-func U002 巡检-连接对话框引擎切换MySQL => pass
+shot sweep-U003.png 61988 bytes
+coverage-func U003 巡检-连接对话框引擎切换PostgreSQL => pass
