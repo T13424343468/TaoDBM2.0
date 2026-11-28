@@ -27,3 +27,4 @@ tag=SP closed time=2026-11-28T15:26:22.2030531+00:00 appMem=171 MB
 tag=step-start S79 time=2026-11-28T15:26:23.6821879+00:00 appMem=171 MB
 tag=menu-find-start time=2026-11-28T15:26:24.9529062+00:00 appMem=171 MB
 tag=menu-button-found time=2026-11-28T15:26:26.1715205+00:00 appMem=171 MB
+tag=menu-button-invoked time=2026-11-28T15:26:27.4388945+00:00 appMem=171 MB
