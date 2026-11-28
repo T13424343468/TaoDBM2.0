@@ -50,3 +50,4 @@ S57 keys focus-guard: focus not on editor, mouse-click into editor
 S57 keys arrival missing, retry once with foreground+focus
 S57 keys still not arrived, fallback invoke work-run
 coverage-func S57 批次一-F6执行当前语句 => pass
+coverage-func S57b 批次一-执行账落账 => pass
