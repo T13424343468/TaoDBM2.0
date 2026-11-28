@@ -46,3 +46,4 @@ tag=menu-button-invoked time=2026-11-28T15:29:13.3506061+00:00 appMem=191 MB
 tag=menu-item-found time=2026-11-28T15:29:14.9052995+00:00 appMem=192 MB
 tag=menu-item-invoked time=2026-11-28T15:29:16.2847359+00:00 appMem=193 MB
 tag=step-start S64b time=2026-11-28T15:29:20.6255210+00:00 appMem=190 MB
+tag=S64b applog-hit [引导提示] 请选中一个表 / 集合 / 键后查看数据 time=2026-11-28T15:29:22.1706472+00:00 appMem=188 MB
