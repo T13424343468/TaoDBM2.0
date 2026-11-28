@@ -155,3 +155,4 @@ S74 editor-set retry 2 (readback mismatch got=在此输入 SQL / 过滤器 / 命
 S74 editor-set retry 3 (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
 step S74 P1-格1 补全-编辑器铺底 => fail : editor set verify failed after retries (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
 shot ev-shot-fail-S74.png 78213 bytes
+coverage-func S74 P1-格1 补全-编辑器铺底 => fail
