@@ -1,0 +1,296 @@
+probe quiet-watch start (10s, no UIA)
+probe quiet-watch done
+shot shot-01-start.png 47078 bytes
+coverage: 31 named elements in main window
+step S00A skipped (SkipIds)
+coverage-func S00A 三档分辨率-1366x768 => skip
+shot shot-05-newconn-dialog.png 62274 bytes
+coverage-func S01 新建连接-打开对话框 => pass
+coverage-func S02 连接-选择SQLite引擎 => pass
+coverage-func S03 连接-填写名称 => pass
+coverage-func S04 连接-填写数据库文件 => pass
+shot shot-06-conn-saved.png 47893 bytes
+coverage-func S05 连接-保存 => pass
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S06A skipped (SkipIds)
+coverage-func S06A 三档分辨率-回1920x1080 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
+coverage-func S10 查询-选中连接 => pass
+coverage-func S11 查询-新建查询入口 => pass
+shot ev-shot-result-S12.png 51264 bytes
+S12 ledger: 2026-11-28 15:25:49.956 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-08-count-5000.png 51264 bytes
+coverage-func S12 SQL真实执行-计数 => pass
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+shot ev-shot-result-S15.png 58643 bytes
+S15 ledger: 2026-11-28 15:26:06.647 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
+shot shot-11-cell-value.png 58643 bytes
+coverage-func S15 SQL真实执行-取值比对 => pass
+shot ev-shot-result-S16.png 51704 bytes
+S16 ledger: 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
+shot shot-12-dirty-rows.png 51704 bytes
+coverage-func S16 SQL真实执行-脏数据行 => pass
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题入口可达（切换摘除） => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
+step S20 skipped (SkipIds)
+coverage-func S20 P0-01 停止按钮-执行中点停 => skip
+step S21 skipped (SkipIds)
+coverage-func S21 P0-03 前置-重查小结果集 => skip
+step S22 skipped (SkipIds)
+coverage-func S22 P0-03 网格-列头点击循环排序 => skip
+step S23 skipped (SkipIds)
+coverage-func S23 P0-03 排序实效断言 => skip
+step S24 skipped (SkipIds)
+coverage-func S24 P0-03 网格-右键复制该行 => skip
+step S25 skipped (SkipIds)
+coverage-func S25 P0-03 复制实效断言 => skip
+step S26 skipped (SkipIds)
+coverage-func S26 P0-03 复制落账断言 => skip
+step S27 P0-04 网格-钉住到看板 => fail : mouse target not found
+shot ev-shot-fail-S27.png 51704 bytes
+coverage-func S27 P0-04 网格-钉住到看板 => fail
+step S28 P0-04 钉住菜单项 => fail : menu item not found: 钉住到看板
+shot ev-shot-fail-S28.png 51704 bytes
+coverage-func S28 P0-04 钉住菜单项 => fail
+step S29 P0-04 钉住确认 => fail : mouse target not found
+shot ev-shot-fail-S29.png 51690 bytes
+coverage-func S29 P0-04 钉住确认 => fail
+step S30 P0-04 钉住落账断言 => fail : applog anchor missing: [看板] 钉住 pin= got-tail=[5:26:16.750 [新建查询] worktab built db=main | 2026-11-28 15:26:16.755 [新建查询] tab selected | 2026-11-28 15:26:16.758 [库下拉] 已加载 1 个库 | 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454]
+shot ev-shot-fail-S30.png 51690 bytes
+coverage-func S30 P0-04 钉住落账断言 => fail
+ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : shift-f10
+ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+step S31 P0-04 看板-打开管理 => fail : context item not found: 看板管理
+shot ev-shot-fail-S31.png 51221 bytes
+coverage-func S31 P0-04 看板-打开管理 => fail
+step S32 P0-04 看板-立即刷新 => fail : mouse target not found
+shot ev-shot-fail-S32.png 51221 bytes
+coverage-func S32 P0-04 看板-立即刷新 => fail
+step S33 P0-04 刷新实效断言 => fail : applog anchor missing: [看板] 刷新 pin= got-tail=[ | 2026-11-28 15:26:16.758 [库下拉] 已加载 1 个库 | 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening]
+shot ev-shot-fail-S33.png 51221 bytes
+coverage-func S33 P0-04 刷新实效断言 => fail
+coverage-func S33b P0-04 看板收场 => pass
+ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : shift-f10
+ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+step S34 P0-05 智能工具-打开 => fail : context item not found: 智能工具
+shot ev-shot-fail-S34.png 51230 bytes
+coverage-func S34 P0-05 智能工具-打开 => fail
+step S35 P0-05 回访-填标题 => fail : field not found
+shot ev-shot-fail-S35.png 51230 bytes
+coverage-func S35 P0-05 回访-填标题 => fail
+step S36 P0-05 回访-填SQL => fail : field not found
+shot ev-shot-fail-S36.png 51230 bytes
+coverage-func S36 P0-05 回访-填SQL => fail
+step S37 P0-05 回访-登记（异步不卡界面） => fail : mouse target not found
+shot ev-shot-fail-S37.png 51238 bytes
+coverage-func S37 P0-05 回访-登记（异步不卡界面） => fail
+step S38 P0-05 登记实效断言 => fail : applog anchor missing: [智能工具] 回访登记 title=walk-follow-001 got-tail=[OUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening | 2026-11-28 15:28:56.237 [Flyout] opening | 2026-11-28 15:29:08.203 [Flyout] opening]
+shot ev-shot-fail-S38.png 51238 bytes
+coverage-func S38 P0-05 登记实效断言 => fail
+step S39 P0-05 回访-并入任务中心 => fail : mouse target not found
+shot ev-shot-fail-S39.png 51205 bytes
+coverage-func S39 P0-05 回访-并入任务中心 => fail
+step S40 P0-05 任务真执行终态断言 => fail : applog anchor missing: [任务中心] 终态 && state=done got-tail=[OUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening | 2026-11-28 15:28:56.237 [Flyout] opening | 2026-11-28 15:29:08.203 [Flyout] opening]
+shot ev-shot-fail-S40.png 51205 bytes
+coverage-func S40 P0-05 任务真执行终态断言 => fail
+coverage-func S40b P0-05 智能工具收场 => pass
+coverage-func S41 P0-05 任务中心-打开 => pass
+step S42 P0-05 任务中心-填标题 => fail : field not found
+shot ev-shot-fail-S42.png 51493 bytes
+coverage-func S42 P0-05 任务中心-填标题 => fail
+step S43 P0-05 任务中心-填SQL => fail : field not found
+shot ev-shot-fail-S43.png 51493 bytes
+coverage-func S43 P0-05 任务中心-填SQL => fail
+step S44 P0-05 任务中心-提交真执行 => fail : mouse target not found
+shot ev-shot-fail-S44.png 51493 bytes
+coverage-func S44 P0-05 任务中心-提交真执行 => fail
+step S45 P0-05 任务真执行终态断言 => fail : applog anchor missing: [任务中心] 终态 && state=done got-tail=[;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening | 2026-11-28 15:28:56.237 [Flyout] opening | 2026-11-28 15:29:08.203 [Flyout] opening | 2026-11-28 15:31:49.159 [Flyout] opening]
+shot ev-shot-fail-S45.png 51461 bytes
+coverage-func S45 P0-05 任务真执行终态断言 => fail
+coverage-func S46 P0-05 任务中心收场 => pass
+ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : shift-f10
+ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+step S47 P0-06 部署向导-打开 => fail : context item not found: 部署向导
+shot ev-shot-fail-S47.png 51193 bytes
+coverage-func S47 P0-06 部署向导-打开 => fail
+step S48 P0-06 向导-下一步单步 => fail : mouse target not found
+shot ev-shot-fail-S48.png 51212 bytes
+coverage-func S48 P0-06 向导-下一步单步 => fail
+step S49 P0-06 单步导航断言（停在步骤2不跳步） => fail : window text missing: 步骤 2/5 got-tail=[al | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | c | 454 | 1 行 · 1 ms · 11-28 15:26:23 | 详情 | 对象 | ui-auto-sqlite | 引擎 | SQLite | 主机 | 127.0.0.1 | 端口 | 暂不可用 | 状态 | 未连接 | SQLite · main 执行完成 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S49.png 51212 bytes
+coverage-func S49 P0-06 单步导航断言（停在步骤2不跳步） => fail
+step S50 P0-06 向导-上一步单步 => fail : mouse target not found
+shot ev-shot-fail-S50.png 51212 bytes
+coverage-func S50 P0-06 向导-上一步单步 => fail
+step S51 P0-06 回退断言（停在步骤1） => fail : window text missing: 步骤 1/5 got-tail=[al | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | c | 454 | 1 行 · 1 ms · 11-28 15:26:23 | 详情 | 对象 | ui-auto-sqlite | 引擎 | SQLite | 主机 | 127.0.0.1 | 端口 | 暂不可用 | 状态 | 未连接 | SQLite · main 执行完成 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S51.png 51212 bytes
+coverage-func S51 P0-06 回退断言（停在步骤1） => fail
+coverage-func S52 P0-06 向导收场 => pass
+step S55 skipped (SkipIds)
+coverage-func S55 批次一-编辑器填多语句 => skip
+step S56 skipped (SkipIds)
+coverage-func S56 批次一-右键打开编辑器菜单 => skip
+step S56b skipped (SkipIds)
+coverage-func S56b 批次一-美化SQL菜单项 => skip
+step S56c skipped (SkipIds)
+coverage-func S56c 批次一-美化实效断言 => skip
+step S57 skipped (SkipIds)
+coverage-func S57 批次一-F6执行当前语句 => skip
+step S57b skipped (SkipIds)
+coverage-func S57b 批次一-执行账落账 => skip
+step S58 skipped (SkipIds)
+coverage-func S58 批次一-右键注释切换 => skip
+step S58b skipped (SkipIds)
+coverage-func S58b 批次一-注释切换菜单项 => skip
+step S58c skipped (SkipIds)
+coverage-func S58c 批次一-注释切换实效断言 => skip
+step S59 skipped (SkipIds)
+coverage-func S59 批次一-右键执行计划 => skip
+step S59b skipped (SkipIds)
+coverage-func S59b 批次一-执行计划菜单项 => skip
+step S59c skipped (SkipIds)
+coverage-func S59c 批次一-执行计划实效断言 => skip
+step S60 skipped (SkipIds)
+coverage-func S60 批次一-右键代码段 => skip
+step S60b skipped (SkipIds)
+coverage-func S60b 批次一-代码段菜单项 => skip
+step S60c skipped (SkipIds)
+coverage-func S60c 批次一-代码段弹层断言 => skip
+step S60d skipped (SkipIds)
+coverage-func S60d 批次一-代码段收场 => skip
+step S60e skipped (SkipIds)
+coverage-func S60e 批次一-全选编辑器 => skip
+step S60f skipped (SkipIds)
+coverage-func S60f 批次一-复制入堆栈 => skip
+step S61 skipped (SkipIds)
+coverage-func S61 批次一-右键剪贴板堆栈 => skip
+step S61b skipped (SkipIds)
+coverage-func S61b 批次一-堆栈菜单项 => skip
+step S61c skipped (SkipIds)
+coverage-func S61c 批次一-堆栈弹层断言 => skip
+step S61d skipped (SkipIds)
+coverage-func S61d 批次一-堆栈收场 => skip
+step S62 skipped (SkipIds)
+coverage-func S62 批次一-Ctrl+F查找替换 => skip
+step S62b skipped (SkipIds)
+coverage-func S62b 批次一-查找替换弹层断言 => skip
+step S62c skipped (SkipIds)
+coverage-func S62c 批次一-查找替换收场 => skip
+step S63a skipped (SkipIds)
+coverage-func S63a P1-01 错误横幅-执行必败SQL => skip
+step S63b skipped (SkipIds)
+coverage-func S63b P1-01 错误横幅-F6执行 => skip
+step S63c skipped (SkipIds)
+coverage-func S63c P1-01 错误横幅-横幅落账 => skip
+step S63d skipped (SkipIds)
+coverage-func S63d P1-01 错误横幅-横幅可见 => skip
+step S63e skipped (SkipIds)
+coverage-func S63e P1-01 错误横幅-改成功语句 => skip
+step S63f skipped (SkipIds)
+coverage-func S63f P1-01 错误横幅-成功执行 => skip
+step S63g skipped (SkipIds)
+coverage-func S63g P1-01 错误横幅-收起落账 => skip
+step S63h skipped (SkipIds)
+coverage-func S63h P1-01 错误横幅-横幅消失 => skip
+step S63z skipped (SkipIds)
+coverage-func S63z P1-01 引导降模态-选中连接节点 => skip
+step S64a skipped (SkipIds)
+coverage-func S64a P1-01 引导降模态-触发引导 => skip
+step S64b skipped (SkipIds)
+coverage-func S64b P1-01 引导降模态-非模态落账 => skip
+step S64c skipped (SkipIds)
+coverage-func S64c P1-01 引导降模态-状态栏可见 => skip
+step S65a skipped (SkipIds)
+coverage-func S65a P1-02 脏标记-编辑置脏 => skip
+step S65b skipped (SkipIds)
+coverage-func S65b P1-02 脏标记-标题出现● => skip
+step S65c skipped (SkipIds)
+coverage-func S65c P1-02 脏标记-Ctrl+S另存弹层 => skip
+step S65d skipped (SkipIds)
+coverage-func S65d P1-02 脏标记-取消另存 => skip
+step S65e skipped (SkipIds)
+coverage-func S65e P1-02 脏标记-取消后●保留 => skip
+step S66a skipped (SkipIds)
+coverage-func S66a P1-02 未保存保护-点关闭 => skip
+step S66b skipped (SkipIds)
+coverage-func S66b P1-02 未保存保护-确认框出现 => skip
+step S66c skipped (SkipIds)
+coverage-func S66c P1-02 未保存保护-点取消 => skip
+step S66d skipped (SkipIds)
+coverage-func S66d P1-02 未保存保护-取消页签保留 => skip
+step S66e skipped (SkipIds)
+coverage-func S66e P1-02 未保存保护-再点关闭 => skip
+step S66f skipped (SkipIds)
+coverage-func S66f P1-02 未保存保护-点不保存 => skip
+step S66g skipped (SkipIds)
+coverage-func S66g P1-02 未保存保护-页签移除 => skip
+step S68 skipped (SkipIds)
+coverage-func S68 P1-格5 表设计器-改表模式打开 => skip
+step S69 skipped (SkipIds)
+coverage-func S69 P1-格5 改表弹窗断言 => skip
+step S70 skipped (SkipIds)
+coverage-func S70 P1-格5 索引外键区可见 => skip
+step S71 skipped (SkipIds)
+coverage-func S71 P1-格5 生成SQL => skip
+step S72 skipped (SkipIds)
+coverage-func S72 P1-格5 预览断言 => skip
+step S73 skipped (SkipIds)
+coverage-func S73 P1-格5 收场 => skip
+step S74 skipped (SkipIds)
+coverage-func S74 P1-格1 补全-编辑器铺底 => skip
+step S75 skipped (SkipIds)
+coverage-func S75 P1-格1 补全-Ctrl+Space触发 => skip
+step S76 skipped (SkipIds)
+coverage-func S76 P1-格1 补全-浮层落账 => skip
+step S77 skipped (SkipIds)
+coverage-func S77 P1-格1 补全-收场 => skip
+step S78 skipped (SkipIds)
+coverage-func S78 P1-格7 导出流式-真实导出 => skip
+step S79 skipped (SkipIds)
+coverage-func S79 P1-格10 备份-打开向导 => skip
+step S80 skipped (SkipIds)
+coverage-func S80 P1-格10 备份-弹窗断言 => skip
+step S81 skipped (SkipIds)
+coverage-func S81 P1-格10 备份-收场 => skip
+step S82 skipped (SkipIds)
+coverage-func S82 P1-格11 同步-打开 => skip
+step S83 skipped (SkipIds)
+coverage-func S83 P1-格11 同步-追加模式断言 => skip
+step S84 skipped (SkipIds)
+coverage-func S84 P1-格11 同步-收场 => skip
+step S85 skipped (SkipIds)
+coverage-func S85 P1-格14 ERD-打开 => skip
+step S85b skipped (SkipIds)
+coverage-func S85b P1-格14 ERD-弹窗断言 => skip
+step S85c skipped (SkipIds)
+coverage-func S85c P1-格14 ERD-收场 => skip
+step S86 skipped (SkipIds)
+coverage-func S86 P1-格16 权限-打开审计 => skip
+step S86b skipped (SkipIds)
+coverage-func S86b P1-格16 权限-弹窗断言 => skip
+step S86c skipped (SkipIds)
+coverage-func S86c P1-格16 权限-收场 => skip
+step S99A skipped (SkipIds)
+coverage-func S99A 三档分辨率-2560x1440 => skip
