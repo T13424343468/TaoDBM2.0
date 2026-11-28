@@ -178,3 +178,4 @@ tag=menu-button-invoked time=2026-11-28T15:42:30.2105493+00:00 appMem=140 MB
 tag=menu-item-found time=2026-11-28T15:42:31.6487993+00:00 appMem=144 MB
 tag=menu-item-invoked time=2026-11-28T15:42:33.3095399+00:00 appMem=144 MB
 tag=step-start S83 time=2026-11-28T15:42:38.0456608+00:00 appMem=145 MB
+tag=red S83 time=2026-11-28T15:42:52.1257125+00:00 appMem=143 MB
