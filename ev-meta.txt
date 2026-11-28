@@ -29,3 +29,4 @@ tag=S16 editor-dirty, fresh tab time=2026-11-28T15:29:35.6650987+00:00 appMem=21
 tag=S16 run-invoked time=2026-11-28T15:29:44.4738232+00:00 appMem=222 MB
 tag=S16 result-shot time=2026-11-28T15:29:49.3037003+00:00 appMem=218 MB
 tag=S16 ledger-hit time=2026-11-28T15:29:51.0054816+00:00 appMem=218 MB
+tag=step-start S54 time=2026-11-28T15:29:52.5831464+00:00 appMem=216 MB
