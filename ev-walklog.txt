@@ -121,3 +121,4 @@ coverage-func S64b P1-01 引导降模态-非模态落账 => pass
 coverage-func S64c P1-01 引导降模态-状态栏可见 => pass
 coverage-func S65a P1-02 脏标记-编辑置脏 => pass
 coverage-func S65b P1-02 脏标记-标题出现● => pass
+S65c keys focus-guard: focus not on editor, mouse-click into editor
