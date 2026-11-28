@@ -112,3 +112,4 @@ coverage-func S51 P0-06 回退断言（停在步骤1） => skip
 step S52 skipped (SkipIds)
 coverage-func S52 P0-06 向导收场 => skip
 coverage-func S55 批次一-编辑器填多语句 => pass
+coverage-func S56 批次一-右键打开编辑器菜单 => pass
