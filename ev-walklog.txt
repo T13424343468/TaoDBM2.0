@@ -131,3 +131,5 @@ coverage-func S66e P1-02 未保存保护-再点关闭 => pass
 step S66f P1-02 未保存保护-点不保存 => fail : target not found
 shot ev-shot-fail-S66f.png 78216 bytes
 coverage-func S66f P1-02 未保存保护-点不保存 => fail
+step S66g P1-02 未保存保护-页签移除 => fail : window negative anchor hit: ● 查询
+shot ev-shot-fail-S66g.png 78216 bytes
