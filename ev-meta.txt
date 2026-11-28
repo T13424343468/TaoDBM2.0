@@ -135,3 +135,4 @@ tag=step-start S66f time=2026-11-28T15:38:36.1917575+00:00 appMem=155 MB
 tag=click-fail-buttons &Help | View Slider | Organize | New folder | Filter dropdown | Filter dropdown | Filter dropdown | Filter dropdown | Search | Minimize | Maximize | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 结果 | 执行计划 | 消息 | 复制详情 time=2026-11-28T15:38:46.5391760+00:00 appMem=155 MB
 tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent | System Properties | Program Manager time=2026-11-28T15:38:48.1630746+00:00 appMem=155 MB
 tag=red S66f time=2026-11-28T15:38:51.0473240+00:00 appMem=155 MB
+tag=step-start S66g time=2026-11-28T15:38:52.7707369+00:00 appMem=155 MB
