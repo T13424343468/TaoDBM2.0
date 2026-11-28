@@ -49,3 +49,4 @@ tag=step-start U019 time=2026-11-28T15:28:44.4592662+00:00 appMem=222 MB
 tag=click-fail-buttons Minimize | Restore | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | 打开 | 设计 | 新建表 | ✦ AI 建表 | 导入 | 导出 | 删除 | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | 导出 ▾ | 结构 | 新增行 | 导入 | 设计表 | 更多 ▾ | ◀ 上一页 | 下一页 ▶ | 结果 | 执行计划 | 消息 | ⏮ | ◀ | ▶ | ⏭ | 编辑本行 | 编辑大字段 time=2026-11-28T15:28:54.8640127+00:00 appMem=219 MB
 tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent | Program Manager time=2026-11-28T15:28:56.3121090+00:00 appMem=219 MB
 tag=step-start U020 time=2026-11-28T15:28:59.0798866+00:00 appMem=218 MB
+tag=step-start U021a time=2026-11-28T15:29:09.5944587+00:00 appMem=215 MB
