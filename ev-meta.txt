@@ -171,3 +171,4 @@ tag=step-start S78 time=2026-11-28T15:38:46.4667872+00:00 appMem=164 MB
 tag=S17a start time=2026-11-28T15:38:48.0322707+00:00 appMem=164 MB
 tag=S17a btn-found=False time=2026-11-28T15:38:55.5648693+00:00 appMem=164 MB
 tag=step-start S79 time=2026-11-28T15:38:58.4079056+00:00 appMem=164 MB
+tag=menu-find-start time=2026-11-28T15:38:59.8936954+00:00 appMem=164 MB
