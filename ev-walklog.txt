@@ -33,3 +33,5 @@ shot sweep-U010.png 47302 bytes
 coverage-func U010 巡检-展开连接 => pass
 shot sweep-U011.png 56556 bytes
 coverage-func U011 巡检-展开数据库 => pass
+shot sweep-U012.png 60713 bytes
+coverage-func U012 巡检-选中表节点 => pass
