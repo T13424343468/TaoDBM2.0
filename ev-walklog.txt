@@ -170,3 +170,5 @@ ctx retry __CONN_NAME__ : select-then-rightclick
 ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
 ctx retry __CONN_NAME__ : shift-f10
 ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
+step S86 P1-格16 权限-打开审计 => fail : context item not found: 权限审计
+shot ev-shot-fail-S86.png 77030 bytes
