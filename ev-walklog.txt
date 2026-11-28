@@ -157,3 +157,4 @@ coverage-func S76 P1-格1 补全-浮层落账 => fail
 coverage-func S77 P1-格1 补全-收场 => pass
 step S78 P1-格7 导出流式-真实导出 => miss : work-csv not found
 coverage-func S78 P1-格7 导出流式-真实导出 => miss
+coverage-func S79 P1-格10 备份-打开向导 => pass
