@@ -47,3 +47,14 @@ shot ev-shot-result-S14.png 48995 bytes
 S14 ledger: 2026-11-28 15:30:03.592 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 step S14 SQL真实执行-空值过滤 => fail : execution error: 2026-11-28 15:30:03.592 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 shot ev-shot-fail-S14.png 48995 bytes
+coverage-func S14 SQL真实执行-空值过滤 => fail
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
