@@ -206,3 +206,4 @@ tag=S85b window-hit 模型设计 · ER 图 time=2026-11-28T15:44:12.6491296+00:0
 tag=step-start S85c time=2026-11-28T15:44:14.1584811+00:00 appMem=150 MB
 tag=step-start S86 time=2026-11-28T15:44:23.6436747+00:00 appMem=149 MB
 tag=red S86 time=2026-11-28T15:44:36.6938287+00:00 appMem=148 MB
+tag=step-start S86b time=2026-11-28T15:44:38.3349552+00:00 appMem=147 MB
