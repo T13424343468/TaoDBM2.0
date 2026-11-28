@@ -115,3 +115,4 @@ tag=tour-ok 分片键评估 tour-conn-13.png time=2026-11-28T15:36:24.8032474+00
 tag=tour-ok 迁移续传 tour-conn-14.png time=2026-11-28T15:36:39.3575654+00:00 appMem=186 MB
 tag=tour-ok 团队合并 tour-conn-15.png time=2026-11-28T15:36:53.7961940+00:00 appMem=188 MB
 tag=tour-ok 共享包 tour-conn-16.png time=2026-11-28T15:37:08.6091629+00:00 appMem=191 MB
+tag=tour-ok 智能工具 tour-conn-17.png time=2026-11-28T15:37:23.6402798+00:00 appMem=190 MB
