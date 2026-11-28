@@ -42,3 +42,4 @@ tag=menu-button-invoked time=2026-11-28T15:30:14.5257033+00:00 appMem=192 MB
 tag=menu-item-found time=2026-11-28T15:30:16.0081333+00:00 appMem=194 MB
 tag=menu-item-invoked time=2026-11-28T15:30:17.5113223+00:00 appMem=193 MB
 tag=step-start S55 time=2026-11-28T15:30:21.9122311+00:00 appMem=202 MB
+tag=S55 editor-dirty, fresh tab time=2026-11-28T15:30:23.2759056+00:00 appMem=203 MB
