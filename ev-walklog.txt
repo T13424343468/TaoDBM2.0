@@ -20,3 +20,4 @@ shot ev-shot-fail-S04e.png 46555 bytes
 coverage-func S04e 连接-填写数据库 => fail
 step S05 连接-保存 => fail : target not found
 shot ev-shot-fail-S05.png 46555 bytes
+coverage-func S05 连接-保存 => fail
