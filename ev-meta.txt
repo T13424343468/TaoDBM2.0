@@ -36,3 +36,4 @@ tag=red S30 time=2026-11-28T15:27:28.5402962+00:00 appMem=190 MB
 tag=step-start S31 time=2026-11-28T15:27:30.0607024+00:00 appMem=190 MB
 tag=ctx-miss __CONN_NAME__ attempt 1 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] time=2026-11-28T15:27:41.1291304+00:00 appMem=186 MB
 tag=ctx-miss __CONN_NAME__ attempt 2 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] time=2026-11-28T15:27:53.0902462+00:00 appMem=178 MB
+tag=ctx-miss __CONN_NAME__ attempt 3 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] time=2026-11-28T15:28:04.3243560+00:00 appMem=173 MB
