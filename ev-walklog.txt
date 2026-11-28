@@ -76,3 +76,5 @@ shot sweep-U021.png 65938 bytes
 coverage-func U021 巡检-粘贴数据按钮 => pass
 shot sweep-U022.png 65903 bytes
 coverage-func U022 巡检-粘贴数据收场 => pass
+shot sweep-U023.png 78799 bytes
+coverage-func U023 巡检-表设计器（列） => pass
