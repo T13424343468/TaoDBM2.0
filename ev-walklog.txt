@@ -4,3 +4,5 @@ shot shot-01-start.png 46199 bytes
 coverage: 30 named elements in main window
 step S00A skipped (SkipIds)
 coverage-func S00A 三档分辨率-1366x768 => skip
+shot shot-05-newconn-dialog.png 61457 bytes
+coverage-func S01 新建连接-打开对话框 => pass
