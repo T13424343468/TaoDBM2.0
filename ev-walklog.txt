@@ -70,3 +70,5 @@ step U019 巡检-拟真数据按钮 => miss : target not found
 coverage-func U019 巡检-拟真数据按钮 => miss
 shot sweep-U020.png 65909 bytes
 coverage-func U020 巡检-拟真数据收场 => pass
+shot sweep-U021a.png 71617 bytes
+coverage-func U021a 巡检-更多菜单展开（B⑥ 低频收组） => pass
