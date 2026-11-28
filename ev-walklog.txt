@@ -17,3 +17,4 @@ shot ev-shot-fail-S04d.png 46542 bytes
 coverage-func S04d 连接-填写密码 => fail
 step S04e 连接-填写数据库 => fail : field not found
 shot ev-shot-fail-S04e.png 46555 bytes
+coverage-func S04e 连接-填写数据库 => fail
