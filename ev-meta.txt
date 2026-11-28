@@ -173,3 +173,4 @@ tag=step-start U088b time=2026-11-28T15:44:05.1031767+00:00 appMem=268 MB
 tag=step-start U088c time=2026-11-28T15:44:07.6662336+00:00 appMem=268 MB
 tag=U088c pre-close time=2026-11-28T15:44:10.1474451+00:00 appMem=265 MB
 tag=SP closed time=2026-11-28T15:44:12.8900476+00:00 appMem=264 MB
+tag=step-start U088d time=2026-11-28T15:44:15.2772064+00:00 appMem=261 MB
