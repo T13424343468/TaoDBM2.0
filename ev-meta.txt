@@ -128,3 +128,4 @@ tag=step-start S65b time=2026-11-28T15:38:17.3127453+00:00 appMem=143 MB
 tag=S65b window-hit ● 查询 time=2026-11-28T15:38:18.9511013+00:00 appMem=142 MB
 tag=step-start S65c time=2026-11-28T15:38:20.4175787+00:00 appMem=142 MB
 tag=S65c focus-guard fallback SetFocus time=2026-11-28T15:38:23.0632316+00:00 appMem=140 MB
+tag=S65c keys-sent ^s time=2026-11-28T15:38:25.8077141+00:00 appMem=172 MB
