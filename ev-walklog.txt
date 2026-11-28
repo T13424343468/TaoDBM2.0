@@ -239,3 +239,5 @@ shot sweep-U088j.png 57089 bytes
 coverage-func U088j 巡检-对账收场 => pass
 shot sweep-U088k.png 60098 bytes
 coverage-func U088k 巡检-诊断中心结果态 => pass
+shot sweep-U088l0.png 55366 bytes
+coverage-func U088l0 巡检-切体检页签 => pass
