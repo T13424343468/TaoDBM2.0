@@ -121,3 +121,5 @@ shot sweep-U042.png 55294 bytes
 coverage-func U042 巡检-报表 => pass
 shot sweep-U043.png 55294 bytes
 coverage-func U043 巡检-报表收场 => pass
+step U044 巡检-设计辅助 => miss : target not found
+coverage-func U044 巡检-设计辅助 => miss
