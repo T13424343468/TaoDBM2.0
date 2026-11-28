@@ -24,7 +24,7 @@ public static class ModelDialog
     private static string _db = "";
     private static MainWindow _owner = null!;
 
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         _owner = owner;
         _prov = info.Provider;
@@ -130,14 +130,7 @@ public static class ModelDialog
             Height = 560,
         });
 
-        var dlg = new ContentDialog
-        {
-            Title = "三层模型（概念 / 逻辑 / 物理）",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
+        return panel;
     }
 
     /// <summary>批次五格1：从库拉表进当前层模型（口径同 ErdDialog：最多 40 张，外键深度推断）。</summary>

@@ -9,60 +9,36 @@ using TaoDBM.Core;
 
 namespace TaoDBM.UI;
 
-/// <summary>拟真数据 ContentDialog（纯代码构建，多表模式）。</summary>
+/// <summary>拟真数据面板（内嵌主窗口页签，纯代码构建，多表模式）。</summary>
 public static class FakerDialog
 {
-    public static async Task Show(MainWindow owner, IDbProvider provider, string db, string table)
+    public static FrameworkElement BuildPanel(MainWindow owner, IDbProvider provider, string db, string table)
     {
         if (provider is RedisProvider)
         {
-            await new MessageDialogHelper(owner).Show("拟真数据", "Redis 是键值存储，没有表结构，拟真数据功能不适用。");
-            return;
-        }
-
-        // 读取库内全部表结构（读库在后台，含列读失败的容错）
-        var (tables, readErrors) = await CollectTablesAsync(provider, db);
-        if (tables.Count == 0)
-        {
-            string why = readErrors.Count > 0 ? "。\n读取失败的表：\n" + string.Join("\n", readErrors.Take(5)) : "。";
-            await new MessageDialogHelper(owner).Show("拟真数据", "没有读到可生成的表结构" + why);
-            return;
+            return new TextBlock
+            {
+                Text = "拟真数据：Redis 是键值存储，没有表结构，拟真数据功能不适用。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         var infoText = new TextBlock
         {
-            Text = $"目标库：{db} · {tables.Count} 个表（{EngineInfo.Name(provider.Profile.Engine)}）",
+            Text = $"目标库：{db}（{EngineInfo.Name(provider.Profile.Engine)}）",
             FontSize = AntTokens.FontBody,
             Foreground = Ant.Text,
             Margin = new Thickness(0, 0, 0, 4),
+            TextWrapping = TextWrapping.Wrap,
         };
-        if (readErrors.Count > 0)
-            infoText.Text += $"\n（{readErrors.Count} 个表读取列结构失败，已跳过：{string.Join("、", readErrors.Select(e => e.Split(':')[0]).Take(3))}…）";
 
-        // 每表一行：表名 + 行数输入（空 = 不生成；初始表默认 50）
+        // 每表一行：表名 + 行数输入（空 = 不生成；初始表默认 50）——表结构后台读取后填充
         var rowBoxes = new Dictionary<string, TextBox>(StringComparer.OrdinalIgnoreCase);
+        List<SeedTable> tables = new();
         var rowsPanel = new StackPanel { Spacing = 4 };
-        foreach (var t in tables)
-        {
-            var box = new TextBox { PlaceholderText = "0 或留空 = 不生成", MinWidth = 110 };
-            if (string.Equals(t.Name, table, StringComparison.OrdinalIgnoreCase)) box.Text = "50";
-            rowBoxes[t.Name] = box;
-            var g = new Grid { ColumnSpacing = 8 };
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
-            var name = new TextBlock
-            {
-                Text = $"{t.Name}（{t.Columns.Count} 列）",
-                VerticalAlignment = VerticalAlignment.Center,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                Foreground = Ant.Text,
-            };
-            Grid.SetColumn(name, 0);
-            Grid.SetColumn(box, 1);
-            g.Children.Add(name);
-            g.Children.Add(box);
-            rowsPanel.Children.Add(g);
-        }
         var listHost = new ScrollViewer
         {
             Content = rowsPanel,
@@ -86,9 +62,7 @@ public static class FakerDialog
             FontSize = AntTokens.FontMinor,
             Foreground = Ant.TextSub,
             TextWrapping = TextWrapping.Wrap,
-            Text = provider is MongoProvider
-                ? "将按拓扑顺序逐集合生成拟真文档写入。"
-                : "将按拓扑顺序逐表生成（被引用表先写入），引用列自动取已写入父表的值。",
+            Text = "正在读取表结构…",
         };
         var presetRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         foreach (var preset in FakerPreset.All)
@@ -148,6 +122,24 @@ public static class FakerDialog
         CancellationTokenSource? fakerCts = null;
         cancelBtn.Click += (_, _) => fakerCts?.Cancel();
         var panel = new StackPanel { Spacing = 10, MinWidth = 520, Margin = new Thickness(0, 0, 12, 0) };
+        // 405 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "测试数据生成器", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
+
+        // 执行写入按钮（原 ContentDialog 主按钮）：必须先预览才可用
+        var execBtn = new Button
+        {
+            Content = "执行写入",
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            Padding = new Thickness(10, 4, 10, 4),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            IsEnabled = false,   // 必须先预览
+        };
+
+        var scroll = new ScrollViewer
+        {
+            Content = panel,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
         panel.Children.Add(infoText);
         panel.Children.Add(listTitle);
         panel.Children.Add(listHost);
@@ -156,27 +148,51 @@ public static class FakerDialog
         panel.Children.Add(clearBox);
         panel.Children.Add(previewBox);
         panel.Children.Add(previewBtn);
+        panel.Children.Add(execBtn);
         panel.Children.Add(progress);
         panel.Children.Add(cancelBtn);
         panel.Children.Add(statusText);
 
-        var dlg = new ContentDialog
+        // 读取库内全部表结构（读库在后台，含列读失败的容错），完成后填充行输入
+        _ = Safe.RunAsync(async () =>
         {
-            Title = "拟真数据",
-            Content = panel,
-            PrimaryButtonText = "执行写入",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = owner.Content.XamlRoot,
-        };
-
-        var scroll = new ScrollViewer
-        {
-            Content = panel,
-            MaxHeight = 560,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        };
-        dlg.Content = scroll;
+            var (loaded, readErrors) = await CollectTablesAsync(provider, db);
+            tables = loaded;
+            if (tables.Count == 0)
+            {
+                string why = readErrors.Count > 0 ? "。\n读取失败的表：\n" + string.Join("\n", readErrors.Take(5)) : "。";
+                statusText.Text = "没有读到可生成的表结构" + why;
+                statusText.Foreground = Ant.Error;
+                return;
+            }
+            infoText.Text = $"目标库：{db} · {tables.Count} 个表（{EngineInfo.Name(provider.Profile.Engine)}）";
+            if (readErrors.Count > 0)
+                infoText.Text += $"\n（{readErrors.Count} 个表读取列结构失败，已跳过：{string.Join("、", readErrors.Select(e => e.Split(':')[0]).Take(3))}…）";
+            statusText.Text = provider is MongoProvider
+                ? "将按拓扑顺序逐集合生成拟真文档写入。"
+                : "将按拓扑顺序逐表生成（被引用表先写入），引用列自动取已写入父表的值。";
+            foreach (var t in tables)
+            {
+                var box = new TextBox { PlaceholderText = "0 或留空 = 不生成", MinWidth = 110 };
+                if (string.Equals(t.Name, table, StringComparison.OrdinalIgnoreCase)) box.Text = "50";
+                rowBoxes[t.Name] = box;
+                var g = new Grid { ColumnSpacing = 8 };
+                g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+                var name = new TextBlock
+                {
+                    Text = $"{t.Name}（{t.Columns.Count} 列）",
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    Foreground = Ant.Text,
+                };
+                Grid.SetColumn(name, 0);
+                Grid.SetColumn(box, 1);
+                g.Children.Add(name);
+                g.Children.Add(box);
+                rowsPanel.Children.Add(g);
+            }
+        }, "拟真数据:读取表结构");
 
         bool previewed = false;
 
@@ -207,14 +223,14 @@ public static class FakerDialog
                 statusText.Text = $"已生成 {plan.Count} 个表的预览，共 {plan.Sum(p => p.Count):N0} 行；确认后点「执行写入」。";
                 statusText.Foreground = Ant.TextSub;
                 previewed = true;
-                dlg.IsPrimaryButtonEnabled = true;
+                execBtn.IsEnabled = true;
             }
             catch (Exception ex)
             {
                 statusText.Text = HumanError.Say(ex, "生成失败");
                 statusText.Foreground = Ant.Error;
                 previewed = false;
-                dlg.IsPrimaryButtonEnabled = false;
+                execBtn.IsEnabled = false;
             }
             finally
             {
@@ -222,10 +238,9 @@ public static class FakerDialog
             }
         };
 
-        // 全部流程自定义：默认关闭一律拦截，成功才手动关
-        dlg.PrimaryButtonClick += async (ContentDialog sender, ContentDialogButtonClickEventArgs args) =>
+        // 执行写入：预览通过后才可用；执行中禁用按钮并展示进度，完成后状态行反馈
+        execBtn.Click += async (_, _) =>
         {
-            args.Cancel = true;
             if (!previewed)
             {
                 statusText.Text = "请先点「生成预览」再执行。";
@@ -270,7 +285,7 @@ public static class FakerDialog
                     return;
                 }
             }
-            sender.IsPrimaryButtonEnabled = false;
+            execBtn.IsEnabled = false;
             progress.Visibility = Visibility.Visible;
             progress.Value = 0;
             cancelBtn.Visibility = Visibility.Visible;
@@ -328,10 +343,11 @@ public static class FakerDialog
                     }
                 });
                 progress.Value = 100;
-                sender.Hide();
                 string tail = errors.Count > 0 ? "（部分表处理失败：" + string.Join("；", errors.Take(3)) + "）" : "";
                 AppLog.Write($"[模拟数据] 表={plan.Count} 行={doneRows}");   // 批次四格6 验收锚点
-                await new MessageDialogHelper(owner).Show("拟真数据", $"已写入 {doneRows:N0} 行拟真数据到 {db}。{tail}");
+                statusText.Text = $"已写入 {doneRows:N0} 行拟真数据到 {db}。{tail}";
+                statusText.Foreground = Ant.TextSub;
+                execBtn.IsEnabled = true;
             }
             catch (OperationCanceledException)
             {
@@ -344,7 +360,7 @@ public static class FakerDialog
             {
                 statusText.Text = HumanError.Say(ex, "写入失败") + $"（已完成 {doneRows:N0} 行）";
                 statusText.Foreground = Ant.Error;
-                sender.IsPrimaryButtonEnabled = true;
+                execBtn.IsEnabled = true;
             }
             finally
             {
@@ -354,8 +370,7 @@ public static class FakerDialog
             }
         };
 
-        dlg.IsPrimaryButtonEnabled = false;   // 必须先预览
-        _ = dlg.ShowThemedAsync();
+        return scroll;
     }
 
     private static List<SeedEdge> _edges = new();   // 本次会话内库结构关联（预览与写入共用）

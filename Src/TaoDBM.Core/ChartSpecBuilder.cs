@@ -93,6 +93,20 @@ public static class ChartSpecBuilder
     public static string ToJson(ChartSpec spec) =>
         JsonSerializer.Serialize(spec, new JsonSerializerOptions { WriteIndented = true });
 
+    /// <summary>报表页时间范围过滤口径：找结果集中第一个时间列，没有返回 -1。</summary>
+    public static int FindTimeColumn(QueryResult r)
+    {
+        for (int i = 0; i < r.Columns.Count; i++)
+            if (IsTimeColumn(r, i)) return i;
+        return -1;
+    }
+
+    /// <summary>报表页 KPI 口径公开取数：数值解析（Num 公开口）。</summary>
+    public static double? TryNum(object? v) => Num(v);
+
+    /// <summary>报表页 KPI 口径公开取数：时间解析（Time 公开口）。</summary>
+    public static DateTimeOffset? TryTime(object? v) => Time(v);
+
     public static ChartSpec? FromJson(string json)
     {
         try { return JsonSerializer.Deserialize<ChartSpec>(json); }

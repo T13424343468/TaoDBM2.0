@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 解析不了的问题如实报原因，不猜测、不拼凑（P-3：纯本地，不调外部模型）。</summary>
 public static class NaturalQueryDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         string db = info.Db.Length > 0 ? info.Db : info.Profile.Database;
@@ -17,7 +17,7 @@ public static class NaturalQueryDialog
         // 表选择：表节点直接带入；库节点列全表
         var tableBox = new ComboBox { MinWidth = 260, PlaceholderText = "选择要问的表", Header = "目标表" };
         List<string> tables = new();
-        try { tables = await prov.GetChildren(db); }
+        try { tables = prov.GetChildren(db).GetAwaiter().GetResult(); }
         catch { tables = new List<string>(); }
         foreach (var t in tables) tableBox.Items.Add(t);
         if (info.Kind == NodeKind.Table && tables.Contains(info.Name)) tableBox.SelectedItem = info.Name;
@@ -48,7 +48,6 @@ public static class NaturalQueryDialog
         var runBtn = new Button { Content = "直接执行", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd), FontSize = AntTokens.FontMinor, IsEnabled = false };
         var askBtn = new Button { Content = "问一下", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusPill), FontSize = AntTokens.FontMinor };
 
-        ContentDialog? dlg = null;
         NLQueryResult? last = null;
 
         askBtn.Click += async (_, _) =>
@@ -90,7 +89,6 @@ public static class NaturalQueryDialog
         openBtn.Click += (_, _) =>
         {
             if (last is not { Ok: true } r) return;
-            dlg?.Hide();
             owner.OpenQueryTab(info, r.Sql);
         };
 
@@ -145,13 +143,6 @@ public static class NaturalQueryDialog
         panel.Children.Add(btnRow);
         panel.Children.Add(resultHost);
 
-        dlg = new ContentDialog
-        {
-            Title = "问库 — 用中文直接查数据",
-            Content = new ScrollViewer { Content = panel, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return new ScrollViewer { Content = panel, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 }

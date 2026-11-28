@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 本对话框只展示计划，不执行任何搬迁；实际搬数由执行层按对账防丢。</summary>
 public static class RebalancePlannerDialog
 {
-    public static Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -45,15 +45,7 @@ public static class RebalancePlannerDialog
         });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "再均衡计划",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        return Task.CompletedTask;
+        return panel;
     }
 
     private static async Task RunPlanAsync(string text, StackPanel report, TextBlock status)

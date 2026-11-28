@@ -12,14 +12,20 @@ public static class UserPermissionDialog
 {
     private sealed record AccountGrants(string Label, List<GrantRecord> Records, List<PermissionFinding> Findings);
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (!UserPermissionCatalog.Supported(profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("权限审计", UserPermissionCatalog.UnsupportedReason(profile.Engine));
-            return;
+            return new TextBlock
+            {
+                Text = $"权限审计：{UserPermissionCatalog.UnsupportedReason(profile.Engine)}",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         var accountBox = new ComboBox { MinWidth = 260, PlaceholderText = "加载中…" };
@@ -261,6 +267,8 @@ public static class UserPermissionDialog
         };
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 460 };
+        // 504 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "用户与权限", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         var topRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         topRow.Children.Add(accountBox);
         topRow.Children.Add(revokeBtn);
@@ -272,16 +280,8 @@ public static class UserPermissionDialog
         panel.Children.Add(riskBox);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "用户与权限审计",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        var loadTask = LoadAccountsAsync();
-        _ = dlg.ShowThemedAsync();
-        await loadTask;
+        _ = Safe.RunAsync(async () => await LoadAccountsAsync(), "权限审计加载账号");
+        return panel;
     }
 
     /// <summary>草稿预览执行：公共口径见 DraftOps（逐条勾选，确认后执行并写本地操作历史）。</summary>

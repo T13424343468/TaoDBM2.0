@@ -19,7 +19,7 @@ public static class CommandMonitorDialog
         _ => "SELECT '该引擎无库端会话视图' AS note WHERE 0",
     };
 
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var provider = info.Provider!;
         var kw = new TextBox { Header = "关键字过滤（本机历史）", PlaceholderText = "语句包含…" };
@@ -72,19 +72,13 @@ public static class CommandMonitorDialog
             catch (Exception ex) { status.Text += HumanError.Say(ex, " · 库端实时查询失败"); }
         }
 
-        var dlg = new ContentDialog
-        {
-            Title = $"命令监控 · {info.Name}",
-            Content = new StackPanel { Spacing = 10, MinWidth = 620, Children = {
-                chips,
-                kw,
-                new TextBlock { Text = "本机历史（双击打开到查询窗口）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, hist,
-                new TextBlock { Text = "库端实时（打开时快照）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, realtime,
-                status } },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        dlg.Opened += (_, _) => { FillHistory(); _ = FillRealtime(); };
-        _ = dlg.ShowThemedAsync();
+        FillHistory();
+        _ = FillRealtime();
+        return new StackPanel { Spacing = 10, MinWidth = 620, Children = {
+            chips,
+            kw,
+            new TextBlock { Text = "本机历史（双击打开到查询窗口）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, hist,
+            new TextBlock { Text = "库端实时（打开时快照）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub }, realtime,
+            status } };
     }
 }

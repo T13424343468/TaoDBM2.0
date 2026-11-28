@@ -12,7 +12,7 @@ namespace TaoDBM.UI;
 /// <summary>报表页：多卡图表聚合面，两列网格布局，卡片配置持久化（ReportPageStore）。</summary>
 public static class ReportPageDialog
 {
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var grid = new Grid { MinWidth = 680 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -20,7 +20,17 @@ public static class ReportPageDialog
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(grid, "ReportPage");
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
+        // 拍板（2026-11-28）：报表页顶部 KPI 行＋时间范围选择器——KPI 取钉住查询结果集内聚合，不另发 SQL
+        var kpiRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var rangeCombo = new ComboBox { Width = 140, FontSize = AntTokens.FontMinor, SelectedIndex = 0 };
+        foreach (var t in new[] { "全部时间", "最近1小时", "最近24小时", "最近7天", "最近30天" }) rangeCombo.Items.Add(t);
+        var rangeRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        rangeRow.Children.Add(new TextBlock { Text = "时间范围", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, VerticalAlignment = VerticalAlignment.Center });
+        rangeRow.Children.Add(rangeCombo);
+
         var panel = new StackPanel { Spacing = 8, MinWidth = 700, MinHeight = 560 };
+        panel.Children.Add(rangeRow);
+        panel.Children.Add(kpiRow);
         panel.Children.Add(status);
         panel.Children.Add(new Border
         {
@@ -31,21 +41,27 @@ public static class ReportPageDialog
             Height = 560,
         });
 
-        var dlg = new ContentDialog
+        // 时间范围下拉：切换即落盘到每张卡并整页重刷（发现67 同款摘钩，防重入）
+        var cards0 = ReportPageStore.All();
+        rangeCombo.Tag = true;
+        rangeCombo.SelectedIndex = RangeIndex(cards0.FirstOrDefault()?.NormalizedTimeRange ?? "all");
+        rangeCombo.Tag = null;
+        rangeCombo.SelectionChanged += async (_, _) =>
         {
-            Title = "报表页（点选出图即钉住）",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
+            if (rangeCombo.Tag is true || rangeCombo.SelectedIndex < 0) return;
+            var key = RangeKeyOf(rangeCombo.SelectedIndex);
+            foreach (var c in ReportPageStore.All()) ReportPageStore.Upsert(c with { TimeRange = key });
+            AppLog.Write($"[报表页] 时间范围切换 {key}");
+            await RefreshAllAsync(info, grid, status, kpiRow);
         };
 
         // 打开即重建：所有卡片按钉住清单重跑重绘（格19 重建口径）
-        dlg.Opened += async (_, _) => await RefreshAllAsync(info, grid, status);
-        _ = dlg.ShowThemedAsync();
+        _ = RefreshAllAsync(info, grid, status, kpiRow);
+        return panel;
     }
 
-    /// <summary>按钉住清单重建两列网格，并逐卡刷新。</summary>
-    private static async Task RefreshAllAsync(NodeInfo info, Grid grid, TextBlock status)
+    /// <summary>按钉住清单重建两列网格，并逐卡刷新；完成后回填顶部 KPI 行。</summary>
+    private static async Task RefreshAllAsync(NodeInfo info, Grid grid, TextBlock status, StackPanel kpiRow)
     {
         var cards = ReportPageStore.All();
         AppLog.Write($"[报表页] 卡={cards.Count}");   // ㉘ 验收锚点
@@ -60,12 +76,13 @@ public static class ReportPageDialog
                 Margin = new Thickness(12, 10, 0, 0),
             });
             status.Text = "没有钉住的卡片。";
+            UpdateKpi(kpiRow, 0, 0, 0, 0);
             return;
         }
 
         grid.Children.Clear();
         grid.RowDefinitions.Clear();
-        int done = 0, failed = 0;
+        int done = 0, failed = 0, totalRows = 0;
         for (int i = 0; i < cards.Count; i++)
         {
             var card = cards[i];
@@ -138,7 +155,7 @@ public static class ReportPageDialog
 
             try
             {
-                await FillCardAsync(info, card, chartHost, colCombo, typeCombo);
+                totalRows += await FillCardAsync(info, card, chartHost, colCombo, typeCombo);
                 done++;
             }
             catch (Exception ex)
@@ -149,26 +166,53 @@ public static class ReportPageDialog
             }
         }
         status.Text = $"共 {cards.Count} 张卡：出图成功 {done}，失败 {failed}（{DateTimeOffset.Now:HH:mm:ss}）。";
+        UpdateKpi(kpiRow, cards.Count, totalRows, done, failed);
     }
 
-    /// <summary>单卡刷新（格19 重建口径）：重跑 SQL → 按图型/聚合列重新聚合 → 重绘。</summary>
-    private static async Task RefreshCardAsync(NodeInfo info, ReportPageStore.Card card, StackPanel chartHost, ComboBox colCombo, ComboBox typeCombo)
+    /// <summary>顶部 KPI 行（拍板 2026-11-28）：卡片数 / 结果行（时间过滤后合计）/ 出图与失败，取钉住结果集内聚合，不另发 SQL。</summary>
+    private static void UpdateKpi(StackPanel kpiRow, int cards, int rows, int ok, int failed)
+    {
+        kpiRow.Children.Clear();
+        kpiRow.Children.Add(KpiCard(cards.ToString(), "卡片"));
+        kpiRow.Children.Add(KpiCard(rows.ToString("N0"), "结果行（时间过滤后）"));
+        kpiRow.Children.Add(KpiCard($"{ok} / {failed}", "出图 / 失败"));
+    }
+
+    /// <summary>单张 KPI 卡：大数字＋小标签，边框卡片视觉。</summary>
+    private static FrameworkElement KpiCard(string value, string label)
+    {
+        var sp = new StackPanel { Spacing = 2, MinWidth = 120 };
+        sp.Children.Add(new TextBlock { Text = value, FontSize = AntTokens.FontDisplay, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = Ant.Primary });
+        sp.Children.Add(new TextBlock { Text = label, FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextTrimming = TextTrimming.CharacterEllipsis });
+        return new Border
+        {
+            Child = sp,
+            BorderBrush = Ant.Border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
+            Padding = new Thickness(12, 8, 12, 8),
+        };
+    }
+
+    /// <summary>单卡刷新（格19 重建口径）：重跑 SQL → 时间范围过滤 → 按图型/聚合列重新聚合 → 重绘。返回过滤后行数。</summary>
+    private static async Task<int> RefreshCardAsync(NodeInfo info, ReportPageStore.Card card, StackPanel chartHost, ComboBox colCombo, ComboBox typeCombo)
     {
         chartHost.Opacity = 0.6;
         try
         {
-            await FillCardAsync(info, card, chartHost, colCombo, typeCombo);
+            return await FillCardAsync(info, card, chartHost, colCombo, typeCombo);
         }
         catch (Exception ex)
         {
             chartHost.Opacity = 1.0;
             chartHost.Children.Clear();
             chartHost.Children.Add(new TextBlock { Text = HumanError.Say(ex, "刷新失败"), FontSize = AntTokens.FontBody, Foreground = Ant.Error, TextWrapping = TextWrapping.Wrap });
+            return 0;
         }
     }
 
-    /// <summary>执行 SQL 并按卡配置聚合出图；聚合列下拉按结果列重填（保持当前选择）。</summary>
-    private static async Task FillCardAsync(NodeInfo info, ReportPageStore.Card card, StackPanel chartHost, ComboBox colCombo, ComboBox typeCombo)
+    /// <summary>执行 SQL 并按卡配置聚合出图；先按卡时间范围过滤（首个时间列），聚合列下拉按结果列重填（保持当前选择）。返回过滤后行数。</summary>
+    private static async Task<int> FillCardAsync(NodeInfo info, ReportPageStore.Card card, StackPanel chartHost, ComboBox colCombo, ComboBox typeCombo)
     {
         if (info.Provider is null) throw new InvalidOperationException("无活动连接，暂不能刷新；连上库再打开报表页。");
         var list = await info.Provider.Execute(card.Db ?? "", card.Sql);
@@ -179,8 +223,12 @@ public static class ReportPageDialog
             chartHost.Opacity = 1.0;
             chartHost.Children.Clear();
             chartHost.Children.Add(new TextBlock { Text = msg, FontSize = AntTokens.FontBody, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
-            return;
+            return 0;
         }
+
+        // 拍板（2026-11-28）：时间范围过滤——按结果集首个时间列截取窗口；无时间列原样通过并在图注说明
+        int before = r.Rows.Count;
+        (r, bool timeApplied) = FilterByTime(r, card.NormalizedTimeRange);
 
         // 聚合列下拉：结果列全量，当前选择优先（卡上可手动切换聚合列；发现67：重填前 Tag 摘钩，填完恢复）
         string current = colCombo.SelectedItem as string ?? card.Column;
@@ -207,8 +255,28 @@ public static class ReportPageDialog
         chartHost.Children.Clear();
         chartHost.Children.Add(RenderChart(spec, type));
         string ts = DateTimeOffset.Now.ToString("HH:mm:ss");
-        chartHost.Children.Add(new TextBlock { Text = $"{spec.Extra} · {ts}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        string rangeNote = card.NormalizedTimeRange == "all" ? ""
+            : timeApplied ? $" · {RangeLabel(card.NormalizedTimeRange)}（{before}→{r.Rows.Count} 行）"
+            : " · 无时间列，未过滤";
+        chartHost.Children.Add(new TextBlock { Text = $"{spec.Extra}{rangeNote} · {ts}", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap });
+        return r.Rows.Count;
     }
+
+    /// <summary>拍板时间范围过滤：按结果集首个时间列截取窗口（all 原样返回；无时间列原样返回）。</summary>
+    private static (QueryResult Result, bool Applied) FilterByTime(QueryResult r, string range)
+    {
+        if (r.Rows.Count == 0 || range is not ("1h" or "24h" or "7d" or "30d")) return (r, false);
+        int tIdx = ChartSpecBuilder.FindTimeColumn(r);
+        if (tIdx < 0) return (r, false);
+        var span = range switch { "1h" => TimeSpan.FromHours(1), "24h" => TimeSpan.FromHours(24), "7d" => TimeSpan.FromDays(7), _ => TimeSpan.FromDays(30) };
+        var since = DateTimeOffset.Now - span;
+        var filtered = r.Rows.Where(row => ChartSpecBuilder.TryTime(row[tIdx]) is { } t && t >= since).ToList();
+        return (new QueryResult { Title = r.Title, Columns = r.Columns, Rows = filtered, Message = r.Message }, true);
+    }
+
+    static string RangeKeyOf(int i) => i switch { 1 => "1h", 2 => "24h", 3 => "7d", 4 => "30d", _ => "all" };
+    static int RangeIndex(string key) => key switch { "1h" => 1, "24h" => 2, "7d" => 3, "30d" => 4, _ => 0 };
+    static string RangeLabel(string key) => key switch { "1h" => "最近1小时", "24h" => "最近24小时", "7d" => "最近7天", "30d" => "最近30天", _ => "全部时间" };
 
     /// <summary>ChartSpec 出图（零包自绘）：柱状/直方横条，折线 Polyline 归一化。</summary>
     private static FrameworkElement RenderChart(ChartSpec s, string type)
@@ -257,7 +325,7 @@ public static class ReportPageDialog
             var bar = new Border
             {
                 Height = 14,
-                CornerRadius = new CornerRadius(0, 3, 3, 0),
+                CornerRadius = new(0, AntTokens.RadiusBadge, AntTokens.RadiusBadge, 0),
                 Background = Ant.Primary,
                 Width = Math.Max(4, 160 * s.Values[i] / maxV),
                 HorizontalAlignment = HorizontalAlignment.Left,

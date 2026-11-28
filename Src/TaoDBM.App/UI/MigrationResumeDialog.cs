@@ -11,7 +11,7 @@ public static class MigrationResumeDialog
 {
     private static MigrationState? _freshState;
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         _freshState = null;
         var source = info.Profile.DisplayName;
@@ -119,15 +119,7 @@ public static class MigrationResumeDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "迁移续传",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>三-12：真实清单生成——读当前连接的表清单与行数，生成 MigrationManifest JSON 回填清单框。</summary>

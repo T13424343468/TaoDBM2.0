@@ -14,14 +14,20 @@ public static class ShardingWizardDialog
 {
     private const int StepTable = 0, StepStrategy = 1, StepKey = 2, StepConfirm = 3;
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (!ShardingWizard.Supported(profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("分片向导", ShardingWizard.UnsupportedReason(profile.Engine));
-            return;
+            return new TextBlock
+            {
+                Text = $"分片向导：{ShardingWizard.UnsupportedReason(profile.Engine)}",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
@@ -631,6 +637,8 @@ public static class ShardingWizardDialog
         estRow.Children.Add(pkBox);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 580 };
+        // 307 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "分库分表向导", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(Head("四步向导：选表 → 选拆分方式 → 选分片键 → 确认方案"));
         panel.Children.Add(topStatus);   // 格13：状态行前置
         panel.Children.Add(stepChips);
@@ -653,15 +661,7 @@ public static class ShardingWizardDialog
         if (profile.Engine == DbEngine.MySQL) panel.Children.Add(openQryBtn);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "分库分区分表向导",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>把步骤内容包进 Border，用 Tag 记步骤号，ShowStep 按可见性切换。</summary>

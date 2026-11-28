@@ -30,8 +30,15 @@ public sealed class AlertRule
     public int TriggerCount { get; set; }
 }
 
-/// <summary>一次触发的告警事件（触发记录可回溯）。</summary>
-public sealed record AlertEvent(string RuleName, string Metric, double Value, string Message, string Severity, string FiredAtUtc);
+/// <summary>一次触发的告警事件（触发记录可回溯）。
+/// 2026-11-28 拍板：补「来源」「状态」两列——Source=告警来源（系统/巡检/外部），Status=未处理/已确认/已关闭；
+/// 旧记录缺字段按默认（来源=系统、状态=未处理）迁移，JSON 反序列化容错。</summary>
+public sealed record AlertEvent(string RuleName, string Metric, double Value, string Message, string Severity, string FiredAtUtc,
+    string Source = "系统", string Status = "未处理")
+{
+    /// <summary>状态合法值：未处理 / 已确认 / 已关闭。</summary>
+    public string NormalizedStatus => Status is "未处理" or "已确认" or "已关闭" ? Status : "未处理";
+}
 
 public static class AlertEngine
 {
@@ -134,6 +141,15 @@ public static class AlertEngine
     /// <summary>触发记录落 JSONL（一行一事件，损坏行跳过）。</summary>
     public static void AppendEvent(string path, AlertEvent e) =>
         File.AppendAllText(path, JsonSerializer.Serialize(e, new JsonSerializerOptions(JsonSerializerDefaults.Web)) + "\n");
+
+    /// <summary>全量回写触发记录（状态流转用：读-改-写，AtomicWrite 原子替换）。</summary>
+    public static void SaveEvents(string path, IReadOnlyList<AlertEvent> events)
+    {
+        var sb = new StringBuilder();
+        var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        foreach (var e in events) sb.AppendLine(JsonSerializer.Serialize(e, opts));
+        AtomicWrite.Text(path, sb.ToString());
+    }
 
     public static List<AlertEvent> LoadEvents(string path)
     {

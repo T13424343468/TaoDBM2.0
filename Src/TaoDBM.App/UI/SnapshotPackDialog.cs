@@ -11,7 +11,7 @@ public static class SnapshotPackDialog
 {
     private static SnapshotPack? _pending;
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var db = CurrentDb(info);
@@ -86,15 +86,7 @@ public static class SnapshotPackDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 300, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "快照包",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     private static string CurrentDb(NodeInfo info)

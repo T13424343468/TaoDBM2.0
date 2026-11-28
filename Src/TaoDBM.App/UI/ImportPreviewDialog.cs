@@ -6,13 +6,27 @@ namespace TaoDBM.UI;
 
 /// <summary>发现141：CSV 导入改四步分步向导——①类型与文件（含配置加载）②字段映射（智慧匹配一键）
 /// ③导入模式（首行为表头＋遇错策略二选一＋保存配置）④开始导入（汇总确认）。
-/// 映射结果交回 ImportCsv 按批执行（取消贯穿 CsvBatches）；进度条与取消沿用现有执行链。</summary>
+/// 映射结果交回 ImportCsv 按批执行（取消贯穿 CsvBatches）；进度条与取消沿用现有执行链。
+/// 拍板（2026-11-28）：向导从弹窗改内嵌页签（OpenPanelTab 家法）——「开始导入/取消/直接关页签」都会解锁调用方。</summary>
 public static class ImportPreviewDialog
 {
     /// <summary>导入计划：MappedHeaders 与 MappedCsvIndexes 一一对应（选中导入的列），SkipErrors=出错继续。</summary>
     public sealed record ImportPlan(IReadOnlyList<string> MappedHeaders, int[] MappedCsvIndexes, bool SkipErrors, bool FirstRowHeader);
 
-    public static async Task<ImportPlan?> ShowAsync(MainWindow owner, List<ColumnSpec> tableCols, IReadOnlyList<string> csvHeaders, IReadOnlyList<string?[]> previewRows)
+    /// <summary>页签化入口：向导开进页签，完成（计划或取消）经 Task 解锁调用方继续执行。</summary>
+    public static Task<ImportPlan?> ShowInTabAsync(MainWindow owner, List<ColumnSpec> tableCols, IReadOnlyList<string> csvHeaders, IReadOnlyList<string?[]> previewRows)
+    {
+        var tcs = new TaskCompletionSource<ImportPlan?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var panel = BuildWizardPanel(tableCols, csvHeaders, previewRows, plan =>
+        {
+            owner.ClosePanelTab(panel);
+            tcs.TrySetResult(plan);
+        });
+        owner.OpenPanelTab("导入向导", () => panel);
+        return tcs.Task;
+    }
+
+    public static FrameworkElement BuildWizardPanel(List<ColumnSpec> tableCols, IReadOnlyList<string> csvHeaders, IReadOnlyList<string?[]> previewRows, Action<ImportPlan?> finish)
     {
         // 步骤状态：0=类型与文件 1=字段映射 2=导入模式 3=开始导入
         int step = 0;
@@ -240,19 +254,19 @@ public static class ImportPreviewDialog
         var navRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         navRow.Children.Add(prevBtn);
         navRow.Children.Add(nextBtn);
+        // 页签化后无弹窗关闭按钮，补「取消」入口（放弃向导不导入）
+        var cancelBtn = new Button { Content = "取消", CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+        navRow.Children.Add(cancelBtn);
         panel.Children.Add(navRow);
 
-        var dlg = new ContentDialog
+        bool finished = false;
+        void Done(ImportPlan? p)
         {
-            Title = "CSV 导入向导",
-            Content = panel,
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(dlg, "ImportPreviewDlg");
+            if (finished) return;
+            finished = true;
+            finish(p);
+        }
 
-        var done = false;
         nextBtn.Click += (_, _) =>
         {
             // 步骤守门：②至少一列映射且无冲突；③选项天然合法
@@ -273,26 +287,30 @@ public static class ImportPreviewDialog
                     return;
                 }
             }
-            if (step == 3) { done = true; dlg.Hide(); return; }
+            if (step == 3)
+            {
+                // 收集映射：选中的列按表列名输出，行值按 CSV 索引重排
+                var mappedHeaders = new List<string>();
+                var mappedIdx = new List<int>();
+                for (int i = 0; i < combos.Count; i++)
+                {
+                    if (combos[i].SelectedIndex > 0)
+                    {
+                        mappedHeaders.Add(combos[i].SelectedItem?.ToString() ?? "");
+                        mappedIdx.Add(i);
+                    }
+                }
+                Done(new ImportPlan(mappedHeaders, mappedIdx.ToArray(), skipRadio.IsChecked == true, headerCheck.IsChecked == true));
+                return;
+            }
             ShowStep(step + 1);
         };
         prevBtn.Click += (_, _) => { if (step > 0) ShowStep(step - 1); };
+        cancelBtn.Click += (_, _) => Done(null);
+        // 用户直接关页签（X）也解锁调用方，按取消处理
+        panel.Unloaded += (_, _) => Done(null);
 
         ShowStep(0);
-        await dlg.ShowThemedAsync();
-        if (!done) return null;
-
-        // 收集映射：选中的列按表列名输出，行值按 CSV 索引重排
-        var mappedHeaders = new List<string>();
-        var mappedIdx = new List<int>();
-        for (int i = 0; i < combos.Count; i++)
-        {
-            if (combos[i].SelectedIndex > 0)
-            {
-                mappedHeaders.Add(combos[i].SelectedItem?.ToString() ?? "");
-                mappedIdx.Add(i);
-            }
-        }
-        return new ImportPlan(mappedHeaders, mappedIdx.ToArray(), skipRadio.IsChecked == true, headerCheck.IsChecked == true);
+        return panel;
     }
 }

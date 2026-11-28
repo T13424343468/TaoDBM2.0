@@ -28,17 +28,29 @@ public static class RoutinesDialog
     }
 
     /// <summary>info 传入 Database 节点（连接入口也接受，取其首个库）。</summary>
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         if (info.Provider is not RelationalProvider prov)
         {
-            await new MessageDialogHelper(owner).Show("例程管理", "仅关系型数据库支持例程管理。");
-            return;
+            return new TextBlock
+            {
+                Text = "例程管理：仅关系型数据库支持例程管理。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
         if (!ObjectTreeCatalog.Supported(info.Profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("例程管理", "该引擎暂不支持例程目录。");
-            return;
+            return new TextBlock
+            {
+                Text = "例程管理：该引擎暂不支持例程目录。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         string db = info.Db.Length > 0 ? info.Db : info.Profile.Database;
@@ -132,13 +144,7 @@ public static class RoutinesDialog
         grid.Children.Add(leftHost);
         grid.Children.Add(rightHost);
 
-        var dlg = new ContentDialog
-        {
-            Title = $"例程 — {db}@{info.Profile.Engine}",
-            Content = grid,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
+        // 弹窗改页签（2026-11-28 老板令）：内嵌页签承载，标题由页签头给出
 
         Item? Sel()
         {
@@ -354,7 +360,7 @@ public static class RoutinesDialog
             await LoadDefAsync(sel);
         };
 
-        _ = dlg.ShowThemedAsync();
-        await ReloadAsync();
+        _ = Safe.RunAsync(ReloadAsync, "例程管理加载");
+        return grid;
     }
 }

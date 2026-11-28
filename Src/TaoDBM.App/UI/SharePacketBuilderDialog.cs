@@ -11,7 +11,7 @@ public static class SharePacketBuilderDialog
 {
     private static SharePacket? _pending;
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         _pending = null;
         var sender = info.Profile.DisplayName;
@@ -111,6 +111,8 @@ public static class SharePacketBuilderDialog
         row1.Children.Add(buildBtn); row1.Children.Add(verifyBtn); row1.Children.Add(chunkBox); row1.Children.Add(saveBtn); row1.Children.Add(genBtn);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 680 };
+        // 407 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "分享包构建", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock
         {
             Text = $"局域网搬运（{sender}）：封包生成 SHA256 指纹头，接收方重算指纹防篡改防截断；大包可分块过线。封包前逐条过凭据黑名单，命中即剔除并留痕。载荷只读展示。",
@@ -122,15 +124,7 @@ public static class SharePacketBuilderDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 240, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "共享包",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>三-13：真实条目生成——从当前连接档案出一条 Kind=connection 的共享条目回填条目框。

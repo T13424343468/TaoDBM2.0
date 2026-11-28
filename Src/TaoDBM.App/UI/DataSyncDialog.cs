@@ -8,14 +8,17 @@ namespace TaoDBM.UI;
 /// <summary>数据传输与结构同步：源连接/库/表 → 目标连接/库，可选补结构、传数据。</summary>
 public static class DataSyncDialog
 {
-    public static async Task Show(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
+    public static FrameworkElement BuildPanel(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
     {
         var relational = profiles.Where(p => p.Engine is not (DbEngine.MongoDB or DbEngine.Redis)).ToList();
         if (relational.Count < 2)
         {
-            await new MessageDialogHelper(owner).Show("数据传输",
-                "需要至少两个关系型连接（MySQL / PostgreSQL / SQL Server / SQLite / Oracle）。请先在左侧新建连接。");
-            return;
+            // 页签化改造：连接不足不再弹窗，面板内直接给指引
+            return new TextBlock
+            {
+                Text = "需要至少两个关系型连接（MySQL / PostgreSQL / SQL Server / SQLite / Oracle）。请先在左侧新建连接。",
+                FontSize = AntTokens.FontBody, Foreground = Ant.Warn, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
+            };
         }
 
         var srcBox = new ComboBox { MinWidth = 260, PlaceholderText = "源连接" };
@@ -90,8 +93,8 @@ public static class DataSyncDialog
 
         srcBox.SelectionChanged += async (_, _) => await LoadDbs(srcBox, srcDbBox, output);
         dstBox.SelectionChanged += async (_, _) => await LoadDbs(dstBox, dstDbBox, output);
-        if (srcBox.SelectedItem is not null) await LoadDbs(srcBox, srcDbBox, output);
-        if (dstBox.SelectedItem is not null) await LoadDbs(dstBox, dstDbBox, output);
+        if (srcBox.SelectedItem is not null) _ = LoadDbs(srcBox, srcDbBox, output);   // 页签化改造：BuildPanel 同步返回，预加载改后台
+        if (dstBox.SelectedItem is not null) _ = LoadDbs(dstBox, dstDbBox, output);
         // RefreshChannel 初始点亮移至通道头部卡声明与事件接线之后（run405 定谳：局部函数捕获变量未赋值前调用即 CS0165）
 
         loadBtn.Click += async (_, _) =>
@@ -493,6 +496,8 @@ public static class DataSyncDialog
         };
 
         var content = new StackPanel { Spacing = 10, MinWidth = 620, Margin = new Thickness(0, 0, 12, 0) };
+        // 305 原型：面板标题行
+        content.Children.Add(new TextBlock { Text = "数据同步", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         content.Children.Add(new TextBlock
         {
             Text = "源库只读；目标库会被直接建表、改列、写入数据。点「开始传输」后会先给出确认，确认才会动目标库。",
@@ -541,14 +546,7 @@ public static class DataSyncDialog
         content.Children.Add(runRow);
         content.Children.Add(output);
 
-        var dlg = new ContentDialog
-        {
-            Title = "数据传输与结构同步",
-            Content = new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
+        return new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 
     /// <summary>发现148：按配置执行一次同步（任务中心 sync 条目与挂账任务共用）——

@@ -3979,12 +3979,15 @@ Console.WriteLine("== NotificationDispatcher ==");
 
     // ---- 够格判断 ----
     {
-        var d = new NotificationDispatcher(new NotifyOptions(), () => new DateTime(2026, 11, 18, 12, 0, 0));
-        Check("N01 默认配置事件够格", d.TryAccept(Evt(NotifyKind.Backup, "orderdb")) && d.Evaluate(Evt(NotifyKind.Backup, "otherdb")).Reason == "ok");
+        // 2026-11-28 拍板：系统通知默认关——默认配置不再够格，显式开总开关才走判定链
+        var d = new NotificationDispatcher(new NotifyOptions { Enabled = true }, () => new DateTime(2026, 11, 18, 12, 0, 0));
+        Check("N01 显式开启后事件够格", d.TryAccept(Evt(NotifyKind.Backup, "orderdb")) && d.Evaluate(Evt(NotifyKind.Backup, "otherdb")).Reason == "ok");
+        Check("N01b 默认总开关为关", !new NotifyOptions().Enabled);
         var off = new NotificationDispatcher(new NotifyOptions { Enabled = false }, () => DateTime.Now);
         Check("N02 总开关拦截", !off.TryAccept(Evt(NotifyKind.Backup)) && off.Evaluate(Evt(NotifyKind.Backup)).Reason == "global-off");
         var kindOff = new NotificationDispatcher(new NotifyOptions
         {
+            Enabled = true,   // 拍板后默认关：单类开关/免打扰/节流各链路测试显式开总开关，只验各自判定
             KindToggles = new Dictionary<NotifyKind, bool> { [NotifyKind.Backup] = false },
         }, () => DateTime.Now);
         Check("N03 单类开关拦截", !kindOff.TryAccept(Evt(NotifyKind.Backup)) && kindOff.Evaluate(Evt(NotifyKind.Backup)).Reason == "kind-off");
@@ -3995,7 +3998,7 @@ Console.WriteLine("== NotificationDispatcher ==");
 
     // ---- 免打扰时段 ----
     {
-        NotifyOptions Opts(TimeOnly start, TimeOnly end, bool dndOn = true) => new() { DndEnabled = dndOn, DndStart = start, DndEnd = end };
+        NotifyOptions Opts(TimeOnly start, TimeOnly end, bool dndOn = true) => new() { Enabled = true, DndEnabled = dndOn, DndStart = start, DndEnd = end };
         var clock = new DateTime(2026, 11, 18, 2, 0, 0);   // 凌晨两点
         var d = new NotificationDispatcher(Opts(new TimeOnly(23, 0), new TimeOnly(7, 0)), () => clock);
         Check("N06 跨零点窗口内拦截", !d.TryAccept(Evt(NotifyKind.Backup)) && d.Evaluate(Evt(NotifyKind.Backup, "k")).Reason == "dnd");
@@ -4019,7 +4022,7 @@ Console.WriteLine("== NotificationDispatcher ==");
     {
         var now = new DateTime(2026, 11, 18, 12, 0, 0);
         DateTime clock = now;
-        var d = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 5 }, () => clock);
+        var d = new NotificationDispatcher(new NotifyOptions { Enabled = true, ThrottleMinutes = 5 }, () => clock);
         Check("N14 首条放行", d.TryAccept(Evt(NotifyKind.LongTask, "t1")));
         Check("N15 窗口内同键拦截", !d.TryAccept(Evt(NotifyKind.LongTask, "t1")) && d.Evaluate(Evt(NotifyKind.LongTask, "t1")).Reason == "throttled");
         Check("N16 同键不同类不互斥", d.TryAccept(Evt(NotifyKind.Backup, "t1")));
@@ -4034,9 +4037,9 @@ Console.WriteLine("== NotificationDispatcher ==");
         Check("N20 窗口内第三条被拦", !d.TryAccept(Evt(NotifyKind.LongTask, "t3")));
         clock = now.AddMinutes(11);
         Check("N21 窗口过后第三条放行", d.TryAccept(Evt(NotifyKind.LongTask, "t3")));
-        var noThrottle = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 0 }, () => clock);
+        var noThrottle = new NotificationDispatcher(new NotifyOptions { Enabled = true, ThrottleMinutes = 0 }, () => clock);
         Check("N22 节流关闭时全放行", noThrottle.TryAccept(Evt(NotifyKind.LongTask, "x")) && noThrottle.TryAccept(Evt(NotifyKind.LongTask, "x")));
-        var blank = new NotificationDispatcher(new NotifyOptions { ThrottleMinutes = 5 }, () => now);
+        var blank = new NotificationDispatcher(new NotifyOptions { Enabled = true, ThrottleMinutes = 5 }, () => now);
         Check("N23 空键整类共桶", blank.TryAccept(Evt(NotifyKind.HealthCheck)) && !blank.TryAccept(Evt(NotifyKind.HealthCheck, "  ")));
         Check("N24 节流键含种类与键", NotificationDispatcher.ThrottleKey(Evt(NotifyKind.Backup, " a ")) == "Backup:a");
         d.Reset();
@@ -4067,6 +4070,41 @@ Console.WriteLine("== NotificationDispatcher ==");
         Check("N29 文件落盘重载一致", NotifyPrefs.Load().DndStart == new TimeOnly(22, 30));
         NotifyPrefs.UseFile("");
         try { File.Delete(pFile); } catch { /* 清理失败不影响测试 */ }
+    }
+
+    // ---- 应用内收件箱（拍板 2026-11-28：系统通知默认关后，事件必须有应用内落点）----
+    {
+        var iFile = Path.Combine(Path.GetTempPath(), "taodbm_inbox_" + Guid.NewGuid().ToString("N") + ".json");
+        InboxStore.UseFile(iFile);
+        try
+        {
+            InboxStore.Clear();
+            InboxStore.Append(new NotifyEvent(NotifyKind.Backup, "k1", "标题1", "内容1", new DateTime(2026, 11, 28, 12, 0, 0)));
+            InboxStore.Append(new NotifyEvent(NotifyKind.LongTask, "k2", "标题2", "内容2", new DateTime(2026, 11, 28, 12, 1, 0)));
+            Check("I01 追加后最新在前且未读计数", InboxStore.UnreadCount() == 2 && InboxStore.All()[0].Title == "标题2" && InboxStore.All()[0].Kind == NotifyKind.LongTask.ToString());
+            InboxStore.MarkAllRead();
+            Check("I02 全部已读后未读清零", InboxStore.All().Count == 2 && InboxStore.UnreadCount() == 0);
+            InboxStore.Clear();
+            Check("I03 清空后为空", InboxStore.All().Count == 0 && InboxStore.UnreadCount() == 0);
+            for (int i = 0; i < 505; i++) InboxStore.Append(new NotifyEvent(NotifyKind.LongTask, "k" + i, "t" + i, "m", DateTime.Now));
+            var all = InboxStore.All();
+            Check("I04 上限 500 条防膨胀", all.Count == 500 && all[0].Title == "t504");
+        }
+        finally { InboxStore.UseFile(""); try { File.Delete(iFile); } catch { /* 清理失败不影响测试 */ } }
+
+        // 告警事件来源/状态两列（拍板 2026-11-28）：默认值与非法状态归一
+        var ev = new AlertEvent("连接数过高", "connections", 90, "消息", "danger", "2026-11-28T12:00:00Z");
+        Check("I05 告警事件默认来源系统状态未处理", ev.Source == "系统" && ev.NormalizedStatus == "未处理");
+        Check("I06 非法状态归一未处理", (ev with { Status = "乱写" }).NormalizedStatus == "未处理");
+        Check("I07 状态流转合法值原样保留", (ev with { Status = "已确认" }).NormalizedStatus == "已确认" && (ev with { Status = "已关闭" }).NormalizedStatus == "已关闭");
+        var aFile = Path.Combine(Path.GetTempPath(), "taodbm_alerts_" + Guid.NewGuid().ToString("N") + ".jsonl");
+        try
+        {
+            AlertEngine.SaveEvents(aFile, new List<AlertEvent> { ev, ev with { Status = "已确认", Source = "巡检" } });
+            var loaded = AlertEngine.LoadEvents(aFile);
+            Check("I08 告警事件落盘往返带来源状态", loaded.Count == 2 && loaded[1].Source == "巡检" && loaded[1].NormalizedStatus == "已确认");
+        }
+        finally { try { File.Delete(aFile); } catch { /* 清理失败不影响测试 */ } }
     }
 
     Console.WriteLine("== TaskCenter 完成事件 ==");

@@ -86,11 +86,11 @@ public partial class MainWindow
         UpdateDomainNav();
     }
 
-    private async void OpenTaskCenterFromNav()
+    private void OpenTaskCenterFromNav()
     {
         var info = SelectedInfo();
-        if (info is null) { await InfoAsync("请先在左侧树选中一个连接，再打开任务中心。"); return; }
-        await UI.TaskCenterDialog.Show(this, info);
+        if (info is null) { _ = InfoAsync("请先在左侧树选中一个连接，再打开任务中心。"); return; }
+        OpenPanelTab("任务中心", () => UI.TaskCenterDialog.BuildPanel(this, info));
     }
 
     /// <summary>当前域判定走 DomainNav.ActiveKey 口径；打开新域 / 切换工作页签后刷新。</summary>

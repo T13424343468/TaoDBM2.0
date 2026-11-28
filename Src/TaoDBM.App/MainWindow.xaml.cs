@@ -93,6 +93,9 @@ public partial class MainWindow : Window
         AddWelcomeTab();
         RestoreSession();
         ApplyWindowState();
+        // 手册承诺兑现（2026-11-28）：命令行 -run-task 启动立即执行——主窗就绪即排水，
+        // 不再等任务中心打开才执行（计划任务/无人值守场景依赖此路径）
+        UI.TaskCenterDialog.DrainPendingOnStartup(this);
         // 批次六格3：F11 专注模式——根网格挂加速键；上次退出为专注态则原样恢复
         if (Content is Grid rootGrid)
         {
@@ -131,18 +134,18 @@ public partial class MainWindow : Window
             switch (target)
             {
                 case "taskcenter":
-                    if (SelectedInfo() is { } ti) _ = UI.TaskCenterDialog.Show(this, ti);
+                    if (SelectedInfo() is { } ti) OpenPanelTab("任务中心", () => UI.TaskCenterDialog.BuildPanel(this, ti));
                     else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
                     break;
                 case "backup":
                     OnBackupSel(this, new RoutedEventArgs());
                     break;
                 case "risky":
-                    if (SelectedInfo() is { } ri) _ = UI.RiskySqlGuardDialog.Show(this, ri);
+                    if (SelectedInfo() is { } ri) OpenPanelTab("高危 SQL 拦截", () => UI.RiskySqlGuardDialog.BuildPanel(this, ri));
                     else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
                     break;
                 case "migration":
-                    if (SelectedInfo() is { } mi) _ = UI.MigrationResumeDialog.Show(this, mi);
+                    if (SelectedInfo() is { } mi) OpenPanelTab("迁移续传", () => UI.MigrationResumeDialog.BuildPanel(this, mi));
                     else _ = InfoAsync("点通知跳转：请先在左侧树中选中一个连接。");
                     break;
                 case "health":
@@ -171,7 +174,7 @@ public partial class MainWindow : Window
         _tray.OpenRequested += ShowFromTray;
         _tray.NewConnectionRequested += () => OnNewConn(this, new RoutedEventArgs());
         _tray.ThemeRequested += name => SwitchTheme(name);
-        _tray.SettingsRequested += () => _ = UI.SettingsDialog.ShowAsync(this);
+        _tray.SettingsRequested += () => OpenPanelTab("设置", () => UI.SettingsDialog.BuildPanel(this));   // 页签化改造：设置入页签
         _tray.ExitRequested += ExitApp;
         _tray.RecentRequested += TrayConnect;
         if (!_tray.IsAdded) StartTrayRetry();   // 没一次挂上就短周期重试，不静默放弃
@@ -287,7 +290,7 @@ public partial class MainWindow : Window
 
     private void OnSettings(object sender, RoutedEventArgs e)
     {
-        _ = UI.SettingsDialog.ShowAsync(this);
+        OpenPanelTab("设置", () => UI.SettingsDialog.BuildPanel(this));   // 页签化改造：设置入页签
     }
 
     public void SetStatus(string s) => StatusText.Text = s;
@@ -664,28 +667,28 @@ public partial class MainWindow : Window
                 Sep();
                 SubGroup("工具与向导", sub =>
                 {
-                    SubItem("权限审计", async (_, _) => await UI.UserPermissionDialog.Show(this, info));
-                    SubItem("主从管理面", async (_, _) => await UI.ReplicationDialog.Show(this, info));
-                    SubItem("部署向导", async (_, _) => await UI.DeploymentWizardDialog.Show(this, info));
-                    SubItem("分片向导", async (_, _) => await UI.ShardingWizardDialog.Show(this, info));
-                    SubItem("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                    SubItem("高危 SQL 拦截", async (_, _) => await UI.RiskySqlGuardDialog.Show(this, info));
-                    SubItem("上线审查", async (_, _) => await UI.SqlReleaseCheckDialog.Show(this, info));
-                    SubItem("任务中心", async (_, _) => await UI.TaskCenterDialog.Show(this, info));
-                    SubItem("流式开关", async (_, _) => await UI.StreamingSwitchDialog.Show(this, info));
-                    SubItem("读路由预演", async (_, _) => await UI.ReadRouterDialog.Show(this, info));
-                    SubItem("热点检测", async (_, _) => await UI.HotspotDetectorDialog.Show(this, info));
-                    SubItem("再均衡规划", async (_, _) => await UI.RebalancePlannerDialog.Show(this, info));
-                    SubItem("分片键评估", async (_, _) => await UI.ShardKeyEvaluatorDialog.Show(this, info));
-                    SubItem("迁移续传", async (_, _) => await UI.MigrationResumeDialog.Show(this, info));
-                    SubItem("团队合并", async (_, _) => await UI.TeamShareMergeDialog.Show(this, info));
-                    SubItem("共享包", async (_, _) => await UI.SharePacketBuilderDialog.Show(this, info));
-                    SubItem("智能工具", (_, _) => UI.SmartToolsDialog.Show(this, info));
-                    SubItem("看板管理", (_, _) => UI.KanbanDialog.Show(this, info.Provider));
-                    SubItem("服务器监控", (_, _) => UI.ServerMonitorDialog.Show(this, info));   // 批次三格2
-                    SubItem("命令监控", (_, _) => UI.CommandMonitorDialog.Show(this, info));   // 批次三格3
-                    SubItem("仪表板", (_, _) => UI.DashboardDialog.Show(this, info));   // 批次五格6
-                    SubItem("报表页", (_, _) => UI.ReportPageDialog.Show(this, info));   // ㉘：点选出图即钉住（2026-11-25 设计稿冻结）
+                    SubItem("权限审计", (_, _) => OpenPanelTab("权限审计", () => UI.UserPermissionDialog.BuildPanel(this, info)));
+                    SubItem("主从管理面", (_, _) => OpenPanelTab("主从管理面", () => UI.ReplicationDialog.BuildPanel(this, info)));
+                    SubItem("部署向导", (_, _) => OpenPanelTab("部署向导", () => UI.DeploymentWizardDialog.BuildPanel(this, info)));
+                    SubItem("分片向导", (_, _) => OpenPanelTab("分片向导", () => UI.ShardingWizardDialog.BuildPanel(this, info)));
+                    SubItem("一键诊断", (_, _) => OpenPanelTab("一键诊断", () => UI.DiagnosticsDialog.BuildPanel(this, info)));
+                    SubItem("高危 SQL 拦截", (_, _) => OpenPanelTab("高危 SQL 拦截", () => UI.RiskySqlGuardDialog.BuildPanel(this, info)));
+                    SubItem("上线审查", (_, _) => OpenPanelTab("上线审查", () => UI.SqlReleaseCheckDialog.BuildPanel(this, info)));
+                    SubItem("任务中心", (_, _) => OpenPanelTab("任务中心", () => UI.TaskCenterDialog.BuildPanel(this, info)));
+                    SubItem("流式开关", (_, _) => OpenPanelTab("流式开关", () => UI.StreamingSwitchDialog.BuildPanel(this, info)));
+                    SubItem("读路由预演", (_, _) => OpenPanelTab("读路由预演", () => UI.ReadRouterDialog.BuildPanel(this, info)));
+                    SubItem("热点检测", (_, _) => OpenPanelTab("热点检测", () => UI.HotspotDetectorDialog.BuildPanel(this, info)));
+                    SubItem("再均衡规划", (_, _) => OpenPanelTab("再均衡规划", () => UI.RebalancePlannerDialog.BuildPanel(this, info)));
+                    SubItem("分片键评估", (_, _) => OpenPanelTab("分片键评估", () => UI.ShardKeyEvaluatorDialog.BuildPanel(this, info)));
+                    SubItem("迁移续传", (_, _) => OpenPanelTab("迁移续传", () => UI.MigrationResumeDialog.BuildPanel(this, info)));
+                    SubItem("团队合并", (_, _) => OpenPanelTab("团队合并", () => UI.TeamShareMergeDialog.BuildPanel(this, info)));
+                    SubItem("共享包", (_, _) => OpenPanelTab("共享包", () => UI.SharePacketBuilderDialog.BuildPanel(this, info)));
+                    SubItem("智能工具", (_, _) => OpenPanelTab("智能工具", () => UI.SmartToolsDialog.BuildPanel(this, info)));
+                    SubItem("看板管理", (_, _) => OpenPanelTab("看板管理", () => UI.KanbanDialog.BuildPanel(this, info.Provider)));
+                    SubItem("服务器监控", (_, _) => OpenPanelTab("服务器监控", () => UI.ServerMonitorDialog.BuildPanel(this, info)));   // 批次三格2
+                    SubItem("命令监控", (_, _) => OpenPanelTab("命令监控", () => UI.CommandMonitorDialog.BuildPanel(this, info)));   // 批次三格3
+                    SubItem("仪表板", (_, _) => OpenPanelTab("仪表板", () => UI.DashboardDialog.BuildPanel(this, info)));   // 批次五格6
+                    SubItem("报表页", (_, _) => OpenPanelTab("报表页", () => UI.ReportPageDialog.BuildPanel(this, info)));   // ㉘：点选出图即钉住（2026-11-25 设计稿冻结）
                 });
                 Sep();
                 Item("关闭连接", (_, _) => CloseConnection(info, node));
@@ -702,20 +705,20 @@ public partial class MainWindow : Window
                 Sep();
                 SubGroup("库工具", sub =>
                 {
-                    SubItem("备份计划", async (_, _) => await UI.BackupPlanDialog.Show(this, info));
+                    SubItem("备份计划", (_, _) => OpenPanelTab("备份计划", () => UI.BackupPlanDialog.BuildPanel(this, info)));
                     SubItem("备份演练", (_, _) => OpenBackupDrillTab(info));   // 三-15：弹窗改页面，升级内嵌页签
-                    SubItem("数据脱敏", async (_, _) => await UI.MaskPreviewDialog.Show(this, info));
-                    SubItem("数据对账", async (_, _) => await UI.ReconcileDialog.Show(this, info));
-                    SubItem("误删恢复", async (_, _) => await UI.RecoveryDialog.Show(this, info));
-                    SubItem("留痕审计", async (_, _) => await UI.AuditTrailDialog.Show(this, info));
-                    SubItem("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
-                    SubItem("快照包", async (_, _) => await UI.SnapshotPackDialog.Show(this, info));
-                    SubItem("批量清理", async (_, _) => await UI.BatchCleanupDialog.Show(this, info));
-                    SubItem("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info));
-                    SubItem("例程管理", async (_, _) => await UI.RoutinesDialog.Show(this, info));
-                    SubItem("一键诊断", async (_, _) => await UI.DiagnosticsDialog.Show(this, info));
-                    SubItem("告警中心", async (_, _) => await UI.AlertCenterDialog.Show(this, info));
-                    SubItem("三层模型", (_, _) => UI.ModelDialog.Show(this, info));   // 批次五格1/2/4/5
+                    SubItem("数据脱敏", (_, _) => OpenPanelTab("数据脱敏", () => UI.MaskPreviewDialog.BuildPanel(this, info)));
+                    SubItem("数据对账", (_, _) => OpenPanelTab("数据对账", () => UI.ReconcileDialog.BuildPanel(this, info)));
+                    SubItem("误删恢复", (_, _) => OpenPanelTab("误删恢复", () => UI.RecoveryDialog.BuildPanel(this, info)));
+                    SubItem("留痕审计", (_, _) => OpenPanelTab("留痕审计", () => UI.AuditTrailDialog.BuildPanel(this, info)));
+                    SubItem("问库", (_, _) => OpenPanelTab("问库", () => UI.NaturalQueryDialog.BuildPanel(this, info)));
+                    SubItem("快照包", (_, _) => OpenPanelTab("快照包", () => UI.SnapshotPackDialog.BuildPanel(this, info)));
+                    SubItem("批量清理", (_, _) => OpenPanelTab("批量清理", () => UI.BatchCleanupDialog.BuildPanel(this, info)));
+                    SubItem("设计辅助", (_, _) => OpenPanelTab("设计辅助", () => UI.DesignAssistDialog.BuildPanel(this, info)));
+                    SubItem("例程管理", (_, _) => OpenPanelTab("例程管理", () => UI.RoutinesDialog.BuildPanel(this, info)));
+                    SubItem("一键诊断", (_, _) => OpenPanelTab("一键诊断", () => UI.DiagnosticsDialog.BuildPanel(this, info)));
+                    SubItem("告警中心", (_, _) => OpenPanelTab("告警中心", () => UI.AlertCenterDialog.BuildPanel(this, info)));
+                    SubItem("三层模型", (_, _) => OpenPanelTab("三层模型", () => UI.ModelDialog.BuildPanel(this, info)));   // 批次五格1/2/4/5
                 });
                 break;
             case NodeKind.Table:
@@ -725,9 +728,9 @@ public partial class MainWindow : Window
                 Item("新建查询", (_, _) => OpenQueryTab(info));
                 Item("刷新", (_, _) => RefreshNode(node));
                 Sep();
-                Item("问库", async (_, _) => await UI.NaturalQueryDialog.Show(this, info));
+                Item("问库", (_, _) => OpenPanelTab("问库", () => UI.NaturalQueryDialog.BuildPanel(this, info)));
                 Item("拟真数据", (_, _) => OpenFaker(info));
-                Item("设计辅助", (_, _) => UI.DesignAssistDialog.Show(this, info, info.Name));   // 格15：表节点带表名上下文
+                Item("设计辅助", (_, _) => OpenPanelTab($"设计辅助 · {info.Name}", () => UI.DesignAssistDialog.BuildPanel(this, info, info.Name)));   // 格15：表节点带表名上下文
                 break;
             case NodeKind.Category:
                 Item("刷新", (_, _) => RefreshNode(node));
@@ -790,7 +793,7 @@ public partial class MainWindow : Window
         try
         {
             if (info.Provider is null) { AppLog.Write("[库搜索] 打开失败: Provider 为空"); return; }
-            await UI.DbSearchDialog.Show(this, info);
+            OpenPanelTab($"全库搜索 · {info.Db}", () => UI.DbSearchDialog.BuildPanel(this, info));
         }
         catch (Exception ex) { AppLog.Write($"[库搜索] 打开失败: {ex.Message}"); }
     }
@@ -837,7 +840,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>树右键打开拟真数据（多表模式）。</summary>
-    private void OpenFaker(NodeInfo info) => _ = UI.FakerDialog.Show(this, info.Provider!, info.Db, info.Name);
+    private void OpenFaker(NodeInfo info) => OpenPanelTab($"拟真数据 · {info.Name}", () => UI.FakerDialog.BuildPanel(this, info.Provider!, info.Db, info.Name));
 
     /// <summary>发现144：备份条目还原——二次确认后走与向导同源的还原链路，成功失败都落账。</summary>
     private async Task RestoreBackupEntry(NodeInfo info, BackupHistory.Entry entry)
@@ -1190,30 +1193,48 @@ public partial class MainWindow : Window
         WorkTabs.SelectedItem = tab;
     }
 
+    /// <summary>2026-11-28 老板令：工具面板一律内嵌主窗口页签（弹窗只留确认类）——统一打开助手，照 OpenBackupDrillTab 口径。</summary>
+    public void OpenPanelTab(string header, Func<FrameworkElement> build)
+    {
+        var tab = new TabViewItem { Header = header };
+        tab.Content = build();
+        WorkTabs.TabItems.Add(tab);
+        SaveSession();
+        WorkTabs.SelectedItem = tab;
+    }
+
+    /// <summary>拍板（2026-11-28）：流程页完成后按内容自行收口——按 Content 引用找到所属页签移除（导入向导页签化用）。</summary>
+    public void ClosePanelTab(FrameworkElement content)
+    {
+        var tabs = WorkTabs.TabItems.OfType<TabViewItem>().Where(t => ReferenceEquals(t.Content, content)).ToList();
+        foreach (var tab in tabs) WorkTabs.TabItems.Remove(tab);
+        if (tabs.Count > 0) SaveSession();
+    }
+
     /// <summary>备份 / 还原：MySQL/PG 走官方 CLI，SQL Server 走 T-SQL，SQLite 文件复制。</summary>
-    private async void OnBackupSel(object sender, RoutedEventArgs e)
+    private void OnBackupSel(object sender, RoutedEventArgs e)
     {
         _navBackupOpen = true; _navTaskOpen = _navErdOpen = false;   // 发现132：域指示随入口刷新
         UpdateDomainNav();
         var info = SelectedInfo();
-        if (info is null || info.Provider is null) { await InfoAsync("请先选中一个连接（或库、表）再备份 / 还原。"); return; }
-        await UI.BackupDialog.Show(this, info);
+        if (info is null || info.Provider is null) { _ = InfoAsync("请先选中一个连接（或库、表）再备份 / 还原。"); return; }
+        OpenPanelTab($"备份 / 恢复 · {info.Name}", () => UI.BackupDialog.BuildPanel(this, info));   // 页签化改造：备份向导入页签
     }
 
     /// <summary>数据传输与结构同步：源连接 → 目标连接，补结构、搬数据。</summary>
-    private async void OnSyncSel(object sender, RoutedEventArgs e)
+    private void OnSyncSel(object sender, RoutedEventArgs e)
     {
         var info = SelectedInfo();
-        await UI.DataSyncDialog.Show(this, _profiles, info?.Profile);
+        OpenPanelTab("数据传输与结构同步", () => UI.DataSyncDialog.BuildPanel(this, _profiles, info?.Profile));   // 页签化改造：同步入页签
     }
 
     /// <summary>模型设计（ER 图）：库内表结构成图，拖拽排布，导出 PNG，保存 / 打开布局。</summary>
-    private async void OnErdSel(object sender, RoutedEventArgs e)
+    private void OnErdSel(object sender, RoutedEventArgs e)
     {
         _navErdOpen = true; _navBackupOpen = _navTaskOpen = false;   // 发现132：域指示随入口刷新
         UpdateDomainNav();
         var info = SelectedInfo();
-        await UI.ErdDialog.Show(this, _profiles, info?.Profile);
+        OpenPanelTab("模型设计 · ER 图", () => UI.ErdDialog.BuildPanel(this, _profiles, info?.Profile));   // 页签化改造：ER 图入页签
     }
 
     private void OnAbout(object sender, RoutedEventArgs e)

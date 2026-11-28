@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 展示含义与回退方法。开关本身由环境变量决定，本对话框只读展示，不代改环境。</summary>
 public static class StreamingSwitchDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         bool enabled = StreamingSwitch.Enabled;
@@ -43,15 +43,7 @@ public static class StreamingSwitchDialog
         panel.Children.Add(SettingsCard());
         panel.Children.Add(report);
 
-        var dlg = new ContentDialog
-        {
-            Title = "流式开关",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>发现311原型：主开关卡——标题+说明+当前通道状态徽标（开启绿/关闭灰）。</summary>

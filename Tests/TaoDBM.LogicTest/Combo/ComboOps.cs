@@ -301,7 +301,8 @@ public static class ComboOps
                 {
                     var evt = new NotifyEvent(NotifyKind.RiskySqlDone, d.Table, "t", "m", DateTime.Now);
                     if (NotificationDispatcher.ThrottleKey(evt) != "RiskySqlDone:" + d.Table) return "throttle key wrong";
-                    var disp = new NotificationDispatcher();
+                    // 拍板（2026-11-28）：总开关默认关——判定链测试显式开总开关
+                    var disp = new NotificationDispatcher(new NotifyOptions { Enabled = true });
                     if (!disp.TryAccept(evt)) return "first event rejected";
                     if (disp.TryAccept(evt)) return "second event within throttle window accepted";
                     var off = new NotificationDispatcher(new NotifyOptions { Enabled = false });

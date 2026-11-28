@@ -28,14 +28,17 @@ public static class ErdDialog
     // 批次五格3：端点符号图形统一 Tag，重绘时同步清理
     private static readonly object _edgeSymbolTag = new();
 
-    public static async Task Show(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
+    public static FrameworkElement BuildPanel(MainWindow owner, List<ConnectionProfile> profiles, ConnectionProfile? preselect)
     {
         var relational = profiles.Where(p => p.Engine is not (DbEngine.MongoDB or DbEngine.Redis)).ToList();
         if (relational.Count == 0)
         {
-            await new MessageDialogHelper(owner).Show("模型设计（ER 图）",
-                "ER 图基于关系型连接生成，请先新建 MySQL / PostgreSQL / SQL Server / SQLite / Oracle 连接。");
-            return;
+            // 页签化改造：无关系型连接不再弹窗，面板内直接给指引
+            return new TextBlock
+            {
+                Text = "ER 图基于关系型连接生成，请先新建 MySQL / PostgreSQL / SQL Server / SQLite / Oracle 连接。",
+                FontSize = AntTokens.FontBody, Foreground = Ant.Warn, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
+            };
         }
 
         _canvas = new Canvas { Background = Ant.Card, MinHeight = 560, MinWidth = 760 };
@@ -79,7 +82,7 @@ public static class ErdDialog
         };
         if (connBox.SelectedItem is ConnectionProfile selP)
         {
-            await Safe.RunAsync(async () =>
+            _ = Safe.RunAsync(async () =>
             {
                 using var prov0 = ProviderFactory.Create(selP);
                 foreach (var d in await prov0.GetDatabases()) dbBox.Items.Add(d);
@@ -185,14 +188,7 @@ public static class ErdDialog
         };
         panel.Children.Add(border);
 
-        var dlg = new ContentDialog
-        {
-            Title = "模型设计 · ER 图",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
+        return panel;
     }
 
     private static async Task Build(string db, IDbProvider prov)

@@ -11,7 +11,7 @@ namespace TaoDBM.UI;
 /// 另给每个副本摘除 / 加回建议，供流量开关对照。全程只读，不改任何状态。</summary>
 public static class ReadRouterDialog
 {
-    public static Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -115,15 +115,7 @@ public static class ReadRouterDialog
         }
         panel.Children.Add(topoPanel);
 
-        var dlg = new ContentDialog
-        {
-            Title = "读写路由预演",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        return Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>三-11：从当前连接读复制画像——MySQL 走 SHOW REPLICA STATUS（旧版退 SHOW SLAVE STATUS），

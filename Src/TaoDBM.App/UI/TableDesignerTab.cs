@@ -864,6 +864,13 @@ public class TableDesignerTab : Grid
             XamlRoot = _owner.Content.XamlRoot,
         };
         if (await confirm.ShowThemedAsync() != ContentDialogResult.Primary) return;
+        // 手册承诺兑现（2026-11-28）：设计器执行前过高危检查——逐条过闸，danger 级弹拦截窗，与查询链同口径
+        for (int gi = 0; gi < stmts.Count; gi++)
+        {
+            var gate = await RiskySqlInterceptDialog.GateAsync(_owner, _prov, _db, stmts[gi]);
+            if (!gate.Proceed) { _status.Text = $"[表设计] 第 {gi + 1} 条被高危检查拦截，已中止。"; _status.Foreground = Ant.Warn; return; }
+            stmts[gi] = gate.SqlToRun;
+        }
         _busy = true;
         _runBtn.IsEnabled = false;
         try

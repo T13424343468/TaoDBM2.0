@@ -11,7 +11,7 @@ namespace TaoDBM.UI;
 /// 以初始 SQL 打开查询窗口，由用户确认后才执行，不静默改库。</summary>
 public static class DiagnosticsDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
@@ -166,17 +166,10 @@ public static class DiagnosticsDialog
         dlgPanel.Children.Add(tabs);
         dlgPanel.Children.Add(status);   // 共享状态行：各页签加载 / 诊断结果统一回显
 
-        var dlg = new ContentDialog
-        {
-            Title = "一键诊断",
-            Content = dlgPanel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        dlg.Closed += (_, _) => refreshTimer.Stop();   // 发现149：对话框关闭即停自动刷新，无泄漏
-        _ = dlg.ShowThemedAsync();
+        dlgPanel.Unloaded += (_, _) => refreshTimer.Stop();   // 发现149：页签关闭即停自动刷新，无泄漏（弹窗改页签同口径）
         _ = LoadSlowQueriesAsync(slowListPanel, slowTab, status);   // 首页签默认选中不触发 SelectionChanged，显式加载
         _ = RunDiagAsync(owner, info, prov, report, status);
+        return dlgPanel;
     }
 
     /// <summary>发现149：库名解析——与体检同口径，info 未带库时取第一个可用库。</summary>

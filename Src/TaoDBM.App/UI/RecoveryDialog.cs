@@ -10,14 +10,20 @@ namespace TaoDBM.UI;
 /// 数据安全口径：捕获只读；拼回语句只生成草稿，弹窗逐条勾选确认后才执行，执行写入 permops.log。</summary>
 public static class RecoveryDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (prov.IsNoSql || !prov.SupportsBrowse)
         {
-            await new MessageDialogHelper(owner).Show("误删恢复", "该引擎不支持行级快照与拼回。");
-            return;
+            return new TextBlock
+            {
+                Text = "误删恢复：该引擎不支持行级快照与拼回。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
@@ -64,6 +70,8 @@ public static class RecoveryDialog
         row2.Children.Add(restoreBtn);
 
         var panel = new StackPanel { Spacing = 10, MinWidth = 680 };
+        // 303 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "恢复向导", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock
         {
             Text = "第一步：捕获快照（只读，把当前表数据存到本机文件，危险操作前建议先留底）；第二步：误删后从快照生成拼回 INSERT 草稿，逐条勾选确认后才执行。",
@@ -76,14 +84,7 @@ public static class RecoveryDialog
         panel.Children.Add(output);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "误删恢复",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return panel;
     }
 
     private static string CurrentDb(NodeInfo info)

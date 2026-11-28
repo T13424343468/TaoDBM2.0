@@ -100,6 +100,51 @@ public static class TaskCenterDialog
         }
     }
 
+    /// <summary>手册承诺兑现（2026-11-28）：主窗就绪即排水——命令行 -run-task 启动后立即执行排队任务，
+    /// 不再等任务中心打开（计划任务/无人值守场景依赖此路径）。无排队任务时静默返回。</summary>
+    public static void DrainPendingOnStartup(MainWindow owner)
+    {
+        bool hasPending;
+        lock (_pendingLock) hasPending = _pendingRunTaskIds.Count > 0;
+        if (!hasPending) return;
+        try
+        {
+            var info = owner.SelectedInfo();
+            if (info?.Provider is { } prov)
+            {
+                _ = Safe.RunAsync(async () => await DrainScheduledRunAsync(prov, info.Db.Length > 0 ? info.Db : info.Profile.Database), "启动排水");
+                AppLog.Write("[任务中心] 主窗就绪即排水 -run-task 排队任务");
+            }
+            else
+            {
+                // 无活动连接：按任务配置的连接档案建临时提供方执行（无人值守场景主窗未必选中连接）
+                _ = Safe.RunAsync(async () =>
+                {
+                    List<string> pending;
+                    lock (_pendingLock) { pending = new List<string>(_pendingRunTaskIds); _pendingRunTaskIds.Clear(); }
+                    foreach (var id in pending)
+                    {
+                        var e = SqlScheduler.List().FirstOrDefault(x => x.Id == id);
+                        if (e is null) { AppLog.Write($"[任务中心] -run-task 找不到定时任务 {id}，已跳过"); continue; }
+                        try
+                        {
+                            var profile = ConnectionStore.Load().FirstOrDefault(p => p.Id == e.ProfileId);
+                            if (profile is null) { SqlScheduler.RecordResult(e.Id, "failed: 找不到任务配置的连接"); continue; }
+                            var prov = ProviderFactory.Create(profile);
+                            var rs = await prov.Execute(e.Db.Length > 0 ? e.Db : profile.Database, e.Sql);
+                            bool bad = rs.Any(r => r.IsError || r.Message.StartsWith("错误", StringComparison.Ordinal) || r.Message.Contains("没成功："));
+                            SqlScheduler.RecordResult(e.Id, bad ? "failed" : "done");
+                            AppLog.Write($"[任务中心] -run-task 已执行 {e.Name}（{e.Id}）：{(bad ? "failed" : "done")}");
+                        }
+                        catch (Exception ex) { SqlScheduler.RecordResult(e.Id, "failed: " + ex.Message); }
+                    }
+                }, "启动排水（无连接）");
+                AppLog.Write("[任务中心] 主窗就绪即排水 -run-task（按任务配置连接）");
+            }
+        }
+        catch (Exception ex) { AppLog.Write($"[任务中心] 启动排水异常 {ex.Message}"); }
+    }
+
     private static string StateLabel(string state) => state switch
     {
         "done" => "完成",
@@ -135,11 +180,11 @@ public static class TaskCenterDialog
         },
     };
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var db = CurrentDb(info);
-        await DrainScheduledRunAsync(prov, db);   // 发现142：命令行 -run-task 排水
+        _ = Safe.RunAsync(async () => await DrainScheduledRunAsync(prov, db), "任务中心排水");   // 发现142：命令行 -run-task 排水
         var titleBox = new TextBox { PlaceholderText = "任务标题", MinWidth = 200 };
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(titleBox, "tc-title");
         var sqlBox = new TextBox { PlaceholderText = "SQL（长查询/导出语句）", MinWidth = 360 };
@@ -259,16 +304,8 @@ public static class TaskCenterDialog
         panel.Children.Add(new ScrollViewer { Content = list, MaxHeight = 280, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "任务中心",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
         Refresh(list, status);
-        await Task.CompletedTask;
+        return panel;
     }
 
     // 发现142：任务行勾选区——Refresh 重建时同步维护，组合执行/保存组合从这里取勾选快照
@@ -336,7 +373,8 @@ public static class TaskCenterDialog
             {
                 if (!int.TryParse(ivBox.Text?.Trim(), out int iv)) { status.Text = "间隔请填数字（分钟）。"; return; }
                 var kind = (kindBox.SelectedIndex switch { 1 => "backup", 2 => "sync", 3 => "import", 4 => "export", 5 => "dictionary", 6 => "faker", _ => "query" });
-                var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv, kind);
+                var profileId = owner.SelectedInfo()?.Profile.Id ?? "";
+                var e = SqlScheduler.Add(nameBox.Text ?? "", db, sqlBox.Text ?? "", iv, kind, profileId);
                 status.Text = $"已新增定时任务 {e.Name}（{e.Id}，{e.Kind}），下次执行 {e.NextRunAt:MM-dd HH:mm}。";
                 RefreshSched(list, prov, status);
             }

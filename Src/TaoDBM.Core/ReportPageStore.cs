@@ -17,10 +17,12 @@ public static class ReportPageStore
 
     /// <summary>报表卡：钉住时的 SQL/引擎/库/聚合列/图型；刷新走格 19 重建口径重跑同一 SQL。</summary>
     public sealed record Card(string CardId, string Title, string Sql, string Engine, string Column,
-        string ChartType, string? Db = null, DateTimeOffset CreatedAt = default)
+        string ChartType, string? Db = null, DateTimeOffset CreatedAt = default, string TimeRange = "all")
     {
         /// <summary>图型合法值：bar / histogram / line（ChartSpecBuilder 同口径）。</summary>
         public string NormalizedType => ChartType is "bar" or "histogram" or "line" ? ChartType : "bar";
+        /// <summary>时间范围合法值：all / 1h / 24h / 7d / 30d；旧 JSON 缺省兼容 all。</summary>
+        public string NormalizedTimeRange => TimeRange is "1h" or "24h" or "7d" or "30d" ? TimeRange : "all";
     }
 
     /// <summary>全部卡片（文件缺失/损坏回落空表，绝不闪退）。</summary>

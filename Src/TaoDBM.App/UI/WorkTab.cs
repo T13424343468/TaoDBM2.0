@@ -616,7 +616,7 @@ public partial class WorkTab : Grid
             }
         };
         _designBtn.Click += (_, _) => _owner.OpenDesignerTab(_provider, _db, _child.Length > 0 ? _child : null, _cols.Count > 0 ? _cols : null);   // U2：表设计器内嵌页签（格5 增强随 Tab 迁移）
-        _fakerBtn.Click += (_, _) => _ = UI.FakerDialog.Show(_owner, _provider, _db, _child.Length > 0 ? _child : "main");
+        _fakerBtn.Click += (_, _) => _owner.OpenPanelTab($"拟真数据 · {(_child.Length > 0 ? _child : "main")}", () => UI.FakerDialog.BuildPanel(_owner, _provider, _db, _child.Length > 0 ? _child : "main"));
         _histBtn.Click += (_, _) => ShowHistory();
         _favBtn.Click += (_, _) => ShowFavorites();
         _reportBtn.Click += (_, _) => _ = ShowReport();
@@ -624,7 +624,8 @@ public partial class WorkTab : Grid
         {
             // 格15：结果入口——把当前首结果集快照带进设计助手（图表输入预填）
             var info = new NodeInfo { Kind = NodeKind.Database, Profile = _provider.Profile, Provider = _provider, Db = _db, Name = _db };
-            UI.DesignAssistDialog.Show(_owner, info, table: _child.Length > 0 ? _child : null, last: _last?.Count > 0 ? _last[0] : null);
+            var tbl = _child.Length > 0 ? _child : null;
+            _owner.OpenPanelTab(tbl is null ? "设计辅助" : $"设计辅助 · {tbl}", () => UI.DesignAssistDialog.BuildPanel(_owner, info, table: tbl, last: _last?.Count > 0 ? _last[0] : null));
         };
         _prevBtn.Click += (_, _) => { if (_offset >= _pageSize) { _offset -= _pageSize; _ = RunOrRefresh(); } };
         _nextBtn.Click += (_, _) => { _offset += _pageSize; _ = RunOrRefresh(); };
@@ -837,6 +838,13 @@ public partial class WorkTab : Grid
             {
                 var sql = sqlOverride ?? EditorText;
                 if (string.IsNullOrWhiteSpace(sql)) { _messageBox.Text = "请输入要执行的语句。"; return; }
+                // 手册承诺兑现（2026-11-28）：查询执行前过高危检查——danger 级弹拦截窗，确认后继续，与问库同口径
+                if (_owner is not null)
+                {
+                    var gate = await RiskySqlInterceptDialog.GateAsync(_owner, _provider, _db, sql);
+                    if (!gate.Proceed) { _messageBox.Text = "已取消：语句被高危检查拦截。"; _owner.SetStatus("执行被高危检查拦截"); return; }
+                    sql = gate.SqlToRun;
+                }
                 // 批次F：关系库走流式底座列懒加载通道（宽表首屏只物化可见列，横向滚动增量拉取）；流式关闭或非关系引擎回旧整包
                 List<QueryResult> list;
                 if (StreamingSwitch.Enabled && _provider is RelationalProvider lazyProv)
@@ -1974,7 +1982,7 @@ public partial class WorkTab : Grid
             if (isXlsx)
             {
                 // 批次四格1：xlsx 先出预览与映射（前 50 行），确认后走 BuildInserts（与 JSON 同执行链）
-                plan = await ImportPreviewDialog.ShowAsync(_owner, _cols, headers, rows.Take(50).ToList());
+                plan = await ImportPreviewDialog.ShowInTabAsync(_owner, _cols, headers, rows.Take(50).ToList());
                 if (plan is null) return;
             }
             else if (!isJson)
@@ -1993,7 +2001,7 @@ public partial class WorkTab : Grid
                     }
                 }
                 if (previewHeaders.Count == 0 || previewRows.Count == 0) { _messageBox.Text = "CSV 内容为空或格式无法识别。"; return; }
-                plan = await ImportPreviewDialog.ShowAsync(_owner, _cols, previewHeaders, previewRows);
+                plan = await ImportPreviewDialog.ShowInTabAsync(_owner, _cols, previewHeaders, previewRows);
                 if (plan is null) return;
             }
 

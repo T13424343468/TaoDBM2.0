@@ -19,6 +19,8 @@ public class ScheduledSqlEntry
     /// <summary>批次三格1：任务类型（query/backup/sync/import/export/dictionary/faker）。
     /// 旧 JSON 缺省兼容为 query；分派执行时 Kind 为空或未知按 query 处理，不阻断旧条目。</summary>
     public string Kind { get; set; } = "query";
+    /// <summary>任务绑定的连接档案 Id（无人值守执行时按此建临时提供方）；旧 JSON 缺省兼容为空串。</summary>
+    public string ProfileId { get; set; } = "";
 }
 
 /// <summary>
@@ -49,7 +51,7 @@ public static class SqlScheduler
     public static List<ScheduledSqlEntry> List() { lock (Gate) return Load(); }
 
     /// <summary>新增任务：Id 自动生成，NextRunAt = now + interval。返回带 Id 的条目。</summary>
-    public static ScheduledSqlEntry Add(string name, string db, string sql, int intervalMinutes, string kind = "query")
+    public static ScheduledSqlEntry Add(string name, string db, string sql, int intervalMinutes, string kind = "query", string profileId = "")
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("任务名不能为空");
         if (string.IsNullOrWhiteSpace(sql)) throw new ArgumentException("SQL 不能为空");
@@ -67,6 +69,7 @@ public static class SqlScheduler
                 Enabled = true,
                 NextRunAt = DateTimeOffset.Now.AddMinutes(intervalMinutes),
                 Kind = NormalizeKind(kind),
+                ProfileId = profileId ?? "",
             };
             list.Add(e);
             Save(list);

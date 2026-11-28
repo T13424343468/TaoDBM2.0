@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using TaoDBM.Core;
 using TaoDBM.ViewModels;
 
 namespace TaoDBM.UI;
@@ -8,7 +9,7 @@ namespace TaoDBM.UI;
 /// <summary>设置弹窗（MVVM 模板）：视图只负责搭建控件并绑定 ViewModel，选项文案与保存逻辑全部在 ViewModel。</summary>
 public static class SettingsDialog
 {
-    public static async Task ShowAsync(Window owner)
+    public static FrameworkElement BuildPanel(MainWindow owner)
     {
         var vm = new SettingsViewModel(
             Core.AppPrefs.Load(),
@@ -19,6 +20,8 @@ public static class SettingsDialog
             });
 
         var panel = new StackPanel { Spacing = 8, MinWidth = 400 };
+        // 502 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "系统设置", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock { Text = "关闭主窗口时", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
 
         var desc = new TextBlock { Foreground = Ant.TextSub, FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
@@ -236,30 +239,24 @@ public static class SettingsDialog
         pivot.Items.Add(new PivotItem { Header = "外观", Content = lookScroll });
         pivot.Items.Add(new PivotItem { Header = "快捷键", Content = shortcutScroll });
 
-        var dlg = new ContentDialog
+        // 页签化改造：ContentDialog 的「保存/取消」改面板内保存钮——校验不过就地提示不落盘
+        var saveBtn = new Button
         {
-            Title = "设置",
-            Content = pivot,
-            PrimaryButtonText = "保存",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = owner.Content.XamlRoot,
+            Content = "保存",
+            Background = Ant.Primary,
+            Foreground = Ant.OnPrimary,
+            BorderThickness = new Thickness(0),
+            CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd),
         };
-        // 发现106：节流输入非法时拦下保存，人话提示不关窗
-        dlg.Closing += (s, args) =>
+        saveBtn.Click += (_, _) =>
         {
-            if (args.Result != ContentDialogResult.Primary) return;
             var err = ValidateThrottle(out _);
             if (err is not null)
             {
-                args.Cancel = true;
                 throttleHint.Text = err;
                 throttleHint.Visibility = Visibility.Visible;
+                return;
             }
-        };
-
-        if (await dlg.ShowThemedAsync() == ContentDialogResult.Primary)
-        {
             vm.SaveCommand.Execute(null);
             SaveNotify();
             Core.SqlOpenPrefs.Save(chkSqlLatest.IsChecked == true);
@@ -271,7 +268,12 @@ public static class SettingsDialog
             if (int.TryParse(gridSizeBox.Text?.Trim(), out var gsz)) fontPrefs.GridFontSize = gsz;
             fontPrefs.Save();
             Core.AppLog.Write($"[设置] 外观保存 editor={fontPrefs.EditorFontFamily}/{fontPrefs.EditorFontSize} grid={fontPrefs.GridFontFamily}/{fontPrefs.GridFontSize}");
-        }
+        };
+
+        var host = new StackPanel { Spacing = 8 };
+        host.Children.Add(pivot);
+        host.Children.Add(saveBtn);
+        return host;
     }
 
     /// <summary>发现152：改绑对话框——按下新键组合（修饰键＋主键），冲突当场人话提示不落盘；Esc 取消。</summary>

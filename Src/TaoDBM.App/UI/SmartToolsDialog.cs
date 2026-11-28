@@ -11,7 +11,7 @@ namespace TaoDBM.UI;
 /// 全部只读 / 纯计算：重测只执行用户粘贴的 SELECT，容量预估只对用户提供的采样数据回归，不改任何数据。</summary>
 public static class SmartToolsDialog
 {
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -113,14 +113,7 @@ public static class SmartToolsDialog
         panel.Children.Add(followIntervalBox);
         panel.Children.Add(followRow);
 
-        var dlg = new ContentDialog
-        {
-            Title = "智能工具（慢查询 / 重测 / 容量 / 复现包）",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
+        return panel;
     }
 
     // ── 慢查询诊断：静态规则 + 索引建议，全部基于用户粘贴文本 ──

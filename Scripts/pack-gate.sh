@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 出包硬闸（2026-11-24 22:33 老板令三道闸之三：检查不过包不出）
 # 口径：接令开工闸管早发现（高概率），出包硬闸管拦截（百分百）。
-# 五项硬清单（参照小雪 TaoOps 线 pack-gate.sh 五项口径，TaoDBM 线落地）：
+# 五项硬清单（参照小雪 TaoOps 线 pack-gate.sh 五项口径，TaoDBM 线落地；后补 6 视觉比对、7 网页版手册随包）：
 #   1) 总线当日已拉（taobus FETCH_HEAD 当日校验）
 #   2) 五张对账表在位且 grep 无挂账标记（v3.22：随包 SHA-256 归档、验收必核账齐全且全 100%）
 #   3) 全测绿回执提交号与 HEAD 一致
@@ -96,6 +96,17 @@ else
   else
     echo "[PACK-GATE 6] 视觉比对记录未全过或缺满分结论：$LATEST_VIS——缺一分打回重做"; fail=1
   fi
+fi
+
+# ── 7) 网页版手册随包且最新（拍板 2026-11-28：手册随包承诺兑现——出包前按 ManualContent.cs 重生成核对，随包进安装目录）──
+if command -v python3 >/dev/null 2>&1; then
+  if python3 Scripts/gen_manual_html.py >/dev/null 2>&1 && git diff --quiet -- Docs/UserManual.html; then
+    echo "[PACK-GATE 7] 网页版手册与程序内手册同源且最新（Docs/UserManual.html，随包进安装目录）"
+  else
+    echo "[PACK-GATE 7] 网页版手册过期或生成失败：已按 ManualContent.cs 重新生成 Docs/UserManual.html，随本次提交入库后再出包"; fail=1
+  fi
+else
+  echo "[PACK-GATE 7] python3 不可用，跳过手册重生成核对（人工确认 Docs/UserManual.html 与 ManualContent.cs 同源）"
 fi
 
 echo "==="

@@ -10,14 +10,14 @@ namespace TaoDBM.UI;
 /// 全程只读（COUNT 与校验和查询）；结论为不一致时给出抽样 SQL，打开到查询窗口由用户人工比对，不自动修复。</summary>
 public static class ReconcileDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
         List<string> dbs = new();
-        try { dbs = await prov.GetDatabases(); }
+        try { dbs = prov.GetDatabases().GetAwaiter().GetResult(); }
         catch { dbs = new List<string>(); }
         string defDb = CurrentDb(info);
 
@@ -117,14 +117,7 @@ public static class ReconcileDialog
         panel.Children.Add(sampleBtn);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "数据对账",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return panel;
     }
 
     private static string CurrentDb(NodeInfo info)

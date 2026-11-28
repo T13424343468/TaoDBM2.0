@@ -42,11 +42,14 @@ public static class ToastCenter
         }
     }
 
-    /// <summary>事件发布口：规则判定 → 权限核验 → 弹 Toast。任何异常只进日志，不影响业务流程。</summary>
+    /// <summary>事件发布口：先落应用内收件箱（2026-11-28 拍板：应用内为主，系统通知默认关），
+    /// 再按用户配置判定够不够格弹系统级 Toast。任何异常只进日志，不影响业务流程。</summary>
     public static void Publish(NotifyEvent evt)
     {
         try
         {
+            // 应用内收件箱：所有事件先落箱，打开程序即可见（不依赖系统通知开关）
+            InboxStore.Append(evt);
             Dispatcher.Options = NotifyPrefs.Load();
             var decision = Dispatcher.Evaluate(evt);
             AppLog.Write($"Toast: 事件 {evt.Kind}/{evt.Key} 判定 {decision.Reason}");

@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 每表超时跳过不阻断。引擎 SQL 走 Core/DbSearch 纯逻辑出口。</summary>
 public static class DbSearchDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var provider = info.Provider!;
         string db = info.Db;
@@ -28,14 +28,8 @@ public static class DbSearchDialog
         };
         var content = new StackPanel { Spacing = 10, MinWidth = 560,
             Children = { scope, kw, new Button { Content = "开始搜索", HorizontalAlignment = HorizontalAlignment.Left }, progress, status, results } };
-        var dlg = new ContentDialog
-        {
-            Title = $"在库中搜索 · {db}",
-            Content = content,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        dlg.Closed += (_, _) => cancelCts.Cancel();
+        // 弹窗改页签（2026-11-28 老板令）：内嵌页签承载；页签关闭（Unloaded）即取消在途搜索
+        content.Unloaded += (_, _) => cancelCts.Cancel();
 
         async void Run()
         {
@@ -68,7 +62,6 @@ public static class DbSearchDialog
                             {
                                 var tblInfo = new NodeInfo { Kind = NodeKind.Table, Profile = info.Profile, Provider = provider, Db = db, Name = h.Table };
                                 owner.OpenTableTab(tblInfo);
-                                dlg.Hide();
                             };
                             results.Items.Add(li);
                         }
@@ -88,6 +81,6 @@ public static class DbSearchDialog
         }
 
         ((Button)content.Children[1]).Click += (_, _) => Run();
-        await dlg.ShowThemedAsync();
+        return content;
     }
 }

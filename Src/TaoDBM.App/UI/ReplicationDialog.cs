@@ -10,14 +10,20 @@ namespace TaoDBM.UI;
 /// 拓扑变更与恢复操作统一写本地操作历史；管理操作使用当前连接账号自身权限，无权限时报错提示而非隐藏。</summary>
 public static class ReplicationDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (!ReplicationCatalog.Supported(profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("主从管理面", ReplicationCatalog.UnsupportedReason(profile.Engine));
-            return;
+            return new TextBlock
+            {
+                Text = $"主从管理面：{ReplicationCatalog.UnsupportedReason(profile.Engine)}",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         var roleText = new TextBlock { FontSize = AntTokens.FontBody, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
@@ -53,10 +59,10 @@ public static class ReplicationDialog
             if (profile.Engine == DbEngine.MySQL)
             {
                 var deploy = new MenuFlyoutItem { Text = "建复制账号 / 配置从库（向导）" };
-                deploy.Click += (_, _) => _ = DeploymentWizardDialog.Show(owner, info);
+                deploy.Click += (_, _) => owner.OpenPanelTab($"复制向导 · {info.Name}", () => DeploymentWizardDialog.BuildPanel(owner, info));
                 menu.Items.Add(deploy);
                 var seed = new MenuFlyoutItem { Text = "备份播种" };
-                seed.Click += (_, _) => _ = BackupDialog.Show(owner, info);
+                seed.Click += (_, _) => owner.OpenPanelTab($"备份 / 恢复 · {info.Name}", () => BackupDialog.BuildPanel(owner, info));   // 页签化改造：播种走备份面板页签
                 menu.Items.Add(seed);
             }
             return menu;
@@ -321,15 +327,7 @@ public static class ReplicationDialog
         panel.Children.Add(opRow);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "主从 / 分布式管理面",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        var loadTask = RefreshAsync();
-        _ = dlg.ShowThemedAsync();
-        await loadTask;
+        _ = Safe.RunAsync(RefreshAsync, "主从管理面加载拓扑");
+        return panel;
     }
 }

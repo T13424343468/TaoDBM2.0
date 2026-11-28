@@ -12,7 +12,7 @@ public static class AlertCenterDialog
     private static string RulesFile => TaoPaths.FilePath("alert-rules.json");
     private static string EventsFile => TaoPaths.FilePath("alert-events.jsonl");
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         string db = info.Db.Length > 0 ? info.Db : info.Profile.Database;
@@ -58,16 +58,92 @@ public static class AlertCenterDialog
                 historyPanel.Children.Add(new TextBlock { Text = "暂无触发记录。", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
                 return;
             }
-            foreach (var e in Enumerable.Reverse(events.TakeLast(20).ToList()))
+            // 503 原型：触发记录为表格——级别（色点）/ 告警内容 / 触发时间 / 来源 / 状态（2026-11-28 拍板补两列）
+            var grid = new Grid { ColumnSpacing = 12 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            string[] headers = { "级别", "告警内容", "触发时间", "来源", "状态" };
+            for (int c = 0; c < 5; c++)
             {
-                historyPanel.Children.Add(new TextBlock
+                var head = new TextBlock
                 {
-                    Text = $"{e.FiredAtUtc[..19].Replace('T', ' ')} · [{(e.Severity == "error" ? "红色" : "提醒")}] {e.RuleName}：{e.Message}",
+                    Text = headers[c],
                     FontSize = AntTokens.FontMinor,
-                    Foreground = e.Severity == "error" ? Ant.Error : Ant.Text,
-                    TextWrapping = TextWrapping.Wrap,
-                });
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = Ant.TextSub,
+                };
+                head.SetValue(Grid.ColumnProperty, c);
+                grid.Children.Add(head);
             }
+            var rows = Enumerable.Reverse(events.TakeLast(20).ToList()).ToList();
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var e = rows[r];
+                grid.RowDefinitions.Add(new RowDefinition());
+                var dotWrap = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+                dotWrap.Children.Add(new Microsoft.UI.Xaml.Shapes.Ellipse
+                {
+                    Width = 8,
+                    Height = 8,
+                    Fill = e.Severity == "error" ? Ant.Error : Ant.Warn,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                dotWrap.Children.Add(new TextBlock { Text = e.Severity == "error" ? "错误" : "提醒", FontSize = AntTokens.FontMinor });
+                var content = new TextBlock
+                {
+                    Text = $"{e.RuleName}：{e.Message}",
+                    FontSize = AntTokens.FontMinor,
+                    TextWrapping = TextWrapping.Wrap,
+                };
+                var time = new TextBlock
+                {
+                    Text = e.FiredAtUtc[..19].Replace('T', ' '),
+                    FontSize = AntTokens.FontMinor,
+                    FontFamily = new FontFamily("Consolas"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                var source = new TextBlock
+                {
+                    Text = string.IsNullOrEmpty(e.Source) ? "系统" : e.Source,
+                    FontSize = AntTokens.FontMinor,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                // 状态列：未处理可点确认/关闭，已确认可关闭；点击即落盘（拍板口径：状态可流转）
+                var statusCell = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+                statusCell.Children.Add(new TextBlock
+                {
+                    Text = e.NormalizedStatus,
+                    FontSize = AntTokens.FontMinor,
+                    Foreground = e.NormalizedStatus == "未处理" ? Ant.Warn : Ant.TextSub,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                if (e.NormalizedStatus != "已关闭")
+                {
+                    var next = e.NormalizedStatus == "未处理" ? "已确认" : "已关闭";
+                    var btn = new Button { Content = next, FontSize = AntTokens.FontCaption, Padding = new Thickness(8, 1, 8, 1), CornerRadius = AntTokens.CornerRadius(AntTokens.RadiusMd) };
+                    btn.Click += (_, _) =>
+                    {
+                        var updated = e with { Status = next };
+                        var all = AlertEngine.LoadEvents(EventsFile);
+                        int idx = all.FindIndex(x => x.FiredAtUtc == e.FiredAtUtc && x.RuleName == e.RuleName);
+                        if (idx >= 0) { all[idx] = updated; AlertEngine.SaveEvents(EventsFile, all); AppLog.Write($"[告警中心] 状态流转 {e.RuleName} → {next}"); }
+                        RefreshHistory();
+                    };
+                    statusCell.Children.Add(btn);
+                }
+                var cells = new Microsoft.UI.Xaml.UIElement[] { dotWrap, content, time, source, statusCell };
+                for (int c = 0; c < 5; c++)
+                {
+                    var cell = new Border { Padding = new Thickness(0, 4, 0, 4), Child = cells[c] };
+                    Grid.SetColumn(cell, c);
+                    Grid.SetRow(cell, r + 1);
+                    grid.Children.Add(cell);
+                }
+            }
+            historyPanel.Children.Add(grid);
         }
 
         templateBox.SelectionChanged += (_, _) =>
@@ -101,8 +177,13 @@ public static class AlertCenterDialog
                 foreach (var e in fired)
                 {
                     AlertEngine.AppendEvent(EventsFile, e);
-                    // P-4：应用内为主；系统通知走通知中心开关（HealthCheck 通道）
-                    ToastCenter.Publish(new NotifyEvent(NotifyKind.HealthCheck, e.RuleName, $"告警：{e.RuleName}", e.Message, DateTime.Now));
+                    // 2026-11-28 拍板：动作真正分流——inapp 走应用内收件箱（NotifyKind.HealthCheck），
+                    // system 走系统通知通道（ToastCenter 内部按 NotifyPrefs 判定，默认关）
+                    var evt = new NotifyEvent(NotifyKind.HealthCheck, e.RuleName, $"告警：{e.RuleName}", e.Message, DateTime.Now);
+                    if (rules.FirstOrDefault(x => x.Name == e.RuleName)?.Action == "system")
+                        ToastCenter.Publish(evt);   // system：收件箱＋系统通知（够格才弹）
+                    else
+                        InboxStore.Append(evt);     // inapp：只进应用内收件箱
                 }
                 AlertEngine.SaveRules(RulesFile, rules);
                 RefreshRules();
@@ -132,14 +213,7 @@ public static class AlertCenterDialog
         panel.Children.Add(new TextBlock { Text = "触发记录（可回溯）", FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub });
         panel.Children.Add(new ScrollViewer { Content = historyPanel, MaxHeight = 200, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
 
-        var dlg = new ContentDialog
-        {
-            Title = "告警中心 — 阈值/事件告警，应用内提醒",
-            Content = new ScrollViewer { Content = panel, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return new ScrollViewer { Content = panel, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 
     /// <summary>指标采集：只采各引擎真支持的项，采不到的项如实跳过（不猜数、不凑数）。</summary>

@@ -16,21 +16,26 @@ public static class DeploymentWizardDialog
 {
     private static readonly string[] StepNames = { "复制账号", "配置从库", "备份播种", "探活", "上线" };
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var primary = info.Provider ?? ProviderFactory.Create(info.Profile);
         if (primary.Profile.Engine != DbEngine.MySQL)
         {
-            await new MessageDialogHelper(owner).Show("部署向导", "分布式部署向导当前支持 MySQL 主从（P-2 口径：能翻的翻、翻不了的报）。" +
-                "其他引擎的复制拓扑请用「主从管理面」查看。");
-            return;
+            return new TextBlock
+            {
+                Text = "部署向导：分布式部署向导当前支持 MySQL 主从（P-2 口径：能翻的翻、翻不了的报）。" +
+                    "其他引擎的复制拓扑请用「主从管理面」查看。",
+                FontSize = AntTokens.FontMinor,
+                Foreground = Ant.TextSub,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(16),
+            };
         }
 
         bool[] done = new bool[5];
         var stepBar = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
         var body = new StackPanel { Spacing = 10, MinWidth = 620 };
-        ContentDialog? dlg = null;
 
         void UpdateStepBar()
         {
@@ -233,14 +238,7 @@ public static class DeploymentWizardDialog
 
         UpdateStepBar();
         ShowStep(0);
-        dlg = new ContentDialog
-        {
-            Title = "部署向导 — 账号 → 从库 → 播种 → 探活 → 上线",
-            Content = new ScrollViewer { Content = body, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return new ScrollViewer { Content = body, MaxHeight = 620, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 
     private static async Task<(int Code, string Output)> RunTool(ToolSpec spec)

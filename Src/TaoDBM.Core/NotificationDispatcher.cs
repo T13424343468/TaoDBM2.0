@@ -28,7 +28,8 @@ public sealed record NotifyEvent(NotifyKind Kind, string Key, string Title, stri
 /// </summary>
 public sealed record NotifyOptions
 {
-    public bool Enabled { get; init; } = true;
+    /// <summary>系统级通知总开关。2026-11-28 拍板：默认改关——应用内为主，系统通知需用户显式打开。</summary>
+    public bool Enabled { get; init; } = false;
     public bool DndEnabled { get; init; }
     public TimeOnly DndStart { get; init; } = new(23, 0);
     public TimeOnly DndEnd { get; init; } = new(7, 0);

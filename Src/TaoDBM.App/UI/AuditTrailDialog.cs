@@ -21,7 +21,7 @@ public static class AuditTrailDialog
         System.IO.File.AppendAllText(File, System.Text.Json.JsonSerializer.Serialize(entry, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)) + "\n");
     }
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var listPanel = new StackPanel { Spacing = 6 };
@@ -69,18 +69,11 @@ public static class AuditTrailDialog
             status.Text = $"共 {entries.Count} 条留痕账。";
         }
 
-        await Refresh();
+        _ = Safe.RunAsync(Refresh, "留痕审计加载");
         var panel = new StackPanel { Spacing = 10, MinWidth = 560 };
         panel.Children.Add(new ScrollViewer { Content = listPanel, MaxHeight = 420, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
-        var dlg = new ContentDialog
-        {
-            Title = "留痕审计 — 每笔改动可查、可回滚",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return panel;
     }
 
     private static void ShowDiff(MainWindow owner, AuditEntry e)

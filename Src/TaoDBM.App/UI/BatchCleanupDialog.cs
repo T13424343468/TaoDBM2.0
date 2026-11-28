@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 默认先执行少量批次验证。执行走 DraftOps 逐条勾选确认，不静默删数据。</summary>
 public static class BatchCleanupDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var db = CurrentDb(info);
@@ -119,15 +119,7 @@ public static class BatchCleanupDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 280, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "批量清理",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     private static string CurrentDb(NodeInfo info)

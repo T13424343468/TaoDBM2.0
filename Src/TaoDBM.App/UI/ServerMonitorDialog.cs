@@ -12,7 +12,7 @@ namespace TaoDBM.UI;
 /// 对话框关闭即停表，不后台空转（家法：不激活不空转）。</summary>
 public static class ServerMonitorDialog
 {
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var provider = info.Provider!;
         string db = info.Db;
@@ -33,17 +33,11 @@ public static class ServerMonitorDialog
         var sessions = new ListView { MaxHeight = 220 };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
 
-        var dlg = new ContentDialog
-        {
-            Title = $"服务器监控 · {info.Name}",
-            Content = new StackPanel { Spacing = 10, MinWidth = 620, Children = { metricsPanel, alertBar, curve, sessions, status } },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
+        var panel = new StackPanel { Spacing = 10, MinWidth = 620, Children = { metricsPanel, alertBar, curve, sessions, status } };
 
         var history = new Dictionary<string, List<double>>();   // 指标 → 采样序列（曲线用）
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        dlg.Closed += (_, _) => timer.Stop();
+        panel.Unloaded += (_, _) => timer.Stop();   // 弹窗改页签：页签关闭即停采样（原 dlg.Closed 口径）
 
         async Task Sample()
         {
@@ -142,8 +136,10 @@ public static class ServerMonitorDialog
             }
         }
 
-        dlg.Opened += (_, _) => { timer.Tick += async (_, _) => await Sample(); timer.Start(); _ = Sample(); };
-        _ = dlg.ShowThemedAsync();
+        timer.Tick += async (_, _) => await Sample();
+        timer.Start();
+        _ = Sample();
+        return panel;
     }
 
     /// <summary>发现310原型：指标卡——数值大字、标签小字，右上角趋势箭头（升红/降绿/平灰）。</summary>

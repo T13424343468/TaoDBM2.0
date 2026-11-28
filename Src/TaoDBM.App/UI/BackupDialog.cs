@@ -14,25 +14,28 @@ public static class BackupDialog
     private static readonly string[] StepNames = { "选库/表", "备份点", "目标", "执行确认" };
 
     /// <summary>info 须为连接节点（携带 Profile 与 Provider）。</summary>
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
         if (!BackupTools.Supported(profile.Engine))
         {
-            await new MessageDialogHelper(owner).Show("备份 / 恢复", BackupTools.UnsupportedReason(profile.Engine));
-            return;
+            // 页签化改造：不支持引擎不再弹窗，面板内直接给人话原因
+            return new TextBlock
+            {
+                Text = BackupTools.UnsupportedReason(profile.Engine),
+                FontSize = AntTokens.FontBody, Foreground = Ant.Warn, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0),
+            };
         }
 
         List<string> dbs = new();
-        try { dbs = await prov.GetDatabases(); }
+        try { dbs = prov.GetDatabases().GetAwaiter().GetResult(); }
         catch { dbs = new List<string> { profile.Database }; }
 
         bool[] done = new bool[4];
         var stepBar = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap, Foreground = Ant.TextSub };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, TextWrapping = TextWrapping.Wrap };
         var body = new StackPanel { Spacing = 10, MinWidth = 620 };
-        ContentDialog? dlg = null;
 
         // 发现301原型：头部面包屑——连接 · 数据库，一眼确认操作对象
         var crumb = new TextBlock
@@ -785,15 +788,7 @@ public static class BackupDialog
         RefreshConfirm();
         LoadScope();
         ShowStep(0);
-
-        dlg = new ContentDialog
-        {
-            Title = "备份 / 恢复向导",
-            Content = body,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return body;
     }
 
     /// <summary>格10：后台化执行外部工具——逐行泵输出做不确定进度，取消走进程树 Kill。</summary>

@@ -81,14 +81,15 @@ PYEOF
 
 # 1.10) App 层语法级扫描（#303 教训：CS8361 插值裸条件本地编不到 App 层只能云测首验——
 #      Roslyn 解析器不依赖 WinUI 引用，语法级错误本地即可拦截；语义级仍归云测首验）
+#      （2026-11-28 修正：dotnet 路径前置——语法扫描在 PATH 导出之前跑会误报「dotnet: command not found」）
+export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
+export PATH="$DOTNET_ROOT:$PATH"
+
 if ! dotnet run --project Tools/TaoDBM.SyntaxScan > /tmp/gate-syntax.log 2>&1; then
   echo "[GATE] App 层语法错误（见上）"; tail -10 /tmp/gate-syntax.log; fail=1
 else
   echo "[GATE] App 层语法扫描清零"
 fi
-
-export DOTNET_ROOT="${DOTNET_ROOT:-/root/workspace/.local/dotnet}"
-export PATH="$DOTNET_ROOT:$PATH"
 
 # 2) 严格口径双档零警告（今天 CS8765 漏网即此前只验单档的教训：Debug/Release 都要跑）
 for cfg in Debug Release; do

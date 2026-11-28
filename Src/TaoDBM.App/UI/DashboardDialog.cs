@@ -33,7 +33,7 @@ public static class DashboardDialog
         catch { /* 布局落盘失败不闪退，下次打开回落默认顺序 */ }
     }
 
-    public static void Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var provider = info.Provider;
         var grid = new Grid { MinWidth = 680 };
@@ -53,17 +53,9 @@ public static class DashboardDialog
             Height = 560,
         });
 
-        var dlg = new ContentDialog
-        {
-            Title = "仪表板（钉住卡片组合）",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-
         // 打开即刷新：所有卡片按钉住清单重跑一遍（走流式底座，禁整表物化）
-        dlg.Opened += async (_, _) => await RefreshAllAsync(provider, grid, status);
-        _ = dlg.ShowThemedAsync();
+        _ = RefreshAllAsync(provider, grid, status);
+        return panel;
     }
 
     /// <summary>按布局顺序（新钉的排后面）重建两列网格，并逐卡刷新。

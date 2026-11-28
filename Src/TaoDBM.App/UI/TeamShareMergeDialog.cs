@@ -12,7 +12,7 @@ public static class TeamShareMergeDialog
     private static ShareMergeResult? _result;
     private static List<string> _droppedAll = new();
 
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         _result = null;
         _droppedAll = new List<string>();
@@ -89,15 +89,7 @@ public static class TeamShareMergeDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 240, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "团队合并",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     private static void AddLine(StackPanel p, string text, Brush? brush = null, int indent = 0)

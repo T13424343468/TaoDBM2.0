@@ -11,7 +11,7 @@ namespace TaoDBM.UI;
 /// 纯只读计算，不执行任何备份或删除操作；清理清单仅为预览参考，实际执行由任务中心触发。</summary>
 public static class BackupPlanDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var fullBox = new TextBox { PlaceholderText = "全量间隔（小时）", Text = "168", MinWidth = 110 };
@@ -148,15 +148,7 @@ public static class BackupPlanDialog
         panel.Children.Add(new ScrollViewer { Content = schedList, MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(BuildHistoryTable(info.Db.Length > 0 ? info.Db : info.Profile.Database));   // 发现302原型：历史执行表
         panel.Children.Add(status);
-
-        var dlg = new ContentDialog
-        {
-            Title = "备份计划",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return panel;
     }
 
     /// <summary>发现153：已挂备份计划列表（Kind=backup），带停用 / 启用 / 删除，操作落 AppLog。

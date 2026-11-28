@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 供再均衡、拆分或加盐前定位问题分片。纯计算，不触库。</summary>
 public static class HotspotDetectorDialog
 {
-    public static Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -28,6 +28,8 @@ public static class HotspotDetectorDialog
         analyzeBtn.Click += async (_, _) => await RunAnalyzeAsync(loadsBox.Text, report, status);
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 620 };
+        // 410 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "热点检测", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock
         {
             Text = "每行一个分片：名称,负载（行数或请求数，口径统一即可）。热点 = 负载不低于均值 3 倍，冷清 = 不足均值一半。",
@@ -45,15 +47,7 @@ public static class HotspotDetectorDialog
         });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "热点倾斜检测",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        return Task.CompletedTask;
+        return panel;
     }
 
     private static async Task RunAnalyzeAsync(string text, StackPanel report, TextBlock status)

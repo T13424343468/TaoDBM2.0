@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 预演某行数据的落点。纯计算，不触库，不产生任何写操作。</summary>
 public static class ShardKeyEvaluatorDialog
 {
-    public static Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -85,15 +85,7 @@ public static class ShardKeyEvaluatorDialog
         });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "分片键评估",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        return Task.CompletedTask;
+        return panel;
     }
 
     /// <summary>三-11：真实表采样——读真实列结构，对每列跑只读 COUNT/COUNT DISTINCT 生成画像行回填候选框。</summary>

@@ -12,7 +12,7 @@ public static class DesignAssistDialog
 {
     /// <summary>格15：带上下文进入——table 非空预填表单表名并自动生成；last 非空把结果快照序列化预填图表输入；
     /// 无上下文入口行为不变。预填在状态行标注「已带入上下文」。</summary>
-    public static void Show(MainWindow owner, NodeInfo info, string? table = null, QueryResult? last = null)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info, string? table = null, QueryResult? last = null)
     {
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var report = new StackPanel { Spacing = 10 };
@@ -72,6 +72,8 @@ public static class DesignAssistDialog
         lineageRow.Children.Add(lineageImpactBtn);
 
         var panel = new StackPanel { Spacing = 10, MinWidth = 680 };
+        // 404 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "设计助手", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock
         {
             Text = "设计辅助：图表只对粘贴结果聚合；表单可提交写入（预览确认后落库并留痕）；血缘只对粘贴语料建图。",
@@ -109,14 +111,7 @@ public static class DesignAssistDialog
                 TextWrapping = TextWrapping.Wrap,
             });
 
-        var dlg = new ContentDialog
-        {
-            Title = "设计辅助（图表规范 / 表单构建 / 血缘图）",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
+        return panel;
     }
 
     /// <summary>格15：结果快照序列化为图表输入格式（列名行＋数据行，分号分隔，截断前 100 行）。</summary>

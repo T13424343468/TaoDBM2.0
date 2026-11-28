@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 不执行脚本。结论档位（可上线/需复核/不建议）按引擎评分给出。</summary>
 public static class SqlReleaseCheckDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var input = new TextBox
@@ -55,6 +55,8 @@ public static class SqlReleaseCheckDialog
         };
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 680 };
+        // 507 原型：面板标题行
+        panel.Children.Add(new TextBlock { Text = "SQL 上线检查", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = AntTokens.FontBody });
         panel.Children.Add(new TextBlock
         {
             Text = "只读审查：按评分给结论（可上线 / 需复核 / 不建议），逐条列出发现项，不执行任何语句。",
@@ -65,15 +67,7 @@ public static class SqlReleaseCheckDialog
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "上线审查",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     private static void AddLine(StackPanel p, string text, Brush? brush = null, int indent = 0)

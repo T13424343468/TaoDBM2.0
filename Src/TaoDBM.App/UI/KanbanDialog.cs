@@ -19,31 +19,22 @@ public static class KanbanDialog
     static readonly HashSet<string> InFlight = new();
     static bool RefreshingDue;
 
-    public static void Show(MainWindow owner, IDbProvider? provider)
+    public static FrameworkElement BuildPanel(MainWindow owner, IDbProvider? provider)
     {
         var pinsHost = new StackPanel { Spacing = 10, MinWidth = 640 };
         var status = new TextBlock { FontSize = AntTokens.FontMinor, Foreground = Ant.TextSub, TextWrapping = TextWrapping.Wrap };
         var cardData = new Dictionary<string, StackPanel>();   // PinId → 卡片数据宿主，刷新后清空重建子树（格19）
         var lastValues = new Dictionary<string, string>();     // PinId → 上次数值（趋势箭头对比用）
-        var dlg = new ContentDialog
-        {
-            Title = "看板（钉住与定时刷新）",
-            Content = new ScrollViewer { Content = pinsHost, MaxHeight = 520 },
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
 
-        // 对话框打开期间才挂刷新表：关窗即停，不后台空转（家法：不激活不空转）
+        // 弹窗改页签（2026-11-28 老板令）：页签打开期间才挂刷新表，页签关闭（Unloaded）即停，不后台空转（家法：不激活不空转）
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        dlg.Closed += (_, _) => timer.Stop();
-        dlg.Opened += (_, _) =>
-        {
-            timer.Tick += async (_, _) => await RefreshDueAsync(provider, status, cardData, lastValues);
-            timer.Start();
-        };
+        timer.Tick += async (_, _) => await RefreshDueAsync(provider, status, cardData, lastValues);
+        var host = new ScrollViewer { Content = pinsHost, MaxHeight = 520 };
+        host.Unloaded += (_, _) => timer.Stop();
+        timer.Start();
 
         Rebuild(pinsHost, provider, status, cardData, lastValues);
-        _ = dlg.ShowThemedAsync();
+        return host;
     }
 
     static void Rebuild(StackPanel pinsHost, IDbProvider? provider, TextBlock status, Dictionary<string, StackPanel> cardData, Dictionary<string, string> lastValues)

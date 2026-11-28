@@ -10,7 +10,7 @@ namespace TaoDBM.UI;
 /// 只读预览，不修改库中数据；正式导出走同一套 MaskCell/MaskRow 规则。</summary>
 public static class MaskPreviewDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var profile = info.Profile;
         var prov = info.Provider ?? ProviderFactory.Create(profile);
@@ -60,14 +60,7 @@ public static class MaskPreviewDialog
         panel.Children.Add(output);
         panel.Children.Add(status);
 
-        var dlg = new ContentDialog
-        {
-            Title = "数据脱敏",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        await dlg.ShowThemedAsync();
+        return panel;
     }
 
     private static string CurrentDb(NodeInfo info)

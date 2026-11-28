@@ -9,7 +9,7 @@ namespace TaoDBM.UI;
 /// 附行数预估 SQL。本对话框只做检查与预览，不代执行任何语句。</summary>
 public static class RiskySqlGuardDialog
 {
-    public static async Task Show(MainWindow owner, NodeInfo info)
+    public static FrameworkElement BuildPanel(MainWindow owner, NodeInfo info)
     {
         var prov = info.Provider ?? ProviderFactory.Create(info.Profile);
         var input = new TextBox
@@ -68,16 +68,7 @@ public static class RiskySqlGuardDialog
         panel.Children.Add(checkBtn);
         panel.Children.Add(new ScrollViewer { Content = report, MaxHeight = 320, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         panel.Children.Add(status);
-
-        var dlg = new ContentDialog
-        {
-            Title = "高危 SQL 拦截",
-            Content = panel,
-            CloseButtonText = "关闭",
-            XamlRoot = owner.Content.XamlRoot,
-        };
-        _ = dlg.ShowThemedAsync();
-        await Task.CompletedTask;
+        return panel;
     }
 
     private static string WorstLabel(string level) => level switch
