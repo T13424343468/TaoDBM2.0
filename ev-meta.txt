@@ -11,3 +11,4 @@ tag=S06A winsize 1920x1080 time=2026-11-28T15:25:32.3430512+00:00 appMem=158 MB
 tag=step-start S07 time=2026-11-28T15:25:33.6520850+00:00 appMem=158 MB
 tag=expand-ok ui-auto-sqlite time=2026-11-28T15:25:34.9875976+00:00 appMem=160 MB
 tag=step-start S08 time=2026-11-28T15:25:42.3498004+00:00 appMem=166 MB
+tag=kb-tree-items Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | 表 | 查询 | 备份 | 任务中心 | ER 图 | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | 新建查询 | 备份 | 任务中心 | 筛选连接（名称 / 主机） | ui-auto-sqlite（SQLite） time=2026-11-28T15:25:45.3606764+00:00 appMem=165 MB
