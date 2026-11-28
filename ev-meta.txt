@@ -31,3 +31,4 @@ tag=S16 result-shot time=2026-11-28T15:29:49.3037003+00:00 appMem=218 MB
 tag=S16 ledger-hit time=2026-11-28T15:29:51.0054816+00:00 appMem=218 MB
 tag=step-start S54 time=2026-11-28T15:29:52.5831464+00:00 appMem=216 MB
 tag=menu-find-start time=2026-11-28T15:29:54.1269655+00:00 appMem=214 MB
+tag=menu-button-found time=2026-11-28T15:29:55.6765056+00:00 appMem=214 MB
