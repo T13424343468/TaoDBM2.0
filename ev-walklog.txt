@@ -127,3 +127,4 @@ step S66c P1-02 未保存保护-点取消 => fail : target not found
 shot ev-shot-fail-S66c.png 78192 bytes
 coverage-func S66c P1-02 未保存保护-点取消 => fail
 coverage-func S66d P1-02 未保存保护-取消页签保留 => pass
+coverage-func S66e P1-02 未保存保护-再点关闭 => pass
