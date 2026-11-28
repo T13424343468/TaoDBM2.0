@@ -38,3 +38,23 @@
 2026-11-28 15:31:54.805 [执行账] sql=SELECT 1 AS p1ok;  | title=SELECT 1 AS p1ok rows=1 cols=p1ok row0=1
 2026-11-28 15:32:20.426 [Flyout] opening
 2026-11-28 15:32:23.078 [引导提示] 请选中一个表 / 集合 / 键后查看数据。
+2026-11-28 15:35:31.593 [Flyout] opening
+2026-11-28 15:35:31.669 [操作栏] click key=query kind=Connection name=ui-auto-mysql
+2026-11-28 15:35:31.670 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:35:31.675 [新建查询] worktab built db=taodbmui
+2026-11-28 15:35:31.680 [新建查询] tab selected
+2026-11-28 15:35:31.703 [库下拉] 已加载 5 个库
+2026-11-28 15:35:36.622 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:35:36.626 [新建查询] worktab built db=taodbmui
+2026-11-28 15:35:36.629 [新建查询] tab selected
+2026-11-28 15:35:36.636 [库下拉] 已加载 5 个库
+2026-11-28 15:35:43.859 [Flyout] opening
+2026-11-28 15:35:43.937 [操作栏] click key=query kind=Connection name=ui-auto-mysql
+2026-11-28 15:35:43.937 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:35:43.941 [新建查询] worktab built db=taodbmui
+2026-11-28 15:35:43.944 [新建查询] tab selected
+2026-11-28 15:35:43.945 [库下拉] 已加载 5 个库
+2026-11-28 15:35:51.136 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:35:51.140 [新建查询] worktab built db=taodbmui
+2026-11-28 15:35:51.143 [新建查询] tab selected
+2026-11-28 15:35:51.152 [库下拉] 已加载 5 个库
