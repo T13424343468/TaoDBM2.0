@@ -217,3 +217,5 @@ shot sweep-U088.png 49661 bytes
 coverage-func U088 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
 shot sweep-U088a.png 59102 bytes
 coverage-func U088a 巡检-备份计划结果态 => pass
+shot sweep-U088b.png 62968 bytes
+coverage-func U088b 巡检-生成计划点击 => pass
