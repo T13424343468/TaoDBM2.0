@@ -95,3 +95,4 @@ shot ev-shot-fail-S63h.png 52807 bytes
 coverage-func S63h P1-01 错误横幅-横幅消失 => fail
 coverage-func S63z P1-01 引导降模态-选中连接节点 => pass
 coverage-func S64a P1-01 引导降模态-触发引导 => pass
+coverage-func S64b P1-01 引导降模态-非模态落账 => pass
