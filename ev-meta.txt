@@ -77,3 +77,4 @@ tag=S63a editor-dirty, fresh tab time=2026-11-28T15:32:00.6581812+00:00 appMem=1
 tag=S63a editor-set done time=2026-11-28T15:32:08.5376416+00:00 appMem=161 MB
 tag=step-start S63b time=2026-11-28T15:32:10.0723975+00:00 appMem=159 MB
 tag=S63b focus-guard fallback SetFocus time=2026-11-28T15:32:12.7970085+00:00 appMem=155 MB
+tag=S63b keys-arrival-retry time=2026-11-28T15:32:21.3689029+00:00 appMem=154 MB
