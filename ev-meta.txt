@@ -91,3 +91,4 @@ tag=step-start S63d time=2026-11-28T15:32:06.9137478+00:00 appMem=156 MB
 tag=S63d window-hit 执行失败 time=2026-11-28T15:32:08.3290033+00:00 appMem=157 MB
 tag=step-start S63e time=2026-11-28T15:32:09.7318709+00:00 appMem=157 MB
 tag=S63e same-tab clear time=2026-11-28T15:32:11.0148602+00:00 appMem=157 MB
+tag=S63e editor-set done time=2026-11-28T15:32:15.8456811+00:00 appMem=158 MB
