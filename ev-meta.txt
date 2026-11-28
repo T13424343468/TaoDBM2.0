@@ -160,3 +160,4 @@ tag=tour-ok 数据对账 tour-db-04.png time=2026-11-28T15:41:27.2030617+00:00 a
 tag=tour-ok 误删恢复 tour-db-05.png time=2026-11-28T15:41:41.7834301+00:00 appMem=190 MB
 tag=tour-ok 留痕审计 tour-db-06.png time=2026-11-28T15:41:56.3693767+00:00 appMem=195 MB
 tag=tour-ok 问库 tour-db-07.png time=2026-11-28T15:42:10.9164612+00:00 appMem=194 MB
+tag=tour-ok 快照包 tour-db-08.png time=2026-11-28T15:42:25.4401899+00:00 appMem=190 MB
