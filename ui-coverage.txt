@@ -1,0 +1,161 @@
+main-window named-interactive-elements: 30 (visible-list capped 200)
+ControlType.Pane | False | Non Client Input Sink Window
+ControlType.Pane | False | AppWindow Custom Title Bar
+ControlType.Button | False | Minimize
+ControlType.Button | False | Restore
+ControlType.Button | False | Close
+ControlType.Text | False | 表
+ControlType.Text | False | 查询
+ControlType.Text | False | 备份
+ControlType.Text | False | 任务中心
+ControlType.Text | False | ER 图
+ControlType.Button | False | ＋ 新建连接
+ControlType.Button | False | 主题
+ControlType.Button | False | 刷新
+ControlType.Button | False | 手册
+ControlType.Button | False | 关于
+ControlType.Text | False | 还没有连接：点「新建连接」开始。
+ControlType.Edit | False | 筛选连接（名称 / 主机）
+ControlType.TabItem | False | 开始
+ControlType.Text | False | 开始
+ControlType.Button | False | Add New Tab
+ControlType.Text | False | 欢迎使用 TaoDBM
+ControlType.Text | False | 新手引导：右上角「＋ 新建连接」建好连接后，左侧树展开库与表，双击表即可浏览数据；选中后点「新建查询」，写 SQL 按 F5 执行。
+ControlType.Button | False | 知道了
+ControlType.Text | False | 收藏连接
+ControlType.Text | False | 暂无收藏：在连接右键菜单里「星标」即可收藏到这里。
+ControlType.Text | False | 最近打开
+ControlType.Text | False | 暂无最近打开的页签。
+ControlType.Text | False | 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
+ControlType.Text | False | 共 0 个连接 · 0 个分组
+ControlType.Text | False | 0 连接 · 0 已连接
+feature-level coverage account:
+[S00A] 三档分辨率-1366x768 => pass
+[S01] 新建连接-打开对话框 => pass
+[S02] 连接-选择SQLite引擎 => pass
+[S03] 连接-填写名称 => pass
+[S04] 连接-填写数据库文件 => pass
+[S05] 连接-保存 => pass
+[S06] 对象树-连接节点出现 => pass
+[S06A] 三档分辨率-回1920x1080 => pass
+[S07] 对象树-展开连接 => pass
+[S08] 对象树-展开数据库 => pass
+[S09] 对象树-真实表清单 => pass
+[S10] 查询-选中连接 => skip
+[S11] 查询-新建查询入口 => skip
+[S12] SQL真实执行-计数 => skip
+[S13] SQL真实执行-聚合 => skip
+[S14] SQL真实执行-空值过滤 => skip
+[S15] SQL真实执行-取值比对 => skip
+[S16] SQL真实执行-脏数据行 => skip
+[S17] 导出CSV => skip
+[S18] 主题入口可达（切换摘除） => pass
+[S19] 关于页 => pass
+[S20] P0-01 停止按钮-执行中点停 => skip
+[S21] P0-03 前置-重查小结果集 => skip
+[S22] P0-03 网格-列头点击循环排序 => skip
+[S23] P0-03 排序实效断言 => skip
+[S24] P0-03 网格-右键复制该行 => skip
+[S25] P0-03 复制实效断言 => skip
+[S26] P0-03 复制落账断言 => skip
+[S27] P0-04 网格-钉住到看板 => skip
+[S28] P0-04 钉住菜单项 => skip
+[S29] P0-04 钉住确认 => skip
+[S30] P0-04 钉住落账断言 => skip
+[S31] P0-04 看板-打开管理 => skip
+[S32] P0-04 看板-立即刷新 => skip
+[S33] P0-04 刷新实效断言 => skip
+[S33b] P0-04 看板收场 => skip
+[S34] P0-05 智能工具-打开 => skip
+[S35] P0-05 回访-填标题 => skip
+[S36] P0-05 回访-填SQL => skip
+[S37] P0-05 回访-登记（异步不卡界面） => skip
+[S38] P0-05 登记实效断言 => skip
+[S39] P0-05 回访-并入任务中心 => skip
+[S40] P0-05 任务真执行终态断言 => skip
+[S40b] P0-05 智能工具收场 => skip
+[S41] P0-05 任务中心-打开 => skip
+[S42] P0-05 任务中心-填标题 => skip
+[S43] P0-05 任务中心-填SQL => skip
+[S44] P0-05 任务中心-提交真执行 => skip
+[S45] P0-05 任务真执行终态断言 => skip
+[S46] P0-05 任务中心收场 => skip
+[S47] P0-06 部署向导-打开 => skip
+[S48] P0-06 向导-下一步单步 => skip
+[S49] P0-06 单步导航断言（停在步骤2不跳步） => skip
+[S50] P0-06 向导-上一步单步 => skip
+[S51] P0-06 回退断言（停在步骤1） => skip
+[S52] P0-06 向导收场 => skip
+[S55] 批次一-编辑器填多语句 => skip
+[S56] 批次一-右键打开编辑器菜单 => skip
+[S56b] 批次一-美化SQL菜单项 => skip
+[S56c] 批次一-美化实效断言 => skip
+[S57] 批次一-F6执行当前语句 => skip
+[S57b] 批次一-执行账落账 => skip
+[S58] 批次一-右键注释切换 => skip
+[S58b] 批次一-注释切换菜单项 => skip
+[S58c] 批次一-注释切换实效断言 => skip
+[S59] 批次一-右键执行计划 => skip
+[S59b] 批次一-执行计划菜单项 => skip
+[S59c] 批次一-执行计划实效断言 => skip
+[S60] 批次一-右键代码段 => skip
+[S60b] 批次一-代码段菜单项 => skip
+[S60c] 批次一-代码段弹层断言 => skip
+[S60d] 批次一-代码段收场 => skip
+[S60e] 批次一-全选编辑器 => skip
+[S60f] 批次一-复制入堆栈 => skip
+[S61] 批次一-右键剪贴板堆栈 => skip
+[S61b] 批次一-堆栈菜单项 => skip
+[S61c] 批次一-堆栈弹层断言 => skip
+[S61d] 批次一-堆栈收场 => skip
+[S62] 批次一-Ctrl+F查找替换 => skip
+[S62b] 批次一-查找替换弹层断言 => skip
+[S62c] 批次一-查找替换收场 => skip
+[S63a] P1-01 错误横幅-执行必败SQL => skip
+[S63b] P1-01 错误横幅-F6执行 => skip
+[S63c] P1-01 错误横幅-横幅落账 => skip
+[S63d] P1-01 错误横幅-横幅可见 => skip
+[S63e] P1-01 错误横幅-改成功语句 => skip
+[S63f] P1-01 错误横幅-成功执行 => skip
+[S63g] P1-01 错误横幅-收起落账 => skip
+[S63h] P1-01 错误横幅-横幅消失 => skip
+[S63z] P1-01 引导降模态-选中连接节点 => skip
+[S64a] P1-01 引导降模态-触发引导 => skip
+[S64b] P1-01 引导降模态-非模态落账 => skip
+[S64c] P1-01 引导降模态-状态栏可见 => skip
+[S65a] P1-02 脏标记-编辑置脏 => skip
+[S65b] P1-02 脏标记-标题出现● => skip
+[S65c] P1-02 脏标记-Ctrl+S另存弹层 => skip
+[S65d] P1-02 脏标记-取消另存 => skip
+[S65e] P1-02 脏标记-取消后●保留 => skip
+[S66a] P1-02 未保存保护-点关闭 => skip
+[S66b] P1-02 未保存保护-确认框出现 => skip
+[S66c] P1-02 未保存保护-点取消 => skip
+[S66d] P1-02 未保存保护-取消页签保留 => skip
+[S66e] P1-02 未保存保护-再点关闭 => skip
+[S66f] P1-02 未保存保护-点不保存 => skip
+[S66g] P1-02 未保存保护-页签移除 => skip
+[S68] P1-格5 表设计器-改表模式打开 => skip
+[S69] P1-格5 改表弹窗断言 => skip
+[S70] P1-格5 索引外键区可见 => skip
+[S71] P1-格5 生成SQL => skip
+[S72] P1-格5 预览断言 => skip
+[S73] P1-格5 收场 => skip
+[S74] P1-格1 补全-编辑器铺底 => skip
+[S75] P1-格1 补全-Ctrl+Space触发 => skip
+[S76] P1-格1 补全-浮层落账 => skip
+[S77] P1-格1 补全-收场 => skip
+[S78] P1-格7 导出流式-真实导出 => skip
+[S79] P1-格10 备份-打开向导 => pass
+[S80] P1-格10 备份-弹窗断言 => fail
+[S81] P1-格10 备份-收场 => pass
+[S82] P1-格11 同步-打开 => pass
+[S83] P1-格11 同步-追加模式断言 => fail
+[S84] P1-格11 同步-收场 => pass
+[S85] P1-格14 ERD-打开 => pass
+[S85b] P1-格14 ERD-弹窗断言 => pass
+[S85c] P1-格14 ERD-收场 => pass
+[S86] P1-格16 权限-打开审计 => fail
+[S86b] P1-格16 权限-弹窗断言 => fail
+[S86c] P1-格16 权限-收场 => pass
+[S99A] 三档分辨率-2560x1440 => pass
