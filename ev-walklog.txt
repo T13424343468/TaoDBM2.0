@@ -113,3 +113,4 @@ shot ev-shot-fail-S66a.png 78028 bytes
 coverage-func S66a P1-02 未保存保护-点关闭 => fail
 step S66b P1-02 未保存保护-确认框出现 => fail : window text missing: 未保存的更改 got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S66b.png 78028 bytes
+coverage-func S66b P1-02 未保存保护-确认框出现 => fail
