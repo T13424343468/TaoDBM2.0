@@ -65,3 +65,4 @@ tag=step-start S61d time=2026-11-28T15:30:52.5708000+00:00 appMem=161 MB
 tag=step-start S62 time=2026-11-28T15:31:02.1311965+00:00 appMem=158 MB
 tag=S62 focus-guard fallback SetFocus time=2026-11-28T15:31:04.8652864+00:00 appMem=157 MB
 tag=S62 keys-sent ^f time=2026-11-28T15:31:07.4407759+00:00 appMem=158 MB
+tag=step-start S62b time=2026-11-28T15:31:09.0926867+00:00 appMem=154 MB
