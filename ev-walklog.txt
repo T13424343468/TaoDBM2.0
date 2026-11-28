@@ -174,3 +174,5 @@ shot sweep-U050.png 50142 bytes
 coverage-func U050 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
 shot sweep-U058.png 49518 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
+shot sweep-U059.png 49518 bytes
+coverage-func U059 巡检-数据同步收场 => pass
