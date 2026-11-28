@@ -17,3 +17,5 @@ shot sweep-U005.png 61969 bytes
 coverage-func U005 巡检-连接对话框引擎切换MongoDB => pass
 shot sweep-U006.png 61777 bytes
 coverage-func U006 巡检-连接对话框引擎切换Redis => pass
+shot sweep-U007.png 46539 bytes
+coverage-func U007 巡检-连接对话框收场 => pass
