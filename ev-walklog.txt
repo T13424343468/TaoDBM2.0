@@ -88,3 +88,4 @@ coverage-func S62b 批次一-查找替换弹层断言 => pass
 coverage-func S62c 批次一-查找替换收场 => pass
 coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
 S63b keys focus-guard: focus not on editor, mouse-click into editor
+S63b keys arrival missing, retry once with foreground+focus
