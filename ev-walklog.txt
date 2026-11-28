@@ -12,3 +12,4 @@ shot shot-06-conn-saved.png 46996 bytes
 coverage-func S05 连接-保存 => pass
 coverage-func S06 对象树-连接节点出现 => pass
 coverage-func S06A 三档分辨率-回1920x1080 => pass
+coverage-func S07 对象树-展开连接 => pass

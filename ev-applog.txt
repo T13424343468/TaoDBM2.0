@@ -6,3 +6,4 @@
 2026-11-28 15:24:41.831 [连接树] filter= shown=0 groups=0 hidden=0
 2026-11-28 15:24:42.282 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:25:19.658 [连接树] filter= shown=1 groups=0 hidden=0
+2026-11-28 15:25:35.024 [对象树] 连接展开 engine=SQLite dbs=1 [main]
