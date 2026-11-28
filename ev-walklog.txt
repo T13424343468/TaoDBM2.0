@@ -150,3 +150,4 @@ shot sweep-U046d.png 63229 bytes
 coverage-func U046d 巡检-结果网格右键收场 => pass
 shot tour-conn-01.png 47652 bytes
 shot tour-conn-02.png 46700 bytes
+shot tour-conn-03.png 48733 bytes
