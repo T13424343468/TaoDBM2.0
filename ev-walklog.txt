@@ -32,3 +32,24 @@ shot ev-shot-fail-S08.png 46572 bytes
 coverage-func S08 对象树-展开数据库 => fail
 step S09 对象树-真实表清单 => fail : tree text missing: orders
 shot ev-shot-fail-S09.png 46557 bytes
+coverage-func S09 对象树-真实表清单 => fail
+step S10 skipped (SkipIds)
+coverage-func S10 查询-选中连接 => skip
+step S11 skipped (SkipIds)
+coverage-func S11 查询-新建查询入口 => skip
+step S12 skipped (SkipIds)
+coverage-func S12 SQL真实执行-计数 => skip
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
