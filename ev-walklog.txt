@@ -79,3 +79,4 @@ coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
 S63b keys focus-guard: focus not on editor, mouse-click into editor
 S63b keys arrival missing, retry once with foreground+focus
 S63b keys still not arrived, fallback invoke work-run
+coverage-func S63b P1-01 错误横幅-F6执行 => pass
