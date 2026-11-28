@@ -33,3 +33,4 @@ tag=step-start S21 time=2026-11-28T15:28:17.1333997+00:00 appMem=159 MB
 tag=S21 editor-dirty, fresh tab time=2026-11-28T15:28:31.7496225+00:00 appMem=150 MB
 tag=S21 run-invoked time=2026-11-28T15:28:40.2951147+00:00 appMem=157 MB
 tag=S21 result-shot time=2026-11-28T15:28:44.7165636+00:00 appMem=152 MB
+tag=S21 ledger-hit time=2026-11-28T15:28:46.4120424+00:00 appMem=152 MB

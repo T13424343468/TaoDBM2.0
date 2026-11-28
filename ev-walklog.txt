@@ -49,3 +49,4 @@ step S20 P0-01 停止按钮-执行中点停 => fail : stop not effective: no sto
 shot ev-shot-fail-S20.png 51208 bytes
 coverage-func S20 P0-01 停止按钮-执行中点停 => fail
 shot ev-shot-result-S21.png 62495 bytes
+S21 ledger: 2026-11-28 15:28:40.290 [执行账] sql=SELECT id, name FROM products ORDER BY id LIMIT 8;  | title=SELECT id, name FROM products ORDER BY id LIMIT 8 rows=8 cols=id/name row0=1,prod-0001 row1=2,prod-0002 row2=3,prod-0003 row3=4,prod-0004 row4=5,prod-0005 row5=6,prod-0006 row6=7,prod-0007 row7=8,prod-0008
