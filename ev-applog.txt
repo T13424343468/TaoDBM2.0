@@ -34,3 +34,9 @@
 2026-11-28 15:30:27.981 [人话文案] 执行｜原始异常 MySqlException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
 2026-11-28 15:30:27.984 [错误横幅] 执行失败：没成功：SQL 语法没通过。建议检查语句拼写；可单独执行定位出错位置
 2026-11-28 15:30:27.984 [执行账] sql=EXPLAIN -- SELECT 1; SELECT 2 | title=EXPLAIN -- SELECT 1; SELECT 2 rows=0 cols=
+2026-11-28 15:32:02.182 [Flyout] opening
+2026-11-28 15:32:02.221 [操作栏] click key=query kind=Connection name=ui-auto-mysql
+2026-11-28 15:32:02.222 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:32:02.228 [新建查询] worktab built db=taodbmui
+2026-11-28 15:32:02.233 [新建查询] tab selected
+2026-11-28 15:32:02.234 [库下拉] 已加载 5 个库
