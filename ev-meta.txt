@@ -25,3 +25,4 @@ tag=treetxt Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize
 tag=applog-conn 2026-11-28 15:27:44.901 [连接树] filter= shown=0 groups=0 hidden=0 time=2026-11-28T15:32:07.9030236+00:00 appMem=57 MB
 tag=red S09 time=2026-11-28T15:32:10.8709586+00:00 appMem=55 MB
 tag=step-start S54 time=2026-11-28T15:32:12.5169352+00:00 appMem=54 MB
+tag=menu-find-start time=2026-11-28T15:32:13.9801880+00:00 appMem=54 MB
