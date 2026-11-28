@@ -149,3 +149,5 @@ shot ev-shot-fail-S80.png 77507 bytes
 coverage-func S80 P1-格10 备份-弹窗断言 => fail
 coverage-func S81 P1-格10 备份-收场 => pass
 coverage-func S82 P1-格11 同步-打开 => pass
+step S83 P1-格11 同步-追加模式断言 => fail : window text missing: 追加写入 got-tail=[需要至少两个关系型连接（MySQL / PostgreSQL / SQL Server / SQLite / Oracle）。请先在左侧新建连接。 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | Connected | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 1 已连接 | ]
+shot ev-shot-fail-S83.png 77263 bytes
