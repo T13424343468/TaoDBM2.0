@@ -171,3 +171,5 @@ coverage-func S85 P1-格14 ERD-打开 => pass
 coverage-func S85b P1-格14 ERD-弹窗断言 => pass
 coverage-func S85c P1-格14 ERD-收场 => pass
 ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
