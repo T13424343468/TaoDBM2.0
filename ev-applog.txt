@@ -7,3 +7,7 @@
 2026-11-28 15:24:56.243 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:25:29.967 [连接树] filter= shown=1 groups=0 hidden=0
 2026-11-28 15:25:38.582 [Flyout] opening
+2026-11-28 15:25:42.244 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
+2026-11-28 15:25:42.265 [新建查询] worktab built db=main
+2026-11-28 15:25:42.282 [新建查询] tab selected
+2026-11-28 15:25:42.287 [库下拉] 已加载 1 个库
