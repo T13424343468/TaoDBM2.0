@@ -17,3 +17,4 @@ tag=S12 result-shot time=2026-11-28T15:25:54.4076506+00:00 appMem=201 MB
 tag=S12 ledger-hit time=2026-11-28T15:25:55.9046182+00:00 appMem=201 MB
 tag=step-start S15 time=2026-11-28T15:25:57.2999311+00:00 appMem=201 MB
 tag=S15 editor-dirty, fresh tab time=2026-11-28T15:25:58.6737983+00:00 appMem=203 MB
+tag=S15 run-invoked time=2026-11-28T15:26:06.6542314+00:00 appMem=204 MB
