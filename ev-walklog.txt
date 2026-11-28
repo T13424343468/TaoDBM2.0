@@ -7,3 +7,4 @@ coverage-func S00A 三档分辨率-1366x768 => skip
 shot shot-05-newconn-dialog.png 61444 bytes
 coverage-func S01 新建连接-打开对话框 => pass
 coverage-func S02 连接-选择SQLite引擎 => pass
+coverage-func S03 连接-填写名称 => pass
