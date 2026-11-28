@@ -233,3 +233,5 @@ coverage-func U088g 巡检-对账目标表填入 => pass
 shot sweep-U088h.png 57084 bytes
 coverage-func U088h 巡检-开始对账点击 => pass
 shot ux-u088i-reconresult.png 57084 bytes
+shot sweep-U088i.png 57084 bytes
+coverage-func U088i 巡检-对账结果留证 => pass
