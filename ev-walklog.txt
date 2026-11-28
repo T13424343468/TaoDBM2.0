@@ -121,3 +121,4 @@ S57 keys still not arrived, fallback invoke work-run
 coverage-func S57 批次一-F6执行当前语句 => pass
 coverage-func S57b 批次一-执行账落账 => pass
 coverage-func S58 批次一-右键注释切换 => pass
+coverage-func S58b 批次一-注释切换菜单项 => pass
