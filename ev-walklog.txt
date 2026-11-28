@@ -184,3 +184,5 @@ shot sweep-U066.png 61019 bytes
 coverage-func U066 巡检-备份恢复向导 => pass
 shot sweep-U067.png 61019 bytes
 coverage-func U067 巡检-备份收场 => pass
+shot sweep-U078.png 60332 bytes
+coverage-func U078 巡检-在库中搜索 => pass
