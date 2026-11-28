@@ -233,3 +233,4 @@ step S73 skipped (SkipIds)
 coverage-func S73 P1-格5 收场 => skip
 coverage-func S74 P1-格1 补全-编辑器铺底 => pass
 S75 keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S75 P1-格1 补全-Ctrl+Space触发 => pass
