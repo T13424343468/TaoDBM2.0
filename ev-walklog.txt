@@ -145,3 +145,4 @@ shot ev-shot-fail-S70.png 78067 bytes
 coverage-func S70 P1-格5 索引外键区可见 => fail
 step S71 P1-格5 生成SQL => fail : target not found
 shot ev-shot-fail-S71.png 78067 bytes
+coverage-func S71 P1-格5 生成SQL => fail
