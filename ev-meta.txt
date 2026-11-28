@@ -34,3 +34,4 @@ tag=step-start S14 time=2026-11-28T15:29:51.5039032+00:00 appMem=195 MB
 tag=S14 editor-dirty, fresh tab time=2026-11-28T15:29:52.8955101+00:00 appMem=195 MB
 tag=S14 run-invoked time=2026-11-28T15:30:01.5584944+00:00 appMem=194 MB
 tag=S14 result-shot time=2026-11-28T15:30:06.2753383+00:00 appMem=194 MB
+tag=red S14 time=2026-11-28T15:30:09.0893029+00:00 appMem=194 MB

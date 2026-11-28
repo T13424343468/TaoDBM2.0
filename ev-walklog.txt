@@ -44,3 +44,6 @@ step S13 SQL真实执行-聚合 => fail : execution error: 2026-11-28 15:29:44.8
 shot ev-shot-fail-S13.png 48159 bytes
 coverage-func S13 SQL真实执行-聚合 => fail
 shot ev-shot-result-S14.png 48995 bytes
+S14 ledger: 2026-11-28 15:30:03.592 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+step S14 SQL真实执行-空值过滤 => fail : execution error: 2026-11-28 15:30:03.592 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+shot ev-shot-fail-S14.png 48995 bytes
