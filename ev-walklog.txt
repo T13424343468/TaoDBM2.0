@@ -191,3 +191,5 @@ shot sweep-U078a.png 60332 bytes
 coverage-func U078a 巡检-库中搜索对话框留证 => pass
 shot sweep-U079.png 60301 bytes
 coverage-func U079 巡检-库搜索收场 => pass
+shot sweep-U079a.png 53438 bytes
+coverage-func U079a 巡检-命令监控结果态 => pass
