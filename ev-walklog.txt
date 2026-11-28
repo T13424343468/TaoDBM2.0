@@ -140,3 +140,4 @@ shot ev-shot-fail-S48.png 51212 bytes
 coverage-func S48 P0-06 向导-下一步单步 => fail
 step S49 P0-06 单步导航断言（停在步骤2不跳步） => fail : window text missing: 步骤 2/5 got-tail=[al | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | c | 454 | 1 行 · 1 ms · 11-28 15:26:23 | 详情 | 对象 | ui-auto-sqlite | 引擎 | SQLite | 主机 | 127.0.0.1 | 端口 | 暂不可用 | 状态 | 未连接 | SQLite · main 执行完成 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S49.png 51212 bytes
+coverage-func S49 P0-06 单步导航断言（停在步骤2不跳步） => fail
