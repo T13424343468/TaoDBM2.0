@@ -23,3 +23,4 @@ shot ev-shot-fail-S05.png 46555 bytes
 coverage-func S05 连接-保存 => fail
 step S06 对象树-连接节点出现 => fail : tree text missing: ui-auto-mssql
 shot ev-shot-fail-S06.png 46572 bytes
+coverage-func S06 对象树-连接节点出现 => fail
