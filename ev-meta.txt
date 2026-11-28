@@ -23,3 +23,4 @@ tag=red S08 time=2026-11-28T15:30:51.3932470+00:00 appMem=111 MB
 tag=step-start S09 time=2026-11-28T15:30:52.8337436+00:00 appMem=110 MB
 tag=treetxt Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | 表 | 查询 | 备份 | 任务中心 | ER 图 | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | 还没有连接：点「新建连接」开始。 | 筛选连接（名称 / 主机） | 开始 | 开始 | Add New Tab | 欢迎使用 TaoDBM | 新手引导：右上角「＋ 新建连接」建好连接后，左侧树展开库与表，双击表即可浏览数据；选中后点「新建查询」，写 SQL 按 F5 执行。 | 知道了 | 收藏连接 | 暂无收藏：在连接右键菜单里「星标」即可收藏到这里。 | 最近打开 | 暂无最近打开的页签。 | 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL | 共 0 个连接 · 0 个分组 | 0 连接 · 0 已连接 |  time=2026-11-28T15:32:06.4158622+00:00 appMem=57 MB
 tag=applog-conn 2026-11-28 15:27:44.901 [连接树] filter= shown=0 groups=0 hidden=0 time=2026-11-28T15:32:07.9030236+00:00 appMem=57 MB
+tag=red S09 time=2026-11-28T15:32:10.8709586+00:00 appMem=55 MB
