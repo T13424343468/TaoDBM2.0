@@ -157,3 +157,4 @@ step S74 P1-格1 补全-编辑器铺底 => fail : editor set verify failed after
 shot ev-shot-fail-S74.png 78332 bytes
 coverage-func S74 P1-格1 补全-编辑器铺底 => fail
 S75 keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S75 P1-格1 补全-Ctrl+Space触发 => pass
