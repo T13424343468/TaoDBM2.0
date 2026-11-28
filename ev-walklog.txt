@@ -11,3 +11,29 @@ coverage-func S04b 连接-填写端口 => pass
 coverage-func S04c 连接-填写账号 => pass
 coverage-func S04d 连接-填写密码 => pass
 coverage-func S04e 连接-填写数据库 => pass
+shot shot-06-conn-saved.png 47166 bytes
+coverage-func S05 连接-保存 => pass
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
+step S10 skipped (SkipIds)
+coverage-func S10 查询-选中连接 => skip
+step S11 skipped (SkipIds)
+coverage-func S11 查询-新建查询入口 => skip
+step S12 skipped (SkipIds)
+coverage-func S12 SQL真实执行-计数 => skip
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
