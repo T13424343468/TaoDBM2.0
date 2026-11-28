@@ -93,3 +93,4 @@ ctx retry __CONN_NAME__ : shift-f10
 ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
 step S34 P0-05 智能工具-打开 => fail : context item not found: 智能工具
 shot ev-shot-fail-S34.png 51230 bytes
+coverage-func S34 P0-05 智能工具-打开 => fail
