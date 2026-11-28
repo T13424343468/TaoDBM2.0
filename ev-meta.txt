@@ -37,3 +37,4 @@ tag=S14 result-shot time=2026-11-28T15:30:06.2753383+00:00 appMem=194 MB
 tag=red S14 time=2026-11-28T15:30:09.0893029+00:00 appMem=194 MB
 tag=step-start S54 time=2026-11-28T15:30:10.4978625+00:00 appMem=194 MB
 tag=menu-find-start time=2026-11-28T15:30:11.8227628+00:00 appMem=193 MB
+tag=menu-button-found time=2026-11-28T15:30:13.1209947+00:00 appMem=193 MB
