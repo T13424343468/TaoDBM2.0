@@ -14,3 +14,4 @@ tag=menu-item-invoked time=2026-11-28T15:25:46.0713471+00:00 appMem=171 MB
 tag=step-start N12 time=2026-11-28T15:25:50.4696851+00:00 appMem=191 MB
 tag=N12 editor-dirty, fresh tab time=2026-11-28T15:25:51.8837715+00:00 appMem=192 MB
 tag=N12 run-invoked time=2026-11-28T15:26:00.3438332+00:00 appMem=200 MB
+tag=N12 result-shot time=2026-11-28T15:26:04.7733244+00:00 appMem=202 MB
