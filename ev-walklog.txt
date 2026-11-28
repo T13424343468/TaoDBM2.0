@@ -45,3 +45,5 @@ coverage-func U014a 巡检-数据网格右键打开菜单 => pass
 step U014b 巡检-就地编辑打开行编辑器 => miss : menu item not found: ✎ 就地编辑
 coverage-func U014b 巡检-就地编辑打开行编辑器 => miss
 shot ux-u014c-evidence.png 63558 bytes
+shot sweep-U014c.png 63558 bytes
+coverage-func U014c 巡检-行编辑器弹窗留证 => pass
