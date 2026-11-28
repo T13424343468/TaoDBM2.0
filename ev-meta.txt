@@ -33,3 +33,4 @@ tag=red S13 time=2026-11-28T15:29:50.1390415+00:00 appMem=195 MB
 tag=step-start S14 time=2026-11-28T15:29:51.5039032+00:00 appMem=195 MB
 tag=S14 editor-dirty, fresh tab time=2026-11-28T15:29:52.8955101+00:00 appMem=195 MB
 tag=S14 run-invoked time=2026-11-28T15:30:01.5584944+00:00 appMem=194 MB
+tag=S14 result-shot time=2026-11-28T15:30:06.2753383+00:00 appMem=194 MB
