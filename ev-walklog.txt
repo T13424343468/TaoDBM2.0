@@ -262,3 +262,5 @@ shot ux-u107-about.png 76354 bytes
 shot sweep-U107.png 67028 bytes
 coverage-func U107 巡检-关于 => pass
 shot ux-u108-theme.png 67028 bytes
+shot sweep-U108.png 67028 bytes
+coverage-func U108 巡检-主题入口 => pass
