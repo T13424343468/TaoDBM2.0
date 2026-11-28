@@ -57,3 +57,4 @@ tag=step-start U024 time=2026-11-28T15:29:32.3221259+00:00 appMem=218 MB
 tag=step-start U030 time=2026-11-28T15:29:42.9684258+00:00 appMem=200 MB
 tag=menu-find-start time=2026-11-28T15:29:44.4177884+00:00 appMem=199 MB
 tag=menu-button-found time=2026-11-28T15:29:45.9375724+00:00 appMem=199 MB
+tag=menu-button-invoked time=2026-11-28T15:29:47.5530002+00:00 appMem=198 MB
