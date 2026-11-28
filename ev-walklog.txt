@@ -43,3 +43,6 @@ coverage-func S13 SQL真实执行-聚合 => skip
 step S14 skipped (SkipIds)
 coverage-func S14 SQL真实执行-空值过滤 => skip
 shot ev-shot-result-S15.png 48154 bytes
+S15 ledger: 2026-11-28 15:32:17.186 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+step S15 SQL真实执行-取值比对 => fail : execution error: 2026-11-28 15:32:17.186 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+shot ev-shot-fail-S15.png 48154 bytes

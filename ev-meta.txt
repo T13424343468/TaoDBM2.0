@@ -29,3 +29,4 @@ tag=step-start S15 time=2026-11-28T15:32:05.7726240+00:00 appMem=197 MB
 tag=S15 editor-dirty, fresh tab time=2026-11-28T15:32:07.2382336+00:00 appMem=196 MB
 tag=S15 run-invoked time=2026-11-28T15:32:15.1717105+00:00 appMem=194 MB
 tag=S15 result-shot time=2026-11-28T15:32:19.7633331+00:00 appMem=194 MB
+tag=red S15 time=2026-11-28T15:32:22.8800138+00:00 appMem=194 MB
