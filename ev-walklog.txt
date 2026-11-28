@@ -90,3 +90,5 @@ coverage-func S63f P1-01 错误横幅-成功执行 => pass
 step S63g P1-01 错误横幅-收起落账 => fail : applog anchor missing: [错误横幅] 收起 got-tail=[5:32:01.720 [人话文案] 执行｜原始异常 MySqlException: Table 'taodbmui.__no_such_table_p1__' doesn't exist | 2026-11-28 15:32:01.722 [错误横幅] 执行失败：没成功：出了个意外问题。详情已写入日志（帮助 → 打开日志目录），可带着日志反馈 | 2026-11-28 15:32:01.722 [执行账] sql=SELECT * FROM __no_such_table_p1__ | title=SELECT * FROM __no_such_table_p1__ rows=0 cols=]
 shot ev-shot-fail-S63g.png 52807 bytes
 coverage-func S63g P1-01 错误横幅-收起落账 => fail
+step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[行计划 | 消息 | ⚠ | 执行失败：没成功：出了个意外问题。详情已写入日志（帮助 → 打开日志目录），可带着日志反馈 | 复制详情 | 没有可执行的语句。 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | MySQL · taodbmui 执行完成 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S63h.png 52807 bytes
