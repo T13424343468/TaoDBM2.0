@@ -184,3 +184,5 @@ coverage-func S84 P1-格11 同步-收场 => pass
 coverage-func S85 P1-格14 ERD-打开 => pass
 coverage-func S85b P1-格14 ERD-弹窗断言 => pass
 coverage-func S85c P1-格14 ERD-收场 => pass
+step S86 P1-格16 权限-打开审计 => fail : tree item not found: ui-auto-mssql
+shot ev-shot-fail-S86.png 72845 bytes
