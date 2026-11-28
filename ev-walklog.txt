@@ -81,3 +81,4 @@ S63b keys arrival missing, retry once with foreground+focus
 S63b keys still not arrived, fallback invoke work-run
 coverage-func S63b P1-01 错误横幅-F6执行 => pass
 coverage-func S63c P1-01 错误横幅-横幅落账 => pass
+coverage-func S63d P1-01 错误横幅-横幅可见 => pass
