@@ -72,3 +72,5 @@ step S30 P0-04 钉住落账断言 => fail : applog anchor missing: [看板] 钉�
 shot ev-shot-fail-S30.png 51690 bytes
 coverage-func S30 P0-04 钉住落账断言 => fail
 ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
