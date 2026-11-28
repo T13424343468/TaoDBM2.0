@@ -99,3 +99,5 @@ shot sweep-U034.png 55320 bytes
 coverage-func U034 巡检-导出INSERT按钮 => pass
 shot sweep-U035.png 55320 bytes
 coverage-func U035 巡检-导出INSERT收场 => pass
+shot sweep-U036.png 60128 bytes
+coverage-func U036 巡检-导出更多菜单 => pass
