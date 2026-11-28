@@ -19,3 +19,4 @@ tag=kb-tree-items-after Non Client Input Sink Window | AppWindow Custom Title Ba
 tag=expand-kb-ok ui-auto-sqlite child=main state=Expanded time=2026-11-28T15:25:55.1513468+00:00 appMem=167 MB
 tag=step-start S09 time=2026-11-28T15:26:02.4812688+00:00 appMem=167 MB
 tag=step-start S18 time=2026-11-28T15:26:10.0679309+00:00 appMem=167 MB
+tag=S18 pre-close time=2026-11-28T15:26:12.4079463+00:00 appMem=167 MB
