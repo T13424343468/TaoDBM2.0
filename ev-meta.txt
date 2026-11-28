@@ -98,3 +98,4 @@ tag=S63c applog-hit [错误横幅] 执行失败 time=2026-11-28T15:33:14.5602275
 tag=step-start S63d time=2026-11-28T15:33:15.7943062+00:00 appMem=148 MB
 tag=S63d window-hit 执行失败 time=2026-11-28T15:33:17.1740544+00:00 appMem=148 MB
 tag=step-start S63e time=2026-11-28T15:33:18.6519816+00:00 appMem=148 MB
+tag=S63e same-tab clear time=2026-11-28T15:33:19.9821533+00:00 appMem=148 MB
