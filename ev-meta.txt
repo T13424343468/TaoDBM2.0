@@ -69,3 +69,4 @@ tag=step-start S62b time=2026-11-28T15:31:09.0926867+00:00 appMem=154 MB
 tag=S62b window-hit 查找替换 time=2026-11-28T15:31:10.5806967+00:00 appMem=153 MB
 tag=step-start S62c time=2026-11-28T15:31:12.0137936+00:00 appMem=153 MB
 tag=step-start S63a time=2026-11-28T15:31:21.5879542+00:00 appMem=151 MB
+tag=S63a editor-dirty, fresh tab time=2026-11-28T15:31:23.2121806+00:00 appMem=151 MB
