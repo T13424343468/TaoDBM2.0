@@ -171,3 +171,4 @@ tag=tour-summary OK 备份计划 ;; OK 备份演练 ;; OK 数据脱敏 ;; OK 数
 tag=step-start U088a time=2026-11-28T15:43:57.0176624+00:00 appMem=263 MB
 tag=step-start U088b time=2026-11-28T15:44:05.1031767+00:00 appMem=268 MB
 tag=step-start U088c time=2026-11-28T15:44:07.6662336+00:00 appMem=268 MB
+tag=U088c pre-close time=2026-11-28T15:44:10.1474451+00:00 appMem=265 MB
