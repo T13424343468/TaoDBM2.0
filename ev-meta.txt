@@ -141,3 +141,4 @@ tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAge
 tag=red S66f time=2026-11-28T15:36:33.0699512+00:00 appMem=154 MB
 tag=step-start S66g time=2026-11-28T15:36:34.6485223+00:00 appMem=153 MB
 tag=red S66g time=2026-11-28T15:36:37.6628087+00:00 appMem=152 MB
+tag=step-start S68 time=2026-11-28T15:36:39.1750780+00:00 appMem=151 MB
