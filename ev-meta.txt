@@ -104,3 +104,4 @@ tag=tour-ok 主从管理面 tour-conn-02.png time=2026-11-28T15:33:52.5180793+00
 tag=tour-ok 部署向导 tour-conn-03.png time=2026-11-28T15:34:06.9030779+00:00 appMem=185 MB
 tag=tour-ok 分片向导 tour-conn-04.png time=2026-11-28T15:34:21.1914034+00:00 appMem=185 MB
 tag=tour-ok 一键诊断 tour-conn-05.png time=2026-11-28T15:34:35.8690937+00:00 appMem=192 MB
+tag=tour-ok 高危 SQL 拦截 tour-conn-06.png time=2026-11-28T15:34:50.3083090+00:00 appMem=195 MB
