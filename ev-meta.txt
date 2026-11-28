@@ -154,3 +154,4 @@ tag=red S76 time=2026-11-28T15:36:23.7672638+00:00 appMem=160 MB
 tag=step-start S77 time=2026-11-28T15:36:25.1568066+00:00 appMem=160 MB
 tag=step-start S78 time=2026-11-28T15:36:34.8327043+00:00 appMem=160 MB
 tag=S17a start time=2026-11-28T15:36:36.1863439+00:00 appMem=160 MB
+tag=S17a btn-found=False time=2026-11-28T15:36:43.7128915+00:00 appMem=159 MB
