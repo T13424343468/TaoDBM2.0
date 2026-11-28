@@ -49,3 +49,4 @@ shot shot-14-theme.png 46555 bytes
 coverage-func S18 主题切换 => pass
 shot shot-15-about.png 60310 bytes
 coverage-func S19 关于页 => pass
+coverage-func S54 批次一-前置-重开查询页签 => pass
