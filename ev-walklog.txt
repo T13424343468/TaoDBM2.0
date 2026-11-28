@@ -70,3 +70,4 @@ shot ev-shot-fail-S29.png 51690 bytes
 coverage-func S29 P0-04 钉住确认 => fail
 step S30 P0-04 钉住落账断言 => fail : applog anchor missing: [看板] 钉住 pin= got-tail=[5:26:16.750 [新建查询] worktab built db=main | 2026-11-28 15:26:16.755 [新建查询] tab selected | 2026-11-28 15:26:16.758 [库下拉] 已加载 1 个库 | 2026-11-28 15:26:23.953 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454]
 shot ev-shot-fail-S30.png 51690 bytes
+coverage-func S30 P0-04 钉住落账断言 => fail
