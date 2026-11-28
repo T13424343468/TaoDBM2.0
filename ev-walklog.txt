@@ -67,3 +67,4 @@ shot ev-shot-fail-S28.png 51704 bytes
 coverage-func S28 P0-04 钉住菜单项 => fail
 step S29 P0-04 钉住确认 => fail : mouse target not found
 shot ev-shot-fail-S29.png 51690 bytes
+coverage-func S29 P0-04 钉住确认 => fail
