@@ -56,3 +56,5 @@
 2026-11-28 15:33:01.454 [人话文案] 执行｜原始异常 MySqlException: Table 'taodbmui.__no_such_table_p1__' doesn't exist
 2026-11-28 15:33:01.456 [错误横幅] 执行失败：没成功：出了个意外问题。详情已写入日志（帮助 → 打开日志目录），可带着日志反馈
 2026-11-28 15:33:01.456 [执行账] sql=SELECT * FROM __no_such_table_p1__;  | title=SELECT * FROM __no_such_table_p1__ rows=0 cols=
+2026-11-28 15:33:34.561 [错误横幅] 收起
+2026-11-28 15:33:34.565 [执行账] sql=SELECT 1 AS p1ok;  | title=SELECT 1 AS p1ok rows=1 cols=p1ok row0=1
