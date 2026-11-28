@@ -28,3 +28,24 @@
 2026-11-28 15:33:25.161 [人话文案] 执行失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:33:25.161 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
 2026-11-28 15:33:25.161 [执行账] error=Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:34:56.827 [Flyout] opening
+2026-11-28 15:34:56.908 [新建查询] enter kind=Connection name=SQL provider=null
+2026-11-28 15:34:56.913 [新建查询] worktab built db=
+2026-11-28 15:34:56.918 [新建查询] tab selected
+2026-11-28 15:34:58.921 [人话文案] 库列表加载失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:34:58.922 [错误横幅] 库列表加载没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
+2026-11-28 15:34:58.922 [库下拉] error=Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:35:02.739 [Flyout] opening
+2026-11-28 15:35:03.328 [新建查询] enter kind=Connection name=SQL provider=null
+2026-11-28 15:35:03.333 [新建查询] worktab built db=
+2026-11-28 15:35:03.337 [新建查询] tab selected
+2026-11-28 15:35:05.352 [人话文案] 库列表加载失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:35:05.353 [错误横幅] 库列表加载没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
+2026-11-28 15:35:05.353 [库下拉] error=Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:35:11.475 [Flyout] opening
+2026-11-28 15:35:11.500 [新建查询] enter kind=Connection name=SQL provider=null
+2026-11-28 15:35:11.505 [新建查询] worktab built db=
+2026-11-28 15:35:11.509 [新建查询] tab selected
+2026-11-28 15:35:13.533 [人话文案] 库列表加载失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:35:13.533 [错误横幅] 库列表加载没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
+2026-11-28 15:35:13.534 [库下拉] error=Unable to connect to any of the specified MySQL hosts.
