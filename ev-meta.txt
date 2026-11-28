@@ -148,3 +148,4 @@ tag=empty-rect-tabs ● 查询 · SQL[19x32@359,124] | ● 查询 · SQL[115x32@
 tag=red S66e time=2026-11-28T15:39:27.9074920+00:00 appMem=160 MB
 tag=step-start S66f time=2026-11-28T15:39:29.4440506+00:00 appMem=160 MB
 tag=click-fail-buttons &Help | View Slider | Organize | New folder | Filter dropdown | Filter dropdown | Filter dropdown | Filter dropdown | Search | Minimize | Maximize | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 结果 | 执行计划 | 消息 | 复制详情 time=2026-11-28T15:39:40.0362036+00:00 appMem=161 MB
+tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent | System Properties | Program Manager time=2026-11-28T15:39:42.4165809+00:00 appMem=160 MB
