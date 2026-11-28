@@ -154,3 +154,4 @@ shot tour-conn-03.png 48733 bytes
 shot tour-conn-04.png 45786 bytes
 shot tour-conn-05.png 59906 bytes
 shot tour-conn-06.png 51314 bytes
+shot tour-conn-07.png 51628 bytes
