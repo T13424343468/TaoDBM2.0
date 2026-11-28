@@ -12,3 +12,4 @@ tag=S18 pre-close time=2026-11-28T15:27:58.2341999+00:00 appMem=162 MB
 tag=SP closed time=2026-11-28T15:28:01.4846356+00:00 appMem=162 MB
 tag=step-start S19 time=2026-11-28T15:28:02.7649420+00:00 appMem=162 MB
 tag=S19 pre-close time=2026-11-28T15:28:06.1465215+00:00 appMem=160 MB
+tag=SP closed time=2026-11-28T15:28:09.0009178+00:00 appMem=162 MB
