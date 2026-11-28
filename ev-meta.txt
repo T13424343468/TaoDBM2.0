@@ -52,3 +52,4 @@ tag=step-start S60c time=2026-11-28T15:30:02.7516462+00:00 appMem=189 MB
 tag=S60c window-hit 代码段 time=2026-11-28T15:30:04.2951272+00:00 appMem=190 MB
 tag=step-start S60d time=2026-11-28T15:30:06.5298127+00:00 appMem=188 MB
 tag=step-start S60e time=2026-11-28T15:30:16.0914766+00:00 appMem=185 MB
+tag=S60e focus-guard fallback SetFocus time=2026-11-28T15:30:19.0179549+00:00 appMem=184 MB
