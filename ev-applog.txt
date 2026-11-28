@@ -29,3 +29,6 @@
 2026-11-28 15:26:23.905 [新建查询] tab selected
 2026-11-28 15:26:23.909 [库下拉] 已加载 1 个库
 2026-11-28 15:26:31.020 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92
+2026-11-28 15:28:31.651 [人话文案] 执行｜原始异常 SqliteException: SQLite Error 1: 'near "ELECT": syntax error'.
+2026-11-28 15:28:31.658 [错误横幅] 执行失败：没成功：SQL 语法没通过。建议检查语句拼写；可单独执行定位出错位置
+2026-11-28 15:28:31.659 [执行账] sql=WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 500000000) SELECT x FROM c WHERE x % 100000 = 0;ELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c… rows=5000 cols=x row0=100000 row1=200000 row2=300000 row3=400000 row4=500000 row5=600000 row6=700000 row7=800000 | title=ELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=0 cols=

@@ -30,3 +30,4 @@ tag=S20 run-invoked-before-stop time=2026-11-28T15:26:45.8596375+00:00 appMem=20
 tag=S20 stop-invoked time=2026-11-28T15:26:49.5138223+00:00 appMem=206 MB
 tag=red S20 time=2026-11-28T15:28:15.4518345+00:00 appMem=162 MB
 tag=step-start S21 time=2026-11-28T15:28:17.1333997+00:00 appMem=159 MB
+tag=S21 editor-dirty, fresh tab time=2026-11-28T15:28:31.7496225+00:00 appMem=150 MB
