@@ -39,3 +39,8 @@
 2026-11-28 15:28:33.409 [新建查询] tab selected
 2026-11-28 15:28:33.409 [库下拉] 已加载 1 个库
 2026-11-28 15:28:40.290 [执行账] sql=SELECT id, name FROM products ORDER BY id LIMIT 8;  | title=SELECT id, name FROM products ORDER BY id LIMIT 8 rows=8 cols=id/name row0=1,prod-0001 row1=2,prod-0002 row2=3,prod-0003 row3=4,prod-0004 row4=5,prod-0005 row5=6,prod-0006 row6=7,prod-0007 row7=8,prod-0008
+2026-11-28 15:29:52.770 [Flyout] opening
+2026-11-28 15:29:52.815 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=ok
+2026-11-28 15:29:52.821 [新建查询] worktab built db=main
+2026-11-28 15:29:52.831 [新建查询] tab selected
+2026-11-28 15:29:52.834 [库下拉] 已加载 1 个库
