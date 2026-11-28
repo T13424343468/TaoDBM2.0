@@ -138,3 +138,4 @@ tag=red S66a time=2026-11-28T15:38:45.8279830+00:00 appMem=173 MB
 tag=step-start S66b time=2026-11-28T15:38:47.4946164+00:00 appMem=172 MB
 tag=red S66b time=2026-11-28T15:39:01.6770885+00:00 appMem=163 MB
 tag=step-start S66c time=2026-11-28T15:39:03.5677853+00:00 appMem=162 MB
+tag=click-fail-buttons &Help | View Slider | Organize | New folder | Filter dropdown | Filter dropdown | Filter dropdown | Filter dropdown | Search | Minimize | Maximize | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 结果 | 执行计划 | 消息 | 复制详情 time=2026-11-28T15:39:13.9278485+00:00 appMem=161 MB
