@@ -100,3 +100,5 @@ coverage-func S35 P0-05 回访-填标题 => fail
 step S36 P0-05 回访-填SQL => fail : field not found
 shot ev-shot-fail-S36.png 51230 bytes
 coverage-func S36 P0-05 回访-填SQL => fail
+step S37 P0-05 回访-登记（异步不卡界面） => fail : mouse target not found
+shot ev-shot-fail-S37.png 51238 bytes
