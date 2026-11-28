@@ -153,3 +153,4 @@ step S83 P1-格11 同步-追加模式断言 => fail : window text missing: 追�
 shot ev-shot-fail-S83.png 77263 bytes
 coverage-func S83 P1-格11 同步-追加模式断言 => fail
 coverage-func S84 P1-格11 同步-收场 => pass
+coverage-func S85 P1-格14 ERD-打开 => pass
