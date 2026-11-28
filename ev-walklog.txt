@@ -212,3 +212,4 @@ shot tour-db-11.png 51480 bytes
 shot tour-db-12.png 59944 bytes
 shot tour-db-13.png 52297 bytes
 shot tour-db-14.png 49661 bytes
+tour done: OK 备份计划 ;; OK 备份演练 ;; OK 数据脱敏 ;; OK 数据对账 ;; OK 误删恢复 ;; OK 留痕审计 ;; OK 问库 ;; OK 快照包 ;; OK 批量清理 ;; OK 设计辅助 ;; OK 例程管理 ;; OK 一键诊断 ;; OK 告警中心 ;; OK 三层模型
