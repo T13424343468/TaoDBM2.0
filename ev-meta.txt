@@ -61,3 +61,4 @@ tag=step-start S61 time=2026-11-28T15:30:08.2570027+00:00 appMem=194 MB
 tag=step-start S61b time=2026-11-28T15:30:11.8536216+00:00 appMem=193 MB
 tag=step-start S61c time=2026-11-28T15:30:15.3057032+00:00 appMem=189 MB
 tag=red S61c time=2026-11-28T15:30:28.3785677+00:00 appMem=174 MB
+tag=step-start S61d time=2026-11-28T15:30:29.8727540+00:00 appMem=173 MB
