@@ -118,3 +118,4 @@ tag=tour-ok 共享包 tour-conn-16.png time=2026-11-28T15:37:08.6091629+00:00 ap
 tag=tour-ok 智能工具 tour-conn-17.png time=2026-11-28T15:37:23.6402798+00:00 appMem=190 MB
 tag=tour-ok 看板管理 tour-conn-18.png time=2026-11-28T15:37:38.3566722+00:00 appMem=189 MB
 tag=tour-ok 服务器监控 tour-conn-19.png time=2026-11-28T15:37:52.9615904+00:00 appMem=198 MB
+tag=tour-ok 命令监控 tour-conn-20.png time=2026-11-28T15:38:07.6192438+00:00 appMem=199 MB
