@@ -79,3 +79,5 @@ ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramD
 step S31 P0-04 看板-打开管理 => fail : context item not found: 看板管理
 shot ev-shot-fail-S31.png 51221 bytes
 coverage-func S31 P0-04 看板-打开管理 => fail
+step S32 P0-04 看板-立即刷新 => fail : mouse target not found
+shot ev-shot-fail-S32.png 51221 bytes
