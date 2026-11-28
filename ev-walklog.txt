@@ -163,3 +163,4 @@ step S62c skipped (SkipIds)
 coverage-func S62c 批次一-查找替换收场 => skip
 coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
 S63b keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S63b P1-01 错误横幅-F6执行 => pass
