@@ -36,3 +36,4 @@ tag=S63f focus-guard fallback SetFocus time=2026-11-28T15:28:29.0669882+00:00 ap
 tag=S63f keys-sent {F6} time=2026-11-28T15:28:31.4326207+00:00 appMem=211 MB
 tag=step-start S63g time=2026-11-28T15:28:33.0392855+00:00 appMem=210 MB
 tag=red S63g time=2026-11-28T15:28:50.8716543+00:00 appMem=201 MB
+tag=step-start S63h time=2026-11-28T15:28:52.4327083+00:00 appMem=199 MB
