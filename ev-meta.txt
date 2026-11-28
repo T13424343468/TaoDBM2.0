@@ -23,3 +23,4 @@ tag=step-start S13 time=2026-11-28T15:28:38.8238611+00:00 appMem=211 MB
 tag=S13 editor-dirty, fresh tab time=2026-11-28T15:28:40.1268552+00:00 appMem=211 MB
 tag=S13 run-invoked time=2026-11-28T15:28:47.9344635+00:00 appMem=216 MB
 tag=S13 result-shot time=2026-11-28T15:28:52.4233556+00:00 appMem=216 MB
+tag=S13 ledger-hit time=2026-11-28T15:28:53.9531557+00:00 appMem=216 MB
