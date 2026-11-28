@@ -113,3 +113,4 @@ tag=step-start S63z time=2026-11-28T15:37:35.4829687+00:00 appMem=149 MB
 tag=red S63z time=2026-11-28T15:37:48.7259674+00:00 appMem=147 MB
 tag=step-start S64a time=2026-11-28T15:37:50.3429265+00:00 appMem=146 MB
 tag=menu-find-start time=2026-11-28T15:37:51.8068319+00:00 appMem=146 MB
+tag=menu-button-found time=2026-11-28T15:37:53.2968744+00:00 appMem=145 MB
