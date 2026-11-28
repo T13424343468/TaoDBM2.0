@@ -51,3 +51,4 @@ coverage-func S57b 批次一-执行账落账 => pass
 coverage-func S58 批次一-右键注释切换 => pass
 coverage-func S58b 批次一-注释切换菜单项 => pass
 coverage-func S58c 批次一-注释切换实效断言 => pass
+coverage-func S59 批次一-右键执行计划 => pass
