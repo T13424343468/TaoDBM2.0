@@ -1,1 +1,2 @@
 tag=step-start U000 time=2026-11-28T15:25:02.3457264+00:00 appMem=132 MB
+tag=U000 pre-close time=2026-11-28T15:25:05.2045749+00:00 appMem=132 MB
