@@ -180,3 +180,5 @@ coverage-func S85c P1-格14 ERD-收场 => pass
 step S86 P1-格16 权限-打开审计 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S86.png 72715 bytes
 coverage-func S86 P1-格16 权限-打开审计 => fail
+step S86b P1-格16 权限-弹窗断言 => fail : window text missing: 用户与权限审计 got-tail=[greSQL / SQL Server / SQLite / Oracle 连接。 | 模型设计 · ER 图 | Close Tab | Add New Tab | ER 图基于关系型连接生成，请先新建 MySQL / PostgreSQL / SQL Server / SQLite / Oracle 连接。 | 请先选中一个连接（或库、表）再备份 / 还原。 | 0 连接 · 0 已连接 | ]
+shot ev-shot-fail-S86b.png 72715 bytes
