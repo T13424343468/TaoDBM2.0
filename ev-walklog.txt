@@ -200,3 +200,4 @@ shot sweep-U079c.png 53438 bytes
 coverage-func U079c 巡检-命令监控收场 => pass
 shot tour-db-01.png 59313 bytes
 shot tour-db-02.png 58131 bytes
+shot tour-db-03.png 53494 bytes

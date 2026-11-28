@@ -155,3 +155,4 @@ tag=step-start U079c time=2026-11-28T15:40:18.1014757+00:00 appMem=185 MB
 tag=step-start U088 time=2026-11-28T15:40:28.5612420+00:00 appMem=181 MB
 tag=tour-ok 备份计划 tour-db-01.png time=2026-11-28T15:40:43.2939217+00:00 appMem=177 MB
 tag=tour-ok 备份演练 tour-db-02.png time=2026-11-28T15:40:57.7873987+00:00 appMem=181 MB
+tag=tour-ok 数据脱敏 tour-db-03.png time=2026-11-28T15:41:12.3562640+00:00 appMem=187 MB
