@@ -35,3 +35,9 @@ step S15 skipped (SkipIds)
 coverage-func S15 SQL真实执行-取值比对 => skip
 step S16 skipped (SkipIds)
 coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 导出CSV => miss : work-csv not found
+coverage-func S17 导出CSV => miss
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
