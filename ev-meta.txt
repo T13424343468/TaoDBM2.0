@@ -13,3 +13,4 @@ tag=menu-find-start time=2026-11-28T15:28:33.6218080+00:00 appMem=161 MB
 tag=menu-button-found time=2026-11-28T15:28:35.5200533+00:00 appMem=161 MB
 tag=menu-button-invoked time=2026-11-28T15:28:37.0939857+00:00 appMem=161 MB
 tag=menu-item-found time=2026-11-28T15:28:38.6742919+00:00 appMem=165 MB
+tag=menu-item-invoked time=2026-11-28T15:28:40.3469749+00:00 appMem=171 MB
