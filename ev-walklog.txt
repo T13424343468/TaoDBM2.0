@@ -33,3 +33,15 @@ shot shot-09-sum.png 57375 bytes
 coverage-func S13 SQL真实执行-聚合 => pass
 shot ev-shot-result-S14.png 50813 bytes
 S14 ledger: 2026-11-28 15:26:31.020 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92
+shot shot-10-null-emails.png 50813 bytes
+coverage-func S14 SQL真实执行-空值过滤 => pass
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题入口可达（切换摘除） => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
