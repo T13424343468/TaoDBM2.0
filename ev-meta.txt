@@ -208,3 +208,4 @@ tag=step-start S86 time=2026-11-28T15:40:48.6746179+00:00 appMem=143 MB
 tag=red S86 time=2026-11-28T15:41:02.0835923+00:00 appMem=144 MB
 tag=step-start S86b time=2026-11-28T15:41:03.5319710+00:00 appMem=144 MB
 tag=red S86b time=2026-11-28T15:41:17.1625224+00:00 appMem=144 MB
+tag=step-start S86c time=2026-11-28T15:41:18.6553001+00:00 appMem=143 MB
