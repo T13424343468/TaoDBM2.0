@@ -128,3 +128,5 @@ coverage-func U045 巡检-设计辅助收场 => pass
 shot sweep-U045a.png 63025 bytes
 coverage-func U045a 巡检-执行查询填充结果网格 => pass
 shot ux-u045b-evidence.png 63025 bytes
+shot sweep-U045b.png 63025 bytes
+coverage-func U045b 巡检-结果网格就绪留证 => pass
