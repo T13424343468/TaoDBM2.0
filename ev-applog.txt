@@ -19,3 +19,4 @@
 2026-11-28 15:32:29.827 [人话文案] 库列表加载失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts.
 2026-11-28 15:32:29.828 [错误横幅] 库列表加载没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」
 2026-11-28 15:32:29.828 [库下拉] error=Unable to connect to any of the specified MySQL hosts.
+2026-11-28 15:32:40.709 [编辑器] beautify
