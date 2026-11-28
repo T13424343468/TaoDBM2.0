@@ -133,3 +133,4 @@ tag=red S66c time=2026-11-28T15:34:22.5464134+00:00 appMem=177 MB
 tag=step-start S66d time=2026-11-28T15:34:23.9419077+00:00 appMem=176 MB
 tag=S66d window-hit ● 查询 time=2026-11-28T15:34:25.4899258+00:00 appMem=175 MB
 tag=step-start S66e time=2026-11-28T15:34:26.8936465+00:00 appMem=174 MB
+tag=empty-rect-tabs ● 查询 · ui-auto-mysql[14x32@359,125] | ● 查询 · ui-auto-mysql[170x32@373,125] | ● 查询 · ui-auto-mysql[171x32@543,125] time=2026-11-28T15:34:28.4139497+00:00 appMem=173 MB
