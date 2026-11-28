@@ -1,4 +1,3 @@
-2026-11-28 15:35:36.236 [Flyout] opening
 2026-11-28 15:35:43.981 [新建查询] enter kind=Connection name=SQL provider=null
 2026-11-28 15:35:43.986 [新建查询] worktab built db=
 2026-11-28 15:35:43.990 [新建查询] tab selected
@@ -58,3 +57,4 @@
 2026-11-28 15:42:46.649 [Flyout] opening
 2026-11-28 15:42:49.724 [引导提示] 请先选中一个连接（或库、表）再备份 / 还原。
 2026-11-28 15:43:24.830 [Flyout] opening
+2026-11-28 15:44:03.127 [Flyout] opening
