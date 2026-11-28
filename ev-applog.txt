@@ -9,3 +9,4 @@
 2026-11-28 15:25:35.024 [对象树] 连接展开 engine=SQLite dbs=1 [main]
 2026-11-28 15:25:47.863 [对象树] 库展开 db=main children=2 [orders,products]
 2026-11-28 15:26:27.425 [Flyout] opening
+2026-11-28 15:27:03.118 [Flyout] opening
