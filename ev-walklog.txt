@@ -168,3 +168,4 @@ shot tour-conn-17.png 65062 bytes
 shot tour-conn-18.png 47851 bytes
 shot tour-conn-19.png 53730 bytes
 shot tour-conn-20.png 53286 bytes
+shot tour-conn-21.png 50142 bytes
