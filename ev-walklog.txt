@@ -50,3 +50,5 @@ coverage-func U014c 巡检-行编辑器弹窗留证 => pass
 step U014d 巡检-编辑大字段按钮 => miss : target not found
 coverage-func U014d 巡检-编辑大字段按钮 => miss
 shot ux-u014e-evidence.png 63558 bytes
+shot sweep-U014e.png 63558 bytes
+coverage-func U014e 巡检-BLOB编辑器弹窗留证 => pass

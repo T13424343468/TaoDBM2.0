@@ -38,3 +38,4 @@ tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAge
 tag=step-start U014e time=2026-11-28T15:27:46.1627126+00:00 appMem=247 MB
 tag=U014e pre-close time=2026-11-28T15:27:48.6444310+00:00 appMem=247 MB
 tag=SP closed time=2026-11-28T15:27:51.5109754+00:00 appMem=246 MB
+tag=step-start U014f time=2026-11-28T15:27:54.1873505+00:00 appMem=245 MB
