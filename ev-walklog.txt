@@ -175,3 +175,4 @@ coverage-func S63g P1-01 错误横幅-收起落账 => fail
 step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[执行计划 | 消息 | ⚠ | 执行失败：没成功：出了个意外问题。详情已写入日志（帮助 → 打开日志目录），可带着日志反馈 | 复制详情 | 没有可执行的语句。 | 详情 | 对象 | ui-auto-sqlite | 引擎 | SQLite | 主机 | 127.0.0.1 | 端口 | 暂不可用 | 状态 | 未连接 | SQLite · main 执行完成 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S63h.png 52123 bytes
 coverage-func S63h P1-01 错误横幅-横幅消失 => fail
+coverage-func S63z P1-01 引导降模态-选中连接节点 => pass
