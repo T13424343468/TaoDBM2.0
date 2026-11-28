@@ -55,3 +55,4 @@ tag=S58c applog-hit [编辑器] comment-toggle time=2026-11-28T15:31:05.6453780+
 tag=step-start S59 time=2026-11-28T15:31:07.0844215+00:00 appMem=175 MB
 tag=step-start S59b time=2026-11-28T15:31:10.9099880+00:00 appMem=173 MB
 tag=step-start S59c time=2026-11-28T15:31:14.4748885+00:00 appMem=172 MB
+tag=S59c applog-hit [编辑器] explain engine= time=2026-11-28T15:31:16.0874776+00:00 appMem=171 MB
