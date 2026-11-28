@@ -112,3 +112,4 @@ coverage-func S39 P0-05 回访-并入任务中心 => fail
 step S40 P0-05 任务真执行终态断言 => fail : applog anchor missing: [任务中心] 终态 && state=done got-tail=[OUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening | 2026-11-28 15:28:56.237 [Flyout] opening | 2026-11-28 15:29:08.203 [Flyout] opening]
 shot ev-shot-fail-S40.png 51205 bytes
 coverage-func S40 P0-05 任务真执行终态断言 => fail
+coverage-func S40b P0-05 智能工具收场 => pass
