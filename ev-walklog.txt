@@ -9,3 +9,10 @@ coverage-func N03 新用户-填写连接名称 => pass
 coverage-func N04 新用户-选择库文件 => pass
 shot shot-n05-saved.png 46996 bytes
 coverage-func N05 新用户-保存连接 => pass
+coverage-func N06 新用户-连接出现在对象树 => pass
+step N07 skipped (SkipIds)
+coverage-func N07 新用户-展开连接 => skip
+step N08 skipped (SkipIds)
+coverage-func N08 新用户-展开数据库 => skip
+step N09 skipped (SkipIds)
+coverage-func N09 新用户-看到真实表清单 => skip
