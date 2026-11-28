@@ -71,3 +71,4 @@ tag=S60f keys-sent ^c time=2026-11-28T15:31:41.2361622+00:00 appMem=168 MB
 tag=step-start S61 time=2026-11-28T15:31:42.7580201+00:00 appMem=168 MB
 tag=step-start S61b time=2026-11-28T15:31:46.4356538+00:00 appMem=168 MB
 tag=step-start S61c time=2026-11-28T15:31:49.8822350+00:00 appMem=166 MB
+tag=red S61c time=2026-11-28T15:32:03.1047872+00:00 appMem=162 MB
