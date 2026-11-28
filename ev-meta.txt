@@ -31,3 +31,4 @@ tag=S17a btn-found=False time=2026-11-28T15:29:57.4538255+00:00 appMem=194 MB
 tag=step-start S54 time=2026-11-28T15:30:00.4488228+00:00 appMem=193 MB
 tag=menu-find-start time=2026-11-28T15:30:02.0054229+00:00 appMem=192 MB
 tag=menu-button-found time=2026-11-28T15:30:03.5207056+00:00 appMem=193 MB
+tag=menu-button-invoked time=2026-11-28T15:30:05.0965446+00:00 appMem=193 MB
