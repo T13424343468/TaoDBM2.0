@@ -111,3 +111,4 @@ tag=tour-ok 流式开关 tour-conn-09.png time=2026-11-28T15:35:26.6194216+00:00
 tag=tour-ok 读路由预演 tour-conn-10.png time=2026-11-28T15:35:41.0814491+00:00 appMem=198 MB
 tag=tour-ok 热点检测 tour-conn-11.png time=2026-11-28T15:35:55.6035830+00:00 appMem=195 MB
 tag=tour-ok 再均衡规划 tour-conn-12.png time=2026-11-28T15:36:10.1863399+00:00 appMem=197 MB
+tag=tour-ok 分片键评估 tour-conn-13.png time=2026-11-28T15:36:24.8032474+00:00 appMem=191 MB
