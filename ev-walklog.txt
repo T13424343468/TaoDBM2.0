@@ -95,3 +95,5 @@ shot sweep-U034a.png 59844 bytes
 coverage-func U034a 巡检-更多菜单展开（B⑥ 低频收组） => pass
 shot sweep-U034open.png 60128 bytes
 coverage-func U034open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
+shot sweep-U034.png 55320 bytes
+coverage-func U034 巡检-导出INSERT按钮 => pass
