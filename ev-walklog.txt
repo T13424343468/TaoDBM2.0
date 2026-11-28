@@ -227,3 +227,5 @@ coverage-func S77 P1-格1 补全-收场 => skip
 step S78 skipped (SkipIds)
 coverage-func S78 P1-格7 导出流式-真实导出 => skip
 coverage-func S79 P1-格10 备份-打开向导 => pass
+step S80 P1-格10 备份-弹窗断言 => fail : window text missing: 备份 / 恢复向导 got-tail=[备份点 → ③ 目标 → ④ 执行确认 | 步骤 1/4 · 选库/表 | 备份到文件 | 从文件还原 | 数据库 | 整库口径：main 共 2 张表；备份 / 恢复按整库进行。 | 上一步 | 下一步 | 详情 | 对象 | main | 引擎 | SQLite | 子对象 | 2 个 | 字符集 | 暂不可用 | 注释 | 暂不可用 | main：2 个表 | 1 连接 · 1 已连接 | ]
+shot ev-shot-fail-S80.png 59268 bytes
