@@ -1,0 +1,128 @@
+main-window named-interactive-elements: 30 (visible-list capped 200)
+ControlType.Pane | False | Non Client Input Sink Window
+ControlType.Pane | False | AppWindow Custom Title Bar
+ControlType.Button | False | Minimize
+ControlType.Button | False | Restore
+ControlType.Button | False | Close
+ControlType.Text | False | 表
+ControlType.Text | False | 查询
+ControlType.Text | False | 备份
+ControlType.Text | False | 任务中心
+ControlType.Text | False | ER 图
+ControlType.Button | False | ＋ 新建连接
+ControlType.Button | False | 主题
+ControlType.Button | False | 刷新
+ControlType.Button | False | 手册
+ControlType.Button | False | 关于
+ControlType.Text | False | 还没有连接：点「新建连接」开始。
+ControlType.Edit | False | 筛选连接（名称 / 主机）
+ControlType.TabItem | False | 开始
+ControlType.Text | False | 开始
+ControlType.Button | False | Add New Tab
+ControlType.Text | False | 欢迎使用 TaoDBM
+ControlType.Text | False | 新手引导：右上角「＋ 新建连接」建好连接后，左侧树展开库与表，双击表即可浏览数据；选中后点「新建查询」，写 SQL 按 F5 执行。
+ControlType.Button | False | 知道了
+ControlType.Text | False | 收藏连接
+ControlType.Text | False | 暂无收藏：在连接右键菜单里「星标」即可收藏到这里。
+ControlType.Text | False | 最近打开
+ControlType.Text | False | 暂无最近打开的页签。
+ControlType.Text | False | 支持：MySQL · PostgreSQL · SQL Server · SQLite · Oracle · MongoDB · Redis · OceanBase · GaussDB · 达梦 · 金仓 · PolarDB · TDSQL
+ControlType.Text | False | 共 0 个连接 · 0 个分组
+ControlType.Text | False | 0 连接 · 0 已连接
+feature-level coverage account:
+[S01] 新建连接-打开对话框 => pass
+[S02] 连接-选择SQLite引擎 => pass
+[S03] 连接-填写名称 => pass
+[S04] 连接-填写主机 => pass
+[S04b] 连接-填写端口 => pass
+[S04c] 连接-填写账号 => pass
+[S04d] 连接-填写密码 => fail
+[S04e] 连接-填写数据库 => fail
+[S05] 连接-保存 => fail
+[S06] 对象树-连接节点出现 => fail
+[S07] 对象树-展开连接 => fail
+[S08] 对象树-展开数据库 => fail
+[S09] 对象树-真实表清单 => fail
+[S10] 查询-选中连接 => skip
+[S11] 查询-新建查询入口 => skip
+[S12] SQL真实执行-计数 => skip
+[S13] SQL真实执行-聚合 => skip
+[S14] SQL真实执行-空值过滤 => skip
+[S15] SQL真实执行-取值比对 => skip
+[S16] SQL真实执行-脏数据行 => skip
+[S17] 导出CSV => skip
+[S18] 主题切换 => skip
+[S19] 关于页 => skip
+[S54] 批次一-前置-重开查询页签 => pass
+[S55] 批次一-编辑器填多语句 => pass
+[S56] 批次一-右键打开编辑器菜单 => pass
+[S56b] 批次一-美化SQL菜单项 => pass
+[S56c] 批次一-美化实效断言 => pass
+[S57] 批次一-F6执行当前语句 => pass
+[S57b] 批次一-执行账落账 => pass
+[S58] 批次一-右键注释切换 => pass
+[S58b] 批次一-注释切换菜单项 => pass
+[S58c] 批次一-注释切换实效断言 => pass
+[S59] 批次一-右键执行计划 => pass
+[S59b] 批次一-执行计划菜单项 => pass
+[S59c] 批次一-执行计划实效断言 => pass
+[S60] 批次一-右键代码段 => pass
+[S60b] 批次一-代码段菜单项 => pass
+[S60c] 批次一-代码段弹层断言 => pass
+[S60d] 批次一-代码段收场 => pass
+[S60e] 批次一-全选编辑器 => pass
+[S60f] 批次一-复制入堆栈 => pass
+[S61] 批次一-右键剪贴板堆栈 => pass
+[S61b] 批次一-堆栈菜单项 => pass
+[S61c] 批次一-堆栈弹层断言 => fail
+[S61d] 批次一-堆栈收场 => pass
+[S62] 批次一-Ctrl+F查找替换 => pass
+[S62b] 批次一-查找替换弹层断言 => pass
+[S62c] 批次一-查找替换收场 => pass
+[S63a] P1-01 错误横幅-执行必败SQL => pass
+[S63b] P1-01 错误横幅-F6执行 => pass
+[S63c] P1-01 错误横幅-横幅落账 => pass
+[S63d] P1-01 错误横幅-横幅可见 => pass
+[S63e] P1-01 错误横幅-改成功语句 => pass
+[S63f] P1-01 错误横幅-成功执行 => pass
+[S63g] P1-01 错误横幅-收起落账 => fail
+[S63h] P1-01 错误横幅-横幅消失 => fail
+[S63z] P1-01 引导降模态-选中连接节点 => fail
+[S64a] P1-01 引导降模态-触发引导 => pass
+[S64b] P1-01 引导降模态-非模态落账 => pass
+[S64c] P1-01 引导降模态-状态栏可见 => pass
+[S65a] P1-02 脏标记-编辑置脏 => pass
+[S65b] P1-02 脏标记-标题出现● => pass
+[S65c] P1-02 脏标记-Ctrl+S另存弹层 => pass
+[S65d] P1-02 脏标记-取消另存 => pass
+[S65e] P1-02 脏标记-取消后●保留 => pass
+[S66a] P1-02 未保存保护-点关闭 => pass
+[S66b] P1-02 未保存保护-确认框出现 => fail
+[S66c] P1-02 未保存保护-点取消 => fail
+[S66d] P1-02 未保存保护-取消页签保留 => pass
+[S66e] P1-02 未保存保护-再点关闭 => pass
+[S66f] P1-02 未保存保护-点不保存 => fail
+[S66g] P1-02 未保存保护-页签移除 => fail
+[S68] P1-格5 表设计器-改表模式打开 => fail
+[S69] P1-格5 改表弹窗断言 => fail
+[S70] P1-格5 索引外键区可见 => fail
+[S71] P1-格5 生成SQL => fail
+[S72] P1-格5 预览断言 => fail
+[S73] P1-格5 收场 => pass
+[S74] P1-格1 补全-编辑器铺底 => fail
+[S75] P1-格1 补全-Ctrl+Space触发 => pass
+[S76] P1-格1 补全-浮层落账 => fail
+[S77] P1-格1 补全-收场 => pass
+[S78] P1-格7 导出流式-真实导出 => miss
+[S79] P1-格10 备份-打开向导 => pass
+[S80] P1-格10 备份-弹窗断言 => fail
+[S81] P1-格10 备份-收场 => pass
+[S82] P1-格11 同步-打开 => pass
+[S83] P1-格11 同步-追加模式断言 => fail
+[S84] P1-格11 同步-收场 => pass
+[S85] P1-格14 ERD-打开 => pass
+[S85b] P1-格14 ERD-弹窗断言 => pass
+[S85c] P1-格14 ERD-收场 => pass
+[S86] P1-格16 权限-打开审计 => fail
+[S86b] P1-格16 权限-弹窗断言 => fail
+[S86c] P1-格16 权限-收场 => pass
