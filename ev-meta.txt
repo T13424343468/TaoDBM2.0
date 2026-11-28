@@ -60,3 +60,4 @@ tag=menu-button-found time=2026-11-28T15:29:45.9375724+00:00 appMem=199 MB
 tag=menu-button-invoked time=2026-11-28T15:29:47.5530002+00:00 appMem=198 MB
 tag=menu-item-found time=2026-11-28T15:29:49.0603276+00:00 appMem=196 MB
 tag=menu-item-invoked time=2026-11-28T15:29:50.4577071+00:00 appMem=198 MB
+tag=step-start U031 time=2026-11-28T15:29:55.9115772+00:00 appMem=242 MB
