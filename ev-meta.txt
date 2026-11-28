@@ -99,3 +99,4 @@ tag=step-start U046b time=2026-11-28T15:32:54.1845577+00:00 appMem=183 MB
 tag=step-start U046c time=2026-11-28T15:32:58.9348438+00:00 appMem=184 MB
 tag=step-start U046d time=2026-11-28T15:33:13.0034998+00:00 appMem=179 MB
 tag=step-start U050 time=2026-11-28T15:33:23.6088941+00:00 appMem=173 MB
+tag=tour-ok 权限审计 tour-conn-01.png time=2026-11-28T15:33:38.2511693+00:00 appMem=180 MB
