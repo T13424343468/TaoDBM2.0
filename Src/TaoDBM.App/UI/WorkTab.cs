@@ -839,7 +839,9 @@ public partial class WorkTab : Grid
                 var sql = sqlOverride ?? EditorText;
                 if (string.IsNullOrWhiteSpace(sql)) { _messageBox.Text = "请输入要执行的语句。"; return; }
                 // 手册承诺兑现（2026-11-28）：查询执行前过高危检查——danger 级弹拦截窗，确认后继续，与问库同口径
-                if (_owner is not null)
+                // （云测 run 46157414421 修红：对非可空 readonly 字段 _owner 做 is not null 判空，
+                //   会把其流状态污染为 maybe-null，导致方法后段 L893 _owner.SetStatus 报 CS8602；
+                //   字段在构造函数必赋值，判空属冗余防御，删除以恢复可空流分析）
                 {
                     var gate = await RiskySqlInterceptDialog.GateAsync(_owner, _provider, _db, sql);
                     if (!gate.Proceed) { _messageBox.Text = "已取消：语句被高危检查拦截。"; _owner.SetStatus("执行被高危检查拦截"); return; }

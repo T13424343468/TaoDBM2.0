@@ -597,7 +597,7 @@ public partial class MainWindow : Window
         AppLog.Write($"[连接分组] 组={name} 成员=1");
     }
 
-    private NodeInfo? SelectedInfo()
+    internal NodeInfo? SelectedInfo()
     {
         var node = ConnTree.SelectedNode;
         return node is null ? null : _nodeMap.GetValueOrDefault(node);

@@ -17,9 +17,10 @@ public static class ImportPreviewDialog
     public static Task<ImportPlan?> ShowInTabAsync(MainWindow owner, List<ColumnSpec> tableCols, IReadOnlyList<string> csvHeaders, IReadOnlyList<string?[]> previewRows)
     {
         var tcs = new TaskCompletionSource<ImportPlan?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var panel = BuildWizardPanel(tableCols, csvHeaders, previewRows, plan =>
+        FrameworkElement? panel = null;
+        panel = BuildWizardPanel(tableCols, csvHeaders, previewRows, plan =>
         {
-            owner.ClosePanelTab(panel);
+            if (panel is { } p) owner.ClosePanelTab(p);
             tcs.TrySetResult(plan);
         });
         owner.OpenPanelTab("导入向导", () => panel);
