@@ -133,3 +133,4 @@ tag=step-start S65d time=2026-11-28T15:38:27.7336367+00:00 appMem=179 MB
 tag=step-start S65e time=2026-11-28T15:38:37.5454541+00:00 appMem=175 MB
 tag=S65e window-hit ● 查询 time=2026-11-28T15:38:39.2855726+00:00 appMem=176 MB
 tag=step-start S66a time=2026-11-28T15:38:40.7677652+00:00 appMem=174 MB
+tag=empty-rect-tabs ● 查询 · SQL[19x32@359,124] | ● 查询 · SQL[115x32@378,124] | ● 查询 · SQL[115x32@493,124] | ● 查询 · SQL[115x32@608,124] | ● 查询 · SQL[115x32@723,124] | ● 查询 · SQL[100x32@838,124] time=2026-11-28T15:38:42.4742369+00:00 appMem=174 MB
