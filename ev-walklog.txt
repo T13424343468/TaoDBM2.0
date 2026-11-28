@@ -51,3 +51,10 @@ shot ev-shot-result-S16.png 48842 bytes
 S16 ledger: 2026-11-28 15:32:36.701 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 step S16 SQL真实执行-脏数据行 => fail : execution error: 2026-11-28 15:32:36.701 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 shot ev-shot-fail-S16.png 48842 bytes
+coverage-func S16 SQL真实执行-脏数据行 => fail
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
