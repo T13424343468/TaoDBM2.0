@@ -55,3 +55,4 @@ shot shot-17-sort-asc.png 55180 bytes
 coverage-func S22 P0-03 网格-列头点击循环排序 => pass
 step S23 P0-03 排序实效断言 => fail : applog anchor missing: [网格] 排序 col=id got-tail=[ 2026-11-28 15:28:40.290 [执行账] sql=SELECT id, name FROM products ORDER BY id LIMIT 8;  | title=SELECT id, name FROM products ORDER BY id LIMIT 8 rows=8 cols=id/name row0=1,prod-0001 row1=2,prod-0002 row2=3,prod-0003 row3=4,prod-0004 row4=5,prod-0005 row5=6,prod-0006 row6=7,prod-0007 row7=8,prod-0008]
 shot ev-shot-fail-S23.png 55134 bytes
+coverage-func S23 P0-03 排序实效断言 => fail

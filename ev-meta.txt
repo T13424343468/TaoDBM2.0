@@ -37,3 +37,4 @@ tag=S21 ledger-hit time=2026-11-28T15:28:46.4120424+00:00 appMem=152 MB
 tag=step-start S22 time=2026-11-28T15:28:47.8021941+00:00 appMem=151 MB
 tag=step-start S23 time=2026-11-28T15:28:51.5213916+00:00 appMem=150 MB
 tag=red S23 time=2026-11-28T15:29:04.4954674+00:00 appMem=144 MB
+tag=step-start S24 time=2026-11-28T15:29:05.9957008+00:00 appMem=142 MB
