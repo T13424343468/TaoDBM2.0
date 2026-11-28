@@ -73,3 +73,4 @@ coverage-func S60 批次一-右键代码段 => pass
 coverage-func S60b 批次一-代码段菜单项 => pass
 coverage-func S60c 批次一-代码段弹层断言 => pass
 coverage-func S60d 批次一-代码段收场 => pass
+S60e keys focus-guard: focus not on editor, mouse-click into editor
