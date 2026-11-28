@@ -96,3 +96,4 @@ shot ev-shot-fail-S34.png 51230 bytes
 coverage-func S34 P0-05 智能工具-打开 => fail
 step S35 P0-05 回访-填标题 => fail : field not found
 shot ev-shot-fail-S35.png 51230 bytes
+coverage-func S35 P0-05 回访-填标题 => fail
