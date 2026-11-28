@@ -194,3 +194,4 @@ tag=step-start S85b time=2026-11-28T15:39:02.2862312+00:00 appMem=182 MB
 tag=S85b window-hit 模型设计 · ER 图 time=2026-11-28T15:39:03.8038944+00:00 appMem=183 MB
 tag=step-start S85c time=2026-11-28T15:39:05.3344334+00:00 appMem=182 MB
 tag=step-start S86 time=2026-11-28T15:39:15.0767050+00:00 appMem=181 MB
+tag=ctx-miss __CONN_NAME__ attempt 1 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties] time=2026-11-28T15:39:25.9052338+00:00 appMem=187 MB
