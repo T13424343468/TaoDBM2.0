@@ -177,3 +177,4 @@ tag=step-start U088d time=2026-11-28T15:44:15.2772064+00:00 appMem=261 MB
 tag=step-start U088e time=2026-11-28T15:44:25.8960872+00:00 appMem=261 MB
 tag=step-start U088f time=2026-11-28T15:44:33.9623949+00:00 appMem=260 MB
 tag=U088f set-text ok time=2026-11-28T15:44:35.4745014+00:00 appMem=260 MB
+tag=step-start U088g time=2026-11-28T15:44:37.9865337+00:00 appMem=258 MB

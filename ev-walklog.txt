@@ -226,3 +226,5 @@ shot sweep-U088d.png 62968 bytes
 coverage-func U088d 巡检-备份计划收场 => pass
 shot sweep-U088e.png 56506 bytes
 coverage-func U088e 巡检-数据对账结果态 => pass
+shot sweep-U088f.png 56677 bytes
+coverage-func U088f 巡检-对账源表填入 => pass
