@@ -1,4 +1,3 @@
-2026-11-28 15:28:41.484 [新建查询] tab selected
 2026-11-28 15:28:41.493 [库下拉] 已加载 5 个库
 2026-11-28 15:28:47.935 [执行账] sql=SELECT SUM(amount) AS s FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500
 2026-11-28 15:28:58.545 [Flyout] opening
@@ -58,3 +57,4 @@
 2026-11-28 15:36:40.978 [库下拉] 已加载 5 个库
 2026-11-28 15:37:41.391 [Flyout] opening
 2026-11-28 15:38:18.064 [Flyout] opening
+2026-11-28 15:38:54.724 [Flyout] opening
