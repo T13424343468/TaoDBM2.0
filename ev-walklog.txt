@@ -103,3 +103,4 @@ coverage-func S63e P1-01 错误横幅-改成功语句 => pass
 S63f keys focus-guard: focus not on editor, mouse-click into editor
 S63f keys arrival missing, retry once with foreground+focus
 S63f keys still not arrived, fallback invoke work-run
+coverage-func S63f P1-01 错误横幅-成功执行 => pass
