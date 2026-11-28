@@ -16,3 +16,4 @@ tag=N12 editor-dirty, fresh tab time=2026-11-28T15:25:51.8526877+00:00 appMem=19
 tag=N12 run-invoked time=2026-11-28T15:26:00.4623130+00:00 appMem=198 MB
 tag=N12 result-shot time=2026-11-28T15:26:05.0926398+00:00 appMem=201 MB
 tag=N12 ledger-hit time=2026-11-28T15:26:06.6786883+00:00 appMem=202 MB
+tag=step-start N14 time=2026-11-28T15:26:08.3170929+00:00 appMem=202 MB
