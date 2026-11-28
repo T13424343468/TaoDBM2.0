@@ -27,3 +27,5 @@ shot sweep-U007c.png 64113 bytes
 coverage-func U007c 巡检-连接填写名称 => pass
 shot sweep-U007d.png 66151 bytes
 coverage-func U007d 巡检-连接填写数据库文件 => pass
+shot sweep-U007e.png 47374 bytes
+coverage-func U007e 巡检-连接保存 => pass
