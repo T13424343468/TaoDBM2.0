@@ -1,0 +1,184 @@
+probe quiet-watch start (10s, no UIA)
+probe quiet-watch done
+shot shot-01-start.png 46199 bytes
+coverage: 30 named elements in main window
+shot shot-05-newconn-dialog.png 61455 bytes
+coverage-func S01 新建连接-打开对话框 => pass
+coverage-func S02 连接-选择SQLite引擎 => pass
+coverage-func S03 连接-填写名称 => pass
+coverage-func S04 连接-填写主机 => pass
+coverage-func S04b 连接-填写端口 => pass
+coverage-func S04c 连接-填写账号 => pass
+coverage-func S04d 连接-填写密码 => pass
+coverage-func S04e 连接-填写数据库 => pass
+shot shot-06-conn-saved.png 47180 bytes
+coverage-func S05 连接-保存 => pass
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
+coverage-func S10 查询-选中连接 => pass
+coverage-func S11 查询-新建查询入口 => pass
+shot ev-shot-result-S12.png 51116 bytes
+S12 ledger: 2026-11-28 15:29:08.502 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-08-count-5000.png 51116 bytes
+coverage-func S12 SQL真实执行-计数 => pass
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+shot ev-shot-result-S15.png 51318 bytes
+S15 ledger: 2026-11-28 15:29:26.293 [执行账] sql=SELECT name FROM products WHERE id = 7;  | title=SELECT name FROM products WHERE id = 7 rows=1 cols=name row0=prod-0007
+shot shot-11-cell-value.png 51318 bytes
+coverage-func S15 SQL真实执行-取值比对 => pass
+shot ev-shot-result-S16.png 58545 bytes
+S16 ledger: 2026-11-28 15:29:44.474 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
+shot shot-12-dirty-rows.png 58545 bytes
+coverage-func S16 SQL真实执行-脏数据行 => pass
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
+step S18 skipped (SkipIds)
+coverage-func S18 主题切换 => skip
+step S19 skipped (SkipIds)
+coverage-func S19 关于页 => skip
+coverage-func S54 批次一-前置-重开查询页签 => pass
+coverage-func S55 批次一-编辑器填多语句 => pass
+coverage-func S56 批次一-右键打开编辑器菜单 => pass
+coverage-func S56b 批次一-美化SQL菜单项 => pass
+coverage-func S56c 批次一-美化实效断言 => pass
+S57 keys focus-guard: focus not on editor, mouse-click into editor
+S57 keys arrival missing, retry once with foreground+focus
+S57 keys still not arrived, fallback invoke work-run
+coverage-func S57 批次一-F6执行当前语句 => pass
+coverage-func S57b 批次一-执行账落账 => pass
+coverage-func S58 批次一-右键注释切换 => pass
+coverage-func S58b 批次一-注释切换菜单项 => pass
+coverage-func S58c 批次一-注释切换实效断言 => pass
+coverage-func S59 批次一-右键执行计划 => pass
+coverage-func S59b 批次一-执行计划菜单项 => pass
+coverage-func S59c 批次一-执行计划实效断言 => pass
+coverage-func S60 批次一-右键代码段 => pass
+coverage-func S60b 批次一-代码段菜单项 => pass
+coverage-func S60c 批次一-代码段弹层断言 => pass
+coverage-func S60d 批次一-代码段收场 => pass
+S60e keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S60e 批次一-全选编辑器 => pass
+S60f keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S60f 批次一-复制入堆栈 => pass
+coverage-func S61 批次一-右键剪贴板堆栈 => pass
+coverage-func S61b 批次一-堆栈菜单项 => pass
+step S61c 批次一-堆栈弹层断言 => fail : window text missing: 剪贴板堆栈 got-tail=[ | 执行计划 | 消息 | （暂无执行计划：点工具栏「⏱ 解释计划」或编辑器右键「执行计划」。） | 2 行 · 1 ms · 11-28 15:30:42 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | MySQL · taodbmui 执行完成 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S61c.png 51569 bytes
+coverage-func S61c 批次一-堆栈弹层断言 => fail
+coverage-func S61d 批次一-堆栈收场 => pass
+S62 keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S62 批次一-Ctrl+F查找替换 => pass
+coverage-func S62b 批次一-查找替换弹层断言 => pass
+coverage-func S62c 批次一-查找替换收场 => pass
+coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
+S63b keys focus-guard: focus not on editor, mouse-click into editor
+S63b keys arrival missing, retry once with foreground+focus
+S63b keys still not arrived, fallback invoke work-run
+coverage-func S63b P1-01 错误横幅-F6执行 => pass
+coverage-func S63c P1-01 错误横幅-横幅落账 => pass
+coverage-func S63d P1-01 错误横幅-横幅可见 => pass
+coverage-func S63e P1-01 错误横幅-改成功语句 => pass
+S63f keys focus-guard: focus not on editor, mouse-click into editor
+S63f keys arrival missing, retry once with foreground+focus
+S63f keys still not arrived, fallback invoke work-run
+coverage-func S63f P1-01 错误横幅-成功执行 => pass
+coverage-func S63g P1-01 错误横幅-收起落账 => pass
+step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | MySQL · taodbmui 执行完成 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S63h.png 50277 bytes
+coverage-func S63h P1-01 错误横幅-横幅消失 => fail
+coverage-func S63z P1-01 引导降模态-选中连接节点 => pass
+coverage-func S64a P1-01 引导降模态-触发引导 => pass
+coverage-func S64b P1-01 引导降模态-非模态落账 => pass
+coverage-func S64c P1-01 引导降模态-状态栏可见 => pass
+S65a editor-set retry 1 (readback mismatch got=SELECT 'p1-dirty-walk';LECT 1 AS p1ok;)
+S65a editor-set retry 2 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';)
+S65a editor-set retry 3 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';)
+coverage-func S65a P1-02 脏标记-编辑置脏 => pass
+coverage-func S65b P1-02 脏标记-标题出现● => pass
+S65c keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S65c P1-02 脏标记-Ctrl+S另存弹层 => pass
+coverage-func S65d P1-02 脏标记-取消另存 => pass
+coverage-func S65e P1-02 脏标记-取消后●保留 => pass
+step S66a P1-02 未保存保护-点关闭 => fail : mouse target has empty rect
+shot ev-shot-fail-S66a.png 78028 bytes
+coverage-func S66a P1-02 未保存保护-点关闭 => fail
+step S66b P1-02 未保存保护-确认框出现 => fail : window text missing: 未保存的更改 got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S66b.png 78028 bytes
+coverage-func S66b P1-02 未保存保护-确认框出现 => fail
+step S66c P1-02 未保存保护-点取消 => fail : target not found
+shot ev-shot-fail-S66c.png 78028 bytes
+coverage-func S66c P1-02 未保存保护-点取消 => fail
+coverage-func S66d P1-02 未保存保护-取消页签保留 => pass
+step S66e P1-02 未保存保护-再点关闭 => fail : mouse target has empty rect
+shot ev-shot-fail-S66e.png 78028 bytes
+coverage-func S66e P1-02 未保存保护-再点关闭 => fail
+step S66f P1-02 未保存保护-点不保存 => fail : target not found
+shot ev-shot-fail-S66f.png 78041 bytes
+coverage-func S66f P1-02 未保存保护-点不保存 => fail
+step S66g P1-02 未保存保护-页签移除 => fail : window negative anchor hit: ● 查询
+shot ev-shot-fail-S66g.png 78041 bytes
+coverage-func S66g P1-02 未保存保护-页签移除 => fail
+step S68 P1-格5 表设计器-改表模式打开 => fail : tree item not found: 📋 orders
+shot ev-shot-fail-S68.png 78041 bytes
+coverage-func S68 P1-格5 表设计器-改表模式打开 => fail
+step S69 P1-格5 改表弹窗断言 => fail : window text missing: 改表结构 · orders got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S69.png 78041 bytes
+coverage-func S69 P1-格5 改表弹窗断言 => fail
+step S70 P1-格5 索引外键区可见 => fail : window text missing: 索引（勾选删除） got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S70.png 78041 bytes
+coverage-func S70 P1-格5 索引外键区可见 => fail
+step S71 P1-格5 生成SQL => fail : target not found
+shot ev-shot-fail-S71.png 78027 bytes
+coverage-func S71 P1-格5 生成SQL => fail
+step S72 P1-格5 预览断言 => fail : window text missing: ALTER TABLE got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S72.png 78027 bytes
+coverage-func S72 P1-格5 预览断言 => fail
+coverage-func S73 P1-格5 收场 => pass
+S74 editor-set retry 1 (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
+S74 editor-set retry 2 (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
+S74 editor-set retry 3 (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
+step S74 P1-格1 补全-编辑器铺底 => fail : editor set verify failed after retries (readback mismatch got=在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行)
+shot ev-shot-fail-S74.png 77305 bytes
+coverage-func S74 P1-格1 补全-编辑器铺底 => fail
+S75 keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S75 P1-格1 补全-Ctrl+Space触发 => pass
+step S76 P1-格1 补全-浮层落账 => fail : applog anchor missing: [补全] 打开 got-tail=[:53.411 [新建查询] tab selected | 2026-11-28 15:37:53.411 [库下拉] 已加载 5 个库 | 2026-11-28 15:38:00.696 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok | 2026-11-28 15:38:00.701 [新建查询] worktab built db=taodbmui | 2026-11-28 15:38:00.706 [新建查询] tab selected | 2026-11-28 15:38:00.717 [库下拉] 已加载 5 个库]
+shot ev-shot-fail-S76.png 77347 bytes
+coverage-func S76 P1-格1 补全-浮层落账 => fail
+coverage-func S77 P1-格1 补全-收场 => pass
+step S78 P1-格7 导出流式-真实导出 => miss : work-csv not found
+coverage-func S78 P1-格7 导出流式-真实导出 => miss
+coverage-func S79 P1-格10 备份-打开向导 => pass
+step S80 P1-格10 备份-弹窗断言 => fail : window text missing: 备份 / 恢复向导 got-tail=[4 · 选库/表 | 备份到文件 | 从文件还原 | 数据库 | 整库口径：taodbmui 共 2 张表；备份 / 恢复按整库进行。 | 上一步 | 下一步 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S80.png 76620 bytes
+coverage-func S80 P1-格10 备份-弹窗断言 => fail
+coverage-func S81 P1-格10 备份-收场 => pass
+coverage-func S82 P1-格11 同步-打开 => pass
+step S83 P1-格11 同步-追加模式断言 => fail : window text missing: 追加写入 got-tail=[Tab | 需要至少两个关系型连接（MySQL / PostgreSQL / SQL Server / SQLite / Oracle）。请先在左侧新建连接。 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S83.png 76322 bytes
+coverage-func S83 P1-格11 同步-追加模式断言 => fail
+coverage-func S84 P1-格11 同步-收场 => pass
+coverage-func S85 P1-格14 ERD-打开 => pass
+coverage-func S85b P1-格14 ERD-弹窗断言 => pass
+coverage-func S85c P1-格14 ERD-收场 => pass
+ctx miss __CONN_NAME__ attempt 1 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
+ctx retry __CONN_NAME__ : select-then-rightclick
+ctx miss __CONN_NAME__ attempt 2 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
+ctx retry __CONN_NAME__ : shift-f10
+ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] [System Properties]
+step S86 P1-格16 权限-打开审计 => fail : context item not found: 权限审计
+shot ev-shot-fail-S86.png 77058 bytes
+coverage-func S86 P1-格16 权限-打开审计 => fail
+step S86b P1-格16 权限-弹窗断言 => fail : window text missing: 用户与权限审计 got-tail=[New Tab | 生成 ER 图 | 操作 ▾ | 适应窗口 | 选连接与库后点「生成 ER 图」；框可拖拽，线是推断出的主外键关系。 | Vertical | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S86b.png 77030 bytes
+coverage-func S86b P1-格16 权限-弹窗断言 => fail
+coverage-func S86c P1-格16 权限-收场 => pass
