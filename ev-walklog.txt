@@ -85,3 +85,5 @@ coverage-func U030 巡检-新建查询页签 => pass
 shot ux-u031-evidence.png 55895 bytes
 shot sweep-U031.png 55904 bytes
 coverage-func U031 巡检-查询页工具栏全貌 => pass
+shot sweep-U032open.png 60128 bytes
+coverage-func U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
