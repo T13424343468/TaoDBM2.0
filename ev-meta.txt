@@ -187,3 +187,4 @@ tag=step-start S84 time=2026-11-28T15:40:32.4477093+00:00 appMem=147 MB
 tag=step-start S85 time=2026-11-28T15:40:42.0299872+00:00 appMem=143 MB
 tag=menu-find-start time=2026-11-28T15:40:43.5321284+00:00 appMem=143 MB
 tag=menu-button-found time=2026-11-28T15:40:45.0113416+00:00 appMem=143 MB
+tag=menu-button-invoked time=2026-11-28T15:40:46.4815015+00:00 appMem=143 MB
