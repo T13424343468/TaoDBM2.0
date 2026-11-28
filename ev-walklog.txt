@@ -116,3 +116,4 @@ coverage-func S40b P0-05 智能工具收场 => pass
 coverage-func S41 P0-05 任务中心-打开 => pass
 step S42 P0-05 任务中心-填标题 => fail : field not found
 shot ev-shot-fail-S42.png 51493 bytes
+coverage-func S42 P0-05 任务中心-填标题 => fail
