@@ -18,3 +18,8 @@
 2026-11-28 15:29:01.591 [新建查询] tab selected
 2026-11-28 15:29:01.591 [库下拉] 已加载 5 个库
 2026-11-28 15:29:08.502 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+2026-11-28 15:29:19.711 [Flyout] opening
+2026-11-28 15:29:19.748 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:29:19.755 [新建查询] worktab built db=taodbmui
+2026-11-28 15:29:19.759 [新建查询] tab selected
+2026-11-28 15:29:19.762 [库下拉] 已加载 5 个库
