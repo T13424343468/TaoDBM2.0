@@ -140,3 +140,4 @@ step S61c 批次一-堆栈弹层断言 => fail : window text missing: 剪贴板�
 shot ev-shot-fail-S61c.png 51061 bytes
 coverage-func S61c 批次一-堆栈弹层断言 => fail
 coverage-func S61d 批次一-堆栈收场 => pass
+S62 keys focus-guard: focus not on editor, mouse-click into editor
