@@ -53,3 +53,4 @@ coverage-func S18 主题切换 => skip
 step S19 skipped (SkipIds)
 coverage-func S19 关于页 => skip
 coverage-func S54 批次一-前置-重开查询页签 => pass
+coverage-func S55 批次一-编辑器填多语句 => pass
