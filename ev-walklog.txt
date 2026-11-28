@@ -59,3 +59,5 @@ step S25 skipped (SkipIds)
 coverage-func S25 P0-03 复制实效断言 => skip
 step S26 skipped (SkipIds)
 coverage-func S26 P0-03 复制落账断言 => skip
+step S27 P0-04 网格-钉住到看板 => fail : mouse target not found
+shot ev-shot-fail-S27.png 51704 bytes
