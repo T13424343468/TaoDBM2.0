@@ -118,3 +118,4 @@ coverage-func S65b P1-02 脏标记-标题出现● => pass
 S65c keys focus-guard: focus not on editor, mouse-click into editor
 coverage-func S65c P1-02 脏标记-Ctrl+S另存弹层 => pass
 coverage-func S65d P1-02 脏标记-取消另存 => pass
+coverage-func S65e P1-02 脏标记-取消后●保留 => pass
