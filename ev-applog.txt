@@ -42,3 +42,4 @@
 2026-11-28 15:31:42.162 [人话文案] 执行失败｜原始异常 MySqlException: Access denied for user ''@'localhost' (using password: NO)
 2026-11-28 15:31:42.165 [错误横幅] 执行失败：没成功：登录被拒（账号、密码或权限不对）。建议核对账号密码与该库的授权
 2026-11-28 15:31:42.165 [执行账] error=Access denied for user ''@'localhost' (using password: NO)
+2026-11-28 15:32:25.535 [Flyout] opening
