@@ -103,3 +103,5 @@ coverage-func S36 P0-05 回访-填SQL => fail
 step S37 P0-05 回访-登记（异步不卡界面） => fail : mouse target not found
 shot ev-shot-fail-S37.png 51238 bytes
 coverage-func S37 P0-05 回访-登记（异步不卡界面） => fail
+step S38 P0-05 登记实效断言 => fail : applog anchor missing: [智能工具] 回访登记 title=walk-follow-001 got-tail=[OUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454 | 2026-11-28 15:27:32.312 [Flyout] opening | 2026-11-28 15:27:44.301 [Flyout] opening | 2026-11-28 15:28:56.237 [Flyout] opening | 2026-11-28 15:29:08.203 [Flyout] opening]
+shot ev-shot-fail-S38.png 51238 bytes
