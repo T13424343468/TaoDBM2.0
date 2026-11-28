@@ -7,3 +7,6 @@
 2026-11-28 15:27:57.341 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:28:40.566 [连接树] filter= shown=1 groups=0 hidden=0
 2026-11-28 15:28:50.089 [Flyout] opening
+2026-11-28 15:28:53.136 [新建查询] enter kind=Connection name=ui-auto-mysql provider=null
+2026-11-28 15:28:53.155 [新建查询] worktab built db=taodbmui
+2026-11-28 15:28:53.171 [新建查询] tab selected
