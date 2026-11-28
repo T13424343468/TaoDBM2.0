@@ -3,3 +3,5 @@ probe quiet-watch done
 shot shot-01-start.png 46186 bytes
 coverage: 30 named elements in main window
 shot ux-u000-evidence.png 46186 bytes
+shot sweep-U000.png 46186 bytes
+coverage-func U000 巡检-主窗口初始态（欢迎页） => pass
