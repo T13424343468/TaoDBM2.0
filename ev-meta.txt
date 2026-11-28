@@ -33,3 +33,4 @@ tag=step-start S56c time=2026-11-28T15:28:52.9322124+00:00 appMem=215 MB
 tag=S56c applog-hit [编辑器] beautify time=2026-11-28T15:28:54.2948377+00:00 appMem=213 MB
 tag=step-start S57 time=2026-11-28T15:28:56.1024842+00:00 appMem=212 MB
 tag=S57 focus-guard fallback SetFocus time=2026-11-28T15:28:58.6979770+00:00 appMem=213 MB
+tag=S57 keys-arrival-retry time=2026-11-28T15:29:07.0502954+00:00 appMem=204 MB
