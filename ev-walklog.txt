@@ -196,3 +196,5 @@ coverage-func U079a 巡检-命令监控结果态 => pass
 shot ux-u079b-cmdmon.png 53438 bytes
 shot sweep-U079b.png 53438 bytes
 coverage-func U079b 巡检-命令监控留证 => pass
+shot sweep-U079c.png 53438 bytes
+coverage-func U079c 巡检-命令监控收场 => pass
