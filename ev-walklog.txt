@@ -170,3 +170,5 @@ shot ev-shot-fail-S80.png 78300 bytes
 coverage-func S80 P1-格10 备份-弹窗断言 => fail
 coverage-func S81 P1-格10 备份-收场 => pass
 coverage-func S82 P1-格11 同步-打开 => pass
+step S83 P1-格11 同步-追加模式断言 => fail : window text missing: 追加写入 got-tail=[/ SQL Server / SQLite / Oracle）。请先在左侧新建连接。 | 数据传输与结构同步 | Close Tab | Add New Tab | 需要至少两个关系型连接（MySQL / PostgreSQL / SQL Server / SQLite / Oracle）。请先在左侧新建连接。 | 请先选中一个连接（或库、表）再备份 / 还原。 | 0 连接 · 0 已连接 | ]
+shot ev-shot-fail-S83.png 73204 bytes
