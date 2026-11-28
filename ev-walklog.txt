@@ -108,3 +108,4 @@ shot ev-shot-fail-S38.png 51238 bytes
 coverage-func S38 P0-05 登记实效断言 => fail
 step S39 P0-05 回访-并入任务中心 => fail : mouse target not found
 shot ev-shot-fail-S39.png 51205 bytes
+coverage-func S39 P0-05 回访-并入任务中心 => fail
