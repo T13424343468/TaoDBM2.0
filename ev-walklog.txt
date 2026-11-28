@@ -32,3 +32,4 @@ coverage-func S09 对象树-真实表清单 => skip
 step S10 查询-选中连接 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S10.png 46562 bytes
 coverage-func S10 查询-选中连接 => fail
+coverage-func S11 查询-新建查询入口 => pass
