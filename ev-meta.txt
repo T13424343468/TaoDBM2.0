@@ -136,3 +136,4 @@ tag=step-start S66d time=2026-11-28T15:36:11.4884825+00:00 appMem=159 MB
 tag=S66d window-hit ● 查询 time=2026-11-28T15:36:13.1027190+00:00 appMem=159 MB
 tag=step-start S66e time=2026-11-28T15:36:14.6058359+00:00 appMem=159 MB
 tag=step-start S66f time=2026-11-28T15:36:18.5391058+00:00 appMem=159 MB
+tag=click-fail-buttons &Help | View Slider | Organize | New folder | Filter dropdown | Filter dropdown | Filter dropdown | Filter dropdown | Search | Minimize | Maximize | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Close Tab | Close Tab | Close Tab | Close Tab | Close Tab | Add New Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 结果 | 执行计划 | 消息 | 复制详情 time=2026-11-28T15:36:28.6862612+00:00 appMem=155 MB
