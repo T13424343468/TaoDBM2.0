@@ -84,3 +84,4 @@ tag=S62 focus-guard fallback SetFocus time=2026-11-28T15:32:28.3270099+00:00 app
 tag=S62 keys-sent ^f time=2026-11-28T15:32:30.7516834+00:00 appMem=153 MB
 tag=step-start S62b time=2026-11-28T15:32:32.1921176+00:00 appMem=152 MB
 tag=S62b window-hit 查找替换 time=2026-11-28T15:32:33.7494277+00:00 appMem=150 MB
+tag=step-start S62c time=2026-11-28T15:32:35.1039370+00:00 appMem=151 MB
