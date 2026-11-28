@@ -107,3 +107,5 @@ coverage-func S66a P1-02 未保存保护-点关闭 => pass
 step S66b P1-02 未保存保护-确认框出现 => fail : window text missing: 未保存的更改 got-tail=[ 执行 | 结果 | 执行计划 | 消息 | ⚠ | 执行失败：没成功：登录被拒（账号、密码或权限不对）。建议核对账号密码与该库的授权 | 复制详情 | 消息 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S66b.png 79138 bytes
 coverage-func S66b P1-02 未保存保护-确认框出现 => fail
+step S66c P1-02 未保存保护-点取消 => fail : target not found
+shot ev-shot-fail-S66c.png 79138 bytes
