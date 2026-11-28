@@ -10,3 +10,6 @@
 2026-11-28 15:28:17.712 [新建查询] enter kind=Connection name=SQL provider=null
 2026-11-28 15:28:17.738 [新建查询] worktab built db=
 2026-11-28 15:28:17.765 [新建查询] tab selected
+2026-11-28 15:28:18.084 [人话文案] 库列表加载失败｜原始异常 MySqlException: Access denied for user ''@'localhost' (using password: NO)
+2026-11-28 15:28:18.085 [错误横幅] 库列表加载没成功：登录被拒（账号、密码或权限不对）。建议核对账号密码与该库的授权
+2026-11-28 15:28:18.085 [库下拉] error=Access denied for user ''@'localhost' (using password: NO)
