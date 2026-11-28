@@ -32,3 +32,10 @@
 2026-11-28 15:28:31.651 [人话文案] 执行｜原始异常 SqliteException: SQLite Error 1: 'near "ELECT": syntax error'.
 2026-11-28 15:28:31.658 [错误横幅] 执行失败：没成功：SQL 语法没通过。建议检查语句拼写；可单独执行定位出错位置
 2026-11-28 15:28:31.659 [执行账] sql=WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 500000000) SELECT x FROM c WHERE x % 100000 = 0;ELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c… rows=5000 cols=x row0=100000 row1=200000 row2=300000 row3=400000 row4=500000 row5=600000 row6=700000 row7=800000 | title=ELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=0 cols=
+2026-11-28 15:28:33.338 [Flyout] opening
+2026-11-28 15:28:33.376 [操作栏] click key=query kind=Connection name=ui-auto-sqlite
+2026-11-28 15:28:33.376 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=ok
+2026-11-28 15:28:33.404 [新建查询] worktab built db=main
+2026-11-28 15:28:33.409 [新建查询] tab selected
+2026-11-28 15:28:33.409 [库下拉] 已加载 1 个库
+2026-11-28 15:28:40.290 [执行账] sql=SELECT id, name FROM products ORDER BY id LIMIT 8;  | title=SELECT id, name FROM products ORDER BY id LIMIT 8 rows=8 cols=id/name row0=1,prod-0001 row1=2,prod-0002 row2=3,prod-0003 row3=4,prod-0004 row4=5,prod-0005 row5=6,prod-0006 row6=7,prod-0007 row7=8,prod-0008
