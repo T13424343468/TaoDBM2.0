@@ -137,3 +137,4 @@ shot ev-shot-fail-S47.png 51193 bytes
 coverage-func S47 P0-06 部署向导-打开 => fail
 step S48 P0-06 向导-下一步单步 => fail : mouse target not found
 shot ev-shot-fail-S48.png 51212 bytes
+coverage-func S48 P0-06 向导-下一步单步 => fail
