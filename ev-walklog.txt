@@ -246,3 +246,5 @@ coverage-func U088l 巡检-开始诊断点击 => pass
 shot ux-u088m-diagresult.png 54469 bytes
 shot sweep-U088m.png 54469 bytes
 coverage-func U088m 巡检-诊断结果留证 => pass
+shot sweep-U088n.png 54469 bytes
+coverage-func U088n 巡检-诊断收场 => pass
