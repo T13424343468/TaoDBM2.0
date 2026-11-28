@@ -122,3 +122,4 @@ tag=tour-ok 命令监控 tour-conn-20.png time=2026-11-28T15:38:07.6192438+00:00
 tag=tour-ok 仪表板 tour-conn-21.png time=2026-11-28T15:38:22.1557734+00:00 appMem=197 MB
 tag=tour-summary OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 分片向导 ;; OK 一键诊断 ;; OK 高危 SQL 拦截 ;; OK 上线审查 ;; OK 任务中心 ;; OK 流式开关 ;; OK 读路由预演 ;; OK 热点检测 ;; OK 再均衡规划 ;; OK 分片键评估 ;; OK 迁移续传 ;; OK 团队合并 ;; OK 共享包 ;; OK 智能工具 ;; OK 看板管理 ;; OK 服务器监控 ;; OK 命令监控 ;; OK 仪表板 time=2026-11-28T15:38:23.5244273+00:00 appMem=196 MB
 tag=step-start U058 time=2026-11-28T15:38:25.9715931+00:00 appMem=196 MB
+tag=menu-find-start time=2026-11-28T15:38:27.4430378+00:00 appMem=195 MB
