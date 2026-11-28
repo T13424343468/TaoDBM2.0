@@ -33,3 +33,4 @@ tag=step-start S54 time=2026-11-28T15:29:12.8724576+00:00 appMem=217 MB
 tag=menu-find-start time=2026-11-28T15:29:14.1501806+00:00 appMem=216 MB
 tag=menu-button-found time=2026-11-28T15:29:15.4618165+00:00 appMem=214 MB
 tag=menu-button-invoked time=2026-11-28T15:29:16.7330738+00:00 appMem=214 MB
+tag=menu-item-found time=2026-11-28T15:29:18.1357667+00:00 appMem=214 MB
