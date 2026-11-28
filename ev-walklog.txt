@@ -20,3 +20,5 @@ coverage-func N10 新用户-选中连接准备查询 => pass
 coverage-func N11 新用户-新建查询入口 => pass
 shot ev-shot-result-N12.png 50374 bytes
 N12 ledger: 2026-11-28 15:26:00.336 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
+shot shot-n12-count.png 50374 bytes
+coverage-func N12 新用户-首条查询出数 => pass
