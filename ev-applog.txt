@@ -9,3 +9,7 @@
 2026-11-28 15:27:48.101 [对象树] 连接展开 engine=MySQL dbs=5 [information_schema,mysql,performance_schema,sys,taodbmui]
 2026-11-28 15:28:01.297 [对象树] 库展开 db=taodbmui children=2 [orders,products]
 2026-11-28 15:28:28.603 [Flyout] opening
+2026-11-28 15:28:31.277 [新建查询] enter kind=Database name=taodbmui provider=ok
+2026-11-28 15:28:31.291 [新建查询] worktab built db=taodbmui
+2026-11-28 15:28:31.299 [新建查询] tab selected
+2026-11-28 15:28:31.302 [库下拉] 已加载 5 个库
