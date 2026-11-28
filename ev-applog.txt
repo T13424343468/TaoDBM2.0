@@ -31,3 +31,7 @@
 2026-11-28 15:29:37.238 [新建查询] tab selected
 2026-11-28 15:29:37.239 [库下拉] 已加载 5 个库
 2026-11-28 15:29:44.474 [执行账] sql=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL;  | title=SELECT COUNT(*) AS c FROM orders WHERE note IS NULL rows=1 cols=c row0=454
+2026-11-28 15:30:00.467 [新建查询] enter kind=Connection name=ui-auto-mysql provider=ok
+2026-11-28 15:30:00.491 [新建查询] worktab built db=taodbmui
+2026-11-28 15:30:00.496 [新建查询] tab selected
+2026-11-28 15:30:00.499 [库下拉] 已加载 5 个库
