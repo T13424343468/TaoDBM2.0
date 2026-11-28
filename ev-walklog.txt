@@ -74,3 +74,4 @@ coverage-func S61b 批次一-堆栈菜单项 => pass
 step S61c 批次一-堆栈弹层断言 => fail : window text missing: 剪贴板堆栈 got-tail=[ | 执行计划 | 消息 | （暂无执行计划：点工具栏「⏱ 解释计划」或编辑器右键「执行计划」。） | 2 行 · 1 ms · 11-28 15:30:42 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | MySQL · taodbmui 执行完成 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S61c.png 51569 bytes
 coverage-func S61c 批次一-堆栈弹层断言 => fail
+coverage-func S61d 批次一-堆栈收场 => pass
