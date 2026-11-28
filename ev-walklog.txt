@@ -222,3 +222,5 @@ coverage-func U088b 巡检-生成计划点击 => pass
 shot ux-u088c-planresult.png 62968 bytes
 shot sweep-U088c.png 62968 bytes
 coverage-func U088c 巡检-备份计划结果留证 => pass
+shot sweep-U088d.png 62968 bytes
+coverage-func U088d 巡检-备份计划收场 => pass
