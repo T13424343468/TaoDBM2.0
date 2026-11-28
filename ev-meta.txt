@@ -96,3 +96,4 @@ tag=S63b keys-sent {F6} time=2026-11-28T15:36:25.3957355+00:00 appMem=154 MB
 tag=step-start S63c time=2026-11-28T15:36:27.5829449+00:00 appMem=154 MB
 tag=S63c applog-hit [错误横幅] 执行失败 time=2026-11-28T15:36:29.0656572+00:00 appMem=154 MB
 tag=step-start S63d time=2026-11-28T15:36:30.5753879+00:00 appMem=154 MB
+tag=S63d window-hit 执行失败 time=2026-11-28T15:36:32.2675658+00:00 appMem=155 MB
