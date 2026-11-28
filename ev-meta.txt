@@ -112,3 +112,4 @@ tag=step-start S64c time=2026-11-28T15:33:15.0516869+00:00 appMem=152 MB
 tag=S64c window-hit 请选中一个表 / 集合 / 键后查看数据 time=2026-11-28T15:33:16.3504605+00:00 appMem=152 MB
 tag=step-start S65a time=2026-11-28T15:33:17.6533150+00:00 appMem=151 MB
 tag=S65a same-tab clear time=2026-11-28T15:33:18.9451394+00:00 appMem=151 MB
+tag=S65a editor-set done time=2026-11-28T15:33:23.9229855+00:00 appMem=153 MB
