@@ -19,3 +19,4 @@ tag=poll ui-auto-mssql n8 time=2026-11-28T15:30:24.2089830+00:00 appMem=137 MB
 tag=poll ui-auto-mssql n16 time=2026-11-28T15:30:30.6875974+00:00 appMem=132 MB
 tag=red S07 time=2026-11-28T15:30:36.6563536+00:00 appMem=125 MB
 tag=step-start S08 time=2026-11-28T15:30:38.3119957+00:00 appMem=123 MB
+tag=red S08 time=2026-11-28T15:30:51.3932470+00:00 appMem=111 MB

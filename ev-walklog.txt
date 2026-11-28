@@ -27,3 +27,5 @@ coverage-func S06 对象树-连接节点出现 => fail
 step S07 对象树-展开连接 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S07.png 46572 bytes
 coverage-func S07 对象树-展开连接 => fail
+step S08 对象树-展开数据库 => fail : tree item not found: ui-auto-mssql
+shot ev-shot-fail-S08.png 46572 bytes
