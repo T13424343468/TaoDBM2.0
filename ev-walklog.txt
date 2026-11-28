@@ -89,3 +89,5 @@ shot sweep-U032open.png 60128 bytes
 coverage-func U032open 巡检-导出菜单展开（D⑤ 收一个菜单） => pass
 shot sweep-U032.png 55320 bytes
 coverage-func U032 巡检-导出CSV按钮 => pass
+shot sweep-U033.png 55320 bytes
+coverage-func U033 巡检-导出CSV收场 => pass
