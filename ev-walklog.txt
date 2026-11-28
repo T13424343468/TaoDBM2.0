@@ -102,3 +102,4 @@ coverage-func S64c P1-01 引导降模态-状态栏可见 => pass
 S65a editor-set retry 1 (readback mismatch got=SELECT 'p1-dirty-walk';LECT 1 AS p1ok;)
 S65a editor-set retry 2 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';)
 S65a editor-set retry 3 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';)
+coverage-func S65a P1-02 脏标记-编辑置脏 => pass
