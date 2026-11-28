@@ -68,3 +68,4 @@ tag=S60e keys-sent ^a time=2026-11-28T15:30:49.9191852+00:00 appMem=182 MB
 tag=step-start S60f time=2026-11-28T15:30:51.3422272+00:00 appMem=181 MB
 tag=S60f focus-guard fallback SetFocus time=2026-11-28T15:30:53.8523226+00:00 appMem=177 MB
 tag=S60f keys-sent ^c time=2026-11-28T15:30:56.2541955+00:00 appMem=176 MB
+tag=step-start S61 time=2026-11-28T15:30:57.8449352+00:00 appMem=176 MB
