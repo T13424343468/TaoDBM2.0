@@ -174,3 +174,4 @@ tag=S75 keys-sent ^  time=2026-11-28T15:41:58.4273256+00:00 appMem=166 MB
 tag=step-start S76 time=2026-11-28T15:42:00.2841034+00:00 appMem=166 MB
 tag=red S76 time=2026-11-28T15:42:18.3233387+00:00 appMem=159 MB
 tag=step-start S77 time=2026-11-28T15:42:19.9880819+00:00 appMem=158 MB
+tag=step-start S78 time=2026-11-28T15:42:29.4554650+00:00 appMem=158 MB
