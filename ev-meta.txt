@@ -26,3 +26,4 @@ tag=step-start U012 time=2026-11-28T15:26:41.9859651+00:00 appMem=162 MB
 tag=step-start U013 time=2026-11-28T15:26:45.6480413+00:00 appMem=165 MB
 tag=step-start U014 time=2026-11-28T15:26:52.9018704+00:00 appMem=242 MB
 tag=U014 pre-close time=2026-11-28T15:26:55.4026369+00:00 appMem=242 MB
+tag=SP closed time=2026-11-28T15:26:58.1422446+00:00 appMem=242 MB
