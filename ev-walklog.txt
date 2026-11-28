@@ -62,3 +62,4 @@ coverage-func S54 批次一-前置-重开查询页签 => pass
 coverage-func S55 批次一-编辑器填多语句 => pass
 coverage-func S56 批次一-右键打开编辑器菜单 => pass
 coverage-func S56b 批次一-美化SQL菜单项 => pass
+coverage-func S56c 批次一-美化实效断言 => pass
