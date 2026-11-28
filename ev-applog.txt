@@ -6,3 +6,7 @@
 2026-11-28 15:25:09.847 [连接树] filter= shown=0 groups=0 hidden=0
 2026-11-28 15:25:46.401 [连接树] filter= shown=1 groups=0 hidden=0
 2026-11-28 15:25:55.456 [Flyout] opening
+2026-11-28 15:25:58.364 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
+2026-11-28 15:25:58.381 [新建查询] worktab built db=main
+2026-11-28 15:25:58.394 [新建查询] tab selected
+2026-11-28 15:25:58.397 [库下拉] 已加载 1 个库
