@@ -146,3 +146,5 @@ shot sweep-U046b.png 63263 bytes
 coverage-func U046b 巡检-结果网格右键打开菜单 => pass
 step U046c 巡检-结果网格右键菜单 => miss : menu item not found: { } 复制为 JSON
 coverage-func U046c 巡检-结果网格右键菜单 => miss
+shot sweep-U046d.png 63229 bytes
+coverage-func U046d 巡检-结果网格右键收场 => pass
