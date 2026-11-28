@@ -76,3 +76,4 @@ tag=ctx-miss __CONN_NAME__ attempt 1 windows: [TaoDBM v2.0.0] [C:\ProgramData\Gi
 tag=ctx-miss __CONN_NAME__ attempt 2 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] time=2026-11-28T15:33:40.6114182+00:00 appMem=106 MB
 tag=ctx-miss __CONN_NAME__ attempt 3 windows: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent] time=2026-11-28T15:33:51.6585589+00:00 appMem=106 MB
 tag=red S47 time=2026-11-28T15:33:54.9221772+00:00 appMem=106 MB
+tag=step-start S48 time=2026-11-28T15:33:56.4261163+00:00 appMem=106 MB

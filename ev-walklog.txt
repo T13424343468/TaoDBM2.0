@@ -134,3 +134,4 @@ ctx retry __CONN_NAME__ : shift-f10
 ctx miss __CONN_NAME__ attempt 3 windows-on-screen: [TaoDBM v2.0.0] [C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent]
 step S47 P0-06 部署向导-打开 => fail : context item not found: 部署向导
 shot ev-shot-fail-S47.png 51193 bytes
+coverage-func S47 P0-06 部署向导-打开 => fail
