@@ -143,3 +143,4 @@ shot ev-shot-fail-S49.png 51212 bytes
 coverage-func S49 P0-06 单步导航断言（停在步骤2不跳步） => fail
 step S50 P0-06 向导-上一步单步 => fail : mouse target not found
 shot ev-shot-fail-S50.png 51212 bytes
+coverage-func S50 P0-06 向导-上一步单步 => fail
