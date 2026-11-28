@@ -110,3 +110,5 @@ coverage-func S63f P1-01 错误横幅-成功执行 => pass
 step S63g P1-01 错误横幅-收起落账 => fail : applog anchor missing: [错误横幅] 收起 got-tail=[QL hosts. | 2026-11-28 15:37:00.210 [人话文案] 执行失败｜原始异常 MySqlException: Unable to connect to any of the specified MySQL hosts. | 2026-11-28 15:37:00.212 [错误横幅] 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」 | 2026-11-28 15:37:00.213 [执行账] error=Unable to connect to any of the specified MySQL hosts.]
 shot ev-shot-fail-S63g.png 47384 bytes
 coverage-func S63g P1-01 错误横幅-收起落账 => fail
+step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行 | 结果 | 执行计划 | 消息 | ⚠ | 执行失败：没成功：连不上数据库（地址不通或服务没起）。建议确认地址、端口与服务状态，再点「测试连接」 | 复制详情 | 消息 | 执行出错 | 0 连接 · 0 已连接 | ]
+shot ev-shot-fail-S63h.png 47384 bytes
