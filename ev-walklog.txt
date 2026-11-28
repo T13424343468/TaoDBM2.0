@@ -139,3 +139,5 @@ coverage-func S70 P1-格5 索引外键区可见 => fail
 step S71 P1-格5 生成SQL => fail : target not found
 shot ev-shot-fail-S71.png 78027 bytes
 coverage-func S71 P1-格5 生成SQL => fail
+step S72 P1-格5 预览断言 => fail : window text missing: ALTER TABLE got-tail=[ | 结果 | 执行计划 | 消息 | 1 行 | 1 列 | 虚拟滚动 开 | p1ok | 1 | 1 行 · 0 ms · 11-28 15:33:34 | 详情 | 对象 | ui-auto-mysql | 引擎 | MySQL | 主机 | localhost | 端口 | 3306 | 状态 | 未连接 | 请选中一个表 / 集合 / 键后查看数据。 | 1 连接 · 0 已连接 | ]
+shot ev-shot-fail-S72.png 78027 bytes
