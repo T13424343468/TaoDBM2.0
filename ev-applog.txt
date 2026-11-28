@@ -10,3 +10,4 @@
 2026-11-28 15:27:22.470 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=null
 2026-11-28 15:27:22.486 [新建查询] worktab built db=main
 2026-11-28 15:27:22.497 [新建查询] tab selected
+2026-11-28 15:27:22.761 [库下拉] 已加载 1 个库
