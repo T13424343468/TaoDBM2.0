@@ -81,3 +81,4 @@ tag=S62b window-hit 查找替换 time=2026-11-28T15:32:22.6153890+00:00 appMem=1
 tag=step-start S62c time=2026-11-28T15:32:24.3467606+00:00 appMem=154 MB
 tag=step-start S63a time=2026-11-28T15:32:33.9475642+00:00 appMem=152 MB
 tag=S63a editor-dirty, fresh tab time=2026-11-28T15:32:35.5698295+00:00 appMem=151 MB
+tag=S63a editor-set done time=2026-11-28T15:32:43.5935257+00:00 appMem=164 MB
