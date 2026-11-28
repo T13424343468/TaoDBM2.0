@@ -65,3 +65,4 @@ coverage-func S58c 批次一-注释切换实效断言 => pass
 coverage-func S59 批次一-右键执行计划 => pass
 coverage-func S59b 批次一-执行计划菜单项 => pass
 coverage-func S59c 批次一-执行计划实效断言 => pass
+coverage-func S60 批次一-右键代码段 => pass
