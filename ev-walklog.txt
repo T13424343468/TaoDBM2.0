@@ -172,3 +172,5 @@ shot tour-conn-21.png 50142 bytes
 tour done: OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 分片向导 ;; OK 一键诊断 ;; OK 高危 SQL 拦截 ;; OK 上线审查 ;; OK 任务中心 ;; OK 流式开关 ;; OK 读路由预演 ;; OK 热点检测 ;; OK 再均衡规划 ;; OK 分片键评估 ;; OK 迁移续传 ;; OK 团队合并 ;; OK 共享包 ;; OK 智能工具 ;; OK 看板管理 ;; OK 服务器监控 ;; OK 命令监控 ;; OK 仪表板
 shot sweep-U050.png 50142 bytes
 coverage-func U050 巡检-连接节点·工具与向导全巡览（21 弹窗逐项留证） => pass
+shot sweep-U058.png 49518 bytes
+coverage-func U058 巡检-数据传输与同步 => pass
