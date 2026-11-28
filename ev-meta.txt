@@ -17,3 +17,4 @@ tag=red S06 time=2026-11-28T15:30:16.6065930+00:00 appMem=143 MB
 tag=step-start S07 time=2026-11-28T15:30:18.3101690+00:00 appMem=142 MB
 tag=poll ui-auto-mssql n8 time=2026-11-28T15:30:24.2089830+00:00 appMem=137 MB
 tag=poll ui-auto-mssql n16 time=2026-11-28T15:30:30.6875974+00:00 appMem=132 MB
+tag=red S07 time=2026-11-28T15:30:36.6563536+00:00 appMem=125 MB
