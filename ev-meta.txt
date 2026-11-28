@@ -9,3 +9,4 @@ tag=expand-ok ui-auto-sqlite time=2026-11-28T15:25:25.2761222+00:00 appMem=161 M
 tag=step-start N08 time=2026-11-28T15:25:32.6249196+00:00 appMem=167 MB
 tag=kb-tree-items Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | 表 | 查询 | 备份 | 任务中心 | ER 图 | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | 新建查询 | 备份 | 任务中心 | 筛选连接（名称 / 主机） | ui-auto-sqlite（SQLite） time=2026-11-28T15:25:35.8893421+00:00 appMem=165 MB
 tag=kb-state main Collapsed time=2026-11-28T15:25:37.1189758+00:00 appMem=165 MB
+tag=kb-state-afterA main Collapsed time=2026-11-28T15:25:39.8762181+00:00 appMem=169 MB
