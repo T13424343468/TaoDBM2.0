@@ -89,3 +89,4 @@ S63f keys focus-guard: focus not on editor, mouse-click into editor
 coverage-func S63f P1-01 错误横幅-成功执行 => pass
 step S63g P1-01 错误横幅-收起落账 => fail : applog anchor missing: [错误横幅] 收起 got-tail=[5:32:01.720 [人话文案] 执行｜原始异常 MySqlException: Table 'taodbmui.__no_such_table_p1__' doesn't exist | 2026-11-28 15:32:01.722 [错误横幅] 执行失败：没成功：出了个意外问题。详情已写入日志（帮助 → 打开日志目录），可带着日志反馈 | 2026-11-28 15:32:01.722 [执行账] sql=SELECT * FROM __no_such_table_p1__ | title=SELECT * FROM __no_such_table_p1__ rows=0 cols=]
 shot ev-shot-fail-S63g.png 52807 bytes
+coverage-func S63g P1-01 错误横幅-收起落账 => fail
