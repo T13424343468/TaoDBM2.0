@@ -14,3 +14,21 @@ coverage-func S06 对象树-连接节点出现 => pass
 coverage-func S06A 三档分辨率-回1920x1080 => pass
 coverage-func S07 对象树-展开连接 => pass
 coverage-func S08 对象树-展开数据库 => pass
+shot shot-07-table-tree.png 56556 bytes
+coverage-func S09 对象树-真实表清单 => pass
+step S10 skipped (SkipIds)
+coverage-func S10 查询-选中连接 => skip
+step S11 skipped (SkipIds)
+coverage-func S11 查询-新建查询入口 => skip
+step S12 skipped (SkipIds)
+coverage-func S12 SQL真实执行-计数 => skip
+step S13 skipped (SkipIds)
+coverage-func S13 SQL真实执行-聚合 => skip
+step S14 skipped (SkipIds)
+coverage-func S14 SQL真实执行-空值过滤 => skip
+step S15 skipped (SkipIds)
+coverage-func S15 SQL真实执行-取值比对 => skip
+step S16 skipped (SkipIds)
+coverage-func S16 SQL真实执行-脏数据行 => skip
+step S17 skipped (SkipIds)
+coverage-func S17 导出CSV => skip
