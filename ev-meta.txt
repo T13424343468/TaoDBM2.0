@@ -152,3 +152,4 @@ tag=S17a start time=2026-11-28T15:36:47.7056469+00:00 appMem=159 MB
 tag=S17a btn-found=False time=2026-11-28T15:36:55.3989693+00:00 appMem=158 MB
 tag=step-start S79 time=2026-11-28T15:36:58.0496083+00:00 appMem=158 MB
 tag=menu-find-start time=2026-11-28T15:36:59.2869355+00:00 appMem=158 MB
+tag=menu-button-found time=2026-11-28T15:37:00.7529368+00:00 appMem=158 MB
