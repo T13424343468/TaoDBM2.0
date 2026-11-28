@@ -93,3 +93,4 @@ coverage-func S63g P1-01 错误横幅-收起落账 => fail
 step S63h P1-01 错误横幅-横幅消失 => fail : window text missing: 总耗时 got-tail=[w Tab | ▶ 执行 | ■ 停止 | ⏱ 解释计划 | ✨ 格式化 | ☑ 仅选中 | 导出 ▾ | 更多 ▾ | 在此输入 SQL / 过滤器 / 命令，F5 或 Ctrl+Enter 执行 | 结果 | 执行计划 | 消息 | ⚠ | 执行失败：没成功：登录被拒（账号、密码或权限不对）。建议核对账号密码与该库的授权 | 复制详情 | 消息 | 执行出错 | 1 连接 · 0 已连接 | ]
 shot ev-shot-fail-S63h.png 47872 bytes
 coverage-func S63h P1-01 错误横幅-横幅消失 => fail
+coverage-func S63z P1-01 引导降模态-选中连接节点 => pass
