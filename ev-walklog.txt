@@ -20,3 +20,12 @@ shot ev-shot-fail-S04e.png 46555 bytes
 coverage-func S04e 连接-填写数据库 => fail
 step S05 连接-保存 => fail : target not found
 shot ev-shot-fail-S05.png 46555 bytes
+coverage-func S05 连接-保存 => fail
+step S06 skipped (SkipIds)
+coverage-func S06 对象树-连接节点出现 => skip
+step S07 skipped (SkipIds)
+coverage-func S07 对象树-展开连接 => skip
+step S08 skipped (SkipIds)
+coverage-func S08 对象树-展开数据库 => skip
+step S09 skipped (SkipIds)
+coverage-func S09 对象树-真实表清单 => skip
