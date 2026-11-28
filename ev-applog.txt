@@ -36,3 +36,4 @@
 2026-11-28 15:31:23.554 [执行账] sql=SELECT * FROM __no_such_table_p1__;  | title=SELECT * FROM __no_such_table_p1__ rows=0 cols=
 2026-11-28 15:31:54.802 [错误横幅] 收起
 2026-11-28 15:31:54.805 [执行账] sql=SELECT 1 AS p1ok;  | title=SELECT 1 AS p1ok rows=1 cols=p1ok row0=1
+2026-11-28 15:32:20.426 [Flyout] opening
