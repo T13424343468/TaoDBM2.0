@@ -215,3 +215,5 @@ shot tour-db-14.png 49661 bytes
 tour done: OK 备份计划 ;; OK 备份演练 ;; OK 数据脱敏 ;; OK 数据对账 ;; OK 误删恢复 ;; OK 留痕审计 ;; OK 问库 ;; OK 快照包 ;; OK 批量清理 ;; OK 设计辅助 ;; OK 例程管理 ;; OK 一键诊断 ;; OK 告警中心 ;; OK 三层模型
 shot sweep-U088.png 49661 bytes
 coverage-func U088 巡检-库节点·库工具全巡览（14 弹窗逐项留证） => pass
+shot sweep-U088a.png 59102 bytes
+coverage-func U088a 巡检-备份计划结果态 => pass
