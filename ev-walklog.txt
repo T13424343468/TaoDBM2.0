@@ -47,3 +47,4 @@ S15 ledger: 2026-11-28 15:32:17.186 [执行账] error=Unable to connect to any o
 step S15 SQL真实执行-取值比对 => fail : execution error: 2026-11-28 15:32:17.186 [执行账] error=Unable to connect to any of the specified MySQL hosts.
 shot ev-shot-fail-S15.png 48154 bytes
 coverage-func S15 SQL真实执行-取值比对 => fail
+shot ev-shot-result-S16.png 48842 bytes
