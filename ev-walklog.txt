@@ -169,3 +169,4 @@ step S80 P1-格10 备份-弹窗断言 => fail : window text missing: 备份 / �
 shot ev-shot-fail-S80.png 78300 bytes
 coverage-func S80 P1-格10 备份-弹窗断言 => fail
 coverage-func S81 P1-格10 备份-收场 => pass
+coverage-func S82 P1-格11 同步-打开 => pass
