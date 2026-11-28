@@ -44,3 +44,4 @@ tag=red S25 time=2026-11-28T15:29:33.9153386+00:00 appMem=138 MB
 tag=step-start S26 time=2026-11-28T15:29:35.2668195+00:00 appMem=138 MB
 tag=red S26 time=2026-11-28T15:29:48.0658238+00:00 appMem=134 MB
 tag=step-start S74 time=2026-11-28T15:29:49.7641043+00:00 appMem=134 MB
+tag=S74 editor-dirty, fresh tab time=2026-11-28T15:29:51.2807069+00:00 appMem=134 MB
