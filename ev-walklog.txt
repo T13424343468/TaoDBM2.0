@@ -47,3 +47,4 @@ coverage-func S56 批次一-右键打开编辑器菜单 => pass
 coverage-func S56b 批次一-美化SQL菜单项 => pass
 coverage-func S56c 批次一-美化实效断言 => pass
 S57 keys focus-guard: focus not on editor, mouse-click into editor
+S57 keys arrival missing, retry once with foreground+focus
