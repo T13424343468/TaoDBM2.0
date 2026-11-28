@@ -79,3 +79,4 @@ tag=step-start S63b time=2026-11-28T15:32:10.0723975+00:00 appMem=159 MB
 tag=S63b focus-guard fallback SetFocus time=2026-11-28T15:32:12.7970085+00:00 appMem=155 MB
 tag=S63b keys-arrival-retry time=2026-11-28T15:32:21.3689029+00:00 appMem=154 MB
 tag=S63b keys-fallback-invoke time=2026-11-28T15:32:24.6396816+00:00 appMem=153 MB
+tag=S63b keys-sent {F6} time=2026-11-28T15:32:27.1236937+00:00 appMem=155 MB
