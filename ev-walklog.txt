@@ -252,3 +252,5 @@ shot sweep-U104.png 58459 bytes
 coverage-func U104 巡检-设置入口真拍 => pass
 shot sweep-U104a.png 67134 bytes
 coverage-func U104a 巡检-设置菜单项点击 => pass
+shot sweep-U104b.png 67134 bytes
+coverage-func U104b 巡检-设置收场 => pass
