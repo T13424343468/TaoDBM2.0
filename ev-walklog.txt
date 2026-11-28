@@ -33,3 +33,4 @@ step S10 查询-选中连接 => fail : tree item not found: ui-auto-mssql
 shot ev-shot-fail-S10.png 46541 bytes
 coverage-func S10 查询-选中连接 => fail
 coverage-func S11 查询-新建查询入口 => pass
+shot ev-shot-result-S12.png 47887 bytes
