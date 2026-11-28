@@ -11,3 +11,4 @@ tag=red S04e time=2026-11-28T15:28:44.3939872+00:00 appMem=160 MB
 tag=step-start S05 time=2026-11-28T15:28:45.9634356+00:00 appMem=160 MB
 tag=click-fail-buttons Minimize | Restore | Close | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | Add New Tab | 知道了 time=2026-11-28T15:28:55.9015057+00:00 appMem=160 MB
 tag=click-fail-windows TaoDBM v2.0.0 |  | C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent | System Properties | Program Manager time=2026-11-28T15:28:57.3912750+00:00 appMem=160 MB
+tag=red S05 time=2026-11-28T15:29:00.2343735+00:00 appMem=160 MB
