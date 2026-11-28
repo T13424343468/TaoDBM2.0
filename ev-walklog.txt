@@ -127,3 +127,4 @@ coverage-func S65d P1-02 脏标记-取消另存 => pass
 coverage-func S65e P1-02 脏标记-取消后●保留 => pass
 step S66a P1-02 未保存保护-点关闭 => fail : mouse target has empty rect
 shot ev-shot-fail-S66a.png 77583 bytes
+coverage-func S66a P1-02 未保存保护-点关闭 => fail
