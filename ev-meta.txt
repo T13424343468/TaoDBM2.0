@@ -189,3 +189,4 @@ tag=menu-item-invoked time=2026-11-28T15:43:11.0733400+00:00 appMem=135 MB
 tag=step-start S85b time=2026-11-28T15:43:15.8965561+00:00 appMem=134 MB
 tag=S85b window-hit 模型设计 · ER 图 time=2026-11-28T15:43:17.5652217+00:00 appMem=134 MB
 tag=step-start S85c time=2026-11-28T15:43:19.0173720+00:00 appMem=134 MB
+tag=step-start S86 time=2026-11-28T15:43:28.6824234+00:00 appMem=134 MB
