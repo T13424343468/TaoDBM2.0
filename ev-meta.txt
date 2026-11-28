@@ -58,3 +58,4 @@ tag=ctx-miss __CONN_NAME__ attempt 3 windows: [TaoDBM v2.0.0] [C:\ProgramData\Gi
 tag=red S86 time=2026-11-28T15:28:32.5235820+00:00 appMem=151 MB
 tag=step-start S86b time=2026-11-28T15:28:34.2395901+00:00 appMem=150 MB
 tag=red S86b time=2026-11-28T15:28:47.5061104+00:00 appMem=142 MB
+tag=step-start S86c time=2026-11-28T15:28:48.9150521+00:00 appMem=141 MB
