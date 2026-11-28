@@ -92,3 +92,6 @@ S62 keys focus-guard: focus not on editor, mouse-click into editor
 coverage-func S62 批次一-Ctrl+F查找替换 => pass
 coverage-func S62b 批次一-查找替换弹层断言 => pass
 coverage-func S62c 批次一-查找替换收场 => pass
+S63a editor-set retry 1 (readback mismatch got=SELECT * FROM __no_such_)
+S63a editor-set retry 2 (readback mismatch got=SELECT * FROM __no_such_table_p1__;ELECT * FROM __no_such_table_p1__;)
+S63a editor-set retry 3 (readback mismatch got=SELECT * FROM __no_such_table_p1__;ELECT * FROM __no_such_table_p1__;)
