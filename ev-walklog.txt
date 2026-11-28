@@ -243,3 +243,4 @@ shot sweep-U088l0.png 55366 bytes
 coverage-func U088l0 巡检-切体检页签 => pass
 shot sweep-U088l.png 54469 bytes
 coverage-func U088l 巡检-开始诊断点击 => pass
+shot ux-u088m-diagresult.png 54469 bytes
