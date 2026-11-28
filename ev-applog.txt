@@ -24,3 +24,8 @@
 2026-11-28 15:26:06.887 [新建查询] tab selected
 2026-11-28 15:26:06.887 [库下拉] 已加载 1 个库
 2026-11-28 15:26:13.352 [执行账] sql=SELECT SUM(amount) AS s FROM orders;  | title=SELECT SUM(amount) AS s FROM orders rows=1 cols=s row0=22722500
+2026-11-28 15:26:23.896 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=ok
+2026-11-28 15:26:23.901 [新建查询] worktab built db=main
+2026-11-28 15:26:23.905 [新建查询] tab selected
+2026-11-28 15:26:23.909 [库下拉] 已加载 1 个库
+2026-11-28 15:26:31.020 [执行账] sql=SELECT COUNT(*) AS c FROM products WHERE email IS NULL;  | title=SELECT COUNT(*) AS c FROM products WHERE email IS NULL rows=1 cols=c row0=92
