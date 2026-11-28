@@ -144,3 +144,5 @@ coverage-func S66f P1-02 未保存保护-点不保存 => fail
 step S66g P1-02 未保存保护-页签移除 => fail : window negative anchor hit: ● 查询
 shot ev-shot-fail-S66g.png 77598 bytes
 coverage-func S66g P1-02 未保存保护-页签移除 => fail
+step S68 P1-格5 表设计器-改表模式打开 => fail : tree item not found: 📋 orders
+shot ev-shot-fail-S68.png 77569 bytes
