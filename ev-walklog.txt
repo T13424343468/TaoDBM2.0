@@ -64,3 +64,4 @@ coverage-func S60d 批次一-代码段收场 => pass
 S60e keys focus-guard: focus not on editor, mouse-click into editor
 coverage-func S60e 批次一-全选编辑器 => pass
 S60f keys focus-guard: focus not on editor, mouse-click into editor
+coverage-func S60f 批次一-复制入堆栈 => pass
