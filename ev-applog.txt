@@ -6,3 +6,6 @@
 2026-11-28 15:27:44.901 [连接树] filter= shown=0 groups=0 hidden=0
 2026-11-28 15:27:45.461 布局分档切换: Compact @ 1008 DIP
 2026-11-28 15:32:16.914 [Flyout] opening
+2026-11-28 15:32:20.036 [新建查询] enter kind=Connection name=SQL provider=null
+2026-11-28 15:32:20.060 [新建查询] worktab built db=
+2026-11-28 15:32:20.093 [新建查询] tab selected
