@@ -199,3 +199,24 @@ shot ev-shot-fail-S66f.png 78376 bytes
 coverage-func S66f P1-02 未保存保护-点不保存 => fail
 step S66g P1-02 未保存保护-页签移除 => fail : window negative anchor hit: ● 查询
 shot ev-shot-fail-S66g.png 78376 bytes
+coverage-func S66g P1-02 未保存保护-页签移除 => fail
+step S68 skipped (SkipIds)
+coverage-func S68 P1-格5 表设计器-改表模式打开 => skip
+step S69 skipped (SkipIds)
+coverage-func S69 P1-格5 改表弹窗断言 => skip
+step S70 skipped (SkipIds)
+coverage-func S70 P1-格5 索引外键区可见 => skip
+step S71 skipped (SkipIds)
+coverage-func S71 P1-格5 生成SQL => skip
+step S72 skipped (SkipIds)
+coverage-func S72 P1-格5 预览断言 => skip
+step S73 skipped (SkipIds)
+coverage-func S73 P1-格5 收场 => skip
+step S74 skipped (SkipIds)
+coverage-func S74 P1-格1 补全-编辑器铺底 => skip
+step S75 skipped (SkipIds)
+coverage-func S75 P1-格1 补全-Ctrl+Space触发 => skip
+step S76 skipped (SkipIds)
+coverage-func S76 P1-格1 补全-浮层落账 => skip
+step S77 skipped (SkipIds)
+coverage-func S77 P1-格1 补全-收场 => skip
