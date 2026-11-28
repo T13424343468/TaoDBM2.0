@@ -52,3 +52,4 @@ tag=step-start S57 time=2026-11-28T15:33:17.9107098+00:00 appMem=189 MB
 tag=S57 focus-guard fallback SetFocus time=2026-11-28T15:33:20.6487738+00:00 appMem=188 MB
 tag=S57 keys-arrival-retry time=2026-11-28T15:33:29.2197360+00:00 appMem=185 MB
 tag=S57 keys-fallback-invoke time=2026-11-28T15:33:32.4859866+00:00 appMem=183 MB
+tag=S57 keys-sent {F6} time=2026-11-28T15:33:34.9583261+00:00 appMem=180 MB
