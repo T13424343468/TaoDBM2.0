@@ -104,3 +104,4 @@ S65a editor-set retry 2 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-
 S65a editor-set retry 3 (readback mismatch got=SELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';ELECT 'p1-dirty-walk';)
 coverage-func S65a P1-02 脏标记-编辑置脏 => pass
 coverage-func S65b P1-02 脏标记-标题出现● => pass
+S65c keys focus-guard: focus not on editor, mouse-click into editor
