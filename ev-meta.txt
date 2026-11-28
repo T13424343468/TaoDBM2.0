@@ -26,3 +26,4 @@ tag=S14 run-invoked time=2026-11-28T15:26:31.0258421+00:00 appMem=211 MB
 tag=S14 result-shot time=2026-11-28T15:26:35.4724507+00:00 appMem=209 MB
 tag=S14 ledger-hit time=2026-11-28T15:26:37.0154509+00:00 appMem=209 MB
 tag=step-start S20 time=2026-11-28T15:26:38.5327675+00:00 appMem=209 MB
+tag=S20 run-invoked-before-stop time=2026-11-28T15:26:45.8596375+00:00 appMem=207 MB
