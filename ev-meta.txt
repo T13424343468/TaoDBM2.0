@@ -19,3 +19,4 @@ tag=kb-tree-items-after Non Client Input Sink Window | AppWindow Custom Title Ba
 tag=expand-kb-ok ui-auto-mysql child=taodbmui state=Expanded time=2026-11-28T15:28:09.4587940+00:00 appMem=176 MB
 tag=step-start S09 time=2026-11-28T15:28:16.8523255+00:00 appMem=176 MB
 tag=step-start S54 time=2026-11-28T15:28:24.5261299+00:00 appMem=176 MB
+tag=menu-find-start time=2026-11-28T15:28:25.9286209+00:00 appMem=176 MB
