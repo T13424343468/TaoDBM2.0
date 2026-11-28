@@ -1,4 +1,3 @@
-2026-11-28 15:27:56.526 Toast: 当前系统不支持通知，P4 功能降级为应用内提示
 2026-11-28 15:27:56.644 TaoDBM 启动 TaoDBM v2.0.0
 2026-11-28 15:27:56.691 托盘: 图标加载成功 C:\Program Files\TaoDBM\Assets\TaoDBM.ico
 2026-11-28 15:27:56.691 托盘: 消息托管到主窗 hwnd=0x2017C
@@ -58,3 +57,4 @@
 2026-11-28 15:33:01.456 [执行账] sql=SELECT * FROM __no_such_table_p1__;  | title=SELECT * FROM __no_such_table_p1__ rows=0 cols=
 2026-11-28 15:33:34.561 [错误横幅] 收起
 2026-11-28 15:33:34.565 [执行账] sql=SELECT 1 AS p1ok;  | title=SELECT 1 AS p1ok rows=1 cols=p1ok row0=1
+2026-11-28 15:34:03.883 [Flyout] opening
