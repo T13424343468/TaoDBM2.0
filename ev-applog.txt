@@ -11,3 +11,9 @@
 2026-11-28 15:25:42.265 [新建查询] worktab built db=main
 2026-11-28 15:25:42.282 [新建查询] tab selected
 2026-11-28 15:25:42.287 [库下拉] 已加载 1 个库
+2026-11-28 15:25:49.469 [Flyout] opening
+2026-11-28 15:25:49.517 [新建查询] enter kind=Connection name=ui-auto-sqlite provider=ok
+2026-11-28 15:25:49.525 [新建查询] worktab built db=main
+2026-11-28 15:25:49.529 [新建查询] tab selected
+2026-11-28 15:25:49.533 [库下拉] 已加载 1 个库
+2026-11-28 15:25:56.450 [执行账] sql=SELECT COUNT(*) AS c FROM orders;  | title=SELECT COUNT(*) AS c FROM orders rows=1 cols=c row0=5000
