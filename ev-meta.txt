@@ -124,3 +124,4 @@ tag=tour-summary OK 权限审计 ;; OK 主从管理面 ;; OK 部署向导 ;; OK 
 tag=step-start U058 time=2026-11-28T15:38:25.9715931+00:00 appMem=196 MB
 tag=menu-find-start time=2026-11-28T15:38:27.4430378+00:00 appMem=195 MB
 tag=menu-button-found time=2026-11-28T15:38:29.1069720+00:00 appMem=194 MB
+tag=menu-button-invoked time=2026-11-28T15:38:30.6021019+00:00 appMem=194 MB
