@@ -176,3 +176,5 @@ shot sweep-U058.png 49518 bytes
 coverage-func U058 巡检-数据传输与同步 => pass
 shot sweep-U059.png 49518 bytes
 coverage-func U059 巡检-数据同步收场 => pass
+shot sweep-U064.png 50143 bytes
+coverage-func U064 巡检-ER图 => pass
