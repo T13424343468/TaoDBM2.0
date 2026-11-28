@@ -110,3 +110,4 @@ tag=S65a editor-set done time=2026-11-28T15:33:36.8564696+00:00 appMem=125 MB
 tag=step-start S65b time=2026-11-28T15:33:38.4140823+00:00 appMem=125 MB
 tag=S65b window-hit ● 查询 time=2026-11-28T15:33:39.9346538+00:00 appMem=125 MB
 tag=step-start S65c time=2026-11-28T15:33:41.3762672+00:00 appMem=124 MB
+tag=S65c focus-guard fallback SetFocus time=2026-11-28T15:33:43.9137469+00:00 appMem=124 MB
