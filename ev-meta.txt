@@ -91,3 +91,4 @@ tag=S63f keys-sent {F6} time=2026-11-28T15:32:21.8545804+00:00 appMem=143 MB
 tag=step-start S63g time=2026-11-28T15:32:23.4269099+00:00 appMem=145 MB
 tag=red S63g time=2026-11-28T15:32:41.3918876+00:00 appMem=137 MB
 tag=step-start S63h time=2026-11-28T15:32:43.1991579+00:00 appMem=137 MB
+tag=red S63h time=2026-11-28T15:32:56.3269395+00:00 appMem=136 MB
