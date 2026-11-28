@@ -226,3 +226,4 @@ step S77 skipped (SkipIds)
 coverage-func S77 P1-格1 补全-收场 => skip
 step S78 skipped (SkipIds)
 coverage-func S78 P1-格7 导出流式-真实导出 => skip
+coverage-func S79 P1-格10 备份-打开向导 => pass
