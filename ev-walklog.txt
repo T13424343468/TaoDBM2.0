@@ -133,3 +133,4 @@ shot ev-shot-fail-S66b.png 77598 bytes
 coverage-func S66b P1-02 未保存保护-确认框出现 => fail
 step S66c P1-02 未保存保护-点取消 => fail : target not found
 shot ev-shot-fail-S66c.png 77598 bytes
+coverage-func S66c P1-02 未保存保护-点取消 => fail
