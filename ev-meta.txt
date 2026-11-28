@@ -49,3 +49,4 @@ tag=S59c applog-hit [编辑器] explain engine= time=2026-11-28T15:29:53.8370906
 tag=step-start S60 time=2026-11-28T15:29:55.3985440+00:00 appMem=192 MB
 tag=step-start S60b time=2026-11-28T15:29:59.1182182+00:00 appMem=193 MB
 tag=step-start S60c time=2026-11-28T15:30:02.7516462+00:00 appMem=189 MB
+tag=S60c window-hit 代码段 time=2026-11-28T15:30:04.2951272+00:00 appMem=190 MB
