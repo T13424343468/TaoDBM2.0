@@ -59,3 +59,5 @@ coverage-func S23 P0-03 排序实效断言 => fail
 step S24 P0-03 网格-右键复制该行 => fail : mouse target not found
 shot ev-shot-fail-S24.png 55134 bytes
 coverage-func S24 P0-03 网格-右键复制该行 => fail
+step S25 P0-03 复制实效断言 => fail : menu item not found: 复制该行
+shot ev-shot-fail-S25.png 55134 bytes
