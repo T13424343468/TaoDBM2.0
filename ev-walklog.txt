@@ -90,3 +90,4 @@ coverage-func S62c 批次一-查找替换收场 => pass
 S63a editor-set retry 1 (readback mismatch got=SELECT * FROM __no_such_)
 S63a editor-set retry 2 (readback mismatch got=SELECT * FROM __no_such_table_p1__;ELECT * FROM __no_such_table_p1__;)
 coverage-func S63a P1-01 错误横幅-执行必败SQL => pass
+S63b keys focus-guard: focus not on editor, mouse-click into editor
