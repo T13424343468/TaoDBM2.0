@@ -52,3 +52,4 @@ tag=S57b applog-hit [执行账] time=2026-11-28T15:30:03.8160820+00:00 appMem=20
 tag=step-start S58 time=2026-11-28T15:30:05.2145668+00:00 appMem=207 MB
 tag=step-start S58b time=2026-11-28T15:30:08.8508159+00:00 appMem=205 MB
 tag=step-start S58c time=2026-11-28T15:30:12.3270892+00:00 appMem=202 MB
+tag=S58c applog-hit [编辑器] comment-toggle time=2026-11-28T15:30:13.7666705+00:00 appMem=201 MB
