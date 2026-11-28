@@ -173,3 +173,4 @@ tag=step-start S80 time=2026-11-28T15:38:27.2826518+00:00 appMem=168 MB
 tag=red S80 time=2026-11-28T15:38:41.8211963+00:00 appMem=172 MB
 tag=step-start S81 time=2026-11-28T15:38:43.8176132+00:00 appMem=172 MB
 tag=step-start S82 time=2026-11-28T15:38:53.4903801+00:00 appMem=172 MB
+tag=menu-find-start time=2026-11-28T15:38:55.1264200+00:00 appMem=172 MB
