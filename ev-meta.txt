@@ -27,3 +27,4 @@ tag=S12 result-shot time=2026-11-28T15:29:29.0977452+00:00 appMem=202 MB
 tag=red S12 time=2026-11-28T15:29:31.8955314+00:00 appMem=200 MB
 tag=step-start S13 time=2026-11-28T15:29:33.2623328+00:00 appMem=195 MB
 tag=S13 editor-dirty, fresh tab time=2026-11-28T15:29:34.9202903+00:00 appMem=194 MB
+tag=S13 run-invoked time=2026-11-28T15:29:42.8419292+00:00 appMem=198 MB
