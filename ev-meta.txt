@@ -14,3 +14,4 @@ tag=step-start S08 time=2026-11-28T15:27:55.3640491+00:00 appMem=173 MB
 tag=kb-tree-items Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Restore | Close | 表 | 查询 | 备份 | 任务中心 | ER 图 | ＋ 新建连接 | 主题 | 刷新 | 手册 | 关于 | 新建查询 | 备份 | 任务中心 | 筛选连接（名称 / 主机） | ui-auto-mysql（MySQL） time=2026-11-28T15:27:58.5306930+00:00 appMem=175 MB
 tag=kb-state taodbmui Collapsed time=2026-11-28T15:27:59.9236125+00:00 appMem=175 MB
 tag=kb-state-afterA taodbmui Collapsed time=2026-11-28T15:28:02.7909446+00:00 appMem=178 MB
+tag=kb-state-afterB taodbmui Expanded time=2026-11-28T15:28:06.1649437+00:00 appMem=176 MB
